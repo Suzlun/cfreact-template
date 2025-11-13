@@ -1,0 +1,37 @@
+name = "cfreact-template-server"
+main = "packages/server/src/index.ts"
+compatibility_date = "2025-11-13"
+compatibility_flags = ["nodejs_compat"]
+
+# Workers Sites for serving static files (optional)
+# [site]
+# bucket = "./packages/client/dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cfreact-template-db"
+database_id = "YOUR_DATABASE_ID_HERE"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "YOUR_KV_NAMESPACE_ID_HERE"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "cfreact-template-bucket"
+
+[env.production]
+name = "cfreact-template-server-production"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "cfreact-template-db-production"
+database_id = "YOUR_PRODUCTION_DATABASE_ID_HERE"
+
+[[env.production.kv_namespaces]]
+binding = "KV"
+id = "YOUR_PRODUCTION_KV_NAMESPACE_ID_HERE"
+
+[[env.production.r2_buckets]]
+binding = "R2"
+bucket_name = "cfreact-template-bucket-production"

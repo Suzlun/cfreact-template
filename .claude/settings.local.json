@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:developers.cloudflare.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:speckit.org)",
+      "WebFetch(domain:github.github.com)",
+      "WebFetch(domain:github.blog)",
+      "WebFetch(domain:developer.microsoft.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:code.visualstudio.com)",
+      "WebFetch(domain:marcandreuf.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

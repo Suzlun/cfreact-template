@@ -1,0 +1,22 @@
+{
+  "name": "@cfreact-template/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --ip 0.0.0.0",
+    "build": "tsc",
+    "deploy": "wrangler deploy",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cfreact-template/drizzle": "workspace:*",
+    "drizzle-orm": "^0.44.7",
+    "hono": "^4.10.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.0.1"
+  }
+}
