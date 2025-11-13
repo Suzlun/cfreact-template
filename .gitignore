@@ -47,3 +47,10 @@ coverage/
 
 # Misc
 .turbo/
+
+# Codex configuration (contains API keys and logs)
+.devcontainer/.codex/config.json
+.devcontainer/.codex/.env
+.devcontainer/.codex/credentials.json
+.devcontainer/.codex/.api-key
+.devcontainer/.codex/*.log

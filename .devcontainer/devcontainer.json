@@ -21,6 +21,9 @@
       }
     }
   },
+  "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer/.codex,target=/home/node/.codex,type=bind,consistency=cached"
+  ],
   "forwardPorts": [5173, 8787],
   "portsAttributes": {
     "5173": {
