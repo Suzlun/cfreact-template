@@ -54,3 +54,9 @@ coverage/
 .devcontainer/.codex/credentials.json
 .devcontainer/.codex/.api-key
 .devcontainer/.codex/*.log
+# 注: .devcontainer/.codex/config.toml にAPIキーを含める場合は以下を有効化
+# .devcontainer/.codex/config.toml
+
+# Serena MCP Server
+.serena/cache/
+.serena/*.log

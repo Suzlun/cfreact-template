@@ -24,7 +24,7 @@
   "mounts": [
     "source=${localWorkspaceFolder}/.devcontainer/.codex,target=/home/node/.codex,type=bind,consistency=cached"
   ],
-  "forwardPorts": [5173, 8787],
+  "forwardPorts": [5173, 8787, 24282],
   "portsAttributes": {
     "5173": {
       "label": "Vite Dev Server",
@@ -32,6 +32,10 @@
     },
     "8787": {
       "label": "Cloudflare Workers Dev",
+      "onAutoForward": "notify"
+    },
+    "24282": {
+      "label": "Serena Dashboard",
       "onAutoForward": "notify"
     }
   },

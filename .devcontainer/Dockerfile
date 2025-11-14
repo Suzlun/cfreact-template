@@ -1,6 +1,7 @@
 FROM node:24-bookworm
 
 # Python と必要なツールをインストール
+# Serena MCP には Python 3.11+ (3.12+ は不可) が必要
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
@@ -11,6 +12,10 @@ RUN apt-get update && apt-get install -y \
 # uv をインストール
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
+
+# uv を /usr/local/bin にシンボリックリンク（すべてのユーザーがアクセス可能）
+RUN ln -s /root/.local/bin/uv /usr/local/bin/uv && \
+    ln -s /root/.local/bin/uvx /usr/local/bin/uvx
 
 # pnpm を有効化
 RUN corepack enable
@@ -23,3 +28,7 @@ RUN npm install -g @openai/codex
 
 # node ユーザーに切り替え
 USER node
+
+# Serena MCP を事前にダウンロード・キャッシュ
+# これにより devcontainer 起動後すぐに Serena が使用可能になる
+RUN uvx --from git+https://github.com/oraios/serena serena --version

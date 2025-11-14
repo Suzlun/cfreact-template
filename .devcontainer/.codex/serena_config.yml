@@ -1,0 +1,22 @@
+# Serena MCP Server - Global Configuration
+# このファイルはチームで共有可能な設定です
+
+# 統計記録
+record_tool_usage_stats: true
+included_optional_tools: []
+
+# ダッシュボードとロギング
+gui_log_window: false  # devcontainerではGUIウィンドウを無効化
+web_dashboard: true
+web_dashboard_open_on_launch: false
+log_level: 20  # 10=debug, 20=info, 30=warning, 40=error
+
+# パフォーマンス設定
+tool_timeout: 240  # ツール実行のタイムアウト（秒）
+
+# デバッグ
+trace_lsp_communication: false  # LSP通信のトレースを無効化
+
+# プロジェクトレジストリ
+# Serenaが自動的に管理します
+projects: []

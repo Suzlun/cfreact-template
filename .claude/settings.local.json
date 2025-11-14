@@ -11,7 +11,8 @@
       "WebFetch(domain:developer.microsoft.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:code.visualstudio.com)",
-      "WebFetch(domain:marcandreuf.com)"
+      "WebFetch(domain:marcandreuf.com)",
+      "WebFetch(domain:oraios.github.io)"
     ],
     "deny": [],
     "ask": []

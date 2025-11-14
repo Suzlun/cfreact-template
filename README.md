@@ -30,6 +30,7 @@
 - **ESLint** 9.39+ - リンティング（flat config）
 - **Prettier** 3.6.2 - コードフォーマット
 - **Dev Containers** - 一貫した開発環境
+- **Serena MCP** - セマンティックコード検索・編集（Codex CLI統合）
 
 ## プロジェクト構成
 
@@ -364,6 +365,52 @@ speckit bundle spec/api/ --format openapi --out openapi.yaml
 ```
 
 詳細については、https://github.com/specify/speckit を参照してください。
+
+## Serena MCP - セマンティックコード検索
+
+このテンプレートには、Codex CLI と統合された Serena MCP Server が設定されています。Serena は Language Server Protocol (LSP) を使用して、IDE 並みのコード理解機能を提供します。
+
+### 機能
+
+- **セマンティック検索**: シンボルレベルでのコード検索
+- **定義へのジャンプ**: "Go to Definition" 機能
+- **参照の検索**: "Find All References" 機能
+- **インテリジェント編集**: コンテキストを理解したコード編集
+- **メモリ管理**: コードベースのコンテキストを保持
+
+### 使用方法
+
+Codex CLI から以下のように使用します：
+
+```bash
+# プロジェクトをアクティベート（初回のみ）
+"Activate the current dir as project using serena"
+
+# セマンティック検索
+"Find all references to the User type using serena"
+"Show me the definition of apiClient using serena"
+"Find all usages of the createUser function using serena"
+```
+
+### Web ダッシュボード
+
+Serena のダッシュボードにアクセスして、ログやプロジェクト情報を確認できます：
+
+```
+http://localhost:24282/dashboard
+```
+
+### 設定ファイル
+
+- **`.devcontainer/.codex/config.toml`**: Codex CLI の MCP サーバー設定
+- **`.devcontainer/.codex/serena_config.yml`**: Serena のグローバル設定
+- **`.serena/project.yml`**: プロジェクト固有の設定
+
+### セキュリティ
+
+デフォルトでは `read_only: true` に設定されており、ファイルの読み取りのみが可能です。ファイル編集機能を有効にする場合は、`.serena/project.yml` で `read_only: false` に変更してください。
+
+詳細については、https://github.com/oraios/serena を参照してください。
 
 ## カスタマイズ
 
