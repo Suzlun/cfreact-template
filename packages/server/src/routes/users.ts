@@ -1,6 +1,7 @@
-import { Hono } from 'hono';
-import { drizzle } from 'drizzle-orm/d1';
 import { users, type NewUser } from '@cfreact-template/drizzle';
+import { drizzle } from 'drizzle-orm/d1';
+import { Hono } from 'hono';
+
 import type { Bindings } from '../types.js';
 
 const usersRoute = new Hono<{ Bindings: Bindings }>();
@@ -14,7 +15,7 @@ usersRoute.get('/', async (c) => {
 usersRoute.post('/', async (c) => {
   const body = await c.req.json<NewUser>();
 
-  if (!body.name || !body.email) {
+  if (body.name === '' || body.email === '') {
     return c.json({ error: 'Name and email are required' }, 400);
   }
 
@@ -34,7 +35,7 @@ usersRoute.get('/:id', async (c) => {
     .where((row) => row.id === id)
     .get();
 
-  if (!user) {
+  if (user == null) {
     return c.json({ error: 'User not found' }, 404);
   }
 

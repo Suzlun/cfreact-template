@@ -1,5 +1,3 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Heading,
@@ -12,6 +10,9 @@ import {
   Card,
   Text,
 } from '@cfreact-template/ui';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+
 import { apiClient } from '../lib/api-client.js';
 
 export function UsersPage() {
@@ -39,7 +40,7 @@ export function UsersPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && email) {
+    if (name !== '' && email !== '') {
       createUserMutation.mutate();
     }
   };
@@ -61,7 +62,9 @@ export function UsersPage() {
                 <Input
                   placeholder="Name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                  }}
                   required
                 />
               </Box>
@@ -70,7 +73,9 @@ export function UsersPage() {
                   type="email"
                   placeholder="Email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                  }}
                   required
                 />
               </Box>
@@ -84,7 +89,7 @@ export function UsersPage() {
 
       {isLoading && <Spinner size="lg" />}
 
-      {error && (
+      {error != null && (
         <Alert.Root status="error">
           <Alert.Indicator />
           <Alert.Title>Error loading users</Alert.Title>
@@ -92,7 +97,7 @@ export function UsersPage() {
         </Alert.Root>
       )}
 
-      {users && users.length > 0 && (
+      {users != null && users.length > 0 && (
         <Table.Root variant="outline">
           <Table.Header>
             <Table.Row>
@@ -115,7 +120,7 @@ export function UsersPage() {
         </Table.Root>
       )}
 
-      {users && users.length === 0 && (
+      {users?.length === 0 && (
         <Box textAlign="center" py={10}>
           <Text fontSize="lg" color="gray.500">
             No users found. Create one above!

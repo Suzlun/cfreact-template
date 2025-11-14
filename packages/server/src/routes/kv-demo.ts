@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+
 import type { Bindings } from '../types.js';
 
 const kvDemo = new Hono<{ Bindings: Bindings }>();
@@ -17,7 +18,7 @@ kvDemo.get('/:key', async (c) => {
 kvDemo.post('/', async (c) => {
   const { key, value } = await c.req.json<{ key: string; value: string }>();
 
-  if (!key || !value) {
+  if (key === '' || value === '') {
     return c.json({ error: 'Key and value are required' }, 400);
   }
 

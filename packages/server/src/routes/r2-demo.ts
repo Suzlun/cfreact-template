@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+
 import type { Bindings } from '../types.js';
 
 const r2Demo = new Hono<{ Bindings: Bindings }>();
@@ -13,7 +14,7 @@ r2Demo.get('/:key', async (c) => {
 
   return new Response(object.body, {
     headers: {
-      'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+      'Content-Type': object.httpMetadata?.contentType ?? 'application/octet-stream',
       ETag: object.httpEtag,
     },
   });
@@ -24,7 +25,7 @@ r2Demo.post('/', async (c) => {
   const file = formData.get('file') as File | null;
   const key = formData.get('key');
 
-  if (!file || !key) {
+  if (file == null || key == null || key === '') {
     return c.json({ error: 'File and key are required' }, 400);
   }
 

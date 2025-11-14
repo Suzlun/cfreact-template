@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@chakra-ui/react": "^3.28.1",
+    "dompurify": "^3.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

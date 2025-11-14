@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
 import { Box, Heading, Text, Spinner, Alert } from '@cfreact-template/ui';
+import { useQuery } from '@tanstack/react-query';
+
 import { apiClient } from '../lib/api-client.js';
 
 export function HomePage() {
@@ -21,7 +22,7 @@ export function HomePage() {
 
         {isLoading && <Spinner size="lg" />}
 
-        {error && (
+        {error != null && (
           <Alert.Root status="error">
             <Alert.Indicator />
             <Alert.Title>Error loading data</Alert.Title>
@@ -29,7 +30,7 @@ export function HomePage() {
           </Alert.Root>
         )}
 
-        {data && (
+        {data != null && (
           <Box>
             <Text fontSize="lg" mb={2}>
               <strong>Message:</strong> {data.message}

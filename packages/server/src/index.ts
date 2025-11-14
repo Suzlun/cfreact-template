@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import type { Bindings } from './types.js';
 
 import hello from './routes/hello.js';
-import usersRoute from './routes/users.js';
 import kvDemo from './routes/kv-demo.js';
 import r2Demo from './routes/r2-demo.js';
+import usersRoute from './routes/users.js';
+
+import type { Bindings } from './types.js';
 
 const app = new Hono<{ Bindings: Bindings }>();
 

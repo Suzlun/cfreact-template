@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+
 import type { Bindings } from '../types.js';
 
 const hello = new Hono<{ Bindings: Bindings }>();
