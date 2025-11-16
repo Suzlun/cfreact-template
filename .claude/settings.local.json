@@ -14,7 +14,9 @@
       "WebFetch(domain:marcandreuf.com)",
       "WebFetch(domain:oraios.github.io)",
       "Bash(pnpm add:*)",
-      "Bash(pnpm install)"
+      "Bash(pnpm install)",
+      "WebFetch(domain:developers.openai.com)",
+      "WebFetch(domain:www.vibesparking.com)"
     ],
     "deny": [],
     "ask": []

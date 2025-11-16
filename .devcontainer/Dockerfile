@@ -28,7 +28,3 @@ RUN npm install -g @openai/codex
 
 # node ユーザーに切り替え
 USER node
-
-# Serena MCP を事前にダウンロード・キャッシュ
-# これにより devcontainer 起動後すぐに Serena が使用可能になる
-RUN uvx --from git+https://github.com/oraios/serena serena --version

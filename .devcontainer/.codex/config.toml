@@ -1,10 +1,7 @@
-# Codex CLI MCP Server Configuration
+[mcp_servers.playwright]
+command = "npx"
+args = ["@playwright/mcp@latest"]
 
 [mcp_servers.serena]
 command = "uvx"
-args = [
-    "--from", "git+https://github.com/oraios/serena",
-    "serena", "start-mcp-server",
-    "--context", "codex",
-    "--project", "/workspaces/cfreact-template"
-]
+args = ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server", "--context", "codex", "--project", "/workspaces/cfreact-template"]
