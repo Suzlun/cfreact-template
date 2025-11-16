@@ -49,11 +49,9 @@ coverage/
 .turbo/
 
 # Codex configuration (contains API keys and logs)
-.devcontainer/.codex/config.json
-.devcontainer/.codex/.env
-.devcontainer/.codex/credentials.json
-.devcontainer/.codex/.api-key
-.devcontainer/.codex/*.log
+.devcontainer/.codex/auth.json
+.devcontainer/.codex/sessions/*
+.devcontainer/.codex/archived_sessions/*
 # 注: .devcontainer/.codex/config.toml にAPIキーを含める場合は以下を有効化
 # .devcontainer/.codex/config.toml
 

@@ -13,9 +13,11 @@ RUN apt-get update && apt-get install -y \
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
-# uv を /usr/local/bin にシンボリックリンク（すべてのユーザーがアクセス可能）
-RUN ln -s /root/.local/bin/uv /usr/local/bin/uv && \
-    ln -s /root/.local/bin/uvx /usr/local/bin/uvx
+# uv バイナリに実行権限を付与し、/usr/local/bin にコピー（すべてのユーザーがアクセス可能）
+RUN chmod +x /root/.local/bin/uv /root/.local/bin/uvx && \
+    cp /root/.local/bin/uv /usr/local/bin/uv && \
+    cp /root/.local/bin/uvx /usr/local/bin/uvx && \
+    chmod 755 /usr/local/bin/uv /usr/local/bin/uvx
 
 # pnpm を有効化
 RUN corepack enable

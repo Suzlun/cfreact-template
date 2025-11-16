@@ -9,7 +9,18 @@
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
-        "ms-azuretools.vscode-docker"
+        "ms-azuretools.vscode-docker",
+        "vitest.explorer",
+        "ms-playwright.playwright",
+        "usernamehw.errorlens",
+        "eamodio.gitlens",
+        "christian-kohler.path-intellisense",
+        "formulahendry.auto-rename-tag",
+        "wix.vscode-import-cost",
+        "dsznajder.es7-react-js-snippets",
+        "yoavbls.pretty-ts-errors",
+        "mikestead.dotenv",
+        "openai.chatgpt"
       ],
       "settings": {
         "editor.formatOnSave": true,
