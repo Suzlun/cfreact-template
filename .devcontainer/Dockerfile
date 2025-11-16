@@ -30,3 +30,7 @@ RUN npm install -g @openai/codex
 
 # node ユーザーに切り替え
 USER node
+
+# node ユーザーとして spec-kit をインストール
+RUN uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+ENV PATH="/home/node/.local/bin:$PATH"

@@ -156,7 +156,7 @@ cfreact-template/
 **前提条件:**
 
 - Node.js 24.11.0 以降
-- Python 3.x（speckit 用）
+- Python 3.11 以降（spec-kit 用）
 
 1. **依存関係をインストール:**
 
@@ -171,7 +171,7 @@ cfreact-template/
    npm install -g wrangler@4
    ```
 
-3. **uv をインストール（speckit 用）:**
+3. **uv をインストール（spec-kit 用）:**
 
    ```bash
    # macOS/Linux
@@ -191,9 +191,9 @@ cfreact-template/
 
 **注意:** Dev Container には、これらすべてのツールがプリインストールされています（Node.js 24、Python 3、pnpm、Wrangler、uv、Codex CLI）。
 
-### Codex CLI セットアップ（オプション）
+### Codex CLI + spec-kit セットアップ（オプション）
 
-AI 支援開発に Codex CLI を使用する場合：
+AI 支援開発に Codex CLI と spec-kit を使用する場合：
 
 1. **OpenAI API キーを取得:**
    - ChatGPT Plus/Pro/Business に登録するか、OpenAI API キーを取得
@@ -205,11 +205,17 @@ AI 支援開発に Codex CLI を使用する場合：
    codex auth
    ```
 
-3. **speckit と一緒に使用:**
+3. **spec-kit でプロジェクトを初期化:**
+
    ```bash
-   # Codex でプロジェクトを初期化
-   specify init my-feature --ai codex
+   # Codex 用にプロジェクトを初期化
+   uvx --from git+https://github.com/github/spec-kit.git specify init . --ai codex
    ```
+
+4. **Codex CLI 内でスラッシュコマンドを使用:**
+   - `/specify` - 要件仕様を作成
+   - `/plan` - 技術実装計画を作成
+   - `/tasks` - タスクに分解
 
 ## 開発ワークフロー
 
@@ -337,34 +343,51 @@ wrangler secret put CLOUDFLARE_DATABASE_ID
 wrangler secret put CLOUDFLARE_D1_TOKEN
 ```
 
-## speckit による仕様駆動開発
+## spec-kit による仕様駆動開発
 
-このテンプレートには、API 仕様用の `spec/api/` ディレクトリが含まれています。
+このテンプレートには、spec-kit との統合をサポートするディレクトリ構造が含まれています。
 
-### speckit のインストール
+### spec-kit とは
+
+spec-kit は GitHub が提供するオープンソースの仕様駆動開発（Spec-Driven Development）ツールキットです。仕様を実行可能な成果物として扱い、AI コーディングアシスタントと協力して、要件定義から実装まで段階的に進めることができます。
+
+### 4 段階の開発プロセス
+
+1. **Specify（要件定義）**: ユーザーストーリー、解決する問題、成功指標などの仕様を作成
+2. **Plan（計画）**: 技術スタック、アーキテクチャ、制約条件を定義
+3. **Tasks（タスク分解）**: 仕様と計画を小さなタスクに分解
+4. **Implement（実装）**: AI アシスタントが各タスクを順次実装
+
+### プロジェクトの初期化
 
 ```bash
-# uv を使用（推奨）
-uv tool install speckit
+# 現在のディレクトリで初期化
+uvx --from git+https://github.com/github/spec-kit.git specify init . --ai claude
 
-# または pip を使用
-pip install speckit
+# または新しいプロジェクトを作成
+uvx --from git+https://github.com/github/spec-kit.git specify init my-project --ai claude
 ```
 
-### speckit の使用
+サポートされている AI アシスタント: `claude`, `copilot`, `gemini`, `codex`, `codebuddy`
 
-```bash
-# API 仕様を検証
-speckit validate spec/api/
+### スラッシュコマンド
 
-# 仕様から TypeScript 型を生成
-speckit generate spec/api/ --lang typescript --out packages/drizzle/src/types.ts
+プロジェクトを初期化すると、AI アシスタント内で以下のコマンドが使えるようになります：
 
-# OpenAPI 仕様を生成
-speckit bundle spec/api/ --format openapi --out openapi.yaml
+- **`/specify`** - 要件仕様を作成（何を、なぜを定義）
+- **`/plan`** - 技術実装計画を作成（どのように実装するかを定義）
+- **`/tasks`** - 仕様と計画を実装可能なタスクに分解
+
+### 使用例
+
+```
+# AI アシスタント（Codex CLI、Claude Code など）内で実行
+/specify Create a user authentication feature with email and password
+/plan Use JWT tokens and bcrypt for password hashing
+/tasks Break down the authentication feature into implementable tasks
 ```
 
-詳細については、https://github.com/specify/speckit を参照してください。
+詳細については、https://github.com/github/spec-kit を参照してください。
 
 ## Serena MCP - セマンティックコード検索
 
@@ -542,4 +565,4 @@ pnpm check
 - [React ドキュメント](https://react.dev/)
 - [Chakra UI ドキュメント](https://www.chakra-ui.com/)
 - [TanStack Query ドキュメント](https://tanstack.com/query/latest)
-- [speckit ドキュメント](https://github.com/specify/speckit)
+- [spec-kit ドキュメント](https://github.com/github/spec-kit)
