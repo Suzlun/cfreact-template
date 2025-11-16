@@ -1,13 +1,9 @@
 import { Box, Heading, Text, Spinner, Alert } from '@cfreact-template/ui';
-import { useQuery } from '@tanstack/react-query';
 
-import { apiClient } from '../lib/api-client.js';
+import { useHelloQuery } from '@client/hooks/useHello.js';
 
 export function HomePage() {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['hello'],
-    queryFn: () => apiClient.getHello(),
-  });
+  const { data, isLoading, error } = useHelloQuery();
 
   return (
     <Box>

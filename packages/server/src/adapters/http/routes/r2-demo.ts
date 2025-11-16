@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
 
-import type { Bindings } from '../types.js';
+import type { AppVariables } from '@server/app/context.js';
+import type { Bindings } from '@server/types.js';
 
-const r2Demo = new Hono<{ Bindings: Bindings }>();
+const r2Demo = new Hono<{ Bindings: Bindings; Variables: AppVariables }>();
 
 r2Demo.get('/:key', async (c) => {
   const key = c.req.param('key');
-  const object = await c.env.R2.get(key);
+  const object = await c.var.r2.get(key);
 
   if (object === null) {
     return c.json({ error: 'Object not found' }, 404);
@@ -31,7 +32,7 @@ r2Demo.post('/', async (c) => {
 
   const arrayBuffer = await file.arrayBuffer();
 
-  await c.env.R2.put(key, arrayBuffer, {
+  await c.var.r2.put(key, arrayBuffer, {
     httpMetadata: {
       contentType: file.type,
     },
@@ -50,7 +51,7 @@ r2Demo.post('/', async (c) => {
 
 r2Demo.delete('/:key', async (c) => {
   const key = c.req.param('key');
-  await c.env.R2.delete(key);
+  await c.var.r2.delete(key);
   return c.json({ message: 'Object deleted successfully', key });
 });
 

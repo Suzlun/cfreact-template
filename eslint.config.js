@@ -1,11 +1,14 @@
 import js from '@eslint/js';
 import tanstackQuery from '@tanstack/eslint-plugin-query';
+import boundaries from 'eslint-plugin-boundaries';
 import eslintComments from 'eslint-plugin-eslint-comments';
 import importPlugin from 'eslint-plugin-import';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+import security from 'eslint-plugin-security';
+import sonarjs from 'eslint-plugin-sonarjs';
 import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
 
@@ -31,6 +34,9 @@ export default tseslint.config(
       import: importPlugin,
       unicorn: unicorn,
       'eslint-comments': eslintComments,
+      boundaries: boundaries,
+      security: security,
+      sonarjs: sonarjs,
     },
     settings: {
       'import/resolver': {
@@ -39,6 +45,23 @@ export default tseslint.config(
           project: './tsconfig.json',
         },
       },
+      'boundaries/elements': [
+        { type: 'server-entry', pattern: 'packages/server/src/index.ts' },
+        { type: 'server-app', pattern: 'packages/server/src/app/**/*' },
+        { type: 'server-adapters-http', pattern: 'packages/server/src/adapters/http/**/*' },
+        {
+          type: 'server-adapters-persistence',
+          pattern: 'packages/server/src/adapters/persistence/**/*',
+        },
+        { type: 'server-core-domain', pattern: 'packages/server/src/core/domain/**/*' },
+        { type: 'server-core-usecases', pattern: 'packages/server/src/core/usecases/**/*' },
+        { type: 'server-types', pattern: 'packages/server/src/types.ts' },
+        { type: 'client-api', pattern: 'packages/client/src/api/**/*' },
+        { type: 'client-store', pattern: 'packages/client/src/store/**/*' },
+        { type: 'client-hooks', pattern: 'packages/client/src/hooks/**/*' },
+        { type: 'client-pages', pattern: 'packages/client/src/pages/**/*' },
+        { type: 'client-components', pattern: 'packages/client/src/components/**/*' },
+      ],
     },
     rules: {
       // ===== TypeScript 厳格化 =====
@@ -112,6 +135,34 @@ export default tseslint.config(
             order: 'asc',
             caseInsensitive: true,
           },
+          pathGroups: [
+            {
+              pattern: '@cfreact-template/drizzle',
+              group: 'internal',
+              position: 'after',
+            },
+            {
+              pattern: '@client/**',
+              group: 'internal',
+              position: 'after',
+            },
+            {
+              pattern: '@server/**',
+              group: 'internal',
+              position: 'after',
+            },
+            {
+              pattern: '@ui/**',
+              group: 'internal',
+              position: 'after',
+            },
+            {
+              pattern: '@drizzle/**',
+              group: 'internal',
+              position: 'after',
+            },
+          ],
+          pathGroupsExcludedImportTypes: ['builtin'],
         },
       ],
 
@@ -123,11 +174,95 @@ export default tseslint.config(
       'unicorn/prefer-type-error': 'error',
       'unicorn/throw-new-error': 'error',
 
+      // ===== Clean Architecture boundaries =====
+      'boundaries/element-types': [
+        'error',
+        {
+          default: 'allow',
+          message: 'Clean Architecture violation: %{from} is not allowed to import from %{target}.',
+          rules: [
+            {
+              from: ['server-core-domain'],
+              allow: ['server-core-domain', 'server-types'],
+            },
+            {
+              from: ['server-types'],
+              allow: ['server-types'],
+            },
+            {
+              from: ['server-core-usecases'],
+              allow: ['server-core-domain', 'server-core-usecases', 'server-types'],
+            },
+            {
+              from: ['server-adapters-persistence'],
+              allow: [
+                'server-core-usecases',
+                'server-core-domain',
+                'server-types',
+                'server-adapters-persistence',
+              ],
+            },
+            {
+              from: ['server-adapters-http'],
+              allow: [
+                'server-adapters-http',
+                'server-core-usecases',
+                'server-core-domain',
+                'server-types',
+              ],
+            },
+            {
+              from: ['server-app'],
+              allow: [
+                'server-adapters-http',
+                'server-adapters-persistence',
+                'server-core-usecases',
+                'server-core-domain',
+                'server-types',
+              ],
+            },
+            {
+              from: ['server-entry'],
+              allow: ['server-app'],
+            },
+            {
+              from: ['client-api'],
+              allow: ['client-api'],
+            },
+            {
+              from: ['client-hooks'],
+              allow: ['client-hooks', 'client-api', 'client-store'],
+            },
+            {
+              from: ['client-components'],
+              allow: ['client-components', 'client-hooks'],
+            },
+            {
+              from: ['client-pages'],
+              allow: ['client-pages', 'client-components', 'client-hooks'],
+            },
+          ],
+        },
+      ],
+
       // ===== セキュリティ =====
       'no-eval': 'error',
       'no-implied-eval': 'error',
       'no-new-func': 'error',
       'no-script-url': 'error',
+      'security/detect-object-injection': 'warn',
+      'security/detect-non-literal-regexp': 'warn',
+      'security/detect-possible-timing-attacks': 'warn',
+
+      // ===== Sonar (コードスメル) =====
+      'sonarjs/no-identical-functions': 'warn',
+      'sonarjs/no-duplicate-string': [
+        'warn',
+        {
+          threshold: 5,
+        },
+      ],
+      'sonarjs/cognitive-complexity': ['warn', 30],
 
       // ===== コード品質 =====
       'no-console': 'warn',
@@ -200,12 +335,288 @@ export default tseslint.config(
     },
   },
 
+  // React Hooks 用の命名規約
+  {
+    files: ['packages/client/src/**/hooks/**/*.{ts,tsx}'],
+    rules: {
+      'boundaries/element-types': [
+        'error',
+        {
+          default: 'allow',
+          message: 'Hooks層からUI層(pages/components)を参照しないでください。',
+          rules: [
+            {
+              from: ['client-hooks'],
+              disallow: ['client-pages', 'client-components'],
+            },
+          ],
+        },
+      ],
+      '@typescript-eslint/naming-convention': [
+        'error',
+        {
+          selector: 'function',
+          format: ['PascalCase'],
+          prefix: ['use'],
+        },
+        {
+          selector: 'variable',
+          modifiers: ['const'],
+          types: ['function'],
+          format: ['PascalCase'],
+          prefix: ['use'],
+        },
+      ],
+    },
+  },
+
+  // React の Page/Hook/Component から直接 fetch しない
+  {
+    files: [
+      'packages/client/src/pages/**/*.{ts,tsx}',
+      'packages/client/src/components/**/*.{ts,tsx}',
+      'packages/client/src/hooks/**/*.{ts,tsx}',
+    ],
+    ignores: [
+      'packages/client/src/**/*.test.ts',
+      'packages/client/src/**/*.test.tsx',
+      'packages/client/src/**/*.spec.ts',
+      'packages/client/src/**/*.spec.tsx',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.name='fetch']",
+          message:
+            'Pages, components, and hooks must call the shared apiClient instead of fetch directly.',
+        },
+        {
+          selector: "CallExpression[callee.object.name='globalThis'][callee.property.name='fetch']",
+          message:
+            'Pages, components, and hooks must call the shared apiClient instead of fetch directly.',
+        },
+      ],
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'axios',
+              message: 'Use packages/client/src/api/client.ts instead of axios.',
+            },
+            {
+              name: 'cross-fetch',
+              message:
+                'Use packages/client/src/api/client.ts instead of performing manual fetches.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['../api/**', '../hooks/**'],
+              message: '共有レイヤーには @client/... エイリアスを使用してください。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: [
+      'packages/client/src/pages/**/*.{ts,tsx}',
+      'packages/client/src/components/**/*.{ts,tsx}',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@client/api/client.js',
+              message: 'Pages/Components は Hooks 経由でAPIを呼び出してください。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // サーバー側（Hono）の設定
   {
     files: ['packages/server/**/*.ts'],
     rules: {
       // サーバー側では console.log を許可（ログ出力として使用）
       'no-console': 'off',
+    },
+  },
+  {
+    files: ['packages/server/src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../**'],
+              message: '@server エイリアスでパッケージ内の上位ディレクトリを参照してください。',
+            },
+            {
+              group: ['@server/app/**'],
+              message: 'App層の依存はappディレクトリ内でのみ利用してください。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/server/src/app/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../**'],
+              message: '@server エイリアスでパッケージ内の上位ディレクトリを参照してください。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/server/src/core/domain/**/*.{ts,tsx}'],
+    rules: {
+      'no-console': 'error',
+      'no-restricted-globals': ['error', 'fetch', 'Headers', 'Request', 'Response'],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@server/adapters/**', '../adapters/**'],
+              message: 'Domain層からAdaptersを参照しないでください。',
+            },
+            {
+              group: ['hono', 'drizzle-orm', '@cloudflare/**'],
+              message: 'Domain層ではフレームワークやインフラ依存を禁止します。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/server/src/core/usecases/**/*.{ts,tsx}'],
+    rules: {
+      'no-console': 'error',
+      'no-restricted-globals': ['error', 'fetch', 'Headers', 'Request', 'Response'],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@server/adapters/**', '../adapters/**'],
+              message: 'UseCase層からAdaptersを参照しないでください。',
+            },
+            {
+              group: ['hono', 'drizzle-orm', '@cloudflare/**'],
+              message: 'UseCase層ではフレームワークやインフラ依存を禁止します。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/ui/src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../**'],
+              message: '@ui エイリアスでパッケージ内の上位ディレクトリを参照してください。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/drizzle/src/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../**'],
+              message: '@drizzle エイリアスでパッケージ内の上位ディレクトリを参照してください。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
+    rules: {
+      'no-restricted-imports': 'off',
+      'no-restricted-syntax': 'off',
+    },
+  },
+  {
+    files: ['packages/server/src/adapters/http/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '../persistence/**',
+                '../../persistence/**',
+                '@server/adapters/persistence/**',
+              ],
+              message:
+                'HTTPアダプタ層から直接Persistence層を参照せず、UseCase経由でアクセスしてください。',
+            },
+          ],
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "MemberExpression[object.name='c'][property.name='env']",
+          message: 'HTTP層から直接c.envを参照せず、appレイヤが注入する依存を利用してください。',
+        },
+      ],
+    },
+  },
+
+  // ESLint 設定ファイルやテストのゆるめ設定
+  {
+    files: ['eslint.config.js'],
+    rules: {
+      'sonarjs/no-duplicate-string': 'off',
+    },
+  },
+  {
+    files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
+    rules: {
+      'sonarjs/no-duplicate-string': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
+    files: ['packages/client/src/tests/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+      'no-restricted-imports': 'off',
+      'no-restricted-syntax': 'off',
     },
   },
 

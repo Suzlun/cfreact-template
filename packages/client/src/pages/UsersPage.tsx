@@ -10,38 +10,28 @@ import {
   Card,
   Text,
 } from '@cfreact-template/ui';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { apiClient } from '../lib/api-client.js';
+import { useCreateUserMutation, useUsersQuery } from '@client/hooks/useUsers.js';
 
 export function UsersPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const queryClient = useQueryClient();
-
-  const {
-    data: users,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => apiClient.getUsers(),
-  });
-
-  const createUserMutation = useMutation({
-    mutationFn: () => apiClient.createUser(name, email),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['users'] });
-      setName('');
-      setEmail('');
-    },
-  });
+  const { data: users, isLoading, error } = useUsersQuery();
+  const createUserMutation = useCreateUserMutation();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name !== '' && email !== '') {
-      createUserMutation.mutate();
+      createUserMutation.mutate(
+        { name, email },
+        {
+          onSuccess: () => {
+            setName('');
+            setEmail('');
+          },
+        }
+      );
     }
   };
 

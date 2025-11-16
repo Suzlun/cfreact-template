@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
 
-import type { Bindings } from '../types.js';
+import type { AppVariables } from '@server/app/context.js';
+import type { Bindings } from '@server/types.js';
 
-const kvDemo = new Hono<{ Bindings: Bindings }>();
+const kvDemo = new Hono<{ Bindings: Bindings; Variables: AppVariables }>();
 
 kvDemo.get('/:key', async (c) => {
   const key = c.req.param('key');
-  const value = await c.env.KV.get(key);
+  const value = await c.var.kv.get(key);
 
   if (value === null) {
     return c.json({ error: 'Key not found' }, 404);
@@ -22,13 +23,13 @@ kvDemo.post('/', async (c) => {
     return c.json({ error: 'Key and value are required' }, 400);
   }
 
-  await c.env.KV.put(key, value);
+  await c.var.kv.put(key, value);
   return c.json({ message: 'Key-value pair stored successfully', key, value }, 201);
 });
 
 kvDemo.delete('/:key', async (c) => {
   const key = c.req.param('key');
-  await c.env.KV.delete(key);
+  await c.var.kv.delete(key);
   return c.json({ message: 'Key deleted successfully', key });
 });
 

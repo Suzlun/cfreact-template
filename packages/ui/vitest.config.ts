@@ -1,3 +1,5 @@
+import { fileURLToPath, URL } from 'node:url';
+
 import reactPlugin from '@vitejs/plugin-react';
 import { defineConfig as defineConfigRaw } from 'vitest/config';
 
@@ -17,6 +19,11 @@ function defineConfig(config: UserConfig): UserConfig {
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@ui': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

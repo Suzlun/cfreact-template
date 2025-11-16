@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 
-import type { Bindings } from '../types.js';
+import type { Bindings } from '@server/types.js';
 
 const hello = new Hono<{ Bindings: Bindings }>();
 

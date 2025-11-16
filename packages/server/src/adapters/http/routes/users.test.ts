@@ -1,15 +1,15 @@
-import { users } from '@cfreact-template/drizzle';
 import {
   env as testEnv,
   createExecutionContext as createExecutionContextRaw,
   waitOnExecutionContext as waitOnExecutionContextRaw,
 } from 'cloudflare:test';
 import { drizzle } from 'drizzle-orm/d1';
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import worker from '../index.js';
+import { users } from '@cfreact-template/drizzle';
 
-import type { Bindings } from '../types.js';
+import worker from '@server/index.js';
+import type { Bindings } from '@server/types.js';
 
 const env = testEnv as unknown as Bindings;
 
