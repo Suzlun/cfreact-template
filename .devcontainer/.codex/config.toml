@@ -1,5 +1,7 @@
 model = "gpt-5.1-codex"
 model_reasoning_effort = "high"
+
+# playwright mcpを使うにはAMD64である必要がある。プロジェクトを調整し、DockerfileイメージにChromeインストールを加えること
 [mcp_servers.playwright]
 command = "npx"
 args = ["@playwright/mcp@latest"]

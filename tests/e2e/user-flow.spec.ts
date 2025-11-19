@@ -1,4 +1,18 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+const waitForTableOrEmptyState = async (page: Page) => {
+  const tableLocator = page.locator('table');
+  const emptyMessageLocator = page.getByText(/no users found/i);
+
+  await Promise.any([
+    tableLocator.waitFor({ state: 'visible', timeout: 10000 }),
+    emptyMessageLocator.waitFor({ state: 'visible', timeout: 10000 }),
+  ]).catch((error: unknown) => {
+    throw new Error('Unable to find users table or empty state within the expected time.', {
+      cause: error,
+    });
+  });
+};
 
 test.describe('ユーザー管理フロー', () => {
   test.beforeEach(async ({ page }) => {
@@ -18,7 +32,7 @@ test.describe('ユーザー管理フロー', () => {
 
   test('ユーザー一覧が表示される', async ({ page }) => {
     // ユーザー一覧が表示されるまで待つ
-    await page.waitForSelector('table, text=No users found', { timeout: 10000 });
+    await waitForTableOrEmptyState(page);
 
     // テーブルまたは空メッセージのいずれかが表示されることを確認
     const hasTable = await page
@@ -35,7 +49,7 @@ test.describe('ユーザー管理フロー', () => {
 
   test('新しいユーザーを作成できる', async ({ page }) => {
     // データの初期状態を待つ
-    await page.waitForSelector('table, text=No users found', { timeout: 10000 });
+    await waitForTableOrEmptyState(page);
 
     // フォームに入力
     const timestamp = Date.now();
@@ -78,7 +92,7 @@ test.describe('ユーザー管理フロー', () => {
 
   test('複数のユーザーを連続して作成できる', async ({ page }) => {
     // データの初期状態を待つ
-    await page.waitForSelector('table, text=No users found', { timeout: 10000 });
+    await waitForTableOrEmptyState(page);
 
     const timestamp = Date.now();
 

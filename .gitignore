@@ -58,3 +58,8 @@ coverage/
 # Serena MCP Server
 .serena/cache/
 .serena/*.log
+
+# playwright 
+ms-playwright/.links
+playwright-report/
+test-results/

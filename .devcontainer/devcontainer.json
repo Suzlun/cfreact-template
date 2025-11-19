@@ -50,7 +50,7 @@
       "onAutoForward": "notify"
     }
   },
-  "postCreateCommand": "corepack enable && pnpm install",
+  "postCreateCommand": "corepack enable && pnpm install && pnpm exec playwright install",
   "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
   "remoteUser": "node"
 }

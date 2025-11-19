@@ -36,7 +36,7 @@ export default defineConfig({
     },
     {
       command: 'pnpm --filter @cfreact-template/server dev',
-      url: 'http://localhost:8787',
+      url: 'http://localhost:8787/health',
       reuseExistingServer: process.env.CI === undefined,
       timeout: 120 * 1000,
     },
