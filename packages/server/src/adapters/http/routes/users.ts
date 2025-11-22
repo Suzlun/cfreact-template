@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 
-import type { AppVariables } from '@server/app/context.js';
-import type { CreateUserInput } from '@server/core/domain/users/user.js';
-import type { Bindings } from '@server/types.js';
+import type { AppVariables } from '@server/app/context';
+import type { CreateUserInput } from '@server/core/domain/users/user';
+import type { Bindings } from '@server/types';
 
 const usersRoute = new Hono<{ Bindings: Bindings; Variables: AppVariables }>();
 

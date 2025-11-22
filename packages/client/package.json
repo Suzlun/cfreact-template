@@ -14,6 +14,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@cfreact-template/api-sdk": "workspace:*",
     "@cfreact-template/ui": "workspace:*",
     "@tanstack/react-query": "^5.90.7",
     "react": "^19.0.0",

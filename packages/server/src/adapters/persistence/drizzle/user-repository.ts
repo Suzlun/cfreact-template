@@ -2,10 +2,10 @@ import { eq } from 'drizzle-orm';
 
 import { users } from '@cfreact-template/drizzle';
 
-import type { UserRepository } from '@server/core/domain/users/user-repository.js';
-import type { CreateUserInput, User } from '@server/core/domain/users/user.js';
+import type { CreateUserInput, User } from '@server/core/domain/users/user';
+import type { UserRepository } from '@server/core/domain/users/user-repository';
 
-import type { DrizzleClient } from './db.js';
+import type { DrizzleClient } from './db';
 
 export class DrizzleUserRepository implements UserRepository {
   constructor(private readonly db: DrizzleClient) {}

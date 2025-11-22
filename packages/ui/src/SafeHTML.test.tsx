@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 
-import { SafeHTML } from './SafeHTML.js';
+import { SafeHTML } from './SafeHTML';
 
 describe('SafeHTML', () => {
   describe('基本的な HTML レンダリング', () => {

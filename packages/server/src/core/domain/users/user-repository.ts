@@ -1,4 +1,4 @@
-import type { CreateUserInput, User } from './user.js';
+import type { CreateUserInput, User } from './user';
 
 export interface UserRepository {
   findAll(): Promise<User[]>;

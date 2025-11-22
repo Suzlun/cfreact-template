@@ -1,27 +1,64 @@
-import { Box, Container, Flex, Heading, Link } from '@cfreact-template/ui';
+import {
+  AppBar,
+  Box,
+  Container,
+  Link,
+  Paper,
+  Stack,
+  Toolbar,
+  Typography,
+} from '@cfreact-template/ui';
 import { Link as RouterLink, Outlet } from 'react-router';
 
 export function AppLayout() {
   return (
-    <Box minH="100vh">
-      <Box as="header" bg="brand.600" color="white" py={4} shadow="md">
-        <Container maxW="container.xl">
-          <Flex justify="space-between" align="center">
-            <Heading size="lg">cfreact-template</Heading>
-            <Flex gap={6}>
-              <Link asChild color="white" _hover={{ color: 'brand.200' }}>
-                <RouterLink to="/">Home</RouterLink>
+    <Box
+      minHeight="100vh"
+      sx={{
+        backgroundColor: 'transparent',
+        pb: 6,
+      }}
+    >
+      <AppBar
+        position="sticky"
+        color="transparent"
+        elevation={0}
+        sx={{
+          backdropFilter: 'blur(14px)',
+          backgroundColor: 'rgba(255,255,255,0.8)',
+          borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        <Container>
+          <Toolbar disableGutters sx={{ justifyContent: 'space-between', minHeight: 72, gap: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '0.2px' }}>
+              cfreact-template
+            </Typography>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Link component={RouterLink} to="/" color="inherit" fontWeight={600}>
+                Home
               </Link>
-              <Link asChild color="white" _hover={{ color: 'brand.200' }}>
-                <RouterLink to="/users">Users</RouterLink>
+              <Link component={RouterLink} to="/users" color="inherit" fontWeight={600}>
+                Users
               </Link>
-            </Flex>
-          </Flex>
+            </Stack>
+          </Toolbar>
         </Container>
-      </Box>
+      </AppBar>
 
-      <Container maxW="container.xl" py={8}>
-        <Outlet />
+      <Container sx={{ pt: 4 }}>
+        <Paper
+          variant="outlined"
+          sx={{
+            p: { xs: 2.5, sm: 3, md: 4 },
+            borderRadius: 3,
+            background: (theme) =>
+              `linear-gradient(135deg, ${theme.palette.background.paper} 0%, rgba(255,255,255,0.85) 100%)`,
+            boxShadow: '0px 12px 32px rgba(15, 23, 42, 0.06)',
+          }}
+        >
+          <Outlet />
+        </Paper>
       </Container>
     </Box>
   );

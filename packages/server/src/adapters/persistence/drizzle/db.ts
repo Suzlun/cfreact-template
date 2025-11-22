@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/d1';
 
-import type { Bindings } from '@server/types.js';
+import type { Bindings } from '@server/types';
 
 export type DrizzleClient = ReturnType<typeof drizzle>;
 

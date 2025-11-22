@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 
-import type { AppVariables } from '@server/app/context.js';
-import type { Bindings } from '@server/types.js';
+import type { AppVariables } from '@server/app/context';
+import type { Bindings } from '@server/types';
 
 const r2Demo = new Hono<{ Bindings: Bindings; Variables: AppVariables }>();
 

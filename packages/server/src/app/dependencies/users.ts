@@ -1,9 +1,9 @@
-import { createDrizzleClient } from '@server/adapters/persistence/drizzle/db.js';
-import { DrizzleUserRepository } from '@server/adapters/persistence/drizzle/user-repository.js';
-import { CreateUser } from '@server/core/usecases/users/create-user.js';
-import { GetUser } from '@server/core/usecases/users/get-user.js';
-import { ListUsers } from '@server/core/usecases/users/list-users.js';
-import type { Bindings } from '@server/types.js';
+import { createDrizzleClient } from '@server/adapters/persistence/drizzle/db';
+import { DrizzleUserRepository } from '@server/adapters/persistence/drizzle/user-repository';
+import { CreateUser } from '@server/core/usecases/users/create-user';
+import { GetUser } from '@server/core/usecases/users/get-user';
+import { ListUsers } from '@server/core/usecases/users/list-users';
+import type { Bindings } from '@server/types';
 
 export interface UsersUseCases {
   listUsers: ListUsers;

@@ -1,9 +1,10 @@
-import { ChakraProvider } from '@cfreact-template/ui';
-import { system } from '@cfreact-template/ui/theme';
+import { CssBaseline, ThemeProvider } from '@cfreact-template/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from 'react-router';
 
-import { router } from './router.js';
+import { theme } from '@cfreact-template/ui/theme';
+
+import { router } from './router';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,10 +17,11 @@ const queryClient = new QueryClient({
 
 export function App() {
   return (
-    <ChakraProvider value={system}>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
       </QueryClientProvider>
-    </ChakraProvider>
+    </ThemeProvider>
   );
 }

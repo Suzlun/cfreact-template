@@ -10,7 +10,8 @@
     "check": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "openapi:gen": "node ./scripts/generate-openapi.js"
   },
   "dependencies": {
     "@cfreact-template/drizzle": "workspace:*",

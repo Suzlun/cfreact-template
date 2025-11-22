@@ -1,7 +1,7 @@
 import { env as testEnv } from 'cloudflare:test';
 import { beforeAll, beforeEach } from 'vitest';
 
-import type { Bindings } from '@server/types.js';
+import type { Bindings } from '@server/types';
 
 const env = testEnv as unknown as Bindings;
 

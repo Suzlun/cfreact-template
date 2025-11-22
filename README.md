@@ -10,7 +10,7 @@
 - **Vite** 7.2.2 - ビルドツール
 - **React Router** 7.9.5 - ルーティング
 - **TanStack Query** 5.90.7 - データフェッチとキャッシング
-- **Chakra UI** 3.28.1 - コンポーネントライブラリ
+- **Material UI** 6.1.x - コンポーネントライブラリ
 - **TypeScript** 5.9+ - 型安全性
 
 ### バックエンド
@@ -37,33 +37,34 @@
 ```
 cfreact-template/
 ├── packages/
-│   ├── client/               # React フロントエンド（Vite）
-│   │   ├── src/
-│   │   │   ├── main.tsx      # エントリーポイント
-│   │   │   ├── app.tsx       # プロバイダー付きアプリ
-│   │   │   ├── router.tsx    # ルート定義
-│   │   │   ├── lib/          # API クライアント
-│   │   │   ├── pages/        # ページコンポーネント
-│   │   │   └── components/   # 再利用可能なコンポーネント
-│   │   └── package.json
-│   ├── server/               # Cloudflare Workers バックエンド（Hono）
-│   │   ├── src/
-│   │   │   ├── index.ts      # メイン Hono アプリ
-│   │   │   ├── types.ts      # Bindings 型定義
-│   │   │   └── routes/       # API ルートハンドラー
-│   │   └── package.json
-│   ├── drizzle/              # Drizzle ORM スキーマ
+│   ├── client/                   # React フロントエンド（Vite）
 │   │   └── src/
-│   │       └── schema.ts     # D1 テーブル定義
-│   └── ui/                   # Chakra UI テーマ
-│       └── src/
-│           └── theme.ts      # カスタムテーマ設定
+│   │       ├── api/              # API SDK ラッパー
+│   │       ├── components/       # UI コンポーネント
+│   │       ├── hooks/            # ドメイン別カスタムフック
+│   │       ├── pages/            # ルーティングページ
+│   │       ├── tests/            # フロントエンドのテストユーティリティ
+│   │       └── types/            # UI 用ドメイン型
+│   ├── server/                   # Cloudflare Workers バックエンド（Hono）
+│   │   └── src/
+│   │       ├── app/              # DI などアプリ設定
+│   │       ├── adapters/         # 入出力（HTTP / Persistence）
+│   │       │   ├── http/         # Hono ルート
+│   │       │   └── persistence/  # Drizzle 経由のデータアクセス
+│   │       ├── core/             # クリーンアーキテクチャの Domain/UseCase
+│   │       │   ├── domain/
+│   │       │   └── usecases/
+│   │       └── tests/            # サーバー側テスト
+│   ├── api-sdk/                  # OpenAPI から生成したクライアント SDK（orval）
+│   │   ├── openapi/              # swagger.json の出力先
+│   │   └── src/generated/        # 自動生成コード
+│   ├── drizzle/                  # Drizzle ORM スキーマ
+│   │   └── src/schema.ts         # D1 テーブル定義
+│   └── ui/                       # Material UI ベースの UI パッケージ
+│       └── src/theme.ts          # テーマ設定
 ├── drizzle/
 │   └── migrations/           # データベースマイグレーション
-├── spec/
-│   └── api/                  # API 仕様
-│       ├── hello.md
-│       └── users.md
+├── tests/                    # e2e などの統合テスト（Playwright）
 ├── .devcontainer/            # Dev Container 設定
 ├── wrangler.toml             # Cloudflare 設定
 ├── drizzle.config.ts         # Drizzle Kit 設定
@@ -150,6 +151,20 @@ cfreact-template/
    - フロントエンド: http://localhost:5173
    - バックエンド API: http://localhost:8787/api
    - Drizzle Studio: `pnpm migrate:studio`
+
+### API SDK の再生成
+
+サーバーの OpenAPI (swagger.json) からクライアント SDK（`packages/api-sdk`）を自動生成します。
+
+```bash
+# OpenAPI (swagger.json) をサーバー側で生成
+pnpm --filter @cfreact-template/server openapi:gen
+
+# 生成された swagger.json をもとに SDK を再生成
+pnpm --filter @cfreact-template/api-sdk gen
+```
+
+※ `packages/server/scripts/generate-openapi.js` で swagger.json を生成し、`packages/api-sdk` で `orval` が SDK を出力します。
 
 ### 方法 2: 手動セットアップ（Dev Container なし）
 
@@ -437,22 +452,27 @@ http://localhost:24282/dashboard
 
 ## カスタマイズ
 
-### Chakra UI テーマ
+### Material UI テーマ
 
 `packages/ui/src/theme.ts` でテーマをカスタマイズ：
 
 ```typescript
-export const system = createSystem(defaultConfig, {
-  theme: {
-    tokens: {
-      colors: {
-        brand: {
-          // カスタムカラー
-        },
-      },
+import { createTheme, responsiveFontSizes } from '@mui/material/styles';
+
+const baseTheme = createTheme({
+  palette: {
+    primary: {
+      main: '#1976d2',
+      light: '#64b5f6',
+      dark: '#0d47a1',
     },
   },
+  shape: {
+    borderRadius: 12,
+  },
 });
+
+export const theme = responsiveFontSizes(baseTheme);
 ```
 
 ### 新しいルートの追加（フロントエンド）
@@ -551,11 +571,7 @@ pnpm check
 
 ## コントリビュート
 
-1. リポジトリをフォーク
-2. フィーチャーブランチを作成
-3. 変更を加える
-4. `pnpm check` と `pnpm lint` を実行
-5. プルリクエストを提出
+詳細は `CONTRIBUTING.md` を参照してください（ブランチ運用、チェック項目、SDK 再生成手順などを記載）。
 
 ## リソース
 
@@ -563,6 +579,6 @@ pnpm check
 - [Hono ドキュメント](https://hono.dev/)
 - [Drizzle ORM ドキュメント](https://orm.drizzle.team/)
 - [React ドキュメント](https://react.dev/)
-- [Chakra UI ドキュメント](https://www.chakra-ui.com/)
+- [Material UI ドキュメント](https://mui.com/)
 - [TanStack Query ドキュメント](https://tanstack.com/query/latest)
 - [spec-kit ドキュメント](https://github.com/github/spec-kit)

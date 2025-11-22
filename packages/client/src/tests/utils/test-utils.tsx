@@ -1,7 +1,8 @@
-import { ChakraProvider } from '@cfreact-template/ui';
-import { system } from '@cfreact-template/ui/theme';
+import { CssBaseline, ThemeProvider } from '@cfreact-template/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, type RenderOptions } from '@testing-library/react';
+
+import { theme } from '@cfreact-template/ui/theme';
 
 import type { ReactElement, ReactNode } from 'react';
 
@@ -18,11 +19,6 @@ function createTestQueryClient() {
         retry: false,
       },
     },
-    logger: {
-      log: () => void 0,
-      warn: () => void 0,
-      error: () => void 0,
-    },
   });
 }
 
@@ -35,9 +31,10 @@ function AllTheProviders({ children }: AllTheProvidersProps) {
   const queryClient = createTestQueryClient();
 
   return (
-    <ChakraProvider value={system}>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </ChakraProvider>
+    </ThemeProvider>
   );
 }
 

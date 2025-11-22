@@ -2,10 +2,10 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { server } from '../tests/mocks/server.js';
-import { render, screen, waitFor } from '../tests/utils/test-utils.js';
+import { server } from '../../tests/mocks/server';
+import { render, screen, waitFor } from '../../tests/utils/test-utils';
 
-import { UsersPage } from './UsersPage.js';
+import { UsersPage } from './UsersPage';
 
 describe('UsersPage', () => {
   describe('データ取得', () => {

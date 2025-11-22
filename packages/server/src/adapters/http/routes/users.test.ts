@@ -8,8 +8,19 @@ import { describe, expect, it } from 'vitest';
 
 import { users } from '@cfreact-template/drizzle';
 
-import worker from '@server/index.js';
-import type { Bindings } from '@server/types.js';
+import worker from '@server/index';
+import type { Bindings } from '@server/types';
+
+interface UserResponse {
+  id: number;
+  name: string;
+  email: string;
+  createdAt?: unknown;
+}
+
+interface ErrorResponse {
+  error: string;
+}
 
 const env = testEnv as unknown as Bindings;
 
@@ -34,7 +45,7 @@ describe('Users API', () => {
       await waitOnExecutionContext(ctx);
 
       expect(response.status).toBe(200);
-      const data = await response.json();
+      const data = await response.json<UserResponse[]>();
       expect(data).toEqual([]);
     });
 
@@ -52,7 +63,7 @@ describe('Users API', () => {
       await waitOnExecutionContext(ctx);
 
       expect(response.status).toBe(200);
-      const data = await response.json();
+      const data = await response.json<UserResponse[]>();
       expect(data).toHaveLength(2);
       expect(data[0]).toMatchObject({ name: 'Alice', email: 'alice@example.com' });
       expect(data[1]).toMatchObject({ name: 'Bob', email: 'bob@example.com' });
@@ -76,7 +87,7 @@ describe('Users API', () => {
       await waitOnExecutionContext(ctx);
 
       expect(response.status).toBe(201);
-      const data = await response.json();
+      const data = await response.json<UserResponse>();
       expect(data).toMatchObject(newUser);
       expect(data.id).toBeDefined();
     });
@@ -97,7 +108,7 @@ describe('Users API', () => {
       await waitOnExecutionContext(ctx);
 
       expect(response.status).toBe(400);
-      const data = await response.json();
+      const data = await response.json<ErrorResponse>();
       expect(data.error).toBe('Name and email are required');
     });
 
@@ -117,7 +128,7 @@ describe('Users API', () => {
       await waitOnExecutionContext(ctx);
 
       expect(response.status).toBe(400);
-      const data = await response.json();
+      const data = await response.json<ErrorResponse>();
       expect(data.error).toBe('Name and email are required');
     });
 
@@ -153,13 +164,17 @@ describe('Users API', () => {
         .values({ name: 'David', email: 'david@example.com' })
         .returning();
 
+      if (insertedUser == null) {
+        throw new Error('Failed to insert user');
+      }
+
       const request = new Request(`http://localhost/api/users/${String(insertedUser.id)}`);
       const ctx = createExecutionContext();
       const response = await worker.fetch(request, env, ctx);
       await waitOnExecutionContext(ctx);
 
       expect(response.status).toBe(200);
-      const data = await response.json();
+      const data = await response.json<UserResponse>();
       expect(data).toMatchObject({
         id: insertedUser.id,
         name: 'David',
@@ -174,7 +189,7 @@ describe('Users API', () => {
       await waitOnExecutionContext(ctx);
 
       expect(response.status).toBe(404);
-      const data = await response.json();
+      const data = await response.json<ErrorResponse>();
       expect(data.error).toBe('User not found');
     });
   });

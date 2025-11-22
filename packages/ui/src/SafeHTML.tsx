@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument -- DOMPurify の型定義との互換性のため */
-import DOMPurify from 'dompurify';
+import DOMPurify, { type Config as DOMPurifyConfig } from 'dompurify';
 
 export interface SafeHTMLProps {
   /** サニタイズするHTML文字列 */
@@ -7,7 +6,7 @@ export interface SafeHTMLProps {
   /** 追加のクラス名 */
   className?: string;
   /** カスタムサニタイズ設定（オプション） */
-  sanitizeOptions?: DOMPurify.Config;
+  sanitizeOptions?: DOMPurifyConfig;
 }
 
 /**
@@ -29,7 +28,7 @@ export interface SafeHTMLProps {
  * ```
  */
 export function SafeHTML({ html, className, sanitizeOptions }: SafeHTMLProps) {
-  const defaultConfig = {
+  const defaultConfig: DOMPurifyConfig = {
     // 標準設定: 一般的なHTMLタグを許可
     ALLOWED_TAGS: [
       // テキスト構造
@@ -109,11 +108,9 @@ export function SafeHTML({ html, className, sanitizeOptions }: SafeHTMLProps) {
     ALLOW_UNKNOWN_PROTOCOLS: false,
   };
 
-  const config: DOMPurify.Config =
-    sanitizeOptions != null
-      ? (sanitizeOptions as DOMPurify.Config)
-      : (defaultConfig as DOMPurify.Config);
-  const sanitizedHTML = DOMPurify.sanitize(html, config) as string;
+  const config: DOMPurifyConfig = sanitizeOptions ?? defaultConfig;
+  const sanitized: unknown = DOMPurify.sanitize(html, config);
+  const sanitizedHTML = typeof sanitized === 'string' ? sanitized : String(sanitized);
 
   return (
     <div
@@ -123,4 +120,3 @@ export function SafeHTML({ html, className, sanitizeOptions }: SafeHTMLProps) {
     />
   );
 }
-/* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument -- 上記のdisableに対応 */

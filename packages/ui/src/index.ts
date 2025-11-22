@@ -1,3 +1,4 @@
-export { system } from './theme.js';
-export { SafeHTML, type SafeHTMLProps } from './SafeHTML.js';
-export * from '@chakra-ui/react';
+export { theme } from './theme';
+export { SafeHTML, type SafeHTMLProps } from './SafeHTML';
+export * from '@mui/material';
+export { ThemeProvider, createTheme, responsiveFontSizes, useTheme } from '@mui/material/styles';

@@ -1,1 +1,1 @@
-export { default } from './app/server.js';
+export { default } from './app/server';

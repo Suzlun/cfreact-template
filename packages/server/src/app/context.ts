@@ -1,6 +1,6 @@
-import type { Bindings } from '@server/types.js';
+import type { Bindings } from '@server/types';
 
-import type { UsersUseCases } from './dependencies/users.js';
+import type { UsersUseCases } from './dependencies/users';
 
 export interface AppVariables {
   usersUseCases: UsersUseCases;

@@ -2,13 +2,13 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 
-import hello from '@server/adapters/http/routes/hello.js';
-import kvDemo from '@server/adapters/http/routes/kv-demo.js';
-import r2Demo from '@server/adapters/http/routes/r2-demo.js';
-import usersRoute from '@server/adapters/http/routes/users.js';
-import type { AppVariables } from '@server/app/context.js';
-import { createUsersUseCases } from '@server/app/dependencies/users.js';
-import type { Bindings } from '@server/types.js';
+import hello from '@server/adapters/http/routes/hello';
+import kvDemo from '@server/adapters/http/routes/kv-demo';
+import r2Demo from '@server/adapters/http/routes/r2-demo';
+import usersRoute from '@server/adapters/http/routes/users';
+import type { AppVariables } from '@server/app/context';
+import { createUsersUseCases } from '@server/app/dependencies/users';
+import type { Bindings } from '@server/types';
 
 const app = new Hono<{ Bindings: Bindings; Variables: AppVariables }>();
 

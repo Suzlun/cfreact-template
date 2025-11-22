@@ -1,5 +1,5 @@
-import type { UserRepository } from '@server/core/domain/users/user-repository.js';
-import type { CreateUserInput, User } from '@server/core/domain/users/user.js';
+import type { CreateUserInput, User } from '@server/core/domain/users/user';
+import type { UserRepository } from '@server/core/domain/users/user-repository';
 
 export class CreateUser {
   constructor(private readonly userRepository: UserRepository) {}
