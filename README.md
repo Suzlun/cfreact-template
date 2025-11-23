@@ -37,27 +37,18 @@
 ```
 cfreact-template/
 ├── packages/
-│   ├── client/                   # React フロントエンド（Vite）
-│   │   └── src/
-│   │       ├── api/              # API SDK ラッパー
-│   │       ├── components/       # UI コンポーネント
-│   │       ├── hooks/            # ドメイン別カスタムフック
-│   │       ├── pages/            # ルーティングページ
-│   │       ├── tests/            # フロントエンドのテストユーティリティ
-│   │       └── types/            # UI 用ドメイン型
-│   ├── server/                   # Cloudflare Workers バックエンド（Hono）
-│   │   └── src/
-│   │       ├── app/              # DI などアプリ設定
-│   │       ├── adapters/         # 入出力（HTTP / Persistence）
-│   │       │   ├── http/         # Hono ルート
-│   │       │   └── persistence/  # Drizzle 経由のデータアクセス
-│   │       ├── core/             # クリーンアーキテクチャの Domain/UseCase
-│   │       │   ├── domain/
-│   │       │   └── usecases/
-│   │       └── tests/            # サーバー側テスト
-│   ├── client/api/               # OpenAPI から生成したクライアント SDK（orval）+ API ラッパー
-│   │   ├── openapi/              # swagger.json の出力先
-│   │   └── src/generated/        # 自動生成コード
+│   ├── client/
+│   │   ├── app/                  # プレゼンテーション層 (pages/components/router) - Vite
+│   │   ├── domain/               # ドメインフック層 (TanStack Query 等はここでのみ)
+│   │   └── api/                  # OpenAPI 生成 SDK + API ラッパー（React 非依存）
+│   ├── server/                   # Cloudflare Workers バックエンド（クリーンアーキ分割済み）
+│   │   ├── types/                # Bindings 等の共有型
+│   │   ├── domain/               # エンティティ/リポジトリIF
+│   │   ├── usecases/             # アプリケーションサービス
+│   │   ├── http/                 # Hono ルート（インバウンドアダプタ）
+│   │   ├── persistence/          # Drizzle などの永続化アダプタ
+│   │   ├── app/                  # DI / 配線
+│   │   └── entry/                # Workers エントリーポイント
 │   ├── drizzle/                  # Drizzle ORM スキーマ
 │   │   └── src/schema.ts         # D1 テーブル定義
 │   └── ui/                       # Material UI ベースの UI パッケージ
@@ -143,8 +134,8 @@ cfreact-template/
    pnpm dev:all
 
    # または個別に起動:
-   pnpm dev:server  # バックエンド http://localhost:8787
-   pnpm dev:client  # フロントエンド http://localhost:5173
+   pnpm dev:server  # バックエンド http://localhost:8787 （@cfreact-template-server/entry）
+   pnpm dev:client  # フロントエンド http://localhost:5173 （@cfreact-template-client/app）
    ```
 
 8. **アプリケーションにアクセス:**
