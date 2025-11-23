@@ -8,6 +8,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@cfreact-template/drizzle": "workspace:*",
     "@cfreact-template-server/domain": "workspace:*",
     "@cfreact-template-server/types": "workspace:*",
     "@cfreact-template-server/usecases": "workspace:*",
