@@ -198,7 +198,7 @@ const spec = {
   },
 };
 
-const outFile = resolve(__dirname, '../../api-sdk/openapi/swagger.json');
+const outFile = resolve(__dirname, '../../client/api/openapi/swagger.json');
 mkdirSync(dirname(outFile), { recursive: true });
 writeFileSync(outFile, JSON.stringify(spec, null, 2));
 // eslint-disable-next-line no-undef, no-console -- script output for developers

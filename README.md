@@ -55,7 +55,7 @@ cfreact-template/
 │   │       │   ├── domain/
 │   │       │   └── usecases/
 │   │       └── tests/            # サーバー側テスト
-│   ├── api-sdk/                  # OpenAPI から生成したクライアント SDK（orval）
+│   ├── client/api/               # OpenAPI から生成したクライアント SDK（orval）+ API ラッパー
 │   │   ├── openapi/              # swagger.json の出力先
 │   │   └── src/generated/        # 自動生成コード
 │   ├── drizzle/                  # Drizzle ORM スキーマ
@@ -154,17 +154,17 @@ cfreact-template/
 
 ### API SDK の再生成
 
-サーバーの OpenAPI (swagger.json) からクライアント SDK（`packages/api-sdk`）を自動生成します。
+サーバーの OpenAPI (swagger.json) からクライアント SDK（`packages/client/api`）を自動生成します。
 
 ```bash
 # OpenAPI (swagger.json) をサーバー側で生成
-pnpm --filter @cfreact-template/server openapi:gen
+pnpm --filter @cfreact-template-server/entry openapi:gen
 
 # 生成された swagger.json をもとに SDK を再生成
-pnpm --filter @cfreact-template/api-sdk gen
+pnpm --filter @cfreact-template-client/api gen
 ```
 
-※ `packages/server/scripts/generate-openapi.js` で swagger.json を生成し、`packages/api-sdk` で `orval` が SDK を出力します。
+※ `packages/server/scripts/generate-openapi.js` で swagger.json を生成し、`packages/client/api` で `orval` が SDK を出力します。
 
 ### 方法 2: 手動セットアップ（Dev Container なし）
 

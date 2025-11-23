@@ -47,15 +47,15 @@
 - API・スキーマの更新
   - API を変更したら OpenAPI と SDK を再生成
     ```bash
-    pnpm --filter @cfreact-template/server openapi:gen
-    pnpm --filter @cfreact-template/api-sdk gen
+    pnpm --filter @cfreact-template-server/entry openapi:gen
+    pnpm --filter @cfreact-template-client/api gen
     ```
   - データベーススキーマを変更したらマイグレーションを生成
     ```bash
     pnpm migrate:generate
     ```
     必要に応じて `wrangler d1 execute ...` で適用
-- 自動生成ファイル（`packages/api-sdk/src/generated` など）を手動編集しない
+- 自動生成ファイル（`packages/client/api/src/generated` など）を手動編集しない
 
 ## コーディング規則
 

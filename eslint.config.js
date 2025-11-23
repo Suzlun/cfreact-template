@@ -14,6 +14,8 @@ import sonarjs from 'eslint-plugin-sonarjs';
 import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
 
+import maxlinesConfig from './.eslintrc-maxlines.json' with { type: 'json' };
+
 const compat = new FlatCompat();
 
 export default tseslint.config(
@@ -57,22 +59,16 @@ export default tseslint.config(
         },
       },
       'boundaries/elements': [
-        { type: 'server-entry', pattern: 'packages/server/src/index.ts' },
-        { type: 'server-app', pattern: 'packages/server/src/app/**/*' },
-        { type: 'server-adapters-http', pattern: 'packages/server/src/adapters/http/**/*' },
-        {
-          type: 'server-adapters-persistence',
-          pattern: 'packages/server/src/adapters/persistence/**/*',
-        },
-        { type: 'server-core-domain', pattern: 'packages/server/src/core/domain/**/*' },
-        { type: 'server-core-usecases', pattern: 'packages/server/src/core/usecases/**/*' },
-        { type: 'server-types', pattern: 'packages/server/src/types.ts' },
-        { type: 'client-api', pattern: 'packages/client/src/api/**/*' },
-        { type: 'client-store', pattern: 'packages/client/src/store/**/*' },
-        { type: 'client-hooks', pattern: 'packages/client/src/hooks/**/*' },
-        { type: 'client-types', pattern: 'packages/client/src/types/**/*' },
-        { type: 'client-pages', pattern: 'packages/client/src/pages/**/*' },
-        { type: 'client-components', pattern: 'packages/client/src/components/**/*' },
+        { type: 'server-entry', pattern: 'packages/server/entry/src/index.ts' },
+        { type: 'server-app', pattern: 'packages/server/app/src/**/*' },
+        { type: 'server-http', pattern: 'packages/server/http/src/**/*' },
+        { type: 'server-persistence', pattern: 'packages/server/persistence/src/**/*' },
+        { type: 'server-domain', pattern: 'packages/server/domain/src/**/*' },
+        { type: 'server-usecases', pattern: 'packages/server/usecases/src/**/*' },
+        { type: 'server-types', pattern: 'packages/server/types/src/**/*' },
+        { type: 'client-api', pattern: 'packages/client/api/src/**/*' },
+        { type: 'client-domain', pattern: 'packages/client/domain/src/**/*' },
+        { type: 'client-app', pattern: 'packages/client/app/src/**/*' },
       ],
     },
     rules: {
@@ -164,7 +160,7 @@ export default tseslint.config(
               position: 'after',
             },
             {
-              pattern: '@client/**',
+              pattern: '@cfreact-template-client/**',
               group: 'internal',
               position: 'after',
             },
@@ -174,7 +170,7 @@ export default tseslint.config(
               position: 'after',
             },
             {
-              pattern: '@server/**',
+              pattern: '@cfreact-template-server/**',
               group: 'internal',
               position: 'after',
             },
@@ -209,42 +205,32 @@ export default tseslint.config(
           message: 'Clean Architecture violation: %{from} is not allowed to import from %{target}.',
           rules: [
             {
-              from: ['server-core-domain'],
-              allow: ['server-core-domain', 'server-types'],
+              from: ['server-domain'],
+              allow: ['server-domain', 'server-types'],
             },
             {
               from: ['server-types'],
               allow: ['server-types'],
             },
             {
-              from: ['server-core-usecases'],
-              allow: ['server-core-domain', 'server-core-usecases', 'server-types'],
+              from: ['server-usecases'],
+              allow: ['server-domain', 'server-usecases', 'server-types'],
             },
             {
-              from: ['server-adapters-persistence'],
-              allow: [
-                'server-core-usecases',
-                'server-core-domain',
-                'server-types',
-                'server-adapters-persistence',
-              ],
+              from: ['server-persistence'],
+              allow: ['server-usecases', 'server-domain', 'server-types', 'server-persistence'],
             },
             {
-              from: ['server-adapters-http'],
-              allow: [
-                'server-adapters-http',
-                'server-core-usecases',
-                'server-core-domain',
-                'server-types',
-              ],
+              from: ['server-http'],
+              allow: ['server-http', 'server-usecases', 'server-domain', 'server-types'],
             },
             {
               from: ['server-app'],
               allow: [
-                'server-adapters-http',
-                'server-adapters-persistence',
-                'server-core-usecases',
-                'server-core-domain',
+                'server-http',
+                'server-persistence',
+                'server-usecases',
+                'server-domain',
                 'server-types',
               ],
             },
@@ -257,16 +243,12 @@ export default tseslint.config(
               allow: ['client-api'],
             },
             {
-              from: ['client-hooks'],
-              allow: ['client-hooks', 'client-api', 'client-store', 'client-types'],
+              from: ['client-domain'],
+              allow: ['client-domain', 'client-api'],
             },
             {
-              from: ['client-components'],
-              allow: ['client-components', 'client-hooks'],
-            },
-            {
-              from: ['client-pages'],
-              allow: ['client-pages', 'client-components', 'client-hooks'],
+              from: ['client-app'],
+              allow: ['client-app', 'client-domain'],
             },
           ],
         },
@@ -299,12 +281,14 @@ export default tseslint.config(
       'prefer-const': 'error',
       'prefer-arrow-callback': 'error',
       'no-unused-vars': 'off', // TypeScript が処理
+      // ファイル/関数の肥大化防止
     },
   },
 
   // packages 配下は import で拡張子 .js を禁止
   {
     files: ['packages/**/*.{ts,tsx}'],
+    ignores: ['packages/client/api/src/generated/**/*.{ts,tsx}'],
     rules: {
       'import/extensions': [
         'error',
@@ -318,12 +302,85 @@ export default tseslint.config(
           cjs: 'never',
         },
       ],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: ['*.js', '*.mjs', '*.cjs', '**/*.js', '**/*.mjs', '**/*.cjs'],
+        },
+      ],
+    },
+  },
+  // TS/TSX の長さ制約（別ファイルの JSON から読み込み）
+  maxlinesConfig,
+
+  // テストファイルは長さ制約を除外
+  {
+    files: ['**/*.test.{ts,tsx}'],
+    rules: {
+      'max-lines': 'off',
+      'max-lines-per-function': 'off',
+    },
+  },
+
+  // App 層から API パッケージを直接参照しない
+  {
+    files: ['packages/client/app/src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@cfreact-template-client/api',
+              message:
+                'App 層では API パッケージを直接 import せず、domain hooks を経由してください。',
+            },
+          ],
+          patterns: [
+            {
+              group: ['@cfreact-template-client/api/**'],
+              message:
+                'App 層では API パッケージを直接 import せず、domain hooks を経由してください。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // packages 配下の index.ts は re-export 専用（実装禁止）
+  {
+    files: ['packages/**/index.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'Program > :not(ImportDeclaration):not(ExportNamedDeclaration):not(ExportAllDeclaration)',
+          message: 'index.ts では実装を持たず、re-export のみにしてください。',
+        },
+        {
+          selector: 'ExportNamedDeclaration[declaration]',
+          message: 'index.ts では値や関数の実装を直接 export しないでください (re-export のみ)。',
+        },
+        {
+          selector: 'ExportDefaultDeclaration',
+          message: 'index.ts での default export は禁止です。re-export のみにしてください。',
+        },
+      ],
     },
   },
 
   // API SDK (生成コード) は厳格ルールを緩和
   {
-    files: ['packages/api-sdk/src/generated/**/*.{ts,tsx}'],
+    files: ['packages/client/api/src/generated/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+        project: './packages/client/api/tsconfig.json',
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     rules: {
       '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
@@ -395,7 +452,7 @@ export default tseslint.config(
 
   // React Hooks 用の命名規約
   {
-    files: ['packages/client/src/**/hooks/**/*.{ts,tsx}'],
+    files: ['packages/client/domain/src/hooks/**/*.{ts,tsx}'],
     plugins: {
       'hooks-domain': {
         rules: {
@@ -622,6 +679,18 @@ export default tseslint.config(
           selector: "ExportSpecifier[exported.name='apiClient'], Identifier[name='apiClient']",
           message: 'apiClient の再エクスポートを禁止します。',
         },
+        {
+          selector:
+            "ImportSpecifier[importKind='type']:not([parent.source.value='types']):not([parent.source.value^='types/'])",
+          message:
+            'hooks の型 import は src/types 経由にしてください (import type ... from "types")。',
+        },
+        {
+          selector:
+            "ImportDeclaration[importKind='type']:not([source.value='types']):not([source.value^='types/'])",
+          message:
+            'hooks の型 import は src/types 経由にしてください (import type ... from "types")。',
+        },
       ],
       'hooks-domain/require-domain-structure': 'error',
       'no-restricted-imports': [
@@ -629,22 +698,8 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ['../**', './**'],
-              message: 'hooks は @client/hooks エイリアスを使って参照してください（相対禁止）。',
-            },
-            {
-              group: ['@client/usecases/**', '../usecases/**'],
-              message:
-                'hooks から usecases 層を参照しないでください。ドメインは専用の hooks で表現してください。',
-            },
-            {
-              group: [
-                '@client/components/**',
-                '../components/**',
-                '@client/pages/**',
-                '../pages/**',
-              ],
-              message: 'hooks では UI 層（pages/components）の import を禁止します。',
+              group: ['@cfreact-template-client/app/**', '../app/**'],
+              message: 'hooks では UI 層（app/pages/components）の import を禁止します。',
             },
           ],
         },
@@ -662,8 +717,8 @@ export default tseslint.config(
           message: 'Hooks層からUI層(pages/components)を参照しないでください。',
           rules: [
             {
-              from: ['client-hooks'],
-              disallow: ['client-pages', 'client-components'],
+              from: ['client-domain'],
+              disallow: ['client-app'],
             },
           ],
         },
@@ -686,18 +741,18 @@ export default tseslint.config(
     },
   },
 
-  // React の Page/Hook/Component から直接 fetch しない
+  // client 全体で直接 fetch しない（共通 API 経由）
   {
-    files: [
-      'packages/client/src/pages/**/*.{ts,tsx}',
-      'packages/client/src/components/**/*.{ts,tsx}',
-      'packages/client/src/hooks/**/*.{ts,tsx}',
-    ],
+    files: ['packages/client/app/src/**/*.{ts,tsx}', 'packages/client/domain/src/**/*.{ts,tsx}'],
     ignores: [
-      'packages/client/src/**/*.test.ts',
-      'packages/client/src/**/*.test.tsx',
-      'packages/client/src/**/*.spec.ts',
-      'packages/client/src/**/*.spec.tsx',
+      'packages/client/app/src/**/*.test.ts',
+      'packages/client/app/src/**/*.test.tsx',
+      'packages/client/app/src/**/*.spec.ts',
+      'packages/client/app/src/**/*.spec.tsx',
+      'packages/client/domain/src/**/*.test.ts',
+      'packages/client/domain/src/**/*.test.tsx',
+      'packages/client/domain/src/**/*.spec.ts',
+      'packages/client/domain/src/**/*.spec.tsx',
     ],
     rules: {
       'no-restricted-syntax': [
@@ -719,18 +774,11 @@ export default tseslint.config(
           paths: [
             {
               name: 'axios',
-              message: 'Use packages/client/src/api/client.ts instead of axios.',
+              message: 'Use @cfreact-template-client/api instead of axios.',
             },
             {
               name: 'cross-fetch',
-              message:
-                'Use packages/client/src/api/client.ts instead of performing manual fetches.',
-            },
-          ],
-          patterns: [
-            {
-              group: ['../api/**', '../hooks/**'],
-              message: '共有レイヤーには @client/... エイリアスを使用してください。',
+              message: 'Use @cfreact-template-client/api instead of performing manual fetches.',
             },
           ],
         },
@@ -738,12 +786,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/client/src/pages/**/*.{ts,tsx}'],
+    files: ['packages/client/app/src/pages/**/*.{ts,tsx}'],
     ignores: [
-      'packages/client/src/**/*.test.ts',
-      'packages/client/src/**/*.test.tsx',
-      'packages/client/src/**/*.spec.ts',
-      'packages/client/src/**/*.spec.tsx',
+      'packages/client/app/src/**/*.test.ts',
+      'packages/client/app/src/**/*.test.tsx',
+      'packages/client/app/src/**/*.spec.ts',
+      'packages/client/app/src/**/*.spec.tsx',
     ],
     rules: {
       'no-restricted-syntax': [
@@ -773,12 +821,11 @@ export default tseslint.config(
           paths: [
             {
               name: 'axios',
-              message: 'Use packages/client/src/api/client.ts instead of axios.',
+              message: 'Use @cfreact-template-client/api instead of axios.',
             },
             {
               name: 'cross-fetch',
-              message:
-                'Use packages/client/src/api/client.ts instead of performing manual fetches.',
+              message: 'Use @cfreact-template-client/api instead of performing manual fetches.',
             },
             {
               name: 'react',
@@ -805,12 +852,8 @@ export default tseslint.config(
           ],
           patterns: [
             {
-              group: ['../api/**', '../hooks/**'],
-              message: '共有レイヤーには @client/... エイリアスを使用してください。',
-            },
-            {
-              group: ['@client/components/**', '../components/**'],
-              message: 'Pages は components/hook を経由してください。',
+              group: ['@cfreact-template-client/api/**'],
+              message: 'App 層から API パッケージを直接 import しないでください（domain 経由）。',
             },
           ],
         },
@@ -819,8 +862,8 @@ export default tseslint.config(
   },
   {
     files: [
-      'packages/client/src/pages/**/*.{ts,tsx}',
-      'packages/client/src/components/**/*.{ts,tsx}',
+      'packages/client/app/src/pages/**/*.{ts,tsx}',
+      'packages/client/app/src/components/**/*.{ts,tsx}',
     ],
     rules: {
       'no-restricted-imports': [
@@ -828,17 +871,17 @@ export default tseslint.config(
         {
           paths: [
             {
-              name: '@client/api/client',
+              name: '@cfreact-template-client/api',
               message: 'Pages/Components は Hooks 経由でAPIを呼び出してください。',
             },
             {
-              name: '@client/hooks',
+              name: '@cfreact-template-client/domain',
               message: 'hooks は個別フックを指し示すパスで import してください。',
             },
           ],
           patterns: [
             {
-              group: ['@client/components/**'],
+              group: ['@cfreact-template-client/app/src/components/**'],
               message: 'components 同士の循環参照を避け、必要なら hooks 経由にしてください。',
             },
           ],
@@ -848,8 +891,11 @@ export default tseslint.config(
   },
   // Pages 直下の TSX ファイルを禁止
   {
-    files: ['packages/client/src/pages/*.tsx'],
-    ignores: ['packages/client/src/pages/*.test.tsx', 'packages/client/src/pages/*.spec.tsx'],
+    files: ['packages/client/app/src/pages/*.tsx'],
+    ignores: [
+      'packages/client/app/src/pages/*.test.tsx',
+      'packages/client/app/src/pages/*.spec.tsx',
+    ],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -881,7 +927,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/server/src/**/*.{ts,tsx}'],
+    files: ['packages/server/**/src/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -889,11 +935,12 @@ export default tseslint.config(
           patterns: [
             {
               group: ['../**'],
-              message: '@server エイリアスでパッケージ内の上位ディレクトリを参照してください。',
+              message:
+                '@cfreact-template-server/* エイリアスでパッケージ内の上位ディレクトリを参照してください。',
             },
             {
-              group: ['@server/app/**'],
-              message: 'App層の依存はappディレクトリ内でのみ利用してください。',
+              group: ['@cfreact-template-server/app/**'],
+              message: 'App層の依存はappパッケージ内でのみ利用してください。',
             },
           ],
         },
@@ -901,7 +948,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/server/src/app/**/*.{ts,tsx}'],
+    files: ['packages/server/app/src/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -909,7 +956,8 @@ export default tseslint.config(
           patterns: [
             {
               group: ['../**'],
-              message: '@server エイリアスでパッケージ内の上位ディレクトリを参照してください。',
+              message:
+                '@cfreact-template-server/* エイリアスでパッケージ内の上位ディレクトリを参照してください。',
             },
           ],
         },
@@ -917,7 +965,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/server/src/core/domain/**/*.{ts,tsx}'],
+    files: ['packages/server/domain/src/**/*.{ts,tsx}'],
     rules: {
       'no-console': 'error',
       'no-restricted-globals': ['error', 'fetch', 'Headers', 'Request', 'Response'],
@@ -926,7 +974,12 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ['@server/adapters/**', '../adapters/**'],
+              group: [
+                '@cfreact-template-server/http/**',
+                '@cfreact-template-server/persistence/**',
+                '../http/**',
+                '../persistence/**',
+              ],
               message: 'Domain層からAdaptersを参照しないでください。',
             },
             {
@@ -939,7 +992,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/server/src/core/usecases/**/*.{ts,tsx}'],
+    files: ['packages/server/usecases/src/**/*.{ts,tsx}'],
     rules: {
       'no-console': 'error',
       'no-restricted-globals': ['error', 'fetch', 'Headers', 'Request', 'Response'],
@@ -948,7 +1001,12 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ['@server/adapters/**', '../adapters/**'],
+              group: [
+                '@cfreact-template-server/http/**',
+                '@cfreact-template-server/persistence/**',
+                '../http/**',
+                '../persistence/**',
+              ],
               message: 'UseCase層からAdaptersを参照しないでください。',
             },
             {
@@ -1000,7 +1058,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/server/src/adapters/http/**/*.{ts,tsx}'],
+    files: ['packages/server/http/src/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -1010,7 +1068,7 @@ export default tseslint.config(
               group: [
                 '../persistence/**',
                 '../../persistence/**',
-                '@server/adapters/persistence/**',
+                '@cfreact-template-server/persistence/**',
               ],
               message:
                 'HTTPアダプタ層から直接Persistence層を参照せず、UseCase経由でアクセスしてください。',
@@ -1044,7 +1102,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/client/src/tests/**/*.{ts,tsx}'],
+    files: ['packages/client/app/src/tests/**/*.{ts,tsx}'],
     rules: {
       'react-refresh/only-export-components': 'off',
       'no-restricted-imports': 'off',
@@ -1052,6 +1110,55 @@ export default tseslint.config(
     },
   },
 
+  // packages 全体で index.ts 経由の import を強制 + 行数制約（生成コード・テストは除外）
+  {
+    files: ['packages/**/src/**/*.{ts,tsx}'],
+    ignores: [
+      '**/index.ts',
+      'packages/client/api/src/generated/**/*.{ts,tsx}',
+      '**/*.test.ts',
+      '**/*.test.tsx',
+      '**/*.spec.ts',
+      '**/*.spec.tsx',
+    ],
+    rules: {
+      'max-lines': [
+        'error',
+        {
+          max: 500,
+          skipComments: true,
+          skipBlankLines: true,
+        },
+      ],
+      'max-lines-per-function': [
+        'error',
+        {
+          max: 100,
+          skipComments: true,
+          skipBlankLines: true,
+          IIFEs: true,
+        },
+      ],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '**/src/**/!(*index)',
+                '@cfreact-template-client/**/!(*index)',
+                '@cfreact-template-server/**/!(*index)',
+                '@cfreact-template/**/!(*index)',
+                './**/!(*index)',
+                '../**/!(*index)',
+              ],
+              message: 'import は各ディレクトリの index.ts に統一してください。',
+            },
+          ],
+        },
+      ],
+    },
+  },
   // JavaScript ファイルの設定
   {
     files: ['**/*.js', '**/*.cjs', '**/*.mjs'],
@@ -1067,7 +1174,7 @@ export default tseslint.config(
       '**/.wrangler/**',
       '**/drizzle/migrations/**',
       '**/.serena/**',
-      'packages/api-sdk/openapi/**',
+      'packages/client/api/openapi/**',
       '**/pnpm-lock.yaml',
     ],
   }

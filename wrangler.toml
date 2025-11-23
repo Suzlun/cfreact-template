@@ -1,5 +1,5 @@
 name = "cfreact-template-server"
-main = "packages/server/src/index.ts"
+main = "packages/server/entry/src/index.ts"
 compatibility_date = "2025-11-13"
 compatibility_flags = ["nodejs_compat"]
 

@@ -14,18 +14,18 @@ function defineWorkspace(config: WorkspaceSpec[]): WorkspaceSpec[] {
  */
 export default defineWorkspace([
   {
-    // Client パッケージ（React）
-    extends: './packages/client/vitest.config.ts',
+    // Client App パッケージ（React）
+    extends: './packages/client/app/vitest.config.ts',
     test: {
-      name: 'client',
+      name: 'client-app',
       environment: 'jsdom',
     },
   },
   {
     // Server パッケージ（Hono + Cloudflare Workers）
-    extends: './packages/server/vitest.config.ts',
+    extends: './packages/server/http/vitest.config.ts',
     test: {
-      name: 'server',
+      name: 'server-http',
       pool: '@cloudflare/vitest-pool-workers',
     },
   },
