@@ -68,6 +68,9 @@ RUN npm install -g wrangler@4
 # Codex CLI をグローバルインストール
 RUN npm install -g @openai/codex
 
+# OpenSpec CLI をグローバルインストール
+RUN npm install -g @fission-ai/openspec@latest
+
 # node ユーザーに切り替え
 USER node
 
