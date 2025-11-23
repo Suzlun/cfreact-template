@@ -4,7 +4,7 @@
 
 ## 前提環境
 
-- Node.js 24.11+ / pnpm 10.22+（`corepack enable` 推奨）
+- Node.js 24.11+ / pnpm 10.23+（`corepack enable` 推奨）
 - Wrangler 4.x
 - （任意）Dev Container + Docker
 
@@ -17,8 +17,8 @@
    ```
 2. 開発サーバー
    ```bash
-   pnpm dev:server    # Workers
-   pnpm dev:client    # Vite
+   pnpm dev:server    # @cfreact-template-server/entry (http://localhost:8787)
+   pnpm dev:client    # @cfreact-template-client/app  (http://localhost:5173)
    # または
    pnpm dev:all
    ```
@@ -38,10 +38,10 @@
   ```
 - テスト
   ```bash
-  pnpm test          # すべて
-  pnpm test:client   # フロント
-  pnpm test:server   # サーバー
-  pnpm test:ui       # UI パッケージ
+  pnpm test          # すべて（vitest workspace）
+  pnpm test:client   # @cfreact-template-client/app
+  pnpm test:server   # @cfreact-template-server/http
+  pnpm test:ui       # @cfreact-template/ui
   pnpm test:e2e      # Playwright（必要に応じて）
   ```
 - API・スキーマの更新
@@ -60,11 +60,11 @@
 ## コーディング規則
 
 - TypeScript: `any`/`unsafe` 系を避け、`import type` を優先。非 null 前提のアクセスをせず、undefined/null を明示的に扱う。
-- パス/層: エイリアス（`@client/*`, `@server/*`, `@ui/*` 等）を使い、クリーンアーキテクチャの境界（boundary lint）を守る。hooks 層から UI/pages を直接参照しない。
-- Hooks: hooks ディレクトリは `useXxx` で命名し、`{ data, actions }` 形式を返す。TanStack Query などの React/TanStack hooks を最低1つは利用する。
-- API 呼び出し: pages/components/hooks から `fetch`/`axios` を直接呼ばず、`@client/api` ラッパー or 用意された hooks 経由で SDK を使う。
-- フロント型変換: API DTO を UI 用型に変換する処理は `packages/client/src/api` または hooks で完結させ、サーバー DTO を UI に漏らさない。
-- ファイル命名: hooks ディレクトリ配下は camelCase（lint で `unicorn/filename-case`）。他はプロジェクト既存の命名に合わせる。
+- パス/層: エイリアス（`@cfreact-template-client/*`, `@cfreact-template-server/*`, `@ui/*`, `@drizzle/*` 等）を使用し、eslint の boundaries で定義された依存方向を守る（app→domain→api、entry→app→http/persistence→usecases→domain→types）。
+- Hooks: domain 配下の hooks は `useXxx` 命名で `{ data, actions }` を返し、TanStack Query 等の hooks を最低1つ利用。UI 層(app)からの直接参照は禁止。
+- API 呼び出し: app から API パッケージを直接 import せず domain hooks 経由。`fetch`/`axios` の直呼びは禁止。
+- フロント型変換: API DTO を UI 用型に変換する処理は `packages/client/api` または domain hooks で完結させ、サーバー DTO を UI に漏らさない。
+- ファイル命名: domain/hooks 配下は camelCase（`unicorn/filename-case`）。index.ts は re-export 専用（実装禁止）。
 
 ## プルリクエストの流れ
 

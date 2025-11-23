@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Full-stack template for Cloudflare Workers with React, Hono, and Drizzle ORM",
-  "packageManager": "pnpm@10.22.0",
+  "packageManager": "pnpm@10.23.0",
   "engines": {
     "node": ">=24.11.0"
   },
