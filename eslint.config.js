@@ -18,6 +18,84 @@ import maxlinesConfig from './.eslintrc-maxlines.json' with { type: 'json' };
 
 const compat = new FlatCompat();
 
+const exportTsdocPlugin = {
+  rules: {
+    'require-export-tsdoc': {
+      meta: {
+        type: 'problem',
+        docs: {
+          description: 'Require TSDoc comments for exported declarations.',
+        },
+        schema: [],
+        messages: {
+          missing:
+            'エクスポートする{{target}}には直前に TSDoc コメント (/** ... */) を付けてください。',
+        },
+      },
+      create(context) {
+        const sourceCode = context.getSourceCode();
+
+        const hasTsdocComment = (node) => {
+          const comments = sourceCode.getCommentsBefore(node);
+          if (comments.length === 0) {
+            return false;
+          }
+          const last = comments[comments.length - 1];
+          const isAdjacent = node.loc.start.line - last.loc.end.line <= 1;
+          const isTsdoc = last.type === 'Block' && last.value.startsWith('*');
+          return isAdjacent && isTsdoc;
+        };
+
+        const reportIfMissing = (targetNode, label) => {
+          if (hasTsdocComment(targetNode)) return;
+          context.report({ node: targetNode, messageId: 'missing', data: { target: label } });
+        };
+
+        const getExportInfo = (node) => {
+          const decl = node.declaration;
+          if (!decl) return null;
+          switch (decl.type) {
+            case 'FunctionDeclaration':
+              return { target: decl, label: '関数' };
+            case 'ClassDeclaration':
+              return { target: decl, label: 'クラス' };
+            case 'TSEnumDeclaration':
+              return { target: decl, label: 'enum' };
+            case 'TSInterfaceDeclaration':
+              return { target: decl, label: 'インターフェース' };
+            case 'TSTypeAliasDeclaration':
+              return { target: decl, label: '型' };
+            case 'VariableDeclaration':
+              return { target: decl, label: '変数/定数' };
+            default:
+              return { target: decl, label: '値' };
+          }
+        };
+
+        const getDefaultExportInfo = (node) => {
+          const decl = node.declaration;
+          if (!decl) return null;
+          const target = decl.type === 'Identifier' ? node : decl;
+          return { target, label: 'default export' };
+        };
+
+        return {
+          ExportNamedDeclaration(node) {
+            const info = getExportInfo(node);
+            if (!info) return;
+            reportIfMissing(info.target, info.label);
+          },
+          ExportDefaultDeclaration(node) {
+            const info = getDefaultExportInfo(node);
+            if (!info) return;
+            reportIfMissing(info.target, info.label);
+          },
+        };
+      },
+    },
+  },
+};
+
 export default tseslint.config(
   // 除外対象
   {
@@ -282,6 +360,24 @@ export default tseslint.config(
       'prefer-arrow-callback': 'error',
       'no-unused-vars': 'off', // TypeScript が処理
       // ファイル/関数の肥大化防止
+    },
+  },
+
+  // エクスポートは TSDoc 必須（再エクスポートは対象外）
+  {
+    files: ['packages/**/src/**/*.{ts,tsx}'],
+    ignores: [
+      'packages/client/api/src/generated/**/*.{ts,tsx}',
+      '**/*.test.ts',
+      '**/*.test.tsx',
+      '**/*.spec.ts',
+      '**/*.spec.tsx',
+    ],
+    plugins: {
+      'export-tsdoc': exportTsdocPlugin,
+    },
+    rules: {
+      'export-tsdoc/require-export-tsdoc': 'error',
     },
   },
 
@@ -805,14 +901,27 @@ export default tseslint.config(
           message: 'Pages must call the shared apiClient instead of fetch directly.',
         },
         {
-          selector:
-            'CallExpression[callee.name=/^(useState|useReducer|useEffect|useLayoutEffect|useInsertionEffect|useMemo|useCallback|useRef|useImperativeHandle|useTransition|useDeferredValue|useId|useSyncExternalStore|useOptimistic|useActionState)$/]',
-          message: 'Pages 層では React の組み込み Hooks を直接使わず hooks 層に委譲してください。',
+          selector: 'CallExpression[callee.name=/^(useMemo|useCallback)$/]',
+          message:
+            'Pages 層での useMemo/useCallback は components 層または hooks 層にロジックを移して使用してください。',
         },
         {
           selector:
-            "CallExpression[callee.object.name='React'][callee.property.name=/^(useState|useReducer|useEffect|useLayoutEffect|useInsertionEffect|useMemo|useCallback|useRef|useImperativeHandle|useTransition|useDeferredValue|useId|useSyncExternalStore|useOptimistic|useActionState)$/]",
-          message: 'Pages 層では React の組み込み Hooks を直接使わず hooks 層に委譲してください。',
+            'CallExpression[callee.name=/^(useReducer|useEffect|useLayoutEffect|useInsertionEffect|useRef|useImperativeHandle|useTransition|useDeferredValue|useId|useSyncExternalStore|useOptimistic|useActionState)$/]',
+          message:
+            'Pages 層では useState 以外の React の組み込み Hooks を直接使わず hooks 層に委譲してください。',
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='React'][callee.property.name=/^(useMemo|useCallback)$/]",
+          message:
+            'Pages 層での useMemo/useCallback は components 層または hooks 層にロジックを移して使用してください。',
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='React'][callee.property.name=/^(useReducer|useEffect|useLayoutEffect|useInsertionEffect|useRef|useImperativeHandle|useTransition|useDeferredValue|useId|useSyncExternalStore|useOptimistic|useActionState)$/]",
+          message:
+            'Pages 層では useState 以外の React の組み込み Hooks を直接使わず hooks 層に委譲してください。',
         },
       ],
       'no-restricted-imports': [
@@ -829,14 +938,17 @@ export default tseslint.config(
             },
             {
               name: 'react',
+              importNames: ['useMemo', 'useCallback'],
+              message:
+                'Pages 層での useMemo/useCallback は components 層または hooks 層にロジックを移して使用してください。',
+            },
+            {
+              name: 'react',
               importNames: [
-                'useState',
                 'useReducer',
                 'useEffect',
                 'useLayoutEffect',
                 'useInsertionEffect',
-                'useMemo',
-                'useCallback',
                 'useRef',
                 'useImperativeHandle',
                 'useTransition',
@@ -847,13 +959,81 @@ export default tseslint.config(
                 'useActionState',
               ],
               message:
-                'Pages 層では React の組み込み Hooks を直接使わず hooks 層に委譲してください。',
+                'Pages 層では useState 以外の React の組み込み Hooks を直接使わず hooks 層に委譲してください。',
             },
           ],
           patterns: [
             {
               group: ['@cfreact-template-client/api/**'],
               message: 'App 層から API パッケージを直接 import しないでください（domain 経由）。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/client/app/src/components/**/*.{ts,tsx}'],
+    ignores: [
+      'packages/client/app/src/components/**/*.test.ts',
+      'packages/client/app/src/components/**/*.test.tsx',
+      'packages/client/app/src/components/**/*.spec.ts',
+      'packages/client/app/src/components/**/*.spec.tsx',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.name='useState']",
+          message:
+            'Components 層では状態管理に useState を使わず hooks 層または pages 層の useState に委譲してください。',
+        },
+        {
+          selector: "CallExpression[callee.object.name='React'][callee.property.name='useState']",
+          message:
+            'Components 層では状態管理に useState を使わず hooks 層または pages 層の useState に委譲してください。',
+        },
+        {
+          selector:
+            'CallExpression[callee.name=/^(useReducer|useEffect|useLayoutEffect|useInsertionEffect|useRef|useImperativeHandle|useTransition|useDeferredValue|useId|useSyncExternalStore|useOptimistic|useActionState)$/]',
+          message:
+            'Components 層では React の組み込み Hooks は useMemo/useCallback のみに限定し、その他は hooks 層に委譲してください。',
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='React'][callee.property.name=/^(useReducer|useEffect|useLayoutEffect|useInsertionEffect|useRef|useImperativeHandle|useTransition|useDeferredValue|useId|useSyncExternalStore|useOptimistic|useActionState)$/]",
+          message:
+            'Components 層では React の組み込み Hooks は useMemo/useCallback のみに限定し、その他は hooks 層に委譲してください。',
+        },
+      ],
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'react',
+              importNames: ['useState'],
+              message:
+                'Components 層では状態管理に useState を使わず hooks 層または pages 層の useState に委譲してください。',
+            },
+            {
+              name: 'react',
+              importNames: [
+                'useReducer',
+                'useEffect',
+                'useLayoutEffect',
+                'useInsertionEffect',
+                'useRef',
+                'useImperativeHandle',
+                'useTransition',
+                'useDeferredValue',
+                'useId',
+                'useSyncExternalStore',
+                'useOptimistic',
+                'useActionState',
+              ],
+              message:
+                'Components 層では React の組み込み Hooks は useMemo/useCallback のみに限定し、その他は hooks 層に委譲してください。',
             },
           ],
         },
