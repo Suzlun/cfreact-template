@@ -51,7 +51,6 @@ RUN apt-get update && apt-get install -y \
 
 # uv をインストール
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:$PATH"
 
 # uv バイナリに実行権限を付与し、/usr/local/bin にコピー（すべてのユーザーがアクセス可能）
 RUN chmod +x /root/.local/bin/uv /root/.local/bin/uvx && \
@@ -61,6 +60,20 @@ RUN chmod +x /root/.local/bin/uv /root/.local/bin/uvx && \
 
 # pnpm を有効化
 RUN corepack enable
+# node ユーザーでもグローバルインストール可能にする（/usr/local ではなく $HOME 配下へ）
+ENV NPM_CONFIG_PREFIX="/home/node/.npm-global"
+ENV PNPM_HOME="/home/node/.local/share/pnpm"
+ENV PATH="/home/node/.local/bin:/home/node/.npm-global/bin:${PNPM_HOME}:$PATH"
+RUN mkdir -p /home/node/.npm-global /home/node/.local/bin /home/node/.local/share/pnpm && \
+    chown -R node:node /home/node/.npm-global /home/node/.local
+RUN printf '%s\n' \
+    'export NPM_CONFIG_PREFIX="/home/node/.npm-global"' \
+    'export PNPM_HOME="/home/node/.local/share/pnpm"' \
+    'export PATH="/home/node/.local/bin:/home/node/.npm-global/bin:/home/node/.local/share/pnpm:$PATH"' \
+    > /etc/profile.d/99-snix-node-path.sh
+
+# node ユーザーに切り替え
+USER node
 
 # Wrangler をグローバルインストール
 RUN npm install -g wrangler@4
@@ -71,9 +84,5 @@ RUN npm install -g @openai/codex
 # OpenSpec CLI をグローバルインストール
 RUN npm install -g @fission-ai/openspec@latest
 
-# node ユーザーに切り替え
-USER node
-
 # node ユーザーとして spec-kit をインストール
 RUN uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
-ENV PATH="/home/node/.local/bin:$PATH"
