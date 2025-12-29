@@ -76,7 +76,7 @@ cfreact-template/
 
 ## セットアップ
 
-### 方法 1: Dev Container を使用（推奨）
+### 方法 1: Dev Container を使用
 
 1. **リポジトリをクローン:**
 
@@ -157,7 +157,7 @@ pnpm --filter @cfreact-template-client/api gen
 
 ※ `packages/server/scripts/generate-openapi.js` で swagger.json を生成し、`packages/client/api` で `orval` が SDK を出力します。
 
-### 方法 2: 手動セットアップ（Dev Container なし）
+### 方法 2: 手動セットアップ
 
 **前提条件:**
 
@@ -197,7 +197,7 @@ pnpm --filter @cfreact-template-client/api gen
 
 **注意:** Dev Container には、これらすべてのツールがプリインストールされています（Node.js 24、Python 3、pnpm、Wrangler、uv、Codex CLI）。
 
-### Codex CLI + spec-kit セットアップ（オプション）
+### Codex CLI + spec-kit セットアップ
 
 AI 支援開発に Codex CLI と spec-kit を使用する場合：
 
@@ -219,9 +219,11 @@ AI 支援開発に Codex CLI と spec-kit を使用する場合：
    ```
 
 4. **Codex CLI 内でスラッシュコマンドを使用:**
-   - `/specify` - 要件仕様を作成
-   - `/plan` - 技術実装計画を作成
-   - `/tasks` - タスクに分解
+   - `/speckit.specify` - 要件仕様を作成
+   - `/speckit.clarify` - 仕様の曖昧点を解消
+   - `/speckit.plan` - 技術実装計画を作成
+   - `/speckit.tasks` - タスクに分解
+   - `/speckit.implement` - タスクに沿って実装
 
 ## 開発ワークフロー
 
@@ -292,7 +294,7 @@ pnpm dev:all
 
 - `GET /api/hello` - シンプルなヘルスチェック
 
-### Users（D1 データベース）
+### Users
 
 - `GET /api/users` - すべてのユーザーを一覧表示
 - `POST /api/users` - 新しいユーザーを作成
@@ -380,20 +382,22 @@ uvx --from git+https://github.com/github/spec-kit.git specify init my-project --
 
 プロジェクトを初期化すると、AI アシスタント内で以下のコマンドが使えるようになります：
 
-- **`/specify`** - 要件仕様を作成（何を、なぜを定義）
-- **`/plan`** - 技術実装計画を作成（どのように実装するかを定義）
-- **`/tasks`** - 仕様と計画を実装可能なタスクに分解
+- **`/speckit.specify`** - 要件仕様を作成（何を、なぜを定義）
+- **`/speckit.clarify`** - 仕様の曖昧点を解消（質問→回答を spec に反映）
+- **`/speckit.plan`** - 技術実装計画を作成（どのように実装するかを定義）
+- **`/speckit.tasks`** - 仕様と計画を実装可能なタスクに分解
+- **`/speckit.implement`** - タスクに沿って実装
 
 ### 使用例
 
 ```
 # AI アシスタント（Codex CLI、Claude Code など）内で実行
-/specify Create a user authentication feature with email and password
-/plan Use JWT tokens and bcrypt for password hashing
-/tasks Break down the authentication feature into implementable tasks
+/speckit.specify Create a user authentication feature with email and password
+/speckit.plan Use JWT tokens and bcrypt for password hashing
+/speckit.tasks
 ```
 
-詳細については、https://github.com/github/spec-kit を参照してください。
+本テンプレートでの運用方法は `docs/SPECKIT.md`、上流の詳細は https://github.com/github/spec-kit を参照してください。
 
 ## Serena MCP - セマンティックコード検索
 
@@ -466,12 +470,12 @@ const baseTheme = createTheme({
 export const theme = responsiveFontSizes(baseTheme);
 ```
 
-### 新しいルートの追加（フロントエンド）
+### 新しいルートの追加
 
 1. `packages/client/src/pages/` にページコンポーネントを作成
 2. `packages/client/src/router.tsx` にルートを追加
 
-### 新しい API ルートの追加（バックエンド）
+### 新しい API ルートの追加
 
 1. `packages/server/src/routes/` にルートハンドラーを作成
 2. `packages/server/src/index.ts` にルートを登録
@@ -480,7 +484,7 @@ export const theme = responsiveFontSizes(baseTheme);
 
 このテンプレートには、一貫したコード標準を維持するための自動コード品質ツールが含まれています。
 
-### Git フック（Husky）
+### Git フック
 
 Git フックは Husky を介して自動的に設定されます：
 
@@ -572,4 +576,5 @@ pnpm check
 - [React ドキュメント](https://react.dev/)
 - [Material UI ドキュメント](https://mui.com/)
 - [TanStack Query ドキュメント](https://tanstack.com/query/latest)
+- [Speckit 運用ガイド](docs/SPECKIT.md)
 - [spec-kit ドキュメント](https://github.com/github/spec-kit)

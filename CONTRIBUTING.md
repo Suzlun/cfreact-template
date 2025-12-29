@@ -2,7 +2,7 @@
 
 プロジェクトへの貢献に感謝します。レビューと保守をしやすくするため、以下のガイドラインに従ってください。
 
-## ドキュメント（まずここ）
+## ドキュメント
 
 - コーディング規則（一次資料）: `docs/CODING_STANDARDS.md`
   - `eslint.config.js` は規約の自動検査（実装）として追従させます
@@ -34,7 +34,7 @@
 - 命名例: `feat/<topic>` / `fix/<topic>` / `docs/<topic>` / `refactor/<topic>`
 - 1PR = 1意図（混ぜすぎない）
 
-## コミット（Conventional Commits）
+## コミット
 
 Husky によりコミット時に検証されます。
 
@@ -56,9 +56,9 @@ Husky によりコミット時に検証されます。
 - 自動生成ファイルは手で直さない
   - 例: `packages/client/api/src/generated/**`
 
-## 自動生成（API / DB）
+## 自動生成
 
-### API（OpenAPI → SDK）
+### API
 
 API を変更したら、OpenAPI と SDK を再生成してください。
 
@@ -67,7 +67,7 @@ pnpm --filter @cfreact-template-server/entry openapi:gen
 pnpm --filter @cfreact-template-client/api gen
 ```
 
-### DB（Drizzle）
+### DB
 
 スキーマを変更したらマイグレーションを生成してください。
 
@@ -77,7 +77,7 @@ pnpm migrate:generate
 
 適用は `wrangler d1 execute ...`（README 参照）。
 
-## 実装時のチェック（最低限）
+## 実装時のチェック
 
 PR 前にローカルで以下を通してください。
 
