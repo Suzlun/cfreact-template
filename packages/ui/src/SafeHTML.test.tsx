@@ -9,15 +9,15 @@ describe('SafeHTML', () => {
       const html = '<p>Hello World</p>';
       render(<SafeHTML html={html} />);
 
-      expect(screen.getByText('Hello World')).toBeInTheDocument();
+      expect(screen.queryByText('Hello World')).not.toBeNull();
     });
 
     it('複数のタグを含む HTML をレンダリングする', () => {
       const html = '<div><h1>Title</h1><p>Content</p></div>';
       render(<SafeHTML html={html} />);
 
-      expect(screen.getByText('Title')).toBeInTheDocument();
-      expect(screen.getByText('Content')).toBeInTheDocument();
+      expect(screen.queryByText('Title')).not.toBeNull();
+      expect(screen.queryByText('Content')).not.toBeNull();
     });
 
     it('テキスト装飾タグを正しくレンダリングする', () => {
@@ -27,10 +27,10 @@ describe('SafeHTML', () => {
       const strong = container.querySelector('strong');
       const em = container.querySelector('em');
 
-      expect(strong).toBeInTheDocument();
-      expect(strong).toHaveTextContent('Bold');
-      expect(em).toBeInTheDocument();
-      expect(em).toHaveTextContent('Italic');
+      expect(strong).not.toBeNull();
+      expect(strong?.textContent).toBe('Bold');
+      expect(em).not.toBeNull();
+      expect(em?.textContent).toBe('Italic');
     });
   });
 
@@ -39,8 +39,8 @@ describe('SafeHTML', () => {
       const html = '<p>Safe content</p><script>alert("XSS")</script>';
       const { container } = render(<SafeHTML html={html} />);
 
-      expect(screen.getByText('Safe content')).toBeInTheDocument();
-      expect(container.querySelector('script')).not.toBeInTheDocument();
+      expect(screen.queryByText('Safe content')).not.toBeNull();
+      expect(container.querySelector('script')).toBeNull();
     });
 
     it('onclick などのイベントハンドラを削除する', () => {
@@ -48,8 +48,8 @@ describe('SafeHTML', () => {
       const { container } = render(<SafeHTML html={html} />);
 
       const button = container.querySelector('button');
-      expect(button).toBeInTheDocument();
-      expect(button).not.toHaveAttribute('onclick');
+      expect(button).not.toBeNull();
+      expect(button?.getAttribute('onclick')).toBeNull();
     });
 
     it('危険なプロトコルを含むリンクを削除する', () => {
@@ -58,7 +58,7 @@ describe('SafeHTML', () => {
       const { container } = render(<SafeHTML html={html} />);
 
       const link = container.querySelector('a');
-      expect(link).toBeInTheDocument();
+      expect(link).not.toBeNull();
       // DOMPurify は危険な href を削除または無効化する
       expect(link?.getAttribute('href')).toBeNull();
     });
@@ -69,7 +69,7 @@ describe('SafeHTML', () => {
 
       const img = container.querySelector('img');
       // DOMPurify は危険な src を削除するため、img タグが削除される
-      expect(img).not.toBeInTheDocument();
+      expect(img).toBeNull();
     });
   });
 
@@ -79,9 +79,9 @@ describe('SafeHTML', () => {
       const { container } = render(<SafeHTML html={html} />);
 
       const link = container.querySelector('a');
-      expect(link).toBeInTheDocument();
-      expect(link).toHaveAttribute('href', 'https://example.com');
-      expect(link).toHaveTextContent('Link');
+      expect(link).not.toBeNull();
+      expect(link?.getAttribute('href')).toBe('https://example.com');
+      expect(link?.textContent).toBe('Link');
     });
 
     it('安全な画像をレンダリングする', () => {
@@ -89,9 +89,9 @@ describe('SafeHTML', () => {
       const { container } = render(<SafeHTML html={html} />);
 
       const img = container.querySelector('img');
-      expect(img).toBeInTheDocument();
-      expect(img).toHaveAttribute('src', 'https://example.com/image.jpg');
-      expect(img).toHaveAttribute('alt', 'Test Image');
+      expect(img).not.toBeNull();
+      expect(img?.getAttribute('src')).toBe('https://example.com/image.jpg');
+      expect(img?.getAttribute('alt')).toBe('Test Image');
     });
   });
 
@@ -101,7 +101,7 @@ describe('SafeHTML', () => {
       const { container } = render(<SafeHTML html={html} className="custom-class" />);
 
       const div = container.querySelector('.custom-class');
-      expect(div).toBeInTheDocument();
+      expect(div).not.toBeNull();
     });
   });
 
@@ -112,9 +112,9 @@ describe('SafeHTML', () => {
         <SafeHTML html={html} sanitizeOptions={{ ALLOWED_TAGS: ['p'] }} />
       );
 
-      expect(screen.getByText('Paragraph')).toBeInTheDocument();
+      expect(screen.queryByText('Paragraph')).not.toBeNull();
       const strong = container.querySelector('strong');
-      expect(strong).not.toBeInTheDocument();
+      expect(strong).toBeNull();
     });
 
     it('カスタム設定で許可属性を制限できる', () => {
@@ -130,9 +130,9 @@ describe('SafeHTML', () => {
       );
 
       const link = container.querySelector('a');
-      expect(link).toBeInTheDocument();
-      expect(link).toHaveAttribute('href', 'https://example.com');
-      expect(link).not.toHaveAttribute('title');
+      expect(link).not.toBeNull();
+      expect(link?.getAttribute('href')).toBe('https://example.com');
+      expect(link?.getAttribute('title')).toBeNull();
     });
   });
 
@@ -149,9 +149,9 @@ describe('SafeHTML', () => {
       `;
       const { container } = render(<SafeHTML html={html} />);
 
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Title');
-      expect(screen.getByText('bold')).toBeInTheDocument();
-      expect(screen.getByText('italic')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('Title');
+      expect(screen.queryByText('bold')).not.toBeNull();
+      expect(screen.queryByText('italic')).not.toBeNull();
 
       const listItems = container.querySelectorAll('li');
       expect(listItems).toHaveLength(2);

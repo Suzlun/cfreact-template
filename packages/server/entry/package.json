@@ -12,7 +12,7 @@
     "build": "tsc",
     "deploy": "wrangler deploy",
     "check": "tsc --noEmit",
-    "openapi:gen": "node ../scripts/generate-openapi.js"
+    "openapi:gen": "tsx ../scripts/generate-openapi.ts"
   },
   "dependencies": {
     "@cfreact-template-server/app": "workspace:*",

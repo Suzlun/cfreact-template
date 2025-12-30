@@ -36,4 +36,5 @@ kvDemo.delete('/:key', async (c) => {
   return c.json({ message: 'Key deleted successfully', key });
 });
 
+/** Demo routes for Cloudflare KV operations. */
 export default kvDemo;

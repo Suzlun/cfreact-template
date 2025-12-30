@@ -10,7 +10,8 @@ import {
 } from '@cfreact-template/ui';
 import { Link as RouterLink, Outlet } from 'react-router';
 
-export function AppLayout() {
+/** Shared layout for the main app routes. */
+function AppLayout() {
   return (
     <Box
       minHeight="100vh"
@@ -63,3 +64,5 @@ export function AppLayout() {
     </Box>
   );
 }
+
+export { AppLayout };

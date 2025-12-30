@@ -6,7 +6,7 @@ export default defineConfig({
     output: {
       target: './src/generated/client.ts',
       client: 'fetch',
-      baseUrl: '/api',
+      baseUrl: '',
       clean: true,
     },
   },

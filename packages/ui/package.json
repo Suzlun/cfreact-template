@@ -17,6 +17,9 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@fontsource/ibm-plex-sans-jp": "^5.2.8",
+    "@fontsource/oxanium": "^5.2.7",
+    "@fontsource/zen-kaku-gothic-new": "^5.2.7",
     "@mui/material": "^6.1.6",
     "dompurify": "^3.3.0",
     "react": "^19.0.0",

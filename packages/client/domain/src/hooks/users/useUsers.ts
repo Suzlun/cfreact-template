@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { usersApi } from '@cfreact-template-client/api';
 import type { CreateUserPayload, User } from '@cfreact-template-client/api/types';
 
-export interface UsersData {
+/** Data exposed by the users domain hook. */
+interface UsersData {
   list: User[];
   isLoading: boolean;
   isSubmitting: boolean;
@@ -12,14 +13,16 @@ export interface UsersData {
   form: CreateUserPayload & { isValid: boolean };
 }
 
-export interface UsersActions {
+/** Actions exposed by the users domain hook. */
+interface UsersActions {
   reload: () => void;
   updateName: (value: string) => void;
   updateEmail: (value: string) => void;
   submit: () => Promise<void>;
 }
 
-export function useUsers(): { data: UsersData; actions: UsersActions } {
+/** Fetch users and manage user creation form state. */
+function useUsers(): { data: UsersData; actions: UsersActions } {
   const queryClient = useQueryClient();
   const formState = useState<CreateUserPayload>({ name: '', email: '' });
   const [form] = formState;
@@ -70,3 +73,6 @@ export function useUsers(): { data: UsersData; actions: UsersActions } {
     actions,
   };
 }
+
+export type { UsersActions, UsersData };
+export { useUsers };

@@ -35,7 +35,7 @@ const exportTsdocPlugin = {
       create(context) {
         const sourceCode = context.getSourceCode();
 
-        const hasTsdocComment = (node) => {
+        const isTsdocCommentBefore = (node) => {
           const comments = sourceCode.getCommentsBefore(node);
           if (comments.length === 0) {
             return false;
@@ -44,6 +44,20 @@ const exportTsdocPlugin = {
           const isAdjacent = node.loc.start.line - last.loc.end.line <= 1;
           const isTsdoc = last.type === 'Block' && last.value.startsWith('*');
           return isAdjacent && isTsdoc;
+        };
+
+        const hasTsdocComment = (node) => {
+          if (isTsdocCommentBefore(node)) {
+            return true;
+          }
+          const parent = node.parent;
+          if (
+            parent &&
+            (parent.type === 'ExportNamedDeclaration' || parent.type === 'ExportDefaultDeclaration')
+          ) {
+            return isTsdocCommentBefore(parent);
+          }
+          return false;
         };
 
         const reportIfMissing = (targetNode, label) => {
@@ -411,7 +425,7 @@ export default tseslint.config(
 
   // テストファイルは長さ制約を除外
   {
-    files: ['**/*.test.{ts,tsx}'],
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
     rules: {
       'max-lines': 'off',
       'max-lines-per-function': 'off',
@@ -1243,6 +1257,17 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
+          paths: [
+            {
+              name: 'zod',
+              message: 'zod は packages/server/http/src/schemas 配下でのみ使用してください。',
+            },
+            {
+              name: '@hono/zod-openapi',
+              importNames: ['OpenAPIHono', 'createRoute'],
+              message: 'createRoute / OpenAPIHono は routes 以外で import しないでください。',
+            },
+          ],
           patterns: [
             {
               group: [
@@ -1265,6 +1290,65 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ['packages/server/http/src/schemas/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@hono/zod-openapi',
+              importNames: ['OpenAPIHono', 'createRoute'],
+              message: 'createRoute / OpenAPIHono は routes 以外で import しないでください。',
+            },
+          ],
+          patterns: [
+            {
+              group: [
+                '../persistence/**',
+                '../../persistence/**',
+                '@cfreact-template-server/persistence/**',
+              ],
+              message:
+                'HTTPアダプタ層から直接Persistence層を参照せず、UseCase経由でアクセスしてください。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/server/http/src/routes/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'hono',
+              message: 'OpenAPI ルートでは @hono/zod-openapi を使用してください。',
+            },
+            {
+              name: 'zod',
+              message: 'zod は packages/server/http/src/schemas 配下でのみ使用してください。',
+            },
+          ],
+          patterns: [
+            {
+              group: [
+                '../persistence/**',
+                '../../persistence/**',
+                '@cfreact-template-server/persistence/**',
+              ],
+              message:
+                'HTTPアダプタ層から直接Persistence層を参照せず、UseCase経由でアクセスしてください。',
+            },
+          ],
+        },
+      ],
+    },
+  },
 
   // ESLint 設定ファイルやテストのゆるめ設定
   {
@@ -1279,6 +1363,12 @@ export default tseslint.config(
     rules: {
       'sonarjs/no-duplicate-string': 'off',
       'react-refresh/only-export-components': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/require-await': 'off',
     },
   },
   {
@@ -1339,9 +1429,22 @@ export default tseslint.config(
       ],
     },
   },
+  // theme.ts は行数制約を緩和
+  {
+    files: ['**/theme.ts'],
+    rules: {
+      'max-lines': 'off',
+      'max-lines-per-function': 'off',
+    },
+  },
   // JavaScript ファイルの設定
   {
     files: ['**/*.js', '**/*.cjs', '**/*.mjs'],
+    ...tseslint.configs.disableTypeChecked,
+  },
+  // vitest config は型情報なしで lint
+  {
+    files: ['packages/ui/vitest.config.ts'],
     ...tseslint.configs.disableTypeChecked,
   },
 

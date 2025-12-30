@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 
-export const handlers = [
+/** MSW handlers for client-side API mocking. */
+const handlers = [
   // GET /api/users
   http.get('http://localhost:8787/api/users', () => {
     return HttpResponse.json([
@@ -45,3 +46,5 @@ export const handlers = [
     });
   }),
 ];
+
+export { handlers };

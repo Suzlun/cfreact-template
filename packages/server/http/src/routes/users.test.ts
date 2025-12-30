@@ -6,13 +6,10 @@ import {
 import { drizzle } from 'drizzle-orm/d1';
 import { describe, expect, it } from 'vitest';
 
-import { users } from '@cfreact-template/drizzle';
+import * as schema from '@cfreact-template/drizzle';
 
-import type { AppVariables } from '@cfreact-template-server/app';
 import server from '@cfreact-template-server/entry';
 import type { Bindings } from '@cfreact-template-server/types';
-
-import type { Hono } from 'hono';
 
 interface UserResponse {
   id: number;
@@ -26,7 +23,8 @@ interface ErrorResponse {
 }
 
 const env = testEnv as unknown as Bindings;
-const app = server as unknown as Hono<{ Bindings: Bindings; Variables: AppVariables }>;
+const app = server;
+const createDb = () => drizzle<typeof schema>(env.DB, { schema });
 
 function createExecutionContext(): ExecutionContext {
   type Fn = () => ExecutionContext;
@@ -55,8 +53,8 @@ describe('Users API', () => {
 
     it('既存ユーザーのリストを返す', async () => {
       // テストデータを挿入
-      const db = drizzle(env.DB);
-      await db.insert(users).values([
+      const db = createDb();
+      await db.insert(schema.users).values([
         { name: 'Alice', email: 'alice@example.com' },
         { name: 'Bob', email: 'bob@example.com' },
       ]);
@@ -137,9 +135,9 @@ describe('Users API', () => {
     });
 
     it('重複したメールアドレスはエラーを返す', async () => {
-      const db = drizzle(env.DB);
+      const db = createDb();
       const existingUser = { name: 'Existing', email: 'existing@example.com' };
-      await db.insert(users).values(existingUser);
+      await db.insert(schema.users).values(existingUser);
 
       const duplicateUser = {
         name: 'Duplicate',
@@ -162,17 +160,19 @@ describe('Users API', () => {
 
   describe('GET /api/users/:id', () => {
     it('指定されたIDのユーザーを返す', async () => {
-      const db = drizzle(env.DB);
-      const [insertedUser] = await db
-        .insert(users)
-        .values({ name: 'David', email: 'david@example.com' })
-        .returning();
+      const createRequest = new Request('http://localhost/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'David', email: 'david@example.com' }),
+      });
+      const createCtx = createExecutionContext();
+      const createResponse = await app.fetch(createRequest, env, createCtx);
+      await waitOnExecutionContext(createCtx);
 
-      if (insertedUser == null) {
-        throw new Error('Failed to insert user');
-      }
+      expect(createResponse.status).toBe(201);
+      const createdUser = await createResponse.json<UserResponse>();
 
-      const request = new Request(`http://localhost/api/users/${String(insertedUser.id)}`);
+      const request = new Request(`http://localhost/api/users/${String(createdUser.id)}`);
       const ctx = createExecutionContext();
       const response = await app.fetch(request, env, ctx);
       await waitOnExecutionContext(ctx);
@@ -180,7 +180,7 @@ describe('Users API', () => {
       expect(response.status).toBe(200);
       const data = await response.json<UserResponse>();
       expect(data).toMatchObject({
-        id: insertedUser.id,
+        id: createdUser.id,
         name: 'David',
         email: 'david@example.com',
       });

@@ -58,4 +58,5 @@ r2Demo.delete('/:key', async (c) => {
   return c.json({ message: 'Object deleted successfully', key });
 });
 
+/** Demo routes for Cloudflare R2 operations. */
 export default r2Demo;

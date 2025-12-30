@@ -2,18 +2,21 @@ import { useQuery } from '@tanstack/react-query';
 
 import { helloApi } from '@cfreact-template-client/api';
 
-export interface HelloData {
+/** Data exposed by the hello domain hook. */
+interface HelloData {
   message: string;
   timestamp: Date | null;
   isLoading: boolean;
   error?: Error;
 }
 
-export interface HelloActions {
+/** Actions exposed by the hello domain hook. */
+interface HelloActions {
   refresh: () => void;
 }
 
-export function useHello(): { data: HelloData; actions: HelloActions } {
+/** Fetch hello message data with refresh support. */
+function useHello(): { data: HelloData; actions: HelloActions } {
   const query = useQuery({
     queryKey: ['hello'],
     queryFn: () => helloApi.get(),
@@ -37,3 +40,6 @@ export function useHello(): { data: HelloData; actions: HelloActions } {
     actions,
   };
 }
+
+export type { HelloActions, HelloData };
+export { useHello };

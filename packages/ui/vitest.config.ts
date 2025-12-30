@@ -17,6 +17,7 @@ function defineConfig(config: UserConfig): UserConfig {
   return fn(config);
 }
 
+/** Vitest 設定 (ui パッケージ) */
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -28,6 +29,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/tests/setup.ts'],
+    exclude: ['node_modules/**', 'dist/**', 'tests/e2e/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

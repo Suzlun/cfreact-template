@@ -18,7 +18,9 @@ export type {
   listUsersResponse,
 } from './generated/client.js';
 
-export interface ApiSdkConfig {
+/** Configuration for the API SDK default request settings. */
+/** Configuration for the API SDK default request settings. */
+interface ApiSdkConfig {
   defaultInit?: RequestInit;
 }
 
@@ -45,7 +47,9 @@ const withDefaultInit = (init: RequestInit | undefined, defaultInit: RequestInit
   };
 };
 
-export const createApiSdk = (config?: ApiSdkConfig) => {
+/** Create a typed API SDK wrapper with optional default request init. */
+/** Create a typed API SDK wrapper with optional default request init. */
+const createApiSdk = (config?: ApiSdkConfig) => {
   const defaultInit = config?.defaultInit;
 
   return {
@@ -74,3 +78,6 @@ export const createApiSdk = (config?: ApiSdkConfig) => {
     },
   };
 };
+
+export type { ApiSdkConfig };
+export { createApiSdk };

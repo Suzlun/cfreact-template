@@ -2,9 +2,8 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 
-import type { AppVariables } from '@cfreact-template-server/app';
-import { createUsersUseCases } from '@cfreact-template-server/app';
-import { helloRoute, kvDemoRoute, r2DemoRoute, usersRoute } from '@cfreact-template-server/http';
+import { createUsersUseCases, type AppVariables } from '@cfreact-template-server/app';
+import { openApiApp } from '@cfreact-template-server/http';
 import type { Bindings } from '@cfreact-template-server/types';
 
 const app = new Hono<{ Bindings: Bindings; Variables: AppVariables }>();
@@ -26,10 +25,7 @@ app.use(
 );
 
 // Routes
-app.route('/api/hello', helloRoute);
-app.route('/api/users', usersRoute);
-app.route('/api/kv', kvDemoRoute);
-app.route('/api/r2', r2DemoRoute);
+app.route('/', openApiApp);
 
 // Health check
 app.get('/health', (c) => {
@@ -47,4 +43,5 @@ app.onError((err, c) => {
   return c.json({ error: 'Internal Server Error', message: err.message }, 500);
 });
 
+/** Hono app configured with middleware and routes. */
 export default app;

@@ -16,14 +16,13 @@ export interface User {
   createdAt: string;
 }
 
+export interface ErrorResponse {
+  error: string;
+}
+
 export interface CreateUserInput {
   name: string;
   email: string;
-}
-
-export interface ErrorResponse {
-  error?: string;
-  code?: string;
 }
 
 /**
@@ -135,6 +134,11 @@ export type getUserResponse200 = {
   status: 200;
 };
 
+export type getUserResponse400 = {
+  data: ErrorResponse;
+  status: 400;
+};
+
 export type getUserResponse404 = {
   data: ErrorResponse;
   status: 404;
@@ -143,7 +147,7 @@ export type getUserResponse404 = {
 export type getUserResponseSuccess = getUserResponse200 & {
   headers: Headers;
 };
-export type getUserResponseError = getUserResponse404 & {
+export type getUserResponseError = (getUserResponse400 | getUserResponse404) & {
   headers: Headers;
 };
 

@@ -1,5 +1,6 @@
 import type { CreateUserInput, User, UserRepository } from '@cfreact-template-server/domain';
 
+/** Use case to create a new user. */
 export class CreateUser {
   constructor(private readonly userRepository: UserRepository) {}
 

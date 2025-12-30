@@ -154,7 +154,8 @@ function TechStackCard() {
   );
 }
 
-export function HomePage() {
+/** Landing page with hello API status and tech stack overview. */
+function HomePage() {
   const { data, actions } = useHello();
 
   return (
@@ -175,3 +176,5 @@ export function HomePage() {
     </Stack>
   );
 }
+
+export { HomePage };

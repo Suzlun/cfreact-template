@@ -16,14 +16,16 @@ const toUser = (dto: User) => ({
   createdAt: new Date(dto.createdAt),
 });
 
-export const helloApi = {
+/** Hello API wrapper for the greeting endpoint. */
+const helloApi = {
   get: async (): Promise<Hello> => {
     const { data } = await sdk.hello.get();
     return toHello(data);
   },
 };
 
-export const usersApi = {
+/** Users API wrapper for list/create/get operations. */
+const usersApi = {
   list: async () => {
     const { data } = await sdk.users.list();
     return data.map((user) => toUser(user));
@@ -44,5 +46,7 @@ export const usersApi = {
     return toUser(response.data);
   },
 };
+
+export { helloApi, usersApi };
 
 // SDK types are internal; consumers should use domain types

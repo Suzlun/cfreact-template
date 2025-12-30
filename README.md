@@ -155,7 +155,7 @@ pnpm --filter @cfreact-template-server/entry openapi:gen
 pnpm --filter @cfreact-template-client/api gen
 ```
 
-※ `packages/server/scripts/generate-openapi.js` で swagger.json を生成し、`packages/client/api` で `orval` が SDK を出力します。
+※ `packages/server/scripts/generate-openapi.ts` で swagger.json を生成し、`packages/client/api` で `orval` が SDK を出力します。
 
 ### 方法 2: 手動セットアップ
 
@@ -300,19 +300,7 @@ pnpm dev:all
 - `POST /api/users` - 新しいユーザーを作成
 - `GET /api/users/:id` - ID でユーザーを取得
 
-### KV デモ
-
-- `GET /api/kv/:key` - KV から値を取得
-- `POST /api/kv` - キーバリューペアを保存
-- `DELETE /api/kv/:key` - キーを削除
-
-### R2 デモ
-
-- `GET /api/r2/:key` - R2 からオブジェクトをダウンロード
-- `POST /api/r2` - R2 にファイルをアップロード（multipart/form-data）
-- `DELETE /api/r2/:key` - オブジェクトを削除
-
-詳細な API 仕様は `spec/api/` を参照してください。
+詳細な API 仕様は `packages/client/api/openapi/swagger.json` を参照してください。
 
 ## デプロイ
 

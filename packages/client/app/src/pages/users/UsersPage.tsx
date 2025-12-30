@@ -155,7 +155,8 @@ function UsersTable({ data }: { data: UsersData }) {
   );
 }
 
-export function UsersPage() {
+/** Users management page with list and creation form. */
+function UsersPage() {
   const { data, actions } = useUsers();
 
   return (
@@ -191,3 +192,5 @@ export function UsersPage() {
     </Stack>
   );
 }
+
+export { UsersPage };

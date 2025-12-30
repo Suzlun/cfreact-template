@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
+/** Users table schema definition. */
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
@@ -10,5 +11,7 @@ export const users = sqliteTable('users', {
     .default(sql`(unixepoch())`),
 });
 
+/** User row type inferred from the users table. */
 export type User = typeof users.$inferSelect;
+/** Insert payload type inferred from the users table. */
 export type NewUser = typeof users.$inferInsert;

@@ -244,6 +244,7 @@ components（表示部品）:
 
 - `fetch` / `Request` / `Response` / `Headers` を直接使わない
 - Hono/Drizzle/Cloudflare SDK 等の import をしない
+- Zod / `@hono/zod-openapi` を import しない
 - Adapters（`http`/`persistence`）を参照しない
 - `console` を使わない（観測が必要なら外側で）
 
@@ -252,6 +253,12 @@ components（表示部品）:
 - ルーティングと入出力変換に専念し、UseCase を呼ぶ
 - `persistence` を直接参照しない（UseCase 経由）
 - `c.env` を直接参照しない（`server-app` が注入する依存を使う）
+- OpenAPI 対象のルートは `@hono/zod-openapi` + `zod` で定義し、ルート定義＝API 契約とする
+- Zod スキーマは `packages/server/http/src/schemas` に集約し、`zod` の import は同ディレクトリ内に限定する
+- `createRoute` / `OpenAPIHono` は `packages/server/http/src/routes` 以外で import しない
+- 手書きの Swagger/OpenAPI は禁止（`packages/client/api/openapi/swagger.json` は生成物）
+- ルート変更時は `pnpm --filter @cfreact-template-server/entry openapi:gen` を実行して swagger.json を更新する
+- デモ用途のルートは追加しない（必要なら正式な API として OpenAPI 定義に含める）
 
 ### 9.3 `server-persistence`
 

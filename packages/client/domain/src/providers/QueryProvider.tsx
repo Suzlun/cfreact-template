@@ -11,6 +11,9 @@ const queryClient = new QueryClient({
   },
 });
 
-export function QueryProvider({ children }: { children: ReactNode }) {
+/** Provide a shared React Query client for the app. */
+function QueryProvider({ children }: { children: ReactNode }) {
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
+
+export { QueryProvider };

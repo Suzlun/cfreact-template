@@ -7,7 +7,8 @@ import { theme } from '@cfreact-template/ui/theme';
 
 import { router } from './router';
 
-export function App() {
+/** Root application component with theme and routing. */
+function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -17,3 +18,5 @@ export function App() {
     </ThemeProvider>
   );
 }
+
+export { App };

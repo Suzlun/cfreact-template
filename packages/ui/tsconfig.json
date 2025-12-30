@@ -9,5 +9,5 @@
       "@ui/*": ["./*"]
     }
   },
-  "include": ["src/**/*", "vitest.config.ts"]
+  "include": ["src/**/*"]
 }

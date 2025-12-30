@@ -1,7 +1,8 @@
 import DOMPurify, { type Config as DOMPurifyConfig } from 'dompurify';
 
-export interface SafeHTMLProps {
-  /** サニタイズするHTML文字列 */
+/** サニタイズ済みのマークアップを描画するコンポーネントのプロパティ。 */
+interface SafeHTMLProps {
+  /** サニタイズするマークアップ文字列。 */
   html: string;
   /** 追加のクラス名 */
   className?: string;
@@ -10,14 +11,14 @@ export interface SafeHTMLProps {
 }
 
 /**
- * DOMPurify でサニタイズした HTML を安全にレンダリングするコンポーネント
+ * DOMPurifyでサニタイズしたマークアップを安全にレンダリングするコンポーネント。
  *
  * @example
  * ```tsx
- * // マークダウンからHTML
+ * // マークダウンから生成したマークアップ
  * <SafeHTML html={marked.parse(markdown)} />
  *
- * // APIから取得したコンテンツ
+ * // 外部サービスから取得したコンテンツ
  * <SafeHTML html={apiContent} />
  *
  * // カスタムサニタイズ設定
@@ -27,7 +28,7 @@ export interface SafeHTMLProps {
  * />
  * ```
  */
-export function SafeHTML({ html, className, sanitizeOptions }: SafeHTMLProps) {
+function SafeHTML({ html, className, sanitizeOptions }: SafeHTMLProps) {
   const defaultConfig: DOMPurifyConfig = {
     // 標準設定: 一般的なHTMLタグを許可
     ALLOWED_TAGS: [
@@ -70,6 +71,8 @@ export function SafeHTML({ html, className, sanitizeOptions }: SafeHTMLProps) {
       'tr',
       'th',
       'td',
+      // ボタン
+      'button',
       // 画像
       'img',
       // その他
@@ -98,8 +101,7 @@ export function SafeHTML({ html, className, sanitizeOptions }: SafeHTMLProps) {
       'data-language',
     ],
     // リンクのプロトコル制限
-    ALLOWED_URI_REGEXP:
-      /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp):|[^a-z]|[+.a-z-]+(?:[^+.:a-z-]|$))/i,
+    ALLOWED_URI_REGEXP: /^(?:https?|mailto|tel):/i,
     // data属性は禁止（セキュリティリスク）
     ALLOW_DATA_ATTR: false,
     // 安全でないスキームを削除
@@ -112,11 +114,28 @@ export function SafeHTML({ html, className, sanitizeOptions }: SafeHTMLProps) {
   const sanitized: unknown = DOMPurify.sanitize(html, config);
   const sanitizedHTML = typeof sanitized === 'string' ? sanitized : String(sanitized);
 
+  // data: URI を含む画像をサニタイズ後に除去（DOMPurifyのプロトコル制限に加え、念のため）
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(sanitizedHTML, 'text/html');
+  for (const img of doc.querySelectorAll('img')) {
+    const srcAttr = img.getAttribute('src');
+    if (typeof srcAttr === 'string') {
+      const normalizedSrc = srcAttr.trim().toLowerCase();
+      if (normalizedSrc.startsWith('data:')) {
+        img.remove();
+      }
+    }
+  }
+  const finalHTML = doc.body.innerHTML;
+
   return (
     <div
       className={className}
       // eslint-disable-next-line react/no-danger -- DOMPurify でサニタイズ済み
-      dangerouslySetInnerHTML={{ __html: sanitizedHTML }}
+      dangerouslySetInnerHTML={{ __html: finalHTML }}
     />
   );
 }
+
+export type { SafeHTMLProps };
+export { SafeHTML };

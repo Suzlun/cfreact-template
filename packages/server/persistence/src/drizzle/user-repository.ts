@@ -6,6 +6,7 @@ import type { CreateUserInput, User, UserRepository } from '@cfreact-template-se
 
 import type { DrizzleClient } from './db';
 
+/** Drizzle-backed implementation of the user repository. */
 export class DrizzleUserRepository implements UserRepository {
   constructor(private readonly db: DrizzleClient) {}
 

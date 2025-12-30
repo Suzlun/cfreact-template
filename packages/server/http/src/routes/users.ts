@@ -1,45 +1,150 @@
-import { Hono } from 'hono';
+import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 
 import type { AppVariables, UsersUseCases } from '@cfreact-template-server/app';
-import type { CreateUserInput } from '@cfreact-template-server/domain';
+import type { User } from '@cfreact-template-server/domain';
 import type { Bindings } from '@cfreact-template-server/types';
 
-const usersRoute = new Hono<{ Bindings: Bindings; Variables: AppVariables }>();
+import {
+  createUserInputSchema,
+  errorResponseSchema,
+  userIdParamsSchema,
+  userResponseSchema,
+  usersListResponseSchema,
+} from '../schemas';
 
-usersRoute.get('/', async (c) => {
-  const { listUsers }: UsersUseCases = c.var.usersUseCases;
-  const allUsers = await listUsers.execute();
-  return c.json(allUsers);
+const listUsersRoute = createRoute({
+  method: 'get',
+  path: '/users',
+  tags: ['users'],
+  operationId: 'listUsers',
+  summary: 'List all users',
+  responses: {
+    200: {
+      description: 'List all users',
+      content: {
+        'application/json': {
+          schema: usersListResponseSchema,
+        },
+      },
+    },
+  },
 });
 
-usersRoute.post('/', async (c) => {
-  const body = await c.req.json<CreateUserInput>();
-  const { createUser }: UsersUseCases = c.var.usersUseCases;
-
-  try {
-    const newUser = await createUser.execute(body);
-    return c.json(newUser, 201);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to create user';
-    return c.json({ error: message }, 400);
-  }
+const createUserRoute = createRoute({
+  method: 'post',
+  path: '/users',
+  tags: ['users'],
+  operationId: 'createUser',
+  summary: 'Create a new user',
+  request: {
+    body: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: createUserInputSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: 'User created',
+      content: {
+        'application/json': {
+          schema: userResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: {
+        'application/json': {
+          schema: errorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
-usersRoute.get('/:id', async (c) => {
-  const id = Number.parseInt(c.req.param('id'), 10);
-
-  if (Number.isNaN(id)) {
-    return c.json({ error: 'Invalid id' }, 400);
-  }
-
-  const { getUser }: UsersUseCases = c.var.usersUseCases;
-  const user = await getUser.execute(id);
-
-  if (user == null) {
-    return c.json({ error: 'User not found' }, 404);
-  }
-
-  return c.json(user);
+const getUserRoute = createRoute({
+  method: 'get',
+  path: '/users/{id}',
+  tags: ['users'],
+  operationId: 'getUser',
+  summary: 'Get a user by id',
+  request: {
+    params: userIdParamsSchema,
+  },
+  responses: {
+    200: {
+      description: 'User found',
+      content: {
+        'application/json': {
+          schema: userResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Invalid request',
+      content: {
+        'application/json': {
+          schema: errorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'User not found',
+      content: {
+        'application/json': {
+          schema: errorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
-export default usersRoute;
+const toUserResponse = (user: User) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  createdAt: user.createdAt.toISOString(),
+});
+
+/** Register user routes on the OpenAPI-enabled app. */
+const registerUsersRoutes = (app: OpenAPIHono<{ Bindings: Bindings; Variables: AppVariables }>) => {
+  app.openapi(listUsersRoute, async (c) => {
+    const { listUsers }: UsersUseCases = c.var.usersUseCases;
+    const allUsers = await listUsers.execute();
+    return c.json(
+      allUsers.map((user) => toUserResponse(user)),
+      200
+    );
+  });
+
+  app.openapi(createUserRoute, async (c) => {
+    const body = c.req.valid('json');
+    const { createUser }: UsersUseCases = c.var.usersUseCases;
+
+    try {
+      const newUser = await createUser.execute(body);
+      return c.json(toUserResponse(newUser), 201);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create user';
+      return c.json({ error: message }, 400);
+    }
+  });
+
+  app.openapi(getUserRoute, async (c) => {
+    const { id } = c.req.valid('param');
+    const { getUser }: UsersUseCases = c.var.usersUseCases;
+    const user = await getUser.execute(id);
+
+    if (user == null) {
+      return c.json({ error: 'User not found' }, 404);
+    }
+
+    return c.json(toUserResponse(user), 200);
+  });
+};
+
+export { registerUsersRoutes };

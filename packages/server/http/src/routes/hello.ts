@@ -1,14 +1,39 @@
-import { Hono } from 'hono';
+import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 
+import type { AppVariables } from '@cfreact-template-server/app';
 import type { Bindings } from '@cfreact-template-server/types';
 
-const hello = new Hono<{ Bindings: Bindings }>();
+import { helloResponseSchema } from '../schemas';
 
-hello.get('/', (c) => {
-  return c.json({
-    message: 'Hello from Hono + Cloudflare Workers',
-    timestamp: new Date().toISOString(),
-  });
+const helloRoute = createRoute({
+  method: 'get',
+  path: '/hello',
+  tags: ['hello'],
+  operationId: 'getHello',
+  summary: 'Returns greeting',
+  responses: {
+    200: {
+      description: 'Greeting response',
+      content: {
+        'application/json': {
+          schema: helloResponseSchema,
+        },
+      },
+    },
+  },
 });
 
-export default hello;
+/** Register hello routes on the OpenAPI-enabled app. */
+const registerHelloRoutes = (app: OpenAPIHono<{ Bindings: Bindings; Variables: AppVariables }>) => {
+  app.openapi(helloRoute, (c) =>
+    c.json(
+      {
+        message: 'Hello from Hono + Cloudflare Workers',
+        timestamp: new Date().toISOString(),
+      },
+      200
+    )
+  );
+};
+
+export { registerHelloRoutes };

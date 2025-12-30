@@ -6,18 +6,79 @@
   },
   "servers": [
     {
-      "url": "/api",
+      "url": "/",
       "description": "Default server"
     }
   ],
+  "components": {
+    "schemas": {
+      "HelloResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["message", "timestamp"]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "name", "email", "createdAt"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": ["error"]
+      },
+      "CreateUserInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "required": ["name", "email"]
+      }
+    },
+    "parameters": {}
+  },
   "paths": {
-    "/hello": {
+    "/api/hello": {
       "get": {
+        "tags": ["hello"],
         "operationId": "getHello",
         "summary": "Returns greeting",
         "responses": {
           "200": {
-            "description": "Successful response",
+            "description": "Greeting response",
             "content": {
               "application/json": {
                 "schema": {
@@ -29,13 +90,14 @@
         }
       }
     },
-    "/users": {
+    "/api/users": {
       "get": {
+        "tags": ["users"],
         "operationId": "listUsers",
         "summary": "List all users",
         "responses": {
           "200": {
-            "description": "List of users",
+            "description": "List all users",
             "content": {
               "application/json": {
                 "schema": {
@@ -50,6 +112,7 @@
         }
       },
       "post": {
+        "tags": ["users"],
         "operationId": "createUser",
         "summary": "Create a new user",
         "requestBody": {
@@ -86,19 +149,20 @@
         }
       }
     },
-    "/users/{id}": {
+    "/api/users/{id}": {
       "get": {
+        "tags": ["users"],
         "operationId": "getUser",
         "summary": "Get a user by id",
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "required": true,
             "schema": {
               "type": "integer",
               "format": "int64"
-            }
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
           }
         ],
         "responses": {
@@ -112,6 +176,16 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "404": {
             "description": "User not found",
             "content": {
@@ -121,68 +195,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "HelloResponse": {
-        "type": "object",
-        "required": ["message", "timestamp"],
-        "properties": {
-          "message": {
-            "type": "string"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "User": {
-        "type": "object",
-        "required": ["id", "name", "email", "createdAt"],
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "name": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string",
-            "format": "email"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "CreateUserInput": {
-        "type": "object",
-        "required": ["name", "email"],
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string",
-            "format": "email"
-          }
-        }
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string"
-          },
-          "code": {
-            "type": "string"
           }
         }
       }

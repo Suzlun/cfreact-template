@@ -4,7 +4,8 @@ import { AppLayout } from './components/layout/AppLayout';
 import { HomePage } from './pages/home/HomePage';
 import { UsersPage } from './pages/users/UsersPage';
 
-export const router = createBrowserRouter([
+/** App router definition with layout and page routes. */
+const router = createBrowserRouter([
   {
     path: '/',
     element: <AppLayout />,
@@ -20,3 +21,5 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
+export { router };

@@ -1,11 +1,15 @@
-export interface User {
+/** User record mapped for client consumption. */
+interface User {
   id: number;
   name: string;
   email: string;
   createdAt: Date;
 }
 
-export interface CreateUserPayload {
+/** Payload to create a new user. */
+interface CreateUserPayload {
   name: string;
   email: string;
 }
+
+export type { CreateUserPayload, User };

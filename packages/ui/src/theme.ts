@@ -122,4 +122,5 @@ const baseTheme = createTheme({
   },
 });
 
+/** Application theme with responsive typography. */
 export const theme = responsiveFontSizes(baseTheme);
