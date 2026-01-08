@@ -6,17 +6,17 @@
 
 ### フロントエンド
 
-- **React** 19.0.0 - React Compiler サポート付き UI ライブラリ
-- **Vite** 7.2.2 - ビルドツール
-- **React Router** 7.9.5 - ルーティング
-- **TanStack Query** 5.90.7 - データフェッチとキャッシング
-- **Material UI** 6.1.x - コンポーネントライブラリ
+- **React** 19.2.3 - React Compiler サポート付き UI ライブラリ
+- **Vite** 7.3.1 - ビルドツール
+- **React Router** 7.12.0 - ルーティング
+- **TanStack Query** 5.90.16 - データフェッチとキャッシング
+- **Material UI** 7.3.6 - コンポーネントライブラリ
 - **TypeScript** 5.9+ - 型安全性
 
 ### バックエンド
 
-- **Hono** 4.10.5 - 高速で軽量な Web フレームワーク
-- **Drizzle ORM** 0.44.7 - D1 用の型安全 ORM
+- **Hono** 4.11.3 - 高速で軽量な Web フレームワーク
+- **Drizzle ORM** 0.45.1 - D1 用の型安全 ORM
 - **Cloudflare Workers** - サーバーレスランタイム
 - **Cloudflare D1** - SQLite データベース
 - **Cloudflare KV** - キーバリューストレージ
@@ -24,11 +24,11 @@
 
 ### 開発環境
 
-- **pnpm** 10.23+ - 高速で効率的なパッケージマネージャー
-- **Node.js** 24.11.0 LTS - 開発ツール用ランタイム
-- **Wrangler** 4.0+ - Cloudflare CLI
+- **pnpm** 10.27.0 - 高速で効率的なパッケージマネージャー
+- **Node.js** 24.12.0 LTS - 開発ツール用ランタイム
+- **Wrangler** 4.57.0+ - Cloudflare CLI
 - **ESLint** 9.39+ - リンティング（flat config）
-- **Prettier** 3.6.2 - コードフォーマット
+- **Prettier** 3.7.4 - コードフォーマット
 - **Dev Containers** - 一貫した開発環境
 - **Serena MCP** - セマンティックコード検索・編集（Codex CLI統合）
 
@@ -70,8 +70,8 @@ cfreact-template/
 
 または手動セットアップの場合：
 
-- **Node.js** 24.11.0 以降
-- **pnpm** 10.23.0 以降
+- **Node.js** 24.12.0 以降
+- **pnpm** 10.27.0 以降
 - **Cloudflare アカウント**（デプロイ用）
 
 ## セットアップ
@@ -161,7 +161,7 @@ pnpm --filter @cfreact-template-client/api gen
 
 **前提条件:**
 
-- Node.js 24.11.0 以降
+- Node.js 24.12.0 以降
 - Python 3.11 以降（spec-kit 用）
 
 1. **依存関係をインストール:**

@@ -12,7 +12,7 @@
     "@cfreact-template-server/types": "workspace:*",
     "@cfreact-template-server/usecases": "workspace:*",
     "@cfreact-template/drizzle": "workspace:*",
-    "drizzle-orm": "^0.44.7"
+    "drizzle-orm": "^0.45.1"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

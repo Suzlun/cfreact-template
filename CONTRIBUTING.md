@@ -9,8 +9,8 @@
 
 ## 前提環境
 
-- Node.js 24.11+ / pnpm 10.23+（`corepack enable` 推奨）
-- Wrangler 4.x
+- Node.js 24.12+ / pnpm 10.27.0+（`corepack enable` 推奨）
+- Wrangler 4.57.0+
 - （任意）Dev Container + Docker（推奨）
 
 ## セットアップ

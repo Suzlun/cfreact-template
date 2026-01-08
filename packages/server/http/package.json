@@ -8,18 +8,18 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@hono/zod-openapi": "^1.2.0",
     "@cfreact-template-server/domain": "workspace:*",
     "@cfreact-template-server/types": "workspace:*",
     "@cfreact-template-server/usecases": "workspace:*",
     "@cfreact-template/drizzle": "workspace:*",
-    "hono": "^4.10.5",
-    "zod": "^4.2.1"
+    "@hono/zod-openapi": "^1.2.0",
+    "hono": "^4.11.3",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.10.7",
-    "@cloudflare/workers-types": "^4.20241127.0",
+    "@cloudflare/vitest-pool-workers": "^0.12.0",
+    "@cloudflare/workers-types": "^4.20260107.1",
     "typescript": "^5.9.3",
-    "vitest": "3.2.0"
+    "vitest": "4.0.16"
   }
 }

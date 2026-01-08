@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Full-stack template for Cloudflare Workers with React, Hono, and Drizzle ORM",
-  "packageManager": "pnpm@10.26.2+sha512.0e308ff2005fc7410366f154f625f6631ab2b16b1d2e70238444dd6ae9d630a8482d92a451144debc492416896ed16f7b114a86ec68b8404b2443869e68ffda6",
+  "packageManager": "pnpm@10.27.0",
   "engines": {
-    "node": ">=24.11.0"
+    "node": ">=24.12.0"
   },
   "scripts": {
     "dev:client": "pnpm --filter @cfreact-template-client/app dev",
@@ -38,8 +38,8 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.2.0",
-    "@commitlint/config-conventional": "^20.2.0",
+    "@commitlint/cli": "^20.3.0",
+    "@commitlint/config-conventional": "^20.3.0",
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.57.0",
@@ -69,9 +69,9 @@
     "prettier": "^3.7.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.51.0",
+    "typescript-eslint": "^8.52.0",
     "vitest": "^4.0.16",
-    "wrangler": "^4.54.0"
+    "wrangler": "^4.57.0"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.1"

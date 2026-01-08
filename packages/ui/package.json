@@ -16,25 +16,25 @@
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@fontsource/ibm-plex-sans-jp": "^5.2.8",
-    "@fontsource/oxanium": "^5.2.7",
+    "@fontsource/oxanium": "^5.2.8",
     "@fontsource/zen-kaku-gothic-new": "^5.2.7",
-    "@mui/material": "^6.1.6",
-    "dompurify": "^3.3.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "@mui/material": "^7.3.6",
+    "dompurify": "^3.3.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.0",
-    "@types/react": "^19.0.2",
-    "@types/react-dom": "^19.0.2",
-    "@vitejs/plugin-react": "^4.7.0",
-    "@vitest/coverage-v8": "^4.0.9",
-    "jsdom": "^27.2.0",
+    "@testing-library/react": "^16.3.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/coverage-v8": "^4.0.16",
+    "jsdom": "^27.4.0",
     "typescript": "^5.9.3",
-    "vite": "^7.2.2",
-    "vitest": "^4.0.9"
+    "vite": "^7.3.1",
+    "vitest": "^4.0.16"
   }
 }
