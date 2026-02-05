@@ -30,7 +30,7 @@
 - **ESLint** 9.39+ - リンティング（flat config）
 - **Prettier** 3.7.4 - コードフォーマット
 - **Dev Containers** - 一貫した開発環境
-- **Serena MCP** - セマンティックコード検索・編集（Codex CLI統合）
+- **Serena MCP** - セマンティックコード検索・編集（OpenCode 統合）
 
 ## プロジェクト構成
 
@@ -162,7 +162,7 @@ pnpm --filter @cfreact-template-client/api gen
 **前提条件:**
 
 - Node.js 24.12.0 以降
-- Python 3.11 以降（spec-kit 用）
+- Python 3.11 以降（Serena MCP 用）
 
 1. **依存関係をインストール:**
 
@@ -177,7 +177,7 @@ pnpm --filter @cfreact-template-client/api gen
    npm install -g wrangler@4
    ```
 
-3. **uv をインストール（spec-kit 用）:**
+3. **uv をインストール（任意、Python ツール導入用）:**
 
    ```bash
    # macOS/Linux
@@ -187,43 +187,42 @@ pnpm --filter @cfreact-template-client/api gen
    powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
    ```
 
-4. **Codex CLI をインストール（オプション、AI 支援開発用）:**
+4. **OpenCode CLI をインストール（オプション、AI 支援開発用）:**
 
    ```bash
-   npm install -g @openai/codex
+   npm install -g opencode-ai@latest
    ```
 
 5. 方法 1 のステップ 4-8 に従ってください。
 
-**注意:** Dev Container には、これらすべてのツールがプリインストールされています（Node.js 24、Python 3、pnpm、Wrangler、uv、Codex CLI）。
+**注意:** Dev Container には、これらすべてのツールがプリインストールされています（Node.js 24、Python 3、pnpm、Wrangler、uv、OpenCode CLI、OpenSpec CLI）。
 
-### Codex CLI + spec-kit セットアップ
+### OpenCode + OpenSpec セットアップ
 
-AI 支援開発に Codex CLI と spec-kit を使用する場合：
+AI 支援開発に OpenCode と OpenSpec を使用する場合：
 
-1. **OpenAI API キーを取得:**
-   - ChatGPT Plus/Pro/Business に登録するか、OpenAI API キーを取得
-   - https://platform.openai.com/api-keys にアクセス
-
-2. **Codex を設定:**
+1. **OpenCode を設定:**
 
    ```bash
-   codex auth
+   opencode auth
    ```
 
-3. **spec-kit でプロジェクトを初期化:**
+2. **OpenSpec を初期化:**
 
    ```bash
-   # Codex 用にプロジェクトを初期化
-   uvx --from git+https://github.com/github/spec-kit.git specify init . --ai codex
+   openspec init
    ```
 
-4. **Codex CLI 内でスラッシュコマンドを使用:**
-   - `/speckit.specify` - 要件仕様を作成
-   - `/speckit.clarify` - 仕様の曖昧点を解消
-   - `/speckit.plan` - 技術実装計画を作成
-   - `/speckit.tasks` - タスクに分解
-   - `/speckit.implement` - タスクに沿って実装
+3. **OpenCode 内でスラッシュコマンドを使用:**
+   - `/opsx-onboard` - OpenSpec の一連フローをオンボード
+   - `/opsx-new <name>` - change を作成（段階的に artifact を作る）
+   - `/opsx-ff <name>` - artifact を一括生成（実装開始可能まで）
+   - `/opsx-continue <name>` - artifact 作成を継続
+   - `/opsx-apply <name>` - tasks に沿って実装
+   - `/opsx-verify <name>` - 実装と artifacts の整合を確認
+   - `/opsx-sync <name>` - delta specs を main specs に同期
+   - `/opsx-archive <name>` - 完了した change を archive
+   - `/opsx-explore <topic>` - 実装せずに調査・検討
 
 ## 開発ワークフロー
 
@@ -339,57 +338,49 @@ wrangler secret put CLOUDFLARE_DATABASE_ID
 wrangler secret put CLOUDFLARE_D1_TOKEN
 ```
 
-## spec-kit による仕様駆動開発
+## OpenSpec による仕様駆動開発
 
-このテンプレートには、spec-kit との統合をサポートするディレクトリ構造が含まれています。
+このテンプレートには、OpenSpec の運用をサポートするディレクトリ構造が含まれています。
 
-### spec-kit とは
+### OpenSpec とは
 
-spec-kit は GitHub が提供するオープンソースの仕様駆動開発（Spec-Driven Development）ツールキットです。仕様を実行可能な成果物として扱い、AI コーディングアシスタントと協力して、要件定義から実装まで段階的に進めることができます。
+OpenSpec は仕様駆動開発（Spec-Driven Development）のためのワークフローです。change（変更単位）に proposal/specs/design/tasks を揃え、AI コーディングアシスタントと協力して、要件定義から実装まで段階的に進めます。
 
-### 4 段階の開発プロセス
+### 基本の開発プロセス
 
-1. **Specify（要件定義）**: ユーザーストーリー、解決する問題、成功指標などの仕様を作成
-2. **Plan（計画）**: 技術スタック、アーキテクチャ、制約条件を定義
-3. **Tasks（タスク分解）**: 仕様と計画を小さなタスクに分解
-4. **Implement（実装）**: AI アシスタントが各タスクを順次実装
+1. **Proposal**: 目的/非ゴール/成功条件を固める
+2. **Specs**: 仕様（要求・受け入れ条件）を文書化する
+3. **Design**: 実装方針・設計を固める
+4. **Tasks**: 実装可能なタスクに分解する
+5. **Apply**: tasks に沿って実装する
 
 ### プロジェクトの初期化
 
 ```bash
-# 現在のディレクトリで初期化
-uvx --from git+https://github.com/github/spec-kit.git specify init . --ai claude
-
-# または新しいプロジェクトを作成
-uvx --from git+https://github.com/github/spec-kit.git specify init my-project --ai claude
+openspec init
 ```
-
-サポートされている AI アシスタント: `claude`, `copilot`, `gemini`, `codex`, `codebuddy`
 
 ### スラッシュコマンド
 
-プロジェクトを初期化すると、AI アシスタント内で以下のコマンドが使えるようになります：
+OpenCode で以下のコマンドが使えます：
 
-- **`/speckit.specify`** - 要件仕様を作成（何を、なぜを定義）
-- **`/speckit.clarify`** - 仕様の曖昧点を解消（質問→回答を spec に反映）
-- **`/speckit.plan`** - 技術実装計画を作成（どのように実装するかを定義）
-- **`/speckit.tasks`** - 仕様と計画を実装可能なタスクに分解
-- **`/speckit.implement`** - タスクに沿って実装
+- **`/opsx-new <name>`** - change を作成して artifact 作成を開始
+- **`/opsx-continue <name>`** - 次の artifact を作成
+- **`/opsx-apply <name>`** - tasks に沿って実装
+- **`/opsx-archive <name>`** - change を archive
 
 ### 使用例
 
 ```
-# AI アシスタント（Codex CLI、Claude Code など）内で実行
-/speckit.specify Create a user authentication feature with email and password
-/speckit.plan Use JWT tokens and bcrypt for password hashing
-/speckit.tasks
+# OpenCode 内で実行
+/opsx-new add-user-auth
+/opsx-continue add-user-auth
+/opsx-apply add-user-auth
 ```
-
-本テンプレートでの運用方法は `docs/SPECKIT.md`、上流の詳細は https://github.com/github/spec-kit を参照してください。
 
 ## Serena MCP - セマンティックコード検索
 
-このテンプレートには、Codex CLI と統合された Serena MCP Server が設定されています。Serena は Language Server Protocol (LSP) を使用して、IDE 並みのコード理解機能を提供します。
+このテンプレートには、OpenCode と統合できる Serena MCP Server が設定されています。Serena は Language Server Protocol (LSP) を使用して、IDE 並みのコード理解機能を提供します。
 
 ### 機能
 
@@ -401,7 +392,7 @@ uvx --from git+https://github.com/github/spec-kit.git specify init my-project --
 
 ### 使用方法
 
-Codex CLI から以下のように使用します：
+OpenCode などから以下のように使用できます：
 
 ```bash
 # プロジェクトをアクティベート（初回のみ）
@@ -423,8 +414,6 @@ http://localhost:24282/dashboard
 
 ### 設定ファイル
 
-- **`.devcontainer/.codex/config.toml`**: Codex CLI の MCP サーバー設定
-- **`.devcontainer/.codex/serena_config.yml`**: Serena のグローバル設定
 - **`.serena/project.yml`**: プロジェクト固有の設定
 
 ### セキュリティ
@@ -564,5 +553,4 @@ pnpm check
 - [React ドキュメント](https://react.dev/)
 - [Material UI ドキュメント](https://mui.com/)
 - [TanStack Query ドキュメント](https://tanstack.com/query/latest)
-- [Speckit 運用ガイド](docs/SPECKIT.md)
-- [spec-kit ドキュメント](https://github.com/github/spec-kit)
+- [OpenSpec](https://github.com/fission-ai/openspec)

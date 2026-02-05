@@ -78,11 +78,8 @@ USER node
 # Wrangler をグローバルインストール
 RUN npm install -g wrangler@4
 
-# Codex CLI をグローバルインストール
-RUN npm install -g @openai/codex
+# OpenCode CLI をグローバルインストール
+RUN npm install -g opencode-ai@latest
 
 # OpenSpec CLI をグローバルインストール
 RUN npm install -g @fission-ai/openspec@latest
-
-# node ユーザーとして spec-kit をインストール
-RUN uv tool install specify-cli --from git+https://github.com/github/spec-kit.git

@@ -48,13 +48,6 @@ coverage/
 # Misc
 .turbo/
 
-# Codex configuration (contains API keys and logs)
-.devcontainer/.codex/auth.json
-.devcontainer/.codex/sessions/*
-.devcontainer/.codex/archived_sessions/*
-# 注: .devcontainer/.codex/config.toml にAPIキーを含める場合は以下を有効化
-# .devcontainer/.codex/config.toml
-
 # Serena MCP Server
 .serena/cache/
 .serena/*.log
