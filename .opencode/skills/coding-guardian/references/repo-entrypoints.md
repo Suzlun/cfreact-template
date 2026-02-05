@@ -3,8 +3,7 @@
 Read these files in this repository when applying this skill:
 
 - `AGENTS.md`: project workflow (required commands, boundaries, OpenSpec workflow)
-- `openspec/AGENTS.md`: OpenSpec change proposal rules (if present)
-- `openspec/project.md`: OpenSpec project conventions (if present)
+- `openspec/config.yaml`: OpenSpec configuration (change directories may be absent until initialized)
 - `docs/CODING_STANDARDS.md`: coding rules (primary source)
 - `CONTRIBUTING.md`: contributor workflow / required checks
 - `eslint.config.js`: lint implementation

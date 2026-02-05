@@ -17,7 +17,7 @@ description: Enforce this repository's coding rules and spec-driven workflow (Op
 ### 1) Load the repository rules (before work)
 
 - `AGENTS.md` (project workflow, required commands, boundaries, OpenSpec workflow)
-- `openspec/AGENTS.md` (OpenSpec change の作法がある場合)
+- `openspec/config.yaml` (OpenSpec 設定。change ディレクトリが無い場合もある)
 - `docs/CODING_STANDARDS.md` (コーディング規約の一次資料)
 - `CONTRIBUTING.md` (contributor workflow / required checks)
 - `eslint.config.js` (lint の実装)
@@ -38,7 +38,7 @@ Key dependency directions are fixed (violations fail `pnpm lint`):
 
 - 生成物（例: `packages/client/api/src/generated/**`）は手で直さない
 - API 契約/SDK に影響する変更は、必要に応じて `pnpm gen:api-sdk`（swagger 生成 + SDK 再生成）まで通して整合を取る
-- 仕様/要件が変わる変更は、OpenSpec change（`openspec/changes/**`）から始める
+- 仕様/要件が変わる変更は、OpenSpec を運用している場合は change（例: `openspec/changes/**`）から始める（未初期化ならスキップ）
 - Do not bypass ESLint; fix design/boundaries instead
 - 依存方向を崩さない（UI->domain->api、entry->app->...）
 - Avoid dependency backflow (especially pages <-> domains <-> api)
