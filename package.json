@@ -16,8 +16,10 @@
     "build:server": "pnpm --filter @cfreact-template-server/entry build",
     "build": "pnpm build:server && pnpm build:client",
     "check": "pnpm --filter \"./packages/**\" check",
-    "gen:swagger": "pnpm --filter @cfreact-template-server/entry openapi:gen",
-    "gen:api-sdk": "pnpm gen:swagger && pnpm --filter @cfreact-template-client/api gen",
+    "gen:openapi": "pnpm --filter @cfreact-template/api-contract gen:openapi && prettier --write packages/api-contract/openapi/openapi.json",
+    "gen:swagger": "pnpm gen:openapi",
+    "gen:api-sdk": "pnpm gen:openapi && pnpm --filter @cfreact-template-client/api gen && prettier --write packages/client/api/src/generated/client.ts",
+    "check:codegen": "pnpm gen:api-sdk && git ls-files --error-unmatch packages/api-contract/openapi/openapi.json packages/client/api/src/generated/client.ts >/dev/null && git diff --exit-code -- packages/api-contract/openapi/openapi.json packages/client/api/src/generated/client.ts",
     "migrate:generate": "drizzle-kit generate",
     "migrate:apply": "wrangler d1 execute cfreact-template-db --local --file=./drizzle/migrations/<migration-file>.sql",
     "migrate:studio": "drizzle-kit studio",
@@ -27,26 +29,27 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:client": "pnpm --filter @cfreact-template-client/app test",
-    "test:server": "vitest --project server-http",
-    "test:ui-package": "vitest --project ui",
+    "test:server": "vitest run --project server-http",
+    "test:ui-package": "vitest run --project ui",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "lint": "eslint .",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format": "pnpm --filter @cfreact-template/api-contract format && prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "pnpm --filter @cfreact-template/api-contract format:check && prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.3.0",
     "@commitlint/config-conventional": "^20.3.0",
+    "@cloudflare/vitest-pool-workers": "^0.12.10",
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.57.0",
     "@tanstack/eslint-plugin-query": "^5.91.2",
     "@types/dompurify": "^3.2.0",
     "@types/node": "^25.0.3",
-    "@vitest/ui": "^4.0.16",
+    "@vitest/ui": "^3.2.4",
     "concurrently": "^9.2.1",
     "dompurify": "^3.3.1",
     "drizzle-kit": "^0.31.8",
@@ -70,10 +73,17 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.52.0",
-    "vitest": "^4.0.16",
+    "vitest": "^3.2.4",
     "wrangler": "^4.57.0"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "19.2.3",
+      "react-dom": "19.2.3",
+      "@tanstack/react-query": "5.90.16"
+    }
   }
 }

@@ -19,6 +19,7 @@ function defineConfig(config: UserConfig): UserConfig {
 
 /** Vitest 設定 (ui パッケージ) */
 export default defineConfig({
+  root: fileURLToPath(new URL('.', import.meta.url)),
   plugins: [react()],
   resolve: {
     alias: {

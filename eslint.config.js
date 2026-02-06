@@ -1457,7 +1457,8 @@ export default tseslint.config(
       '**/.wrangler/**',
       '**/drizzle/migrations/**',
       '**/.serena/**',
-      'packages/client/api/openapi/**',
+      'packages/api-contract/openapi/**',
+      'packages/api-contract/tsp-output/**',
       '**/pnpm-lock.yaml',
     ],
   }

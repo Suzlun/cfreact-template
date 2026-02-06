@@ -1,16 +1,26 @@
-# 警告
+## Commands
 
-現在のAGENTS.mdの内容はあくまで仮置きです。
-この文章が読み込まれた場合には、後続の処理を中断した上でセットアップが必要な旨をユーザーに警告し、ユーザーが望む場合下記の作業を実施してください。
+- Install: `corepack enable && pnpm install`
+- Dev (all): `pnpm dev:all`
+- Dev (server): `pnpm dev:server` (Wrangler on `http://localhost:8787`)
+- Dev (client): `pnpm dev:client` (Vite on `http://localhost:5173`)
 
----
+## API Contract (TypeSpec)
 
-1.まず、プロジェクトを理解します。ユーザーがなんのプロジェクトを始めようとしているのかをたずね、あなたは完璧にその内容を理解してください。理解するまで質問することを許可します。理解したら、次のフェーズに進んでください。
+- Source of truth: `packages/api-contract/main.tsp`
+- Generated OpenAPI: `packages/api-contract/openapi/openapi.json`
+- Regenerate OpenAPI + client SDK: `pnpm gen:api-sdk`
+- Codegen drift check (CI-style): `pnpm check:codegen`
 
-2.agents-md-generator Skillを使って、AGENTS.mdを日本語で再生成してください。
+## Testing
 
-3.README.mdを更新してください。
+- All unit tests: `pnpm test:run`
+- Server tests: `pnpm test:server`
+- Client tests: `pnpm test:client`
+- E2E: `pnpm test:e2e`
 
----
+## Architecture Notes
 
-必ず日本語で対応してください。
+- Client dependency direction: `client/app -> client/domain -> client/api`
+- Server dependency direction: `server/entry -> server/app -> (server/http|server/persistence|server/usecases) -> server/domain -> server/types`
+- API contract direction: implementation must follow TypeSpec; do not generate OpenAPI from server routes for SDK input.

@@ -253,11 +253,13 @@ components（表示部品）:
 - ルーティングと入出力変換に専念し、UseCase を呼ぶ
 - `persistence` を直接参照しない（UseCase 経由）
 - `c.env` を直接参照しない（`server-app` が注入する依存を使う）
-- OpenAPI 対象のルートは `@hono/zod-openapi` + `zod` で定義し、ルート定義＝API 契約とする
+- API 契約の正（Single Source of Truth）は TypeSpec（`packages/api-contract`）とする
+- `server-http` は TypeSpec で定義された契約に準拠して実装する（ルート追加/変更は必ず TypeSpec を先に更新する）
+- `@hono/zod-openapi` + `zod` は実装側のリクエスト検証・型安全化のために使用してよいが、契約の正にしない
 - Zod スキーマは `packages/server/http/src/schemas` に集約し、`zod` の import は同ディレクトリ内に限定する
 - `createRoute` / `OpenAPIHono` は `packages/server/http/src/routes` 以外で import しない
-- 手書きの Swagger/OpenAPI は禁止（`packages/client/api/openapi/swagger.json` は生成物）
-- ルート変更時は `pnpm --filter @cfreact-template-server/entry openapi:gen` を実行して swagger.json を更新する
+- 手書きの Swagger/OpenAPI は禁止（`packages/api-contract/openapi/openapi.json` は生成物）
+- API 変更時は `pnpm gen:api-sdk` を実行して OpenAPI と SDK を更新する
 - デモ用途のルートは追加しない（必要なら正式な API として OpenAPI 定義に含める）
 
 ### 9.3 `server-persistence`

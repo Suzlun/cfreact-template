@@ -1,6 +1,12 @@
+import { fileURLToPath } from 'node:url';
+
 import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
 
+const projectRoot = fileURLToPath(new URL('.', import.meta.url));
+const wranglerConfigPath = fileURLToPath(new URL('../../../wrangler.toml', import.meta.url));
+
 export default defineWorkersConfig({
+  root: projectRoot,
   test: {
     globals: true,
     setupFiles: ['./src/tests/setup.ts'],
@@ -18,7 +24,7 @@ export default defineWorkersConfig({
     poolOptions: {
       workers: {
         wrangler: {
-          configPath: '../../../wrangler.toml',
+          configPath: wranglerConfigPath,
         },
         miniflare: {
           // テスト用の D1, KV, R2 bindings

@@ -1,15 +1,21 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
 import {
   env as testEnv,
   createExecutionContext as createExecutionContextRaw,
   waitOnExecutionContext as waitOnExecutionContextRaw,
 } from 'cloudflare:test';
-import { drizzle } from 'drizzle-orm/d1';
 import { describe, expect, it } from 'vitest';
 
-import * as schema from '@cfreact-template/drizzle';
-
-import server from '@cfreact-template-server/entry';
+import { openApiApp } from '@cfreact-template-server/http';
+import { DrizzleUserRepository, createDrizzleClient } from '@cfreact-template-server/persistence';
 import type { Bindings } from '@cfreact-template-server/types';
+import { CreateUser, GetUser, ListUsers } from '@cfreact-template-server/usecases';
+
+interface UsersUseCases {
+  listUsers: ListUsers;
+  createUser: CreateUser;
+  getUser: GetUser;
+}
 
 interface UserResponse {
   id: number;
@@ -23,8 +29,35 @@ interface ErrorResponse {
 }
 
 const env = testEnv as unknown as Bindings;
-const app = server;
-const createDb = () => drizzle<typeof schema>(env.DB, { schema });
+
+const createUsersUseCases = () => {
+  const drizzle = createDrizzleClient(env.DB);
+  const repository = new DrizzleUserRepository(drizzle);
+
+  return {
+    listUsers: new ListUsers(repository),
+    createUser: new CreateUser(repository),
+    getUser: new GetUser(repository),
+  } satisfies UsersUseCases;
+};
+
+const app = new OpenAPIHono<{
+  Bindings: Bindings;
+  Variables: {
+    usersUseCases: UsersUseCases;
+    kv: Bindings['KV'];
+    r2: Bindings['R2'];
+  };
+}>();
+
+app.use('*', async (c, next) => {
+  c.set('usersUseCases', createUsersUseCases());
+  c.set('kv', env.KV);
+  c.set('r2', env.R2);
+  await next();
+});
+
+app.route('/', openApiApp);
 
 function createExecutionContext(): ExecutionContext {
   type Fn = () => ExecutionContext;
@@ -52,12 +85,12 @@ describe('Users API', () => {
     });
 
     it('既存ユーザーのリストを返す', async () => {
-      // テストデータを挿入
-      const db = createDb();
-      await db.insert(schema.users).values([
-        { name: 'Alice', email: 'alice@example.com' },
-        { name: 'Bob', email: 'bob@example.com' },
-      ]);
+      await env.DB.prepare('INSERT INTO users (name, email) VALUES (?, ?)')
+        .bind('Alice', 'alice@example.com')
+        .run();
+      await env.DB.prepare('INSERT INTO users (name, email) VALUES (?, ?)')
+        .bind('Bob', 'bob@example.com')
+        .run();
 
       const request = new Request('http://localhost/api/users');
       const ctx = createExecutionContext();
@@ -135,9 +168,9 @@ describe('Users API', () => {
     });
 
     it('重複したメールアドレスはエラーを返す', async () => {
-      const db = createDb();
-      const existingUser = { name: 'Existing', email: 'existing@example.com' };
-      await db.insert(schema.users).values(existingUser);
+      await env.DB.prepare('INSERT INTO users (name, email) VALUES (?, ?)')
+        .bind('Existing', 'existing@example.com')
+        .run();
 
       const duplicateUser = {
         name: 'Duplicate',
@@ -153,8 +186,8 @@ describe('Users API', () => {
       const response = await app.fetch(request, env, ctx);
       await waitOnExecutionContext(ctx);
 
-      // SQLite の UNIQUE 制約違反でエラーになる
-      expect(response.status).toBe(500);
+      // UNIQUE 制約違反は usecase の例外として 400 に変換される
+      expect(response.status).toBe(400);
     });
   });
 

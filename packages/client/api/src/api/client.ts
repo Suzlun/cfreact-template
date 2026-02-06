@@ -27,8 +27,15 @@ const helloApi = {
 /** Users API wrapper for list/create/get operations. */
 const usersApi = {
   list: async () => {
-    const { data } = await sdk.users.list();
-    return data.map((user) => toUser(user));
+    const response = (await sdk.users.list()) as { data: unknown; status: number };
+    if (response.status !== 200) {
+      const maybeError = response.data as { error?: string };
+      throw new Error(maybeError.error ?? 'Failed to fetch users');
+    }
+    if (!Array.isArray(response.data)) {
+      throw new TypeError('Invalid users response');
+    }
+    return response.data.map((user) => toUser(user as User));
   },
   create: async (payload: CreateUserPayload) => {
     const response = await sdk.users.create(payload);

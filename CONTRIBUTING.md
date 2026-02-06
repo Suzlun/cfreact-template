@@ -60,11 +60,10 @@ Husky によりコミット時に検証されます。
 
 ### API
 
-API を変更したら、OpenAPI と SDK を再生成してください。
+API 契約 (TypeSpec) を変更したら、OpenAPI と SDK を再生成してください。
 
 ```bash
-pnpm --filter @cfreact-template-server/entry openapi:gen
-pnpm --filter @cfreact-template-client/api gen
+pnpm gen:api-sdk
 ```
 
 ### DB

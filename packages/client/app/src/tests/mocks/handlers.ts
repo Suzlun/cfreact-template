@@ -1,50 +1,67 @@
 import { http, HttpResponse } from 'msw';
 
+interface MockUser {
+  id: number;
+  name: string;
+  email: string;
+  createdAt: string;
+}
+
+const initialUsers: MockUser[] = [
+  {
+    id: 1,
+    name: 'Test User 1',
+    email: 'test1@example.com',
+    createdAt: '2024-01-01T00:00:00.000Z',
+  },
+  {
+    id: 2,
+    name: 'Test User 2',
+    email: 'test2@example.com',
+    createdAt: '2024-01-02T00:00:00.000Z',
+  },
+];
+
+let users: MockUser[] = [...initialUsers];
+
+const resetMockData = () => {
+  users = [...initialUsers];
+};
+
 /** MSW handlers for client-side API mocking. */
 const handlers = [
   // GET /api/users
-  http.get('http://localhost:8787/api/users', () => {
-    return HttpResponse.json([
-      {
-        id: 1,
-        name: 'Test User 1',
-        email: 'test1@example.com',
-        createdAt: '2024-01-01T00:00:00.000Z',
-      },
-      {
-        id: 2,
-        name: 'Test User 2',
-        email: 'test2@example.com',
-        createdAt: '2024-01-02T00:00:00.000Z',
-      },
-    ]);
+  http.get('/api/users', () => {
+    return HttpResponse.json(users);
   }),
 
   // POST /api/users
-  http.post('http://localhost:8787/api/users', async ({ request }) => {
+  http.post('/api/users', async ({ request }) => {
+    // Artificial delay so UI can show a loading state.
+    await new Promise((resolve) => setTimeout(resolve, 75));
+
     const body = (await request.json()) as { name: string; email: string };
-    return HttpResponse.json(
-      {
-        id: 3,
-        name: body.name,
-        email: body.email,
-        createdAt: new Date().toISOString(),
-      },
-      { status: 201 }
-    );
+    const nextId = Math.max(0, ...users.map((u) => u.id)) + 1;
+    const newUser: MockUser = {
+      id: nextId,
+      name: body.name,
+      email: body.email,
+      createdAt: new Date().toISOString(),
+    };
+    users = [...users, newUser];
+    return HttpResponse.json(newUser, { status: 201 });
   }),
 
   // GET /api/users/:id
-  http.get('http://localhost:8787/api/users/:id', ({ params }) => {
+  http.get('/api/users/:id', ({ params }) => {
     const { id } = params;
-    const idString = String(id ?? '');
-    return HttpResponse.json({
-      id: Number(id),
-      name: `Test User ${idString}`,
-      email: `test${idString}@example.com`,
-      createdAt: '2024-01-01T00:00:00.000Z',
-    });
+    const userId = Number(id);
+    const found = users.find((u) => u.id === userId);
+    if (found == null) {
+      return HttpResponse.json({ error: 'Not Found' }, { status: 404 });
+    }
+    return HttpResponse.json(found);
   }),
 ];
 
-export { handlers };
+export { handlers, resetMockData };

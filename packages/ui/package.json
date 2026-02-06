@@ -21,9 +21,11 @@
     "@fontsource/oxanium": "^5.2.8",
     "@fontsource/zen-kaku-gothic-new": "^5.2.7",
     "@mui/material": "^7.3.6",
-    "dompurify": "^3.3.1",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "dompurify": "^3.3.1"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
@@ -31,10 +33,12 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
-    "@vitest/coverage-v8": "^4.0.16",
+    "@vitest/coverage-v8": "^3.2.4",
     "jsdom": "^27.4.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
-    "vitest": "^4.0.16"
+    "vitest": "^3.2.4"
   }
 }

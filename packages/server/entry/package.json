@@ -11,8 +11,7 @@
     "dev": "wrangler dev --ip 0.0.0.0",
     "build": "tsc",
     "deploy": "wrangler deploy",
-    "check": "tsc --noEmit",
-    "openapi:gen": "tsx ../scripts/generate-openapi.ts"
+    "check": "tsc --noEmit"
   },
   "dependencies": {
     "@cfreact-template-server/app": "workspace:*",

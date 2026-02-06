@@ -10,6 +10,7 @@
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
         "ms-azuretools.vscode-docker",
+        "typespec.typespec-vscode",
         "vitest.explorer",
         "ms-playwright.playwright",
         "usernamehw.errorlens",
@@ -20,6 +21,7 @@
         "dsznajder.es7-react-js-snippets",
         "yoavbls.pretty-ts-errors",
         "mikestead.dotenv",
+        "typespec.typespec-vscode",
         "openai.chatgpt"
       ],
       "settings": {

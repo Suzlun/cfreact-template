@@ -49,7 +49,7 @@ describe('UsersPage', () => {
     it('ユーザーが0件の場合、メッセージが表示される', async () => {
       // 空の配列を返すようにモックを上書き
       server.use(
-        http.get('http://localhost:8787/api/users', () => {
+        http.get('/api/users', () => {
           return HttpResponse.json([]);
         })
       );
@@ -69,7 +69,7 @@ describe('UsersPage', () => {
     it('API エラー時にエラーメッセージが表示される', async () => {
       // エラーを返すようにモックを上書き
       server.use(
-        http.get('http://localhost:8787/api/users', () => {
+        http.get('/api/users', () => {
           return HttpResponse.json({ message: 'Failed to fetch users' }, { status: 500 });
         })
       );
@@ -127,19 +127,23 @@ describe('UsersPage', () => {
         expect(nameInput).toHaveValue('');
         expect(emailInput).toHaveValue('');
       });
+
+      // 新しいユーザーが一覧に表示される
+      await waitFor(() => {
+        expect(screen.getByText('New Test User')).toBeInTheDocument();
+        expect(screen.getByText('newuser@example.com')).toBeInTheDocument();
+      });
     });
 
     it('空のフォームは送信できない', async () => {
-      const user = userEvent.setup();
-
       await waitFor(() => {
         expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
       });
 
       const submitButton = screen.getByRole('button', { name: /create user/i });
 
-      // 空のまま送信を試みる
-      await user.click(submitButton);
+      // 入力が無効な場合は送信ボタンが disabled になる
+      expect(submitButton).toBeDisabled();
 
       // required属性によりブラウザの検証が働くため、実際には送信されない
       // この動作はブラウザの機能なので、ここではフォームの検証属性を確認

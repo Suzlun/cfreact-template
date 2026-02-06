@@ -11,7 +11,7 @@
   },
   "scripts": {
     "gen": "orval --config ./orval.config.ts",
-    "types": "openapi-typescript ./openapi/swagger.json -o src/types/openapi.ts"
+    "types": "openapi-typescript ../../api-contract/openapi/openapi.json -o src/types/openapi.ts"
   },
   "devDependencies": {
     "openapi-typescript": "^7.10.1",

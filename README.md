@@ -37,6 +37,7 @@
 ```
 cfreact-template/
 ├── packages/
+│   ├── api-contract/              # TypeSpec (API 契約) - OpenAPI の正
 │   ├── client/
 │   │   ├── app/                  # プレゼンテーション層 (pages/components/router) - Vite
 │   │   ├── domain/               # ドメインフック層 (TanStack Query 等はここでのみ)
@@ -143,19 +144,22 @@ cfreact-template/
    - バックエンド API: http://localhost:8787/api
    - Drizzle Studio: `pnpm migrate:studio`
 
-### API SDK の再生成
+### API SDK の再生成 (TypeSpec -> OpenAPI -> SDK)
 
-サーバーの OpenAPI (swagger.json) からクライアント SDK（`packages/client/api`）を自動生成します。
+このテンプレートでは TypeSpec を API 契約の正（Single Source of Truth）とし、
+TypeSpec から OpenAPI を生成してクライアント SDK（`packages/client/api`）を自動生成します。
 
 ```bash
-# OpenAPI (swagger.json) をサーバー側で生成
-pnpm --filter @cfreact-template-server/entry openapi:gen
-
-# 生成された swagger.json をもとに SDK を再生成
-pnpm --filter @cfreact-template-client/api gen
+# TypeSpec から OpenAPI を生成し、SDK を再生成
+pnpm gen:api-sdk
 ```
 
-※ `packages/server/scripts/generate-openapi.ts` で swagger.json を生成し、`packages/client/api` で `orval` が SDK を出力します。
+個別に実行する場合：
+
+```bash
+pnpm gen:openapi
+pnpm --filter @cfreact-template-client/api gen
+```
 
 ### 方法 2: 手動セットアップ
 
@@ -299,7 +303,7 @@ pnpm dev:all
 - `POST /api/users` - 新しいユーザーを作成
 - `GET /api/users/:id` - ID でユーザーを取得
 
-詳細な API 仕様は `packages/client/api/openapi/swagger.json` を参照してください。
+詳細な API 仕様は `packages/api-contract/openapi/openapi.json` を参照してください。
 
 ## デプロイ
 
