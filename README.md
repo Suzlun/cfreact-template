@@ -295,13 +295,13 @@ pnpm dev:all
 
 ### Hello
 
-- `GET /api/hello` - シンプルなヘルスチェック
+- `GET /api/v1/hello` - シンプルなヘルスチェック
 
 ### Users
 
-- `GET /api/users` - すべてのユーザーを一覧表示
-- `POST /api/users` - 新しいユーザーを作成
-- `GET /api/users/:id` - ID でユーザーを取得
+- `GET /api/v1/users` - すべてのユーザーを一覧表示
+- `POST /api/v1/users` - 新しいユーザーを作成
+- `GET /api/v1/users/:id` - ID でユーザーを取得
 
 詳細な API 仕様は `packages/api-contract/openapi/openapi.json` を参照してください。
 

@@ -72,9 +72,9 @@ function waitOnExecutionContext(ctx: ExecutionContext): Promise<void> {
 }
 
 describe('Users API', () => {
-  describe('GET /api/users', () => {
+  describe('GET /api/v1/users', () => {
     it('空のリストを返す', async () => {
-      const request = new Request('http://localhost/api/users');
+      const request = new Request('http://localhost/api/v1/users');
       const ctx = createExecutionContext();
       const response = await app.fetch(request, env, ctx);
       await waitOnExecutionContext(ctx);
@@ -92,7 +92,7 @@ describe('Users API', () => {
         .bind('Bob', 'bob@example.com')
         .run();
 
-      const request = new Request('http://localhost/api/users');
+      const request = new Request('http://localhost/api/v1/users');
       const ctx = createExecutionContext();
       const response = await app.fetch(request, env, ctx);
       await waitOnExecutionContext(ctx);
@@ -105,14 +105,14 @@ describe('Users API', () => {
     });
   });
 
-  describe('POST /api/users', () => {
+  describe('POST /api/v1/users', () => {
     it('新しいユーザーを作成する', async () => {
       const newUser = {
         name: 'Charlie',
         email: 'charlie@example.com',
       };
 
-      const request = new Request('http://localhost/api/users', {
+      const request = new Request('http://localhost/api/v1/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newUser),
@@ -133,7 +133,7 @@ describe('Users API', () => {
         email: 'test@example.com',
       };
 
-      const request = new Request('http://localhost/api/users', {
+      const request = new Request('http://localhost/api/v1/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(invalidUser),
@@ -153,7 +153,7 @@ describe('Users API', () => {
         email: '',
       };
 
-      const request = new Request('http://localhost/api/users', {
+      const request = new Request('http://localhost/api/v1/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(invalidUser),
@@ -177,7 +177,7 @@ describe('Users API', () => {
         email: 'existing@example.com', // 同じメールアドレス
       };
 
-      const request = new Request('http://localhost/api/users', {
+      const request = new Request('http://localhost/api/v1/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(duplicateUser),
@@ -191,9 +191,9 @@ describe('Users API', () => {
     });
   });
 
-  describe('GET /api/users/:id', () => {
+  describe('GET /api/v1/users/:id', () => {
     it('指定されたIDのユーザーを返す', async () => {
-      const createRequest = new Request('http://localhost/api/users', {
+      const createRequest = new Request('http://localhost/api/v1/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: 'David', email: 'david@example.com' }),
@@ -205,7 +205,7 @@ describe('Users API', () => {
       expect(createResponse.status).toBe(201);
       const createdUser = await createResponse.json<UserResponse>();
 
-      const request = new Request(`http://localhost/api/users/${String(createdUser.id)}`);
+      const request = new Request(`http://localhost/api/v1/users/${String(createdUser.id)}`);
       const ctx = createExecutionContext();
       const response = await app.fetch(request, env, ctx);
       await waitOnExecutionContext(ctx);
@@ -220,7 +220,7 @@ describe('Users API', () => {
     });
 
     it('存在しないIDの場合は404を返す', async () => {
-      const request = new Request('http://localhost/api/users/999');
+      const request = new Request('http://localhost/api/v1/users/999');
       const ctx = createExecutionContext();
       const response = await app.fetch(request, env, ctx);
       await waitOnExecutionContext(ctx);

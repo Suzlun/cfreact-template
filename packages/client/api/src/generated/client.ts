@@ -39,7 +39,7 @@ export type getHelloResponseSuccess = getHelloResponse200 & {
 export type getHelloResponse = getHelloResponseSuccess;
 
 export const getGetHelloUrl = () => {
-  return `/api/hello`;
+  return `/api/v1/hello`;
 };
 
 export const getHello = async (options?: RequestInit): Promise<getHelloResponse> => {
@@ -68,7 +68,7 @@ export type listUsersResponseSuccess = listUsersResponse200 & {
 export type listUsersResponse = listUsersResponseSuccess;
 
 export const getListUsersUrl = () => {
-  return `/api/users`;
+  return `/api/v1/users`;
 };
 
 export const listUsers = async (options?: RequestInit): Promise<listUsersResponse> => {
@@ -106,7 +106,7 @@ export type createUserResponseError = createUserResponse400 & {
 export type createUserResponse = createUserResponseSuccess | createUserResponseError;
 
 export const getCreateUserUrl = () => {
-  return `/api/users`;
+  return `/api/v1/users`;
 };
 
 export const createUser = async (
@@ -154,7 +154,7 @@ export type getUserResponseError = (getUserResponse400 | getUserResponse404) & {
 export type getUserResponse = getUserResponseSuccess | getUserResponseError;
 
 export const getGetUserUrl = (id: number) => {
-  return `/api/users/${id}`;
+  return `/api/v1/users/${id}`;
 };
 
 export const getUser = async (id: number, options?: RequestInit): Promise<getUserResponse> => {

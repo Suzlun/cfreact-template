@@ -13,7 +13,7 @@
     }
   ],
   "paths": {
-    "/api/hello": {
+    "/api/v1/hello": {
       "get": {
         "operationId": "getHello",
         "summary": "Returns greeting",
@@ -33,7 +33,7 @@
         "tags": ["hello"]
       }
     },
-    "/api/users": {
+    "/api/v1/users": {
       "get": {
         "operationId": "listUsers",
         "summary": "List all users",
@@ -94,7 +94,7 @@
         }
       }
     },
-    "/api/users/{id}": {
+    "/api/v1/users/{id}": {
       "get": {
         "operationId": "getUser",
         "summary": "Get a user by id",
