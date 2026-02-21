@@ -80,6 +80,7 @@ RUN npm install -g wrangler@4
 
 # OpenCode CLI をグローバルインストール
 RUN npm install -g opencode-ai@latest
+RUN opencode upgrade
 
 # OpenSpec CLI をグローバルインストール
 RUN npm install -g @fission-ai/openspec@latest
