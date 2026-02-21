@@ -2,15 +2,14 @@ import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 
 import type { AppVariables, UsersUseCases } from '@cfreact-template-server/app';
 import type { User } from '@cfreact-template-server/domain';
-import type { Bindings } from '@cfreact-template-server/types';
-
 import {
   createUserInputSchema,
   errorResponseSchema,
   userIdParamsSchema,
   userResponseSchema,
   usersListResponseSchema,
-} from '../schemas';
+} from '@cfreact-template-server/http/schemas';
+import type { Bindings } from '@cfreact-template-server/types';
 
 const listUsersRoute = createRoute({
   method: 'get',

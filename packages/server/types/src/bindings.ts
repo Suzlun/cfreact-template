@@ -1,3 +1,5 @@
+import type { D1Database, KVNamespace, R2Bucket } from '@cloudflare/workers-types';
+
 /** Cloudflare bindings consumed by the worker. */
 export interface Bindings {
   DB: D1Database;
