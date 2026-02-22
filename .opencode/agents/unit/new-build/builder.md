@@ -2,7 +2,7 @@
 description: Build agent helper
 mode: subagent
 hidden: false
-model: openai/gpt-5.2-codex
+model: openai/gpt-5.3-codex
 reasoningEffort: 'medium'
 permission:
   edit: allow

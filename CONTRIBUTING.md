@@ -6,6 +6,9 @@
 
 - コーディング規則（一次資料）: `docs/CODING_STANDARDS.md`
   - `eslint.config.js` は規約の自動検査（実装）として追従させます
+- 仕様（契約）: `openspec/specs/**/spec.md`
+  - `pnpm lint` で `openspec validate --all --strict` と Scenario ID カバレッジ検査が走ります
+  - `openspec/changes/**` の delta spec は、`/opsx-sync` または `openspec archive` で main spec に反映してから検査対象になります
 
 ## 前提環境
 
@@ -55,6 +58,9 @@ Husky によりコミット時に検証されます。
 - “例外” は最小にする（ESLint disable は説明必須。理由が妥当かレビュー対象）
 - 自動生成ファイルは手で直さない
   - 例: `packages/client/api/src/generated/**`
+- 仕様が変わる変更は spec とテストをセットで更新する
+  - `openspec/specs/**` の `#### Scenario: ... (..-S001)` に対して、テストタイトルに `[...-S001]` を含める
+  - 自動化できない Scenario は `Tags: manual` を明示する
 
 ## 自動生成
 

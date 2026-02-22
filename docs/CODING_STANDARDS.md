@@ -290,3 +290,63 @@ components（表示部品）:
 - 目的（解決したい問題）と影響範囲を Issue/PR に書く
 - 本書を更新し、必要なら自動検査（ESLint/設定）も追従させる
 - 既存コードに影響がある場合は移行方針を明記する
+
+## 13. OpenSpec: 仕様を自動テストで担保する
+
+このリポジトリでは OpenSpec の spec を「振る舞いの契約」として扱い、実装が spec から逸脱しないことを Lint/CI で検査します。
+
+### 13.1 Spec の置き場所
+
+- 正（Source of Truth）: `openspec/specs/<capability>/spec.md`
+- 変更提案（作業中）: `openspec/changes/<change>/specs/<capability>/spec.md`（delta spec）
+
+### 13.2 Scenario ID（必須）
+
+全ての Scenario は安定 ID を持ちます。ID はレビュー/テスト/追跡のための鍵です。
+
+- Scenario 見出しは末尾に ID を付ける
+  - `#### Scenario: ... (USER-MGMT-S001)`
+- ID 形式（固定）: `^[A-Z0-9]+(?:-[A-Z0-9]+)*-S\d{3,}$`
+  - 例: `AUTH-SESSION-S001`, `USER-MGMT-S012`
+
+### 13.3 テストでの参照（必須）
+
+自動テストは Scenario ID をタイトルに含めて、spec と結び付けます。
+
+- Vitest/Jest:
+  - `it('[USER-MGMT-S001] ...', async () => { ... })`
+  - `test('[USER-MGMT-S001] ...', async () => { ... })`
+- Playwright:
+  - `test('[USER-MGMT-S001] ...', async ({ page }) => { ... })`
+
+### 13.4 例外（manual）
+
+自動化が現実的でない Scenario は明示的に manual 扱いにします（暗黙の未テストは不可）。
+
+- Scenario 見出し直下に `Tags: manual` を追加する
+
+例:
+
+```md
+#### Scenario: Third-party payment settles eventually (PAYMENTS-S014)
+
+Tags: manual
+
+- GIVEN ...
+- WHEN ...
+- THEN ...
+```
+
+### 13.5 自動検査（Lint/CI）
+
+`pnpm lint` は以下を検査します。
+
+- `openspec validate --all --strict`（OpenSpec の構造検証）
+- Scenario ID カバレッジ:
+  - spec に存在する Scenario ID が、テストコードから参照されている
+  - テストが参照している Scenario ID が、spec 側に存在する
+  - Scenario ID が重複しない
+
+注: Scenario ID カバレッジの対象は `openspec/specs/**` です。`openspec/changes/**` の delta spec は、`/opsx-sync` または `openspec archive` 等で main spec に反映した上で検査対象になります。
+
+実装や仕様を変更したら、spec とテストをセットで更新してください。

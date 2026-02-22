@@ -1,5 +1,27 @@
 schema: spec-driven
 
+context: |
+  Repository: cfreact-template
+  Tech stack: TypeScript, React, Cloudflare Workers, Hono, Drizzle ORM
+  Testing: Vitest (unit/integration), Playwright (e2e)
+
+  Spec -> Test contract:
+  - Specs live at openspec/specs/<capability>/spec.md (source of truth)
+  - Every Scenario heading MUST end with a stable Scenario ID in parentheses:
+    - Example: #### Scenario: Create a user (USER-MGMT-S001)
+  - Scenario ID format: ^[A-Z0-9]+(?:-[A-Z0-9]+)*-S\d{3,}$
+  - Automated tests MUST reference Scenario IDs in test titles using brackets:
+    - Example: it('[USER-MGMT-S001] ...', ...)
+  - If a scenario cannot be automated, mark it explicitly with: Tags: manual
+
+rules:
+  specs:
+    - Every Scenario heading MUST include a Scenario ID suffix in parentheses.
+    - Prefer Given/When/Then bullets. Keep scenarios testable and observable.
+    - If a scenario cannot be automated, include `Tags: manual` and explain why in the change proposal/PR.
+  tasks:
+    - For each ADDED/MODIFIED Scenario ID, include a task to add/update automated tests that reference the Scenario ID.
+
 # Project context (optional)
 # This is shown to AI when creating artifacts.
 # Add your tech stack, conventions, style guides, domain knowledge, etc.
