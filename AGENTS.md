@@ -1,3 +1,7 @@
+## Primary Rules
+
+- Think in English; respond in Japanese.
+
 ## Commands
 
 - Install: `corepack enable && pnpm install`

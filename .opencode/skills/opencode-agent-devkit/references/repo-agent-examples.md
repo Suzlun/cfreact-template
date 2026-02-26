@@ -7,13 +7,13 @@ Useful examples:
 - `.opencode/agents/orchest.md`
   - Primary delegator with strict permissions.
   - Uses `permission.task` allowlist to prevent unexpected agents / infinite loops.
-- `.opencode/agents/openspec-applier.md`
+- `.opencode/agents/openspec/applier.md`
   - Delegate-only orchestrator subagent.
-  - Good example of a narrow Task allowlist (`planner`/`builder`/`build-reviewer`).
-- `.opencode/agents/builder.md`
+  - Good example of a narrow Task allowlist (`planner`/`unit/build/builder`/`unit/build/reviewer`).
+- `.opencode/agents/unit/build/builder.md`
   - Implementer subagent.
   - Uses `permission.skill` allowlist and a scoped `permission.bash` policy.
-- `.opencode/agents/build-reviewer.md`
+- `.opencode/agents/unit/build/reviewer.md`
   - Hidden review-only subagent.
   - Good "final verdict" output contract.
 

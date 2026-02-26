@@ -56,3 +56,6 @@ coverage/
 ms-playwright/.links
 playwright-report/
 test-results/
+
+#opencode
+!.opencode/agents/unit/build

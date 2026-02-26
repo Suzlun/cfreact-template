@@ -13,7 +13,7 @@ $ARGUMENTS
 Goal
 
 - /change-builder で入力された仕様設計・ドメイン設計を基に、プロジェクト全体を考慮した推奨 Spec 分割（capability）と推奨 Changes 分割（change-id + 依存関係 + 並列グループ）を提案する
-- ユーザーが承諾したら、`openspec-proposer` サブエージェントを呼び出して各 change を作成する（並列可能なものは並列）
+- ユーザーが承諾したら、`openspec/proposer` サブエージェントを呼び出して各 change を作成する（並列可能なものは並列）
 - 全 change の完成（validate PASS）を確認して報告する
 
 Hard rules
@@ -78,7 +78,7 @@ Process
 
 - Group changes into parallelizable batches based on dependencies.
 - For each batch, call `task` in parallel:
-  - `subagent_type: openspec-proposer`
+  - `subagent_type: openspec/proposer`
   - Prompt includes a YAML `ChangePlan` per change.
 
 7. Completion check and report

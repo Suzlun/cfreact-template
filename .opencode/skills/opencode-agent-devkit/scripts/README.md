@@ -29,8 +29,8 @@ python3 .opencode/skills/opencode-agent-devkit/scripts/new_agent.py \
   --mode subagent \
   --permission-preset review-subagent \
   --task-allow planner \
-  --task-allow builder \
-  --task-allow build-reviewer
+  --task-allow unit/build/builder \
+  --task-allow unit/build/reviewer
 ```
 
 ```bash
