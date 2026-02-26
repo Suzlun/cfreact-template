@@ -5,7 +5,8 @@
   "type": "module",
   "main": "src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./schemas": "./src/schemas/index.ts"
   },
   "dependencies": {
     "@cfreact-template-server/domain": "workspace:*",
@@ -22,5 +23,8 @@
     "@cfreact-template-server/persistence": "workspace:*",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
+  },
+  "scripts": {
+    "check": "tsc --noEmit"
   }
 }

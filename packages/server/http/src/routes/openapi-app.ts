@@ -25,7 +25,7 @@ const validationErrorHook: Hook<unknown, ApiEnv, string, Response | undefined> =
 /** OpenAPI-enabled Hono app for API routes. */
 const openApiApp = new OpenAPIHono<ApiEnv>({
   defaultHook: validationErrorHook,
-}).basePath('/api');
+}).basePath('/api/v1');
 
 registerHelloRoutes(openApiApp);
 registerUsersRoutes(openApiApp);

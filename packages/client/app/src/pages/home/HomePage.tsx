@@ -85,7 +85,7 @@ function ApiHealthCard({ data }: { data: HelloData }) {
     <Card>
       <CardHeader
         title="API Health"
-        subheader="Live response from /api/hello"
+        subheader="Live response from /api/v1/hello"
         slotProps={{ title: { sx: { fontWeight: 700 } } }}
       />
       <CardContent>

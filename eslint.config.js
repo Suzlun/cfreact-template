@@ -1270,6 +1270,11 @@ export default tseslint.config(
           ],
           patterns: [
             {
+              group: ['../**'],
+              message:
+                '@cfreact-template-server/* エイリアスでパッケージ内の上位ディレクトリを参照してください。',
+            },
+            {
               group: [
                 '../persistence/**',
                 '../../persistence/**',
@@ -1288,6 +1293,12 @@ export default tseslint.config(
           message: 'HTTP層から直接c.envを参照せず、appレイヤが注入する依存を利用してください。',
         },
       ],
+    },
+  },
+  {
+    files: ['packages/server/http/src/**/*.test.ts', 'packages/server/http/src/**/*.test.tsx'],
+    rules: {
+      'no-restricted-imports': 'off',
     },
   },
   {

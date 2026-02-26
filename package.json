@@ -34,12 +34,15 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
-    "lint": "eslint .",
+    "lint": "pnpm lint:eslint && pnpm lint:openspec",
+    "lint:eslint": "eslint .",
+    "lint:openspec": "pnpm exec openspec validate --all --strict && node scripts/openspec/verify-scenario-coverage.mjs",
     "format": "pnpm --filter @cfreact-template/api-contract format && prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "pnpm --filter @cfreact-template/api-contract format:check && prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky"
   },
   "devDependencies": {
+    "@fission-ai/openspec": "^1.1.1",
     "@commitlint/cli": "^20.3.0",
     "@commitlint/config-conventional": "^20.3.0",
     "@cloudflare/vitest-pool-workers": "^0.12.10",

@@ -49,7 +49,7 @@ describe('UsersPage', () => {
     it('ユーザーが0件の場合、メッセージが表示される', async () => {
       // 空の配列を返すようにモックを上書き
       server.use(
-        http.get('/api/users', () => {
+        http.get('/api/v1/users', () => {
           return HttpResponse.json([]);
         })
       );
@@ -69,7 +69,7 @@ describe('UsersPage', () => {
     it('API エラー時にエラーメッセージが表示される', async () => {
       // エラーを返すようにモックを上書き
       server.use(
-        http.get('/api/users', () => {
+        http.get('/api/v1/users', () => {
           return HttpResponse.json({ message: 'Failed to fetch users' }, { status: 500 });
         })
       );

@@ -30,13 +30,13 @@ const resetMockData = () => {
 
 /** MSW handlers for client-side API mocking. */
 const handlers = [
-  // GET /api/users
-  http.get('/api/users', () => {
+  // GET /api/v1/users
+  http.get('/api/v1/users', () => {
     return HttpResponse.json(users);
   }),
 
-  // POST /api/users
-  http.post('/api/users', async ({ request }) => {
+  // POST /api/v1/users
+  http.post('/api/v1/users', async ({ request }) => {
     // Artificial delay so UI can show a loading state.
     await new Promise((resolve) => setTimeout(resolve, 75));
 
@@ -52,8 +52,8 @@ const handlers = [
     return HttpResponse.json(newUser, { status: 201 });
   }),
 
-  // GET /api/users/:id
-  http.get('/api/users/:id', ({ params }) => {
+  // GET /api/v1/users/:id
+  http.get('/api/v1/users/:id', ({ params }) => {
     const { id } = params;
     const userId = Number(id);
     const found = users.find((u) => u.id === userId);
