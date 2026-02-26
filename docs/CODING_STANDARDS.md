@@ -1,352 +1,1146 @@
 # コーディング規則
 
-本書はこのリポジトリにおける「コーディング規則（憲法）」です。  
-ESLint/TypeScript/Prettier は規則を自動で検査・整形するための手段であり、規則そのものは本書で定義します。
+本書は lint、CI、git hooks が機械的に強制するルールだけを、人が一目で分かる形にまとめたものです。設定ファイルに書かれていないルールは、このリポジトリでは強制されません。
 
 ## 1. 本書の位置付け
 
-- 正（Source of Truth）: `docs/CODING_STANDARDS.md`
-- 自動検査（追従物）: `eslint.config.js` ほか各種設定
-- 乖離が見つかった場合は、意図に応じて **本書 → 設定 → 実装** の順で整合させる
+- 正は設定と自動実行
+- 本書は設定から抜き出した要約
+- 乖離を見つけたら `opencode run --command rules.update-coding-standard` を実行して更新する
 
 ## 2. 目的
 
-- 依存方向と責務を固定し、変更に強い構造を維持する
-- 画面/UI、HTTP、永続化、ドメインロジックを混ぜない
-- 型安全性・セキュリティ・可読性を “個人差” ではなく “規約” にする
+- 変更しても壊れにくい依存方向を強制する
+- 生成物の改変や契約のズレを自動で検出する
+- 初心者でも失敗しない最小ルールを明文化する
 
 ## 3. プロジェクト構造
 
-### 3.1 クライアント
+この構造は依存方向チェックの入力として使われます。
 
-- `packages/client/app`
-  - UI 層（pages/components/router）
-  - 表示・画面遷移・最小限の状態（原則 `useState`）を担当
-- `packages/client/domain`
-  - ドメインフック層（TanStack Query 等による状態/副作用/キャッシュ）
-  - UI から見た「画面ロジックの API」を提供
-- `packages/client/api`
-  - 通信/SDK 層（OpenAPI 生成物 + 薄いラッパー）
-  - React に依存しない
+ルール
 
-### 3.2 サーバー
+- 依存方向チェックは以下のパスを層として扱う
+  - 強制: `pnpm lint` → `eslint .` → `settings['boundaries/elements']` → `eslint.config.js`
+  - NG例
+    - `packages/server/unknown/src/foo.ts` のような層外に置くと、依存方向チェックの層に含まれない
+  - OK例
+    - `packages/server/usecases/src/foo.ts` のように、層に一致する場所へ置く
 
-- `packages/server/entry`
-  - 起動点（Workers のエントリーポイント）
-  - 役割: `server-app` を呼ぶことに専念する（業務ロジックを書かない）
-- `packages/server/app`
-  - 配線/DI（依存注入・組み立て）
-  - 役割: `env` や実装差し替えをここで閉じる。`server-http` へ依存を注入する
-- `packages/server/http`
-  - HTTP アダプタ（入出力変換・ルーティング）
-  - 役割: HTTP → ドメイン入力へ変換し UseCase を呼ぶ。永続化に直接触らない
-- `packages/server/usecases`
-  - ユースケース（アプリケーションの振る舞い）
-  - 役割: ドメインを操作し、必要なポート（Repository 等）を介して外側へ要求する
-- `packages/server/domain`
-  - ドメイン（最も安定した中心）
-  - 役割: エンティティ/値/ドメインルール/Repository IF 等を定義する
-- `packages/server/persistence`
-  - 永続化アダプタ（DB/外部 I/O 実装）
-  - 役割: Domain のインターフェースを実装し、DB 等の具体に接続する
-- `packages/server/types`
-  - 共有型（bindings 等）
-  - 役割: 型定義を中心に置く（副作用や I/O を置かない）
+層の定義
 
-### 3.3 共通パッケージ
+- サーバー
+  - `server-entry`: `packages/server/entry/src/index.ts`
+  - `server-app`: `packages/server/app/src/**/*`
+  - `server-http`: `packages/server/http/src/**/*`
+  - `server-persistence`: `packages/server/persistence/src/**/*`
+  - `server-domain`: `packages/server/domain/src/**/*`
+  - `server-usecases`: `packages/server/usecases/src/**/*`
+  - `server-types`: `packages/server/types/src/**/*`
+- クライアント
+  - `client-api`: `packages/client/api/src/**/*`
+  - `client-domain`: `packages/client/domain/src/**/*`
+  - `client-app`: `packages/client/app/src/**/*`
+- 共通
+  - `ui`: `packages/ui/src/**/*`
+  - `drizzle`: `packages/drizzle/src/**/*`
+- 契約生成物
+  - `api-contract-openapi`: `packages/api-contract/openapi/openapi.json`
 
-- `packages/ui`（UI 部品/テーマ。`@ui/*` を使用）
-- `packages/drizzle`（スキーマ等。`@drizzle/*` を使用）
+ルール
+
+- 層に属さない TS/TSX ファイルを作らない
+  - 強制: `pnpm lint` → `eslint .` → `rules['boundaries/no-unknown-files']` → `eslint.config.js`
+  - 対象
+    - `packages/server/**/src/**/*.{ts,tsx}`
+    - `packages/client/**/src/**/*.{ts,tsx}`
+    - `packages/ui/src/**/*.{ts,tsx}`
+    - `packages/drizzle/src/**/*.{ts,tsx}`
+  - NG例
+    - `packages/server/foo/src/x.ts`（どの層にも一致しない）
+  - OK例
+    - `packages/server/usecases/src/x.ts`（層に一致する）
 
 ## 4. 依存方向
 
-依存方向はこのプロジェクトの根幹です。例外は最小にしてください。
+ルール
 
-### 4.1 クライアント
+- 許可されていない層への import をしない
+  - 強制: `pnpm lint` → `eslint .` → `rules['boundaries/element-types']` → `eslint.config.js`
+  - 補足
+    - このリポジトリは default を禁止にしており、許可表にある依存だけを許可する
+  - NG例
+    ```ts
+    // packages/server/domain/src/foo.ts
+    import { routes } from '@cfreact-template-server/http';
+    ```
+  - OK例
+    ```ts
+    // packages/server/domain/src/foo.ts
+    import type { Something } from '@cfreact-template-server/types';
+    ```
 
-- `app → domain → api` の順に依存する
-- `app` から `api` を直接参照しない（必ず `domain` を介す）
-- `domain` は `app`（pages/components）に依存しない
+許可表
 
-### 4.2 サーバー
+- サーバー
+  - `server-domain` → `server-domain`, `server-types`
+  - `server-types` → `server-types`
+  - `server-usecases` → `server-domain`, `server-usecases`, `server-types`
+  - `server-persistence` → `server-usecases`, `server-domain`, `server-types`, `server-persistence`, `drizzle`
+  - `server-http` → `server-http`, `server-usecases`, `server-domain`, `server-types`, `api-contract-openapi`
+  - `server-app` → `server-app`, `server-http`, `server-persistence`, `server-usecases`, `server-domain`, `server-types`
+  - `server-entry` → `server-app`
+- クライアント
+  - `client-api` → `client-api`
+  - `client-domain` → `client-domain`, `client-api`
+  - `client-app` → `client-app`, `client-domain`, `ui`
+- 共通
+  - `ui` → `ui`
+  - `drizzle` → `drizzle`
 
-- `entry → app → (http/persistence/usecases) → domain → types` の順に依存する
-- `domain` / `usecases` はインフラに依存しない（HTTP/DB/フレームワークを知らない）
-- `http` は `persistence` を直接参照しない（UseCase 経由にする）
+ルール
 
-### 4.3 依存方向の許可表
-
-サーバー:
-
-| from                 | 許可                                                                                    |
-| -------------------- | --------------------------------------------------------------------------------------- |
-| `server-domain`      | `server-domain`, `server-types`                                                         |
-| `server-types`       | `server-types`                                                                          |
-| `server-usecases`    | `server-domain`, `server-usecases`, `server-types`                                      |
-| `server-persistence` | `server-usecases`, `server-domain`, `server-types`, `server-persistence`                |
-| `server-http`        | `server-http`, `server-usecases`, `server-domain`, `server-types`                       |
-| `server-app`         | `server-http`, `server-persistence`, `server-usecases`, `server-domain`, `server-types` |
-| `server-entry`       | `server-app`                                                                            |
-
-クライアント:
-
-| from            | 許可                          |
-| --------------- | ----------------------------- |
-| `client-api`    | `client-api`                  |
-| `client-domain` | `client-domain`, `client-api` |
-| `client-app`    | `client-app`, `client-domain` |
+- 層から層外ファイルを import しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['boundaries/no-unknown']` → `eslint.config.js`
+  - NG例
+    ```ts
+    // packages/server/http/src/x.ts
+    import something from '../../../../scripts/something';
+    ```
+  - OK例
+    ```ts
+    // 層に属する場所へ移動してから import する
+    ```
 
 ## 5. import / export
 
-### 5.1 エイリアスを使う
+ルール
 
-- サーバー（`packages/server/**/src`）は上位ディレクトリ参照（`../`）を禁止し、`@cfreact-template-server/*` を使う
-- `packages/ui/src` は `@ui/*` を使う
-- `packages/drizzle/src` は `@drizzle/*` を使う
+- import の拡張子を付けない
+  - 強制: `pnpm lint` → `eslint .` → `rules['import/extensions']` → `eslint.config.js`
+  - NG例
+    ```ts
+    import { x } from './x.ts';
+    ```
+  - OK例
+    ```ts
+    import { x } from './x';
+    ```
 
-狙い: 依存関係を読みやすくし、移動/分割に強くする。
+- `packages/**/*.{ts,tsx}` から `.js/.mjs/.cjs` を import しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    import { foo } from './foo.js';
+    ```
+  - OK例
+    ```ts
+    import { foo } from './foo';
+    ```
 
-### 5.2 `index.ts` は公開境界
+- import 順序は `builtin → external → internal → parent/sibling/index → type` にし、グループ間に空行を入れる
+  - 強制: `pnpm lint` → `eslint .` → `rules['import/order']` → `eslint.config.js`
+  - NG例
+    ```ts
+    import { z } from 'zod';
+    import fs from 'node:fs';
+    ```
+  - OK例
 
-`index.ts` は “外部に見せる API の目録” です。実装を置きません。
+    ```ts
+    import fs from 'node:fs';
 
-- `index.ts` には実装を書かない（再エクスポートのみ）
-- `index.ts` で `default export` をしない
+    import { z } from 'zod';
+    ```
 
-### 5.3 deep import をしない
+- `packages/**/index.ts` は re-export のみで、実装と default export を禁止
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/**/index.ts']`
+  - NG例
+    ```ts
+    // packages/foo/index.ts
+    export default function f() {
+      return 1;
+    }
+    ```
+  - OK例
+    ```ts
+    // packages/foo/index.ts
+    export * from './src/something';
+    export { something } from './src/something';
+    ```
 
-- ディレクトリ配下のファイルを直接 import しない
-- “必要なもの” は、そのディレクトリの `index.ts` から export して利用する
+- `packages/**/src/**/*.{ts,tsx}` では各ディレクトリの `index.ts` 経由で import する
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/**/src/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    import { parse } from '@cfreact-template-server/domain/utils/parse';
+    import { parse2 } from './utils/parse2';
+    ```
+  - OK例
+    ```ts
+    import { parse, parse2 } from '@cfreact-template-server/domain';
+    import { something } from './utils';
+    ```
 
-### 5.4 import の表記
+- サーバーと UI と Drizzle は上位ディレクトリ参照の相対 import を禁止し、エイリアスを使う
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js`
+  - 対象
+    - `packages/server/**/src/**/*.{ts,tsx}`
+    - `packages/ui/src/**/*.{ts,tsx}`
+    - `packages/drizzle/src/**/*.ts`
+  - NG例
+    ```ts
+    import { x } from '../domain/x';
+    ```
+  - OK例
+    ```ts
+    import { x } from '@cfreact-template-server/domain';
+    ```
 
-- import の拡張子は付けない（`.ts/.tsx/.js/.jsx/.mjs/.cjs` など）
-- `packages/` 配下の TS/TSX から `.js/.mjs/.cjs` を import しない
-- import は `builtin → external → internal → relative → type` を基本順序とし、グループ間に空行を入れる
-- 同一グループ内はアルファベット順を基本とする（レビューで揺れないようにする）
+- ESLint の disable コメントは未使用を残さない
+  - 強制: `pnpm lint` → `eslint .` → `rules['eslint-comments/no-unused-disable']` → `eslint.config.js`
+  - NG例
+    ```ts
+    // eslint-disable-next-line no-alert
+    const x = 1;
+    ```
+  - OK例
+    ```ts
+    // eslint-disable-next-line no-alert -- legacy UI で alert が必要
+    alert('ok');
+    ```
 
-internal 扱い（例）:
-
-- `@cfreact-template-client/**`
-- `@cfreact-template-server/**`
-- `@cfreact-template/ui/**`
-- `@cfreact-template/drizzle/**`
-- `@ui/**`
-- `@drizzle/**`
-
-### 5.5 ESLint 無効化コメントの運用
-
-無効化は “例外” です。理由が説明できない無効化は入れません。
-
-- 無効化する場合は説明を書いて最小範囲に閉じる
-- 使っていない disable を残さない
-- `disable` したら `enable` をペアにする（無期限 disable を避ける）
-
-### 5.6 フォーマット
-
-フォーマットは Prettier を正とし、手で整形ルールを増やしません。
-
-- `printWidth: 100`
-- `tabWidth: 2` / `semi: true` / `singleQuote: true`
-- `trailingComma: "es5"` / `endOfLine: "lf"`
+- ESLint の disable は enable と対にする
+  - 強制: `pnpm lint` → `eslint .` → `rules['eslint-comments/disable-enable-pair']` → `eslint.config.js`
+  - NG例
+    ```ts
+    /* eslint-disable no-alert */
+    alert('x');
+    ```
+  - OK例
+    ```ts
+    /* eslint-disable no-alert */
+    alert('x');
+    /* eslint-enable no-alert */
+    ```
 
 ## 6. 公開 API のドキュメント
 
-“外に出すもの” は保守負債になりやすいので、説明を必須にします。
+ルール
 
-- `packages/**/src/**/*.{ts,tsx}` の export には TSDoc（`/** ... */`）を付ける
-- 例外は最小にし、必要なら理由を残す（コメント/PR 説明）
+- `packages/**/src/**/*.{ts,tsx}` の export には直前に TSDoc を付ける
+  - 強制: `pnpm lint` → `eslint .` → `rules['export-tsdoc/require-export-tsdoc']` → `eslint.config.js`
+  - 対象外
+    - `packages/client/api/src/generated/**/*.{ts,tsx}`
+    - `**/*.test.ts`, `**/*.test.tsx`, `**/*.spec.ts`, `**/*.spec.tsx`
+  - NG例
+    ```ts
+    export function hello() {
+      return 'hi';
+    }
+    ```
+  - OK例
+    ```ts
+    /**
+     * 挨拶文を返す
+     */
+    export function hello() {
+      return 'hi';
+    }
+    ```
+
+ルール
+
+- 公開 API の契約と SDK の生成物を手で編集しない
+  - 強制: `pnpm check:codegen` → `scripts.check:codegen` → `package.json`
+  - 強制: pre-commit hook → `pnpm check:codegen` → `.husky/pre-commit`
+  - 生成物
+    - `packages/api-contract/openapi/openapi.json`
+    - `packages/client/api/src/generated/client.ts`
+  - 生成物は git 管理対象
+    - 強制: `pnpm check:codegen` 内の `git ls-files --error-unmatch ...` → `package.json`
+  - 再生成
+    - `pnpm gen:api-sdk`
+  - 入力と出力の定義
+    - TypeSpec の入口: `packages/api-contract/main.tsp`
+    - OpenAPI の出力: `packages/api-contract/tspconfig.yaml` の `options['@typespec/openapi3'].output-file` と `options['@typespec/openapi3'].emitter-output-dir`
+    - SDK の出力: `packages/client/api/orval.config.ts` の `input` と `output.target`
+  - NG例
+    ```diff
+    -  "title": "cfreact-template API"
+    +  "title": "my manual edit"
+    ```
+  - OK例
+    ```sh
+    pnpm gen:api-sdk
+    ```
 
 ## 7. TypeScript
 
-### 7.1 禁止事項
+ルール
 
-- `any` で型を逃げない
-- unsafe な代入/呼び出し/メンバーアクセスを放置しない
+- `any` を使わない
+  - 強制: `pnpm lint` → `eslint .` → `rules['@typescript-eslint/no-explicit-any']` → `eslint.config.js`
+  - NG例
+    ```ts
+    const x: any = 1;
+    ```
+  - OK例
+    ```ts
+    const x: number = 1;
+    ```
 
-### 7.2 原則
+- unsafe な代入と呼び出しとメンバーアクセスをしない
+  - 強制: `pnpm lint` → `eslint .` → `rules['@typescript-eslint/no-unsafe-assignment']` → `eslint.config.js`
+  - 強制: `pnpm lint` → `eslint .` → `rules['@typescript-eslint/no-unsafe-call']` → `eslint.config.js`
+  - 強制: `pnpm lint` → `eslint .` → `rules['@typescript-eslint/no-unsafe-member-access']` → `eslint.config.js`
+  - 強制: `pnpm lint` → `eslint .` → `rules['@typescript-eslint/no-unsafe-return']` → `eslint.config.js`
+  - 強制: `pnpm lint` → `eslint .` → `rules['@typescript-eslint/no-unsafe-argument']` → `eslint.config.js`
+  - NG例
+    ```ts
+    const obj: unknown = JSON.parse('{}');
+    obj.x.y();
+    ```
+  - OK例
+    ```ts
+    const obj: unknown = JSON.parse('{}');
+    if (typeof obj === 'object' && obj && 'x' in obj) {
+      // ここで絞り込む
+    }
+    ```
 
-- `null`/`undefined` を前提にせず、分岐や型で表現する
-- 真偽値条件を曖昧にしない（文字列/数値の truthy 判定に頼らない）
-- `Promise` を握りつぶさない（戻り値を返す/`await` する/明示的に扱う）
-- `import type` を優先し、型と実装の依存を分離する
-- 未使用は削除する（意図的に未使用なら `_` prefix を付ける）
-- できるだけ `optional chaining` と `nullish coalescing` を使い、分岐の意図を明確にする
+- 条件式で文字列や数値の truthy 判定をしない
+  - 強制: `pnpm lint` → `eslint .` → `rules['@typescript-eslint/strict-boolean-expressions']` → `eslint.config.js`
+  - NG例
+    ```ts
+    if (userId) {
+      doSomething();
+    }
+    ```
+  - OK例
+    ```ts
+    if (userId !== '') {
+      doSomething();
+    }
+    ```
 
-### 7.3 セキュリティ
+- `Promise` を握りつぶさない
+  - 強制: `pnpm lint` → `eslint .` → `rules['@typescript-eslint/no-floating-promises']` → `eslint.config.js`
+  - NG例
+    ```ts
+    doAsync();
+    ```
+  - OK例
+    ```ts
+    await doAsync();
+    ```
 
-- `eval` / `new Function` 相当を使わない
-- URL/HTML/外部入力を信用せず、境界で検証・サニタイズする
+- `import type` を使う
+  - 強制: `pnpm lint` → `eslint .` → `rules['@typescript-eslint/consistent-type-imports']` → `eslint.config.js`
+  - NG例
+    ```ts
+    import { User } from './types';
+    ```
+  - OK例
+    ```ts
+    import type { User } from './types';
+    ```
 
-### 7.4 コード品質
+- 未使用の変数と引数を残さない
+  - 強制: `pnpm lint` → `eslint .` → `rules['@typescript-eslint/no-unused-vars']` → `eslint.config.js`
+  - 例外
+    - `_` で始まる名前は未使用を許可
+  - NG例
+    ```ts
+    function f(x: number) {
+      return 1;
+    }
+    ```
+  - OK例
+    ```ts
+    function f(_x: number) {
+      return 1;
+    }
+    ```
 
 - `debugger` を残さない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-debugger']` → `eslint.config.js`
+  - NG例
+    ```ts
+    debugger;
+    ```
+  - OK例
+    ```ts
+    // 削除する
+    ```
+
 - `alert` を使わない
-- `var` を使わない（`const` を基本にし、必要な場合のみ `let`）
-- 可能な限り `forEach` を避け、`for...of` 等で制御フローを明確にする
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-alert']` → `eslint.config.js`
+  - NG例
+    ```ts
+    alert('x');
+    ```
+  - OK例
+    ```ts
+    // alert を削除し、UI で表現する
+    ```
+
+- `var` を使わない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-var']` → `eslint.config.js`
+  - NG例
+    ```ts
+    var x = 1;
+    ```
+  - OK例
+    ```ts
+    const x = 1;
+    ```
+
+- `Array.prototype.forEach` を使わない
+  - 強制: `pnpm lint` → `eslint .` → `rules['unicorn/no-array-for-each']` → `eslint.config.js`
+  - NG例
+    ```ts
+    items.forEach((x) => console.log(x));
+    ```
+  - OK例
+    ```ts
+    for (const x of items) {
+      console.log(x);
+    }
+    ```
+
+- `eval` と `new Function` を使わない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-eval']`, `rules['no-new-func']` → `eslint.config.js`
+  - NG例
+    ```ts
+    const f = new Function('return 1');
+    ```
+  - OK例
+    ```ts
+    const f = () => 1;
+    ```
 
 ## 8. クライアント実装規則
 
-### 8.1 `client-api`
+ルール
 
-- React に依存しない（hooks/コンポーネントを置かない）
-- 生成コード（例: `src/generated/**`）は手で編集しない
-- DTO を UI に漏らさない（変換は `api` または `domain` で完結させる）
+- App 層から API パッケージを直接 import しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/client/app/src/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    import { apiClient } from '@cfreact-template-client/api';
+    ```
+  - OK例
+    ```ts
+    import { useUsers } from '@cfreact-template-client/domain/hooks/useUsers';
+    ```
 
-### 8.2 `client-domain`
+- Pages と Components で `@cfreact-template-client/domain` をまとめ import しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/client/app/src/pages/**/*.{ts,tsx}', 'packages/client/app/src/components/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    import { useUsers } from '@cfreact-template-client/domain';
+    ```
+  - OK例
+    ```ts
+    import { useUsers } from '@cfreact-template-client/domain/hooks/useUsers';
+    ```
 
-hooks は UI から見た “アプリの API” です。UI 依存を持たせません。
+- Pages と Components と Hooks で `fetch` を直接呼ばない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/client/app/src/**/*.{ts,tsx}', 'packages/client/domain/src/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    const res = await fetch('/api');
+    ```
+  - OK例
+    ```ts
+    // packages/client/domain/src/hooks/useUsers.ts
+    const res = await apiClient.users.listUsers();
+    ```
 
-- export できる “値” は `useXxx` のカスタムフックのみ（型 export は可）
-- hook 名は `use` 始まり（`useXxx`）に統一する
-- 戻り値は `{ data, actions }` の形に統一する（どちらも必須）
-- `data` の型は `*Data`、`actions` の型は `*Actions` に統一する
-- 少なくとも 1 つは React/TanStack Query 等の hook を使い、状態・副作用・キャッシュを扱う
-- `client-app`（pages/components）を import しない
-- `apiClient` をそのまま返す/再エクスポートしない
-- hooks 配下のファイル名は `camelCase` に統一する
-- hooks から UI 層（`app/pages/components`）へ “逆流” する import を作らない（循環参照の温床になる）
+- `axios` と `cross-fetch` を import しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/client/app/src/**/*.{ts,tsx}', 'packages/client/domain/src/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    import axios from 'axios';
+    ```
+  - OK例
+    ```ts
+    // packages/client/domain/src/hooks/useUsers.ts
+    import { apiClient } from '@cfreact-template-client/api';
+    ```
 
-### 8.3 `client-app`
+- `pages/` 直下に TSX を置かない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/client/app/src/pages/*.tsx']`
+  - NG例
+    - `packages/client/app/src/pages/Home.tsx`
+  - OK例
+    - `packages/client/app/src/pages/home/Home.tsx`
 
-UI 層は “薄く” 保ちます。ロジックは `client-domain` に寄せます。
+- Pages では `useState` 以外の React 組み込み Hooks を直接使わない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` と `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/client/app/src/pages/**/*.{ts,tsx}']`
+  - NG例
 
-共通:
+    ```tsx
+    import { useEffect } from 'react';
 
-- `client-api` を直接 import しない（domain hooks 経由）
-- `fetch` を直接呼ばない（共有のクライアントを経由）
-- `axios`/`cross-fetch` 等を持ち込まない（通信は 1 箇所に集約）
-- pages/components から `client-domain` を参照する場合は、集約エントリに依存せず “必要なものだけ” を import する
-- `dangerouslySetInnerHTML` を使わない（HTML が必要なら安全な経路でサニタイズする）
+    export function Page() {
+      useEffect(() => {}, []);
+      return null;
+    }
+    ```
 
-pages（画面）:
+  - OK例
 
-- `useState` 以外の React 組み込み hooks を pages で直接使わない（hooks 層へ委譲）
-- `useMemo`/`useCallback` は pages で使わない（最適化判断は components/hooks へ）
-- `pages/` 直下に TSX を置かない（必ずサブディレクトリを作る）
-- pages で直接使わないもの（例）:
-  - `useEffect`, `useLayoutEffect`, `useInsertionEffect`
-  - `useReducer`, `useRef`, `useImperativeHandle`
-  - `useTransition`, `useDeferredValue`, `useId`, `useSyncExternalStore`
-  - `useOptimistic`, `useActionState`
+    ```tsx
+    import { useUsers } from '@cfreact-template-client/domain/hooks/useUsers';
 
-components（表示部品）:
+    export function Page() {
+      const { data } = useUsers();
+      return <div>{data.status}</div>;
+    }
+    ```
 
-- 状態管理に `useState` を使わない（状態は pages か hooks に寄せる）
-- `useMemo`/`useCallback` 以外の React 組み込み hooks を使わない（副作用・非同期は hooks へ）
-- components で許可する hooks は `useMemo`/`useCallback` のみ（状態/副作用は hooks に寄せる）
+- Pages では `useMemo` と `useCallback` を使わない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` と `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/client/app/src/pages/**/*.{ts,tsx}']`
+  - NG例
+
+    ```tsx
+    import { useMemo } from 'react';
+
+    const x = useMemo(() => 1, []);
+    ```
+
+  - OK例
+    ```tsx
+    // 最適化が必要なら components または hooks へ移す
+    ```
+
+- Components では `useState` を使わない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` と `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/client/app/src/components/**/*.{ts,tsx}']`
+  - NG例
+    ```tsx
+    import { useState } from 'react';
+    ```
+  - OK例
+    ```tsx
+    import { useUsers } from '@cfreact-template-client/domain/hooks/useUsers';
+    ```
+
+- Components で使える React 組み込み Hooks は `useMemo` と `useCallback` だけ
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` と `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/client/app/src/components/**/*.{ts,tsx}']`
+  - NG例
+    ```tsx
+    import { useEffect } from 'react';
+    ```
+  - OK例
+    ```tsx
+    import { useMemo } from 'react';
+    ```
+
+- React Hooks のルールを守る
+  - 強制: `pnpm lint` → `eslint .` → `rules['react-hooks/rules-of-hooks']` と `rules['react-hooks/exhaustive-deps']` → `eslint.config.js`
+  - NG例
+
+    ```tsx
+    import { useEffect } from 'react';
+
+    // packages/ui/src/components/Comp.tsx
+
+    export function Comp({ id }: { id: string }) {
+      if (id !== '') {
+        useEffect(() => {}, []);
+      }
+      return null;
+    }
+    ```
+
+  - OK例
+
+    ```tsx
+    import { useEffect } from 'react';
+
+    // packages/ui/src/components/Comp.tsx
+
+    export function Comp({ id }: { id: string }) {
+      useEffect(() => {
+        void id;
+      }, [id]);
+      return null;
+    }
+    ```
+
+- 配列を JSX で描画するときは `key` を付ける
+  - 強制: `pnpm lint` → `eslint .` → `rules['react/jsx-key']` → `eslint.config.js`
+  - NG例
+    ```tsx
+    {
+      items.map((x) => <li>{x.name}</li>);
+    }
+    ```
+  - OK例
+    ```tsx
+    {
+      items.map((x) => <li key={x.id}>{x.name}</li>);
+    }
+    ```
+
+- 画像には代替テキストを付ける
+  - 強制: `pnpm lint` → `eslint .` → `rules['jsx-a11y/alt-text']` → `eslint.config.js`
+  - NG例
+    ```tsx
+    <img src="/logo.png" />
+    ```
+  - OK例
+    ```tsx
+    <img src="/logo.png" alt="logo" />
+    ```
+
+- `dangerouslySetInnerHTML` を使わない
+  - 強制: `pnpm lint` → `eslint .` → `rules['react/no-danger']` → `eslint.config.js`
+  - NG例
+    ```tsx
+    <div dangerouslySetInnerHTML={{ __html: html }} />
+    ```
+  - OK例
+    ```tsx
+    <div>{text}</div>
+    ```
+
+ルール
+
+- hooks ディレクトリで export できる値は `useXxx` だけ
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/client/domain/src/hooks/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    export const foo = 1;
+    ```
+  - OK例
+    ```ts
+    export function useFoo() {
+      return { data: { status: 'ok' }, actions: {} };
+    }
+    ```
+
+- hooks は `data` と `actions` をまとめて返し、戻り値に型注釈を付ける
+  - 強制: `pnpm lint` → `eslint .` → `rules['hooks-domain/require-domain-structure']` → `eslint.config.js`
+  - NG例
+    ```ts
+    export function useFoo() {
+      return { data: { status: 'ok' } };
+    }
+    ```
+  - OK例
+
+    ```ts
+    type FooData = { status: 'ok' };
+    type FooActions = {};
+
+    export function useFoo(): { data: FooData; actions: FooActions } {
+      return { data: { status: 'ok' }, actions: {} };
+    }
+    ```
+
+- hooks から `apiClient` を返す、再エクスポートする
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/client/domain/src/hooks/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    export { apiClient } from '@cfreact-template-client/api';
+    ```
+  - OK例
+    ```ts
+    export function useUsers() {
+      return { data: { users: [] }, actions: { reload: () => {} } };
+    }
+    ```
+
+- hooks の型 import は `types` 経由に限定する
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/client/domain/src/hooks/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    import type { User } from '../models/user';
+    ```
+  - OK例
+    ```ts
+    import type { User } from 'types';
+    ```
+
+- hooks では UI 層の import をしない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/client/domain/src/hooks/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    import { Button } from '@cfreact-template-client/app/components/Button';
+    ```
+  - OK例
+    ```ts
+    // UI は hooks の戻り値を使う
+    ```
+
+- hooks のファイル名は camelCase にする
+  - 強制: `pnpm lint` → `eslint .` → `rules['unicorn/filename-case']` → `eslint.config.js`
+  - NG例
+    - `use_users.ts`
+  - OK例
+    - `useUsers.ts`
+
+- hooks の関数名は `use` で始まり、`useXxx` の形にする
+  - 強制: `pnpm lint` → `eslint .` → `rules['@typescript-eslint/naming-convention']` → `eslint.config.js`
+  - NG例
+    ```ts
+    export function useusers() {
+      return { data: {}, actions: {} };
+    }
+    ```
+  - OK例
+    ```ts
+    export function useUsers() {
+      return { data: {}, actions: {} };
+    }
+    ```
 
 ## 9. サーバー実装規則
 
-### 9.1 `server-domain` / `server-usecases`
+ルール
 
-内側（domain/usecases）は外側（HTTP/DB/フレームワーク）を知りません。
+- サーバーの App パッケージの内部パスを import しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/server/**/src/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    import { buildDeps } from '@cfreact-template-server/app/server';
+    ```
+  - OK例
+    ```ts
+    import { buildDeps } from '@cfreact-template-server/app';
+    ```
 
-- `fetch` / `Request` / `Response` / `Headers` を直接使わない
-- Hono/Drizzle/Cloudflare SDK 等の import をしない
-- Zod / `@hono/zod-openapi` を import しない
-- Adapters（`http`/`persistence`）を参照しない
-- `console` を使わない（観測が必要なら外側で）
+- Domain と UseCase では `console` を使わない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-console']` → `eslint.config.js` の `files: ['packages/server/domain/src/**/*.{ts,tsx}', 'packages/server/usecases/src/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    console.log('x');
+    ```
+  - OK例
+    ```ts
+    // ログは外側の層で行う
+    ```
 
-### 9.2 `server-http`
+- Domain と UseCase では `fetch` と `Request` と `Response` と `Headers` を使わない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-globals']` → `eslint.config.js`
+  - NG例
+    ```ts
+    const res = await fetch('https://example.com');
+    ```
+  - OK例
+    ```ts
+    // 外側の層が I/O を行い、内側は純粋な入力で処理する
+    ```
 
-- ルーティングと入出力変換に専念し、UseCase を呼ぶ
-- `persistence` を直接参照しない（UseCase 経由）
-- `c.env` を直接参照しない（`server-app` が注入する依存を使う）
-- API 契約の正（Single Source of Truth）は TypeSpec（`packages/api-contract`）とする
-- `server-http` は TypeSpec で定義された契約に準拠して実装する（ルート追加/変更は必ず TypeSpec を先に更新する）
-- `@hono/zod-openapi` + `zod` は実装側のリクエスト検証・型安全化のために使用してよいが、契約の正にしない
-- Zod スキーマは `packages/server/http/src/schemas` に集約し、`zod` の import は同ディレクトリ内に限定する
-- `createRoute` / `OpenAPIHono` は `packages/server/http/src/routes` 以外で import しない
-- 手書きの Swagger/OpenAPI は禁止（`packages/api-contract/openapi/openapi.json` は生成物）
-- API 変更時は `pnpm gen:api-sdk` を実行して OpenAPI と SDK を更新する
-- デモ用途のルートは追加しない（必要なら正式な API として OpenAPI 定義に含める）
+- Domain と UseCase ではフレームワークとインフラ依存を import しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/server/domain/src/**/*.{ts,tsx}', 'packages/server/usecases/src/**/*.{ts,tsx}']`
+  - 対象
+    - `hono`, `drizzle-orm`, `@cloudflare/**`, `cloudflare:*`, `zod`, `@hono/zod-openapi`
+  - NG例
+    ```ts
+    import { z } from 'zod';
+    ```
+  - OK例
+    ```ts
+    // スキーマや HTTP 依存は HTTP アダプタに置く
+    ```
 
-### 9.3 `server-persistence`
+- Domain と UseCase では外部ライブラリを import しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['boundaries/external']` → `eslint.config.js`
+  - NG例
+    ```ts
+    import { v4 as uuidv4 } from 'uuid';
+    ```
+  - OK例
+    ```ts
+    // 外部依存が必要なら外側の層に移し、内側は入力として受け取る
+    ```
 
-- Domain のインターフェースを実装する（内側に合わせる）
-- `usecases/domain/types` への依存は可、`http` への依存は不可
+- Domain と UseCase から Adapters を参照しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/server/domain/src/**/*.{ts,tsx}', 'packages/server/usecases/src/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    import { db } from '@cfreact-template-server/persistence';
+    ```
+  - OK例
+    ```ts
+    import type { UserRepository } from '@cfreact-template-server/domain';
+    ```
 
-### 9.4 `server-app` / `server-entry`
+- UseCase で `throw new Error` をしない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/server/usecases/src/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    throw new Error('failed');
+    ```
+  - OK例
+    ```ts
+    throw new DomainError('failed');
+    ```
 
-- `server-entry` は起動点。業務ロジックを書かない
-- `server-app` は依存注入/組み立て。`env` や実装の差し替えはここで閉じる
+- UseCase の複雑度を上げない
+  - 強制: `pnpm lint` → `eslint .` → `rules['sonarjs/cognitive-complexity']` → `eslint.config.js` の `files: ['packages/server/usecases/src/**/*.{ts,tsx}']`
+  - 強制: `pnpm lint` → `eslint .` → `rules['complexity']` → `eslint.config.js` の `files: ['packages/server/usecases/src/**/*.{ts,tsx}']`
+  - 強制: `pnpm lint` → `eslint .` → `rules['max-depth']` → `eslint.config.js` の `files: ['packages/server/usecases/src/**/*.{ts,tsx}']`
+  - しきい値
+    - Cognitive Complexity: 10
+    - Complexity: 10
+    - Max Depth: 3
+  - NG例
+    ```ts
+    export async function useCase(x: number) {
+      if (x > 0) {
+        if (x > 1) {
+          if (x > 2) {
+            if (x > 3) {
+              return 4;
+            }
+          }
+        }
+      }
+      return 0;
+    }
+    ```
+  - OK例
+    ```ts
+    // 分岐を Domain の関数へ移し、UseCase は手順だけにする
+    export async function useCase(x: number) {
+      return await doDomainRule(x);
+    }
+    ```
+
+- UseCase で `AppVariables` を定義しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/server/usecases/src/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    export type AppVariables = {};
+    ```
+  - OK例
+    ```ts
+    // HTTP アダプタで管理する
+    ```
+
+ルール
+
+- HTTP アダプタから Persistence を直接参照しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/server/http/src/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    import { userRepo } from '@cfreact-template-server/persistence';
+    ```
+  - OK例
+    ```ts
+    import { createUser } from '@cfreact-template-server/usecases';
+    ```
+
+- HTTP アダプタで `c.env` を参照しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/server/http/src/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    const db = c.env.DB;
+    ```
+  - OK例
+    ```ts
+    const db = deps.db;
+    ```
+
+- HTTP アダプタから App 層を参照しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/server/http/src/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    import { buildDeps } from '@cfreact-template-server/app';
+    ```
+  - OK例
+    ```ts
+    import type { AppDependencies } from '@cfreact-template-server/usecases';
+    ```
+
+- `zod` は `packages/server/http/src/schemas` でだけ使う
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/server/http/src/**/*.{ts,tsx}']` と `files: ['packages/server/http/src/schemas/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    // packages/server/http/src/routes/foo.ts
+    import { z } from 'zod';
+    ```
+  - OK例
+    ```ts
+    // packages/server/http/src/schemas/foo.ts
+    import { z } from 'zod';
+    ```
+
+- `createRoute` と `OpenAPIHono` は `packages/server/http/src/routes` でだけ import する
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/server/http/src/**/*.{ts,tsx}']` と `files: ['packages/server/http/src/schemas/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    // packages/server/http/src/context.ts
+    import { OpenAPIHono } from '@hono/zod-openapi';
+    ```
+  - OK例
+    ```ts
+    // packages/server/http/src/routes/v1.ts
+    import { OpenAPIHono, createRoute } from '@hono/zod-openapi';
+    ```
+
+- OpenAPI ルートで `hono` を import しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/server/http/src/routes/**/*.{ts,tsx}']`
+  - NG例
+    ```ts
+    import { Hono } from 'hono';
+    ```
+  - OK例
+    ```ts
+    import { OpenAPIHono } from '@hono/zod-openapi';
+    ```
+
+ルール
+
+- `packages/server/app/src/server.ts` で KV と R2 を Context に直接注入しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/server/app/src/server.ts']`
+  - NG例
+    ```ts
+    c.set('kv', env.KV);
+    ```
+  - OK例
+    ```ts
+    // UseCase 経由で必要な操作だけを依存として渡す
+    ```
+
+- `packages/server/http/src/context.ts` で `AppVariables` に `kv` と `r2` を追加しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/server/http/src/context.ts']`
+  - NG例
+    ```ts
+    export type AppVariables = { kv: unknown };
+    ```
+  - OK例
+    ```ts
+    export type AppVariables = { deps: unknown };
+    ```
 
 ## 10. サイズ制約
 
-“動く” より先に “読める/直せる” を守ります。
+ルール
 
-- 1ファイルは概ね 500 行以内に分割する
-- 1関数は概ね 100 行以内に分割する
+- `packages/**/src/**/*.{ts,tsx}` は 1 ファイル 500 行以内にする
+  - 強制: `pnpm lint` → `eslint .` → `rules['max-lines']` → `eslint.config.js` と `.eslintrc-maxlines.json`
+  - NG例
+    - 600 行の巨大ファイル
+  - OK例
+    - 分割して 500 行以内
+
+- `packages/**/src/**/*.{ts,tsx}` は 1 関数 100 行以内にする
+  - 強制: `pnpm lint` → `eslint .` → `rules['max-lines-per-function']` → `eslint.config.js` と `.eslintrc-maxlines.json`
+  - NG例
+    - 150 行の関数
+  - OK例
+    - 関数を分割して 100 行以内
 
 ## 11. 例外
 
-- 生成コード（例: `packages/client/api/src/generated/**`）は編集しない。規則は一部緩和される
-- テスト（`*.test.*`, `*.spec.*`）は実用上の都合で規則を一部緩和する
-- 設定ファイルは実装都合で一部緩和されることがある
+ルール
+
+- 生成コードは lint の一部ルールを緩和する
+  - 強制: `pnpm lint` → `eslint .` → `files: ['packages/client/api/src/generated/**/*.{ts,tsx}']` のルール上書き → `eslint.config.js`
+  - NG例
+    - 生成コードを手で直しても `pnpm check:codegen` で差分が戻る
+  - OK例
+    - 入力元を変更して `pnpm gen:api-sdk`
+
+- テストは制約を一部緩和する
+  - 強制: `pnpm lint` → `eslint .` → `files: ['**/*.test.*', '**/*.spec.*']` のルール上書き → `eslint.config.js`
+  - NG例
+    - 本番コードと同じ制約で書く必要があると思い込む
+  - OK例
+    - テストでは制約が一部オフになっている前提で書く
+
+- `**/theme.ts` は行数制約を除外する
+  - 強制: `pnpm lint` → `eslint .` → `files: ['**/theme.ts']` の `max-lines` オフ → `eslint.config.js`
+  - NG例
+    - theme の分割で逆に可読性が落ちる
+  - OK例
+    - theme は 500 行超でも許可
 
 ## 12. 変更手順
 
-- 目的（解決したい問題）と影響範囲を Issue/PR に書く
-- 本書を更新し、必要なら自動検査（ESLint/設定）も追従させる
-- 既存コードに影響がある場合は移行方針を明記する
+このリポジトリで失敗条件になる自動実行
+
+- pre-commit hook
+  - 強制: `.husky/pre-commit`
+  - 実行
+    - `pnpm lint-staged`
+    - `pnpm check:codegen`
+- commit-msg hook
+  - 強制: `.husky/commit-msg`
+  - 実行
+    - `pnpm commitlint --edit $1`
+- pre-push hook
+  - 強制: `.husky/pre-push`
+  - 実行
+    - `pnpm lint`
+
+fail 条件
+
+- `pnpm lint` は ESLint の error と OpenSpec チェックで失敗する
+  - 強制: `scripts.lint` → `package.json`
+  - 内訳
+    - `pnpm lint:eslint` は `eslint .` を実行
+    - `pnpm lint:openspec` は `openspec validate --all --strict` と `node scripts/openspec/verify-scenario-coverage.mjs` を実行
+- `pnpm check:codegen` は生成物のドリフトで失敗する
+  - 強制: `scripts.check:codegen` → `package.json`
+  - 実行
+    - `pnpm gen:api-sdk`
+    - `git diff --exit-code -- packages/api-contract/openapi/openapi.json packages/client/api/src/generated/client.ts`
+- CI は `pnpm format:check` と `pnpm check` と `pnpm test:run` も実行する
+  - 強制: `.github/workflows/ci.yml`
+
+フォーマット
+
+- 変更を含むコミットでは lint-staged が Prettier と ESLint の自動修正を走らせる
+  - 強制: pre-commit hook → `pnpm lint-staged` → `.husky/pre-commit`
+  - 強制: `.lintstagedrc.json`
+  - 実行
+    - `*.{ts,tsx,js,jsx}` は `eslint --fix` と `prettier --write`
+    - `*.{json,md}` は `prettier --write`
+- CI では Prettier をチェックする
+  - 強制: `pnpm format:check` → `scripts.format:check` → `package.json`
+  - 設定: `.prettierrc.json`
+  - NG例
+    ```ts
+    const x = 1;
+    ```
+  - OK例
+    ```ts
+    const x = 1;
+    ```
+
+- CI では TypeSpec のフォーマットをチェックする
+  - 強制: `pnpm format:check` → `scripts.format:check` → `package.json`
+  - 強制: `pnpm --filter @cfreact-template/api-contract format:check` → `scripts.format:check` → `packages/api-contract/package.json`
+  - NG例
+    - `packages/api-contract/**/*.tsp` の整形が崩れている
+  - OK例
+    ```sh
+    pnpm --filter @cfreact-template/api-contract format
+    ```
+
+- CI では TypeSpec がコンパイルできることをチェックする
+  - 強制: CI → `pnpm check` → `.github/workflows/ci.yml`
+  - 強制: `pnpm check` → `scripts.check` → `package.json`
+  - 強制: `pnpm --filter @cfreact-template/api-contract check` → `scripts.check` → `packages/api-contract/package.json`
+  - NG例
+    - `packages/api-contract/main.tsp` の記法ミス
+  - OK例
+    ```sh
+    pnpm --filter @cfreact-template/api-contract check
+    ```
+
+コミットメッセージ
+
+- Conventional Commits の type は許可リストから選ぶ
+  - 強制: commit-msg hook → `pnpm commitlint --edit $1` → `.husky/commit-msg`
+  - 強制: `rules['type-enum']` → `commitlint.config.js`
+  - 許可
+    - `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
+  - NG例
+    ```text
+    feature: add login
+    ```
+  - OK例
+    ```text
+    feat: add login
+    ```
 
 ## 13. OpenSpec: 仕様を自動テストで担保する
 
-このリポジトリでは OpenSpec の spec を「振る舞いの契約」として扱い、実装が spec から逸脱しないことを Lint/CI で検査します。
+ルール
 
-### 13.1 Spec の置き場所
+- OpenSpec の spec は `openspec validate --all --strict` を通す
+  - 強制: `pnpm lint` → `pnpm lint:openspec` → `scripts.lint:openspec` → `package.json`
+  - NG例
+    - `pnpm lint` で OpenSpec validate が失敗する
+  - OK例
+    ```sh
+    pnpm lint:openspec
+    ```
 
-- 正（Source of Truth）: `openspec/specs/<capability>/spec.md`
-- 変更提案（作業中）: `openspec/changes/<change>/specs/<capability>/spec.md`（delta spec）
+- Spec は `openspec/specs/**/spec.md` に置く
+  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs`
+  - NG例
+    - `openspec/changes/.../spec.md` だけを更新して main spec に反映しない
+  - OK例
+    - main spec を更新して lint 対象に含める
 
-### 13.2 Scenario ID（必須）
+- Scenario 見出しは `#### Scenario:` で始め、末尾に安定 ID を付ける
+  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `extractScenarioId`
+  - 形式
+    - `#### Scenario: ... (USER-MGMT-S001)`
+  - NG例
+    ```md
+    #### Scenario: Create user
+    ```
+  - OK例
+    ```md
+    #### Scenario: Create user (USER-MGMT-S001)
+    ```
 
-全ての Scenario は安定 ID を持ちます。ID はレビュー/テスト/追跡のための鍵です。
+- Scenario ID は `^[\dA-Z]+(?:-[\dA-Z]+)*-S\d{3,}$` に一致させる
+  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `SCENARIO_ID_PATTERN`
+  - NG例
+    ```md
+    #### Scenario: Create user (user-mgmt-1)
+    ```
+  - OK例
+    ```md
+    #### Scenario: Create user (USER-MGMT-S001)
+    ```
 
-- Scenario 見出しは末尾に ID を付ける
-  - `#### Scenario: ... (USER-MGMT-S001)`
-- ID 形式（固定）: `^[A-Z0-9]+(?:-[A-Z0-9]+)*-S\d{3,}$`
-  - 例: `AUTH-SESSION-S001`, `USER-MGMT-S012`
+- `Tags: manual` を付けた Scenario はカバレッジ必須から外す
+  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `isManualScenario`
+  - NG例
 
-### 13.3 テストでの参照（必須）
+    ```md
+    #### Scenario: Hard to automate (PAYMENTS-S014)
 
-自動テストは Scenario ID をタイトルに含めて、spec と結び付けます。
+    - GIVEN ...
+    ```
 
-- Vitest/Jest:
-  - `it('[USER-MGMT-S001] ...', async () => { ... })`
-  - `test('[USER-MGMT-S001] ...', async () => { ... })`
-- Playwright:
-  - `test('[USER-MGMT-S001] ...', async ({ page }) => { ... })`
+  - OK例
 
-### 13.4 例外（manual）
+    ```md
+    #### Scenario: Hard to automate (PAYMENTS-S014)
 
-自動化が現実的でない Scenario は明示的に manual 扱いにします（暗黙の未テストは不可）。
+    Tags: manual
 
-- Scenario 見出し直下に `Tags: manual` を追加する
+    - GIVEN ...
+    ```
 
-例:
+- manual でない Scenario はテストタイトルで参照する
+  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `SCENARIO_REF_PATTERN`
+  - NG例
+    ```ts
+    it('create user', async () => {});
+    ```
+  - OK例
+    ```ts
+    it('[USER-MGMT-S001] create user', async () => {});
+    ```
 
-```md
-#### Scenario: Third-party payment settles eventually (PAYMENTS-S014)
+- Spec に同じ Scenario ID を複数置かない
+  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `getDuplicateScenarioErrors`
+  - NG例
+    - 2 つの `spec.md` に同じ ID がある
+  - OK例
+    - ID を一意にする
 
-Tags: manual
-
-- GIVEN ...
-- WHEN ...
-- THEN ...
-```
-
-### 13.5 自動検査（Lint/CI）
-
-`pnpm lint` は以下を検査します。
-
-- `openspec validate --all --strict`（OpenSpec の構造検証）
-- Scenario ID カバレッジ:
-  - spec に存在する Scenario ID が、テストコードから参照されている
-  - テストが参照している Scenario ID が、spec 側に存在する
-  - Scenario ID が重複しない
-
-注: Scenario ID カバレッジの対象は `openspec/specs/**` です。`openspec/changes/**` の delta spec は、`/opsx-sync` または `openspec archive` 等で main spec に反映した上で検査対象になります。
-
-実装や仕様を変更したら、spec とテストをセットで更新してください。
+- Spec にない Scenario ID をテストで参照しない
+  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `orphans`
+  - NG例
+    ```ts
+    test('[USER-MGMT-S999] typo', async () => {});
+    ```
+  - OK例
+    ```ts
+    test('[USER-MGMT-S001] create user', async () => {});
+    ```

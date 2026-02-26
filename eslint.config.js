@@ -147,20 +147,31 @@ export default tseslint.config(
       'import/resolver': {
         typescript: {
           alwaysTryTypes: true,
-          project: './tsconfig.json',
+          project: ['./tsconfig.base.json', './packages/*/*/tsconfig.json'],
         },
       },
       'boundaries/elements': [
-        { type: 'server-entry', pattern: 'packages/server/entry/src/index.ts' },
-        { type: 'server-app', pattern: 'packages/server/app/src/**/*' },
-        { type: 'server-http', pattern: 'packages/server/http/src/**/*' },
-        { type: 'server-persistence', pattern: 'packages/server/persistence/src/**/*' },
-        { type: 'server-domain', pattern: 'packages/server/domain/src/**/*' },
-        { type: 'server-usecases', pattern: 'packages/server/usecases/src/**/*' },
-        { type: 'server-types', pattern: 'packages/server/types/src/**/*' },
-        { type: 'client-api', pattern: 'packages/client/api/src/**/*' },
-        { type: 'client-domain', pattern: 'packages/client/domain/src/**/*' },
-        { type: 'client-app', pattern: 'packages/client/app/src/**/*' },
+        {
+          type: 'api-contract-openapi',
+          pattern: 'packages/api-contract/openapi/openapi.json',
+          mode: 'full',
+        },
+        { type: 'server-entry', pattern: 'packages/server/entry/src/index.ts', mode: 'full' },
+        { type: 'server-app', pattern: 'packages/server/app/src/**/*', mode: 'full' },
+        { type: 'server-http', pattern: 'packages/server/http/src/**/*', mode: 'full' },
+        {
+          type: 'server-persistence',
+          pattern: 'packages/server/persistence/src/**/*',
+          mode: 'full',
+        },
+        { type: 'server-domain', pattern: 'packages/server/domain/src/**/*', mode: 'full' },
+        { type: 'server-usecases', pattern: 'packages/server/usecases/src/**/*', mode: 'full' },
+        { type: 'server-types', pattern: 'packages/server/types/src/**/*', mode: 'full' },
+        { type: 'client-api', pattern: 'packages/client/api/src/**/*', mode: 'full' },
+        { type: 'client-domain', pattern: 'packages/client/domain/src/**/*', mode: 'full' },
+        { type: 'client-app', pattern: 'packages/client/app/src/**/*', mode: 'full' },
+        { type: 'ui', pattern: 'packages/ui/src/**/*', mode: 'full' },
+        { type: 'drizzle', pattern: 'packages/drizzle/src/**/*', mode: 'full' },
       ],
     },
     rules: {
@@ -293,7 +304,7 @@ export default tseslint.config(
       'boundaries/element-types': [
         'error',
         {
-          default: 'allow',
+          default: 'disallow',
           message: 'Clean Architecture violation: %{from} is not allowed to import from %{target}.',
           rules: [
             {
@@ -310,15 +321,28 @@ export default tseslint.config(
             },
             {
               from: ['server-persistence'],
-              allow: ['server-usecases', 'server-domain', 'server-types', 'server-persistence'],
+              allow: [
+                'server-usecases',
+                'server-domain',
+                'server-types',
+                'server-persistence',
+                'drizzle',
+              ],
             },
             {
               from: ['server-http'],
-              allow: ['server-http', 'server-usecases', 'server-domain', 'server-types'],
+              allow: [
+                'server-http',
+                'server-usecases',
+                'server-domain',
+                'server-types',
+                'api-contract-openapi',
+              ],
             },
             {
               from: ['server-app'],
               allow: [
+                'server-app',
                 'server-http',
                 'server-persistence',
                 'server-usecases',
@@ -340,7 +364,29 @@ export default tseslint.config(
             },
             {
               from: ['client-app'],
-              allow: ['client-app', 'client-domain'],
+              allow: ['client-app', 'client-domain', 'ui'],
+            },
+            {
+              from: ['ui'],
+              allow: ['ui'],
+            },
+            {
+              from: ['drizzle'],
+              allow: ['drizzle'],
+            },
+          ],
+        },
+      ],
+
+      // Domain / UseCase は外部ライブラリに依存しない
+      'boundaries/external': [
+        'error',
+        {
+          default: 'allow',
+          rules: [
+            {
+              from: ['server-domain', 'server-usecases'],
+              disallow: ['*'],
             },
           ],
         },
@@ -374,6 +420,21 @@ export default tseslint.config(
       'prefer-arrow-callback': 'error',
       'no-unused-vars': 'off', // TypeScript が処理
       // ファイル/関数の肥大化防止
+    },
+  },
+
+  // Boundaries: 層定義外のファイルや依存を禁止
+  {
+    files: [
+      'packages/server/**/src/**/*.{ts,tsx}',
+      'packages/client/**/src/**/*.{ts,tsx}',
+      'packages/ui/src/**/*.{ts,tsx}',
+      'packages/drizzle/src/**/*.{ts,tsx}',
+    ],
+    rules: {
+      'boundaries/no-unknown-files': 'error',
+      'boundaries/no-unknown': 'error',
+      'boundaries/no-ignored': 'error',
     },
   },
 
@@ -823,12 +884,12 @@ export default tseslint.config(
       'boundaries/element-types': [
         'error',
         {
-          default: 'allow',
-          message: 'Hooks層からUI層(pages/components)を参照しないでください。',
+          default: 'disallow',
+          message: 'Clean Architecture violation: %{from} is not allowed to import from %{target}.',
           rules: [
             {
               from: ['client-domain'],
-              disallow: ['client-app'],
+              allow: ['client-domain', 'client-api'],
             },
           ],
         },
@@ -1177,7 +1238,16 @@ export default tseslint.config(
               message: 'Domain層からAdaptersを参照しないでください。',
             },
             {
-              group: ['hono', 'drizzle-orm', '@cloudflare/**'],
+              group: [
+                'hono',
+                'hono/**',
+                'drizzle-orm',
+                'drizzle-orm/**',
+                '@cloudflare/**',
+                'cloudflare:*',
+                'zod',
+                '@hono/zod-openapi',
+              ],
               message: 'Domain層ではフレームワークやインフラ依存を禁止します。',
             },
           ],
@@ -1188,6 +1258,11 @@ export default tseslint.config(
   {
     files: ['packages/server/usecases/src/**/*.{ts,tsx}'],
     rules: {
+      // UseCase は配線/手順に寄せて、複雑化を Domain 側へ押し戻す
+      'sonarjs/cognitive-complexity': ['error', 10],
+      complexity: ['error', { max: 10 }],
+      'max-depth': ['error', 3],
+
       'no-console': 'error',
       'no-restricted-globals': ['error', 'fetch', 'Headers', 'Request', 'Response'],
       'no-restricted-imports': [
@@ -1204,10 +1279,75 @@ export default tseslint.config(
               message: 'UseCase層からAdaptersを参照しないでください。',
             },
             {
-              group: ['hono', 'drizzle-orm', '@cloudflare/**'],
+              group: [
+                'hono',
+                'hono/**',
+                'drizzle-orm',
+                'drizzle-orm/**',
+                '@cloudflare/**',
+                'cloudflare:*',
+                'zod',
+                '@hono/zod-openapi',
+              ],
               message: 'UseCase層ではフレームワークやインフラ依存を禁止します。',
             },
           ],
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "ThrowStatement > NewExpression[callee.name='Error']",
+          message:
+            'UseCase層での throw new Error は禁止です。Domain で定義したエラー型を使用してください。',
+        },
+        {
+          selector:
+            'TSInterfaceDeclaration[id.name=/.*(Repository|Port|Gateway|Notifier)$/], TSTypeAliasDeclaration[id.name=/.*(Repository|Port|Gateway|Notifier)$/]',
+          message:
+            'UseCase層で Port/Repository などのインターフェースを定義しないでください。Domain層に定義してください。',
+        },
+        {
+          selector: "ClassDeclaration[superClass.type='Identifier'][superClass.name=/Error$/]",
+          message:
+            'UseCase層で Error 派生クラスを定義しないでください。Domain層で定義してください。',
+        },
+        {
+          selector:
+            "TSInterfaceDeclaration[id.name='AppVariables'], TSTypeAliasDeclaration[id.name='AppVariables']",
+          message:
+            'AppVariables は UseCase 層に定義しないでください。HTTPアダプタ層で管理してください。',
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/server/app/src/server.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.property.name='set'][arguments.0.value='kv']",
+          message:
+            'server.ts で kv を Context へ直接注入しないでください。必要なら app で組み立てた依存を UseCase 経由で渡してください。',
+        },
+        {
+          selector: "CallExpression[callee.property.name='set'][arguments.0.value='r2']",
+          message:
+            'server.ts で r2 を Context へ直接注入しないでください。必要なら app で組み立てた依存を UseCase 経由で渡してください。',
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/server/http/src/context.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "TSPropertySignature[key.name='kv'], TSPropertySignature[key.name='r2']",
+          message:
+            'AppVariables に KV/R2 の生バインディングを追加しないでください。UseCase 経由の依存だけを公開してください。',
         },
       ],
     },
@@ -1259,6 +1399,11 @@ export default tseslint.config(
         {
           paths: [
             {
+              name: '@cfreact-template-server/app',
+              message:
+                'HTTPアダプタ層から App 層を参照しないでください。必要な型は usecases/types から参照してください。',
+            },
+            {
               name: 'zod',
               message: 'zod は packages/server/http/src/schemas 配下でのみ使用してください。',
             },
@@ -1283,6 +1428,11 @@ export default tseslint.config(
               message:
                 'HTTPアダプタ層から直接Persistence層を参照せず、UseCase経由でアクセスしてください。',
             },
+            {
+              group: ['@cfreact-template-server/app/**'],
+              message:
+                'HTTPアダプタ層から App 層を参照しないでください。必要な型は usecases/types から参照してください。',
+            },
           ],
         },
       ],
@@ -1291,6 +1441,16 @@ export default tseslint.config(
         {
           selector: "MemberExpression[object.name='c'][property.name='env']",
           message: 'HTTP層から直接c.envを参照せず、appレイヤが注入する依存を利用してください。',
+        },
+        {
+          selector:
+            'TSInterfaceDeclaration[id.name=/.*(Repository|Port|Gateway|Notifier)$/], TSTypeAliasDeclaration[id.name=/.*(Repository|Port|Gateway|Notifier)$/]',
+          message:
+            'HTTP層で Port/Repository などのインターフェースを定義しないでください。Domain層に定義してください。',
+        },
+        {
+          selector: "ClassDeclaration[superClass.type='Identifier'][superClass.name=/Error$/]",
+          message: 'HTTP層で Error 派生クラスを定義しないでください。Domain層で定義してください。',
         },
       ],
     },

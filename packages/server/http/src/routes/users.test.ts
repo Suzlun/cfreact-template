@@ -10,13 +10,12 @@ import type { User, UserCreatedNotifier } from '@cfreact-template-server/domain'
 import { openApiApp } from '@cfreact-template-server/http';
 import { DrizzleUserRepository, createDrizzleClient } from '@cfreact-template-server/persistence';
 import type { Bindings } from '@cfreact-template-server/types';
-import { CreateUser, GetUser, ListUsers } from '@cfreact-template-server/usecases';
-
-interface UsersUseCases {
-  listUsers: ListUsers;
-  createUser: CreateUser;
-  getUser: GetUser;
-}
+import {
+  CreateUser,
+  GetUser,
+  ListUsers,
+  type UsersUseCases,
+} from '@cfreact-template-server/usecases';
 
 interface UserResponse {
   id: number;
@@ -54,15 +53,11 @@ const app = new OpenAPIHono<{
   Bindings: Bindings;
   Variables: {
     usersUseCases: UsersUseCases;
-    kv: Bindings['KV'];
-    r2: Bindings['R2'];
   };
 }>();
 
 app.use('*', async (c, next) => {
   c.set('usersUseCases', createUsersUseCases());
-  c.set('kv', env.KV);
-  c.set('r2', env.R2);
   await next();
 });
 

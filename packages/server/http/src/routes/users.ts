@@ -1,7 +1,8 @@
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 
-import type { AppVariables, UsersUseCases } from '@cfreact-template-server/app';
+import { InvalidCreateUserInputError } from '@cfreact-template-server/domain';
 import type { User } from '@cfreact-template-server/domain';
+import type { AppVariables } from '@cfreact-template-server/http/context';
 import {
   createUserInputSchema,
   errorResponseSchema,
@@ -10,6 +11,7 @@ import {
   usersListResponseSchema,
 } from '@cfreact-template-server/http/schemas';
 import type { Bindings } from '@cfreact-template-server/types';
+import type { UsersUseCases } from '@cfreact-template-server/usecases';
 
 const listUsersRoute = createRoute({
   method: 'get',
@@ -128,8 +130,11 @@ const registerUsersRoutes = (app: OpenAPIHono<{ Bindings: Bindings; Variables: A
       const newUser = await createUser.execute(body);
       return c.json(toUserResponse(newUser), 201);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create user';
-      return c.json({ error: message }, 400);
+      if (error instanceof InvalidCreateUserInputError) {
+        return c.json({ error: error.message }, 400);
+      }
+
+      return c.json({ error: 'Failed to create user' }, 400);
     }
   });
 

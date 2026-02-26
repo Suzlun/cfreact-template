@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 
 import { users } from '@cfreact-template/drizzle';
 
-import type { CreateUserInput, User, UserRepository } from '@cfreact-template-server/domain';
+import type { User, UserRepository, ValidCreateUserInput } from '@cfreact-template-server/domain';
 
 import type { DrizzleClient } from './db';
 
@@ -25,7 +25,7 @@ export class DrizzleUserRepository implements UserRepository {
     return this.mapRow(row);
   }
 
-  async create(input: CreateUserInput): Promise<User> {
+  async create(input: ValidCreateUserInput): Promise<User> {
     const [row] = await this.db.insert(users).values(input).returning();
     if (row == null) {
       throw new Error('Failed to create user');

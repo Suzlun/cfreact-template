@@ -6,6 +6,7 @@
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./context": "./src/context.ts",
     "./schemas": "./src/schemas/index.ts"
   },
   "dependencies": {

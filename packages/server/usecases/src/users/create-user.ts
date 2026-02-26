@@ -1,3 +1,4 @@
+import { normalizeCreateUserInput } from '@cfreact-template-server/domain';
 import type {
   CreateUserInput,
   User,
@@ -13,11 +14,9 @@ export class CreateUser {
   ) {}
 
   async execute(input: CreateUserInput): Promise<User> {
-    if (input.name.trim() === '' || input.email.trim() === '') {
-      throw new Error('Name and email are required');
-    }
+    const normalizedInput = normalizeCreateUserInput(input);
 
-    const createdUser = await this.userRepository.create(input);
+    const createdUser = await this.userRepository.create(normalizedInput);
 
     try {
       await this.userCreatedNotifier.notifyUserCreated(createdUser);

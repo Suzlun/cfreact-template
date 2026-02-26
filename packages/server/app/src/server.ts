@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 
-import { createUsersUseCases, type AppVariables } from '@cfreact-template-server/app';
-import { openApiApp } from '@cfreact-template-server/http';
+import { createUsersUseCases } from '@cfreact-template-server/app';
+import { openApiApp, type AppVariables } from '@cfreact-template-server/http';
 import type { Bindings } from '@cfreact-template-server/types';
 
 const app = new Hono<{ Bindings: Bindings; Variables: AppVariables }>();
@@ -12,8 +12,6 @@ const app = new Hono<{ Bindings: Bindings; Variables: AppVariables }>();
 app.use('*', logger());
 app.use('*', async (c, next) => {
   c.set('usersUseCases', createUsersUseCases(c.env));
-  c.set('kv', c.env.KV);
-  c.set('r2', c.env.R2);
   await next();
 });
 app.use(
