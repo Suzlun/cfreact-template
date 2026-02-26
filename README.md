@@ -245,6 +245,31 @@ pnpm dev:client
 pnpm dev:all
 ```
 
+### Workers Email のローカル検証
+
+`pnpm dev:server` で Wrangler を起動している状態で、`POST /api/v1/users` を叩くと
+`env.EMAIL.send()` が呼ばれ、Wrangler がローカルに `.eml` ファイルを出力します。
+
+1. `wrangler.toml` の `EMAIL_FROM` と `EMAIL_TO` を開発用の値に更新
+2. サーバーを起動
+
+   ```bash
+   pnpm dev:server
+   ```
+
+3. 別ターミナルでユーザー作成 API を実行
+
+   ```bash
+   curl --request POST 'http://localhost:8787/api/v1/users' \
+     --header 'Content-Type: application/json' \
+     --data '{"name":"Email Test User","email":"email-test@example.com"}'
+   ```
+
+4. `pnpm dev:server` 側のログに出る `.eml` ファイルパスを確認
+
+本番で送信を有効化する場合は Cloudflare Email Routing を有効化し、`EMAIL_FROM` と `EMAIL_TO`
+を運用値に変更してください。
+
 ### 利用可能なスクリプト
 
 | スクリプト              | 説明                                        |

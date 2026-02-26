@@ -4,8 +4,9 @@ import {
   createExecutionContext as createExecutionContextRaw,
   waitOnExecutionContext as waitOnExecutionContextRaw,
 } from 'cloudflare:test';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { User, UserCreatedNotifier } from '@cfreact-template-server/domain';
 import { openApiApp } from '@cfreact-template-server/http';
 import { DrizzleUserRepository, createDrizzleClient } from '@cfreact-template-server/persistence';
 import type { Bindings } from '@cfreact-template-server/types';
@@ -30,13 +31,21 @@ interface ErrorResponse {
 
 const env = testEnv as unknown as Bindings;
 
+const notifyUserCreated = vi.fn(async (_user: User): Promise<void> => {
+  return;
+});
+
+const userCreatedNotifier: UserCreatedNotifier = {
+  notifyUserCreated: (user) => notifyUserCreated(user),
+};
+
 const createUsersUseCases = () => {
   const drizzle = createDrizzleClient(env.DB);
   const repository = new DrizzleUserRepository(drizzle);
 
   return {
     listUsers: new ListUsers(repository),
-    createUser: new CreateUser(repository),
+    createUser: new CreateUser(repository, userCreatedNotifier),
     getUser: new GetUser(repository),
   } satisfies UsersUseCases;
 };
@@ -72,6 +81,11 @@ function waitOnExecutionContext(ctx: ExecutionContext): Promise<void> {
 }
 
 describe('Users API', () => {
+  beforeEach(() => {
+    notifyUserCreated.mockReset();
+    notifyUserCreated.mockResolvedValue(undefined);
+  });
+
   describe('GET /api/v1/users', () => {
     it('空のリストを返す', async () => {
       const request = new Request('http://localhost/api/v1/users');
@@ -145,6 +159,52 @@ describe('Users API', () => {
       expect(response.status).toBe(400);
       const data = await response.json<ErrorResponse>();
       expect(data.error).toBe('Name and email are required');
+    });
+
+    it('ユーザー作成時に通知送信を実行する', async () => {
+      const newUser = {
+        name: 'Email Trigger User',
+        email: 'email-trigger@example.com',
+      };
+
+      const request = new Request('http://localhost/api/v1/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser),
+      });
+      const ctx = createExecutionContext();
+      const response = await app.fetch(request, env, ctx);
+      await waitOnExecutionContext(ctx);
+
+      expect(response.status).toBe(201);
+      expect(notifyUserCreated).toHaveBeenCalledTimes(1);
+      const firstCall = notifyUserCreated.mock.calls[0];
+      if (firstCall == null) {
+        throw new Error('notifyUserCreated should have been called');
+      }
+      const [createdUser] = firstCall;
+      expect(createdUser).toMatchObject(newUser);
+    });
+
+    it('通知送信に失敗してもユーザー作成は成功する', async () => {
+      notifyUserCreated.mockRejectedValueOnce(new Error('email delivery failed'));
+
+      const newUser = {
+        name: 'Notification Failure User',
+        email: 'notification-failure@example.com',
+      };
+
+      const request = new Request('http://localhost/api/v1/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser),
+      });
+      const ctx = createExecutionContext();
+      const response = await app.fetch(request, env, ctx);
+      await waitOnExecutionContext(ctx);
+
+      expect(response.status).toBe(201);
+      expect(notifyUserCreated).toHaveBeenCalledTimes(1);
     });
 
     it('メールが空の場合はエラーを返す', async () => {

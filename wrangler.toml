@@ -20,8 +20,19 @@ id = "YOUR_KV_NAMESPACE_ID_HERE"
 binding = "R2"
 bucket_name = "cfreact-template-bucket"
 
+[[send_email]]
+name = "EMAIL"
+
+[vars]
+EMAIL_FROM = "noreply@example.com"
+EMAIL_TO = "recipient@example.com"
+
 [env.production]
 name = "cfreact-template-server-production"
+
+[env.production.vars]
+EMAIL_FROM = "noreply@example.com"
+EMAIL_TO = "recipient@example.com"
 
 [[env.production.d1_databases]]
 binding = "DB"
@@ -35,3 +46,6 @@ id = "YOUR_PRODUCTION_KV_NAMESPACE_ID_HERE"
 [[env.production.r2_buckets]]
 binding = "R2"
 bucket_name = "cfreact-template-bucket-production"
+
+[[env.production.send_email]]
+name = "EMAIL"
