@@ -18,7 +18,7 @@ description: Enforce this repository's coding rules and spec-driven workflow (Op
 
 - `AGENTS.md` (project workflow, required commands, boundaries, OpenSpec workflow)
 - `openspec/config.yaml` (OpenSpec 設定。change ディレクトリが無い場合もある)
-- `docs/CODING_STANDARDS.md` (コーディング規約の一次資料)
+- `CODING_STANDARDS.md` (コーディング規約の一次資料)
 - `CONTRIBUTING.md` (contributor workflow / required checks)
 - `eslint.config.js` (lint の実装)
 

@@ -572,7 +572,7 @@ pnpm check
 
 ## コントリビュート
 
-詳細は `CONTRIBUTING.md` を参照してください（ブランチ運用、チェック項目、SDK 再生成手順など）。コーディング規則は `docs/CODING_STANDARDS.md` にまとめています。
+詳細は `CONTRIBUTING.md` を参照してください（ブランチ運用、チェック項目、SDK 再生成手順など）。コーディング規則は `CODING_STANDARDS.md` にまとめています。
 
 ## リソース
 

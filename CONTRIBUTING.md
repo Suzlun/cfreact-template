@@ -4,7 +4,7 @@
 
 ## ドキュメント
 
-- コーディング規則（一次資料）: `docs/CODING_STANDARDS.md`
+- コーディング規則（一次資料）: `CODING_STANDARDS.md`
   - `eslint.config.js` は規約の自動検査（実装）として追従させます
 - 仕様（契約）: `openspec/specs/**/spec.md`
   - `pnpm lint` で `openspec validate --all --strict` と Scenario ID カバレッジ検査が走ります
@@ -54,7 +54,7 @@ Husky によりコミット時に検証されます。
 
 ## 変更を入れるときの原則
 
-- まず `docs/CODING_STANDARDS.md` の意図（層の責務・依存方向）に沿って配置する
+- まず `CODING_STANDARDS.md` の意図（層の責務・依存方向）に沿って配置する
 - “例外” は最小にする（ESLint disable は説明必須。理由が妥当かレビュー対象）
 - 自動生成ファイルは手で直さない
   - 例: `packages/client/api/src/generated/**`

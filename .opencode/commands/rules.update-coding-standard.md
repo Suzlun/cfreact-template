@@ -1,5 +1,5 @@
 ---
-description: Update docs/CODING_STANDARDS.md from lint, CI, and git-hook enforcement for this TypeScript Cloudflare stack.
+description: Update CODING_STANDARDS.md from lint, CI, and git-hook enforcement for this TypeScript Cloudflare stack.
 ---
 
 ## User Input
@@ -12,7 +12,7 @@ You **MUST** consider the user input before proceeding if it is not empty.
 
 ## Goal
 
-Update `docs/CODING_STANDARDS.md` so humans, including beginners, can understand enforced rules at a glance without reading config files.
+Update `CODING_STANDARDS.md` so humans, including beginners, can understand enforced rules at a glance without reading config files.
 
 This repository is a TypeScript monorepo with React and Vite on the client, Hono on Cloudflare Workers on the server, and a TypeSpec to OpenAPI to SDK generation flow.
 
@@ -21,7 +21,7 @@ The document is **lint-as-rules**. Include **only** rules that are mechanically 
 ## Hard Constraints (MUST)
 
 1. Source of truth is the lint, CI, and git-hook configuration listed below. Do not invent rules that are not enforceable by those files.
-2. Target file is `docs/CODING_STANDARDS.md`. Do not switch to another path.
+2. Target file is `CODING_STANDARDS.md`. Do not switch to another path.
 3. For each enforced rule, include:
    - 1-line summary of required or forbidden behavior
    - Enforcement point with command, config key, and file path
@@ -41,7 +41,7 @@ The document is **lint-as-rules**. Include **only** rules that are mechanically 
 
 ## Required Structure (MUST)
 
-`docs/CODING_STANDARDS.md` MUST contain these exact H2 headings in this order:
+`CODING_STANDARDS.md` MUST contain these exact H2 headings in this order:
 
 ## 1. 本書の位置付け
 
@@ -72,7 +72,7 @@ The document is **lint-as-rules**. Include **only** rules that are mechanically 
 ## Execution Steps
 
 1. Read these files:
-   - `docs/CODING_STANDARDS.md` current version
+   - `CODING_STANDARDS.md` current version
    - `package.json`
    - `eslint.config.js`
    - `.eslintrc-maxlines.json`
@@ -88,11 +88,11 @@ The document is **lint-as-rules**. Include **only** rules that are mechanically 
    - `commitlint.config.js`, `.lintstagedrc.json`
    - `.github/workflows/ci.yml`
 2. Extract only mechanically enforced rules from those files.
-3. Update `docs/CODING_STANDARDS.md` following all constraints above.
+3. Update `CODING_STANDARDS.md` following all constraints above.
 4. Ensure all examples and terminology match this repository stack: TypeScript, React, Hono, Cloudflare Workers, TypeSpec, OpenAPI, OpenSpec.
 
 ## Notes
 
-- This command is the canonical way to maintain `docs/CODING_STANDARDS.md`.
+- This command is the canonical way to maintain `CODING_STANDARDS.md`.
 - Mention this maintenance command in the operations section of the coding standards document:
   - `opencode run --command rules.update-coding-standard`
