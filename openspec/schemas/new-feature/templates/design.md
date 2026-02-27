@@ -10,11 +10,11 @@
 
 ## Assumptions / Dependencies
 
-- <!-- TODO: Preconditions/dependencies (external systems, existing specs, feature flags, authz, migrations, TypeSpec/OpenAPI contract, etc.). -->
+- <!-- TODO: Preconditions/dependencies (external systems, existing specs, feature flags, authz, migrations, API contract, etc.). -->
 
 ## Impacted Areas
 
-- <!-- TODO: Impacted areas (packages/modules, APIs, DB, jobs, monitoring, security, performance). -->
+- <!-- TODO: Impacted areas (modules/components, APIs, DB, jobs, monitoring, security, performance). -->
 
 ## Directory Tree
 
@@ -46,7 +46,7 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-  %% TODO: Show key packages/modules and dependencies (arrows indicate dependency direction).
+  %% TODO: Show key modules/components and dependencies (arrows indicate dependency direction).
   A[Package A] --> B[Package B]
 ```
 
@@ -60,6 +60,16 @@ sequenceDiagram
   U->>S: TBD
   S-->>U: TBD
 ```
+
+## UI Wireframes
+
+<!-- TODO: If this change has no UI work, write N/A and briefly explain why. -->
+
+<!-- TODO: If this change includes UI implementation/modification, add one or more Draw.io wireframes exported as .drawio.svg under wireframes/. -->
+
+![<!-- TODO: Wireframe title -->](wireframes/<!-- TODO: wireframe.drawio.svg -->)
+
+<!-- TODO: Notes: key states (default/loading/empty/error), user actions, and mapping to Scenario IDs. -->
 
 ## Domain Model Diagram
 
@@ -85,9 +95,9 @@ erDiagram
 
 ### Package List
 
-| Package                                                      | Purpose / Responsibility                       | Public API                                 | Dependencies                    |
-| ------------------------------------------------------------ | ---------------------------------------------- | ------------------------------------------ | ------------------------------- |
-| <!-- TODO: Package path/name (e.g., packages/client/app) --> | <!-- TODO: Purpose/responsibility (1 line) --> | <!-- TODO: Key public API/entry points --> | <!-- TODO: Key dependencies --> |
+| Package                                                         | Purpose / Responsibility                       | Public API                                 | Dependencies                    |
+| --------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------ | ------------------------------- |
+| <!-- TODO: Module/package name (e.g., client/app or app/ui) --> | <!-- TODO: Purpose/responsibility (1 line) --> | <!-- TODO: Key public API/entry points --> | <!-- TODO: Key dependencies --> |
 
 ### Details
 
@@ -137,9 +147,9 @@ flowchart TD
 
 ### Unit/Component Test (UT)
 
-| UT ID                                        | Test Name                                                             | Package                                  | Category                                      | Summary                         | Steps (Test)                                       | Expected Behavior                             |
-| -------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------- | --------------------------------------------- | ------------------------------- | -------------------------------------------------- | --------------------------------------------- |
-| <!-- TODO: e.g., UT-USER-MGMT-FE-BND-003 --> | <!-- TODO: e.g., [USER-MGMT-FE-S003] Email input validates format --> | <!-- TODO: e.g., packages/client/app --> | <!-- TODO: Category e.g., HAP/ERR/BND/... --> | <!-- TODO: Summary (1 line) --> | <!-- TODO: Arrange -> Act -> Assert highlights --> | <!-- TODO: Expected behavior (observable) --> |
+| UT ID                                        | Test Name                                                             | Package                         | Category                                      | Summary                         | Steps (Test)                                       | Expected Behavior                             |
+| -------------------------------------------- | --------------------------------------------------------------------- | ------------------------------- | --------------------------------------------- | ------------------------------- | -------------------------------------------------- | --------------------------------------------- |
+| <!-- TODO: e.g., UT-USER-MGMT-FE-BND-003 --> | <!-- TODO: e.g., [USER-MGMT-FE-S003] Email input validates format --> | <!-- TODO: e.g., client/app --> | <!-- TODO: Category e.g., HAP/ERR/BND/... --> | <!-- TODO: Summary (1 line) --> | <!-- TODO: Arrange -> Act -> Assert highlights --> | <!-- TODO: Expected behavior (observable) --> |
 
 ## Rollback / Migration
 

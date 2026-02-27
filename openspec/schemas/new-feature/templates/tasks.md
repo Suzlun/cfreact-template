@@ -1,6 +1,6 @@
 ## 1. <!-- TODO: Task group name (e.g., Setup / FE / BE / Migration / Tests / Docs). -->
 
-- [ ] 1.1 <!-- TODO: Task description. Be concrete; include scope (packages/files) and a clear done condition. -->
+- [ ] 1.1 <!-- TODO: Task description. Be concrete; include scope (modules/files) and a clear done condition. -->
 - [ ] 1.2 <!-- TODO: Task description. Keep it small (one session). Include how to verify. -->
 
 ## 2. <!-- TODO: Task group name (ordered by dependencies). -->

@@ -152,6 +152,15 @@ artifacts:
       - System/Package/Sequence/Domain Model/ER diagrams MUST reflect the spec units being changed.
       - Keep diagrams minimal but accurate.
 
+      UI Wireframes (conditional):
+      - If this change includes UI implementation/modification, you MUST:
+        - Create at least one Draw.io wireframe exported as `.drawio.svg`.
+        - Place wireframe files under `wireframes/` (relative to this design.md).
+        - Add a `## UI Wireframes` section in design.md.
+        - Embed the SVG(s) using relative paths (e.g., `![Title](wireframes/example.drawio.svg)`).
+        - Include wireframe files in **Directory Tree** and **New / Changed Files**.
+      - If this change has no UI work, keep the `## UI Wireframes` section and write `N/A` with a brief reason.
+
       Package-Level Design:
       - Provide a package list with responsibilities, public APIs, and dependencies.
       - For each important package, include key flows, error handling, and testing strategy.
