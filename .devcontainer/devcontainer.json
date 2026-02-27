@@ -9,6 +9,7 @@
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
+        "hediet.vscode-drawio",
         "ms-azuretools.vscode-docker",
         "typespec.typespec-vscode",
         "vitest.explorer",
