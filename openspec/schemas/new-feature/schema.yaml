@@ -181,11 +181,11 @@ artifacts:
          - Steps (Playwright)
          - Expected Behavior
 
-      3) `### Integration Test (IT)`
+      3) `### Integration Test (Endpoint)`
          Columns:
          - IT ID
          - Test Name
-         - Package
+         - Genre
          - Category
          - Summary
          - Steps (Test)

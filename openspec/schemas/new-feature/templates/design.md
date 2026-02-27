@@ -129,11 +129,11 @@ flowchart TD
 | --------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------- | --------------------------------------------- | ------------------------------- | ------------------------------------------------------- | --------------------------------------------- |
 | <!-- TODO: e.g., E2E-USER-MGMT-FE-HAP-001 --> | <!-- TODO: e.g., [USER-MGMT-FE-S001] Create user succeeds --> | <!-- TODO: Scenario ID e.g., USER-MGMT-FE-S001 --> | <!-- TODO: Category e.g., HAP/ERR/BND/... --> | <!-- TODO: Summary (1 line) --> | <!-- TODO: Steps performed in Playwright (sequence) --> | <!-- TODO: Expected behavior (observable) --> |
 
-### Integration Test (IT)
+### Integration Test (Endpoint)
 
-| IT ID                                        | Test Name                                                            | Package                                   | Category                                      | Summary                         | Steps (Test)                                         | Expected Behavior                             |
-| -------------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------- | --------------------------------------------- | ------------------------------- | ---------------------------------------------------- | --------------------------------------------- |
-| <!-- TODO: e.g., IT-USER-MGMT-BE-ERR-002 --> | <!-- TODO: e.g., [USER-MGMT-BE-S004] Duplicate email returns 400 --> | <!-- TODO: e.g., packages/server/http --> | <!-- TODO: Category e.g., HAP/ERR/BND/... --> | <!-- TODO: Summary (1 line) --> | <!-- TODO: Setup -> execute -> assert (sequence) --> | <!-- TODO: Expected behavior (observable) --> |
+| IT ID                                        | Test Name                                                            | Genre                             | Category                                      | Summary                         | Steps (Test)                                         | Expected Behavior                             |
+| -------------------------------------------- | -------------------------------------------------------------------- | --------------------------------- | --------------------------------------------- | ------------------------------- | ---------------------------------------------------- | --------------------------------------------- |
+| <!-- TODO: e.g., IT-USER-MGMT-BE-ERR-002 --> | <!-- TODO: e.g., [USER-MGMT-BE-S004] Duplicate email returns 400 --> | <!-- TODO: fe/be/other/etc... --> | <!-- TODO: Category e.g., HAP/ERR/BND/... --> | <!-- TODO: Summary (1 line) --> | <!-- TODO: Setup -> execute -> assert (sequence) --> | <!-- TODO: Expected behavior (observable) --> |
 
 ### Unit/Component Test (UT)
 
