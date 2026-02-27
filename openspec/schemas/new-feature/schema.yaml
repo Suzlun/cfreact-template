@@ -9,6 +9,8 @@ artifacts:
     template: proposal.md
     instruction: |
       Create the proposal document that establishes WHY this change is needed.
+      language rule:
+      - Think in English; output in Japanese.
 
       Placeholder rule:
       - Use `<!-- TODO: details of what to write -->` for placeholders.
@@ -213,6 +215,7 @@ artifacts:
       Traceability rules:
       - UAT rows SHOULD reference a requirement reference ID (e.g., `USER-MGMT-FE-R001`) and the requirement name.
       - E2E/IT/UT rows SHOULD reference a Scenario ID.
+      - A single Scenario ID may be covered by multiple tests (1:N). Add multiple E2E/IT/UT rows referencing the same Scenario ID as needed (happy/error/boundary/security/performance/etc.).
       - Automated tests MUST include the Scenario ID in the test title in brackets:
         - Example: `test('[USER-MGMT-FE-S001] Create user', async () => { ... })`
 
@@ -240,6 +243,7 @@ artifacts:
 
       Coverage and traceability:
       - For each ADDED/MODIFIED Scenario ID, include a task to add/update automated tests.
+      - It is valid (and often expected) to add multiple tests per Scenario ID (1:N) to cover different categories.
       - Automated tests MUST reference Scenario IDs in test titles using brackets.
       - Include tasks for updating docs (spec/design) when behavior changes.
 
