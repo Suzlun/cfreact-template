@@ -1,3 +1,0 @@
-# References
-
-- None yet.
