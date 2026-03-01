@@ -1,0 +1,31 @@
+{
+  "name": "@cfreact-template-backend/http",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./context": "./src/context.ts",
+    "./schemas": "./src/schemas/index.ts"
+  },
+  "dependencies": {
+    "@cfreact-template-backend/domain": "workspace:*",
+    "@cfreact-template-backend/types": "workspace:*",
+    "@cfreact-template-backend/usecases": "workspace:*",
+    "@cfreact-template-backend/drizzle": "workspace:*",
+    "@hono/zod-openapi": "^1.2.0",
+    "hono": "^4.11.3",
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.12.10",
+    "@cloudflare/workers-types": "^4.20260107.1",
+    "@cfreact-template-backend/persistence": "workspace:*",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "scripts": {
+    "check": "tsc --noEmit"
+  }
+}

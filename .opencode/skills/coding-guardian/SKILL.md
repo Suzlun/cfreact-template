@@ -9,7 +9,7 @@ description: Enforce this repository's coding rules and spec-driven workflow (Op
 
 - 返答言語: `AGENTS.md` の方針に従う
 - 重要: `openspec/**`（要求/合意）と実装が矛盾しないように保つ
-- 重要: 生成物は手編集しない（例: `packages/client/api/src/generated/**`）
+- 重要: 生成物は手編集しない（例: `packages/frontend/api/src/generated/**`）
 - 重要: lint 回避は禁止（`eslint-disable` 等で逃げずに直す）
 
 ## Workflow
@@ -25,18 +25,18 @@ description: Enforce this repository's coding rules and spec-driven workflow (Op
 ### 2) Classify the change (before editing)
 
 - Spec/workflow: `openspec/**` / `.opencode/**`
-- Frontend: `packages/client/app/**`, `packages/ui/**`
-- Backend: `packages/server/**`, `packages/drizzle/**`
+- Frontend: `packages/frontend/app/**`, `packages/frontend/ui/**`
+- Backend: `packages/backend/**`, `packages/backend/drizzle/**`
 - Tooling: ルート設定ファイル、CI（存在する場合）
 
 Key dependency directions are fixed (violations fail `pnpm lint`):
 
-- Client: `packages/client/app` -> `packages/client/domain` -> `packages/client/api`
-- Server: `packages/server/entry` -> `packages/server/app` -> (http/persistence/usecases) -> domain -> types
+- Client: `packages/frontend/app` -> `packages/frontend/domain` -> `packages/frontend/api`
+- Server: `packages/backend/entry` -> `packages/backend/app` -> (http/persistence/usecases) -> domain -> types
 
 ### 3) Implement without breaking rules
 
-- 生成物（例: `packages/client/api/src/generated/**`）は手で直さない
+- 生成物（例: `packages/frontend/api/src/generated/**`）は手で直さない
 - API 契約/SDK に影響する変更は、必要に応じて `pnpm gen:api-sdk`（swagger 生成 + SDK 再生成）まで通して整合を取る
 - 仕様/要件が変わる変更は、OpenSpec を運用している場合は change（例: `openspec/changes/**`）から始める（未初期化ならスキップ）
 - Do not bypass ESLint; fix design/boundaries instead
@@ -64,7 +64,7 @@ Lightweight checks for changed files (requires deps installed):
 
 ## Common violations to prevent
 
-- 生成物（例: `packages/client/api/src/generated/**`）の手編集
+- 生成物（例: `packages/frontend/api/src/generated/**`）の手編集
 - 合意済み要件（`openspec/**`）と実装の不整合
 - ESLint suppression / bypassing (no inline config)
-- `packages/client/app` から `packages/client/api` を直 import（domain を介さない）
+- `packages/frontend/app` から `packages/frontend/api` を直 import（domain を介さない）

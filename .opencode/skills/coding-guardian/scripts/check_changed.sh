@@ -51,7 +51,7 @@ go_files=()
 auto_exclude() {
   local p="$1"
   # Generated API client code is never hand-edited.
-  [[ "$p" == packages/client/api/src/generated/* ]] && return 0
+  [[ "$p" == packages/frontend/api/src/generated/* ]] && return 0
   return 1
 }
 

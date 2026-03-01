@@ -1,11 +1,11 @@
 name = "cfreact-template-server"
-main = "packages/server/entry/src/index.ts"
+main = "packages/backend/entry/src/index.ts"
 compatibility_date = "2025-11-13"
 compatibility_flags = ["nodejs_compat"]
 
 # Workers Sites for serving static files (optional)
 # [site]
-# bucket = "./packages/client/dist"
+# bucket = "./packages/frontend/app/dist"
 
 [[d1_databases]]
 binding = "DB"

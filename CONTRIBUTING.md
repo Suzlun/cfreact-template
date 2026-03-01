@@ -25,8 +25,8 @@
    ```
 2. 開発サーバー
    ```bash
-   pnpm dev:server    # @cfreact-template-server/entry (http://localhost:8787)
-   pnpm dev:client    # @cfreact-template-client/app  (http://localhost:5173)
+   pnpm dev:server    # @cfreact-template-backend/entry (http://localhost:8787)
+   pnpm dev:client    # @cfreact-template-frontend/app  (http://localhost:5173)
    # または
    pnpm dev:all
    ```
@@ -57,7 +57,7 @@ Husky によりコミット時に検証されます。
 - まず `CODING_STANDARDS.md` の意図（層の責務・依存方向）に沿って配置する
 - “例外” は最小にする（ESLint disable は説明必須。理由が妥当かレビュー対象）
 - 自動生成ファイルは手で直さない
-  - 例: `packages/client/api/src/generated/**`
+  - 例: `packages/frontend/api/src/generated/**`
 - 仕様が変わる変更は spec とテストをセットで更新する
   - `openspec/specs/**` の `#### Scenario: ... (..-S001)` に対して、テストタイトルに `[...-S001]` を含める
   - 自動化できない Scenario は `Tags: manual` を明示する
@@ -96,9 +96,9 @@ pnpm check
 
 ```bash
 pnpm test          # すべて（vitest workspace）
-pnpm test:client   # @cfreact-template-client/app
-pnpm test:server   # @cfreact-template-server/http
-pnpm test:ui       # @cfreact-template/ui
+pnpm test:client   # @cfreact-template-frontend/app
+pnpm test:server   # @cfreact-template-backend/http
+pnpm test:ui       # @cfreact-template-frontend/ui
 pnpm test:e2e      # Playwright（変更が e2e に影響する場合）
 ```
 

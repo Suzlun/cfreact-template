@@ -95,9 +95,9 @@ erDiagram
 
 ### Package List
 
-| Package                                                         | Purpose / Responsibility                       | Public API                                 | Dependencies                    |
-| --------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------ | ------------------------------- |
-| <!-- TODO: Module/package name (e.g., client/app or app/ui) --> | <!-- TODO: Purpose/responsibility (1 line) --> | <!-- TODO: Key public API/entry points --> | <!-- TODO: Key dependencies --> |
+| Package                                                                | Purpose / Responsibility                       | Public API                                 | Dependencies                    |
+| ---------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------ | ------------------------------- |
+| <!-- TODO: Module/package name (e.g., frontend/app or frontend/ui) --> | <!-- TODO: Purpose/responsibility (1 line) --> | <!-- TODO: Key public API/entry points --> | <!-- TODO: Key dependencies --> |
 
 ### Details
 
@@ -147,9 +147,9 @@ flowchart TD
 
 ### Unit/Component Test (UT)
 
-| UT ID                                        | Test Name                                                             | Package                         | Category                                      | Summary                         | Steps (Test)                                       | Expected Behavior                             |
-| -------------------------------------------- | --------------------------------------------------------------------- | ------------------------------- | --------------------------------------------- | ------------------------------- | -------------------------------------------------- | --------------------------------------------- |
-| <!-- TODO: e.g., UT-USER-MGMT-FE-BND-003 --> | <!-- TODO: e.g., [USER-MGMT-FE-S003] Email input validates format --> | <!-- TODO: e.g., client/app --> | <!-- TODO: Category e.g., HAP/ERR/BND/... --> | <!-- TODO: Summary (1 line) --> | <!-- TODO: Arrange -> Act -> Assert highlights --> | <!-- TODO: Expected behavior (observable) --> |
+| UT ID                                        | Test Name                                                             | Package                           | Category                                      | Summary                         | Steps (Test)                                       | Expected Behavior                             |
+| -------------------------------------------- | --------------------------------------------------------------------- | --------------------------------- | --------------------------------------------- | ------------------------------- | -------------------------------------------------- | --------------------------------------------- |
+| <!-- TODO: e.g., UT-USER-MGMT-FE-BND-003 --> | <!-- TODO: e.g., [USER-MGMT-FE-S003] Email input validates format --> | <!-- TODO: e.g., frontend/app --> | <!-- TODO: Category e.g., HAP/ERR/BND/... --> | <!-- TODO: Summary (1 line) --> | <!-- TODO: Arrange -> Act -> Assert highlights --> | <!-- TODO: Expected behavior (observable) --> |
 
 ## Rollback / Migration
 

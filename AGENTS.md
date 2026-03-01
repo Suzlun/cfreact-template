@@ -11,8 +11,8 @@
 
 ## API Contract (TypeSpec)
 
-- Source of truth: `packages/api-contract/main.tsp`
-- Generated OpenAPI: `packages/api-contract/openapi/openapi.json`
+- Source of truth: `packages/typespec/main.tsp`
+- Generated OpenAPI: `packages/typespec/openapi/openapi.json`
 - Regenerate OpenAPI + client SDK: `pnpm gen:api-sdk`
 - Codegen drift check (CI-style): `pnpm check:codegen`
 
@@ -25,8 +25,8 @@
 
 ## Architecture Notes
 
-- Client dependency direction: `client/app -> client/domain -> client/api`
-- Server dependency direction: `server/entry -> server/app -> (server/http|server/persistence|server/usecases) -> server/domain -> server/types`
+- Client dependency direction: `frontend/app -> frontend/domain -> frontend/api`
+- Server dependency direction: `backend/entry -> backend/app -> (backend/http|backend/persistence|backend/usecases) -> backend/domain -> backend/types`
 - API contract direction: implementation must follow TypeSpec; do not generate OpenAPI from server routes for SDK input.
 
 ## OpenSpec (Spec -> Test Contract)

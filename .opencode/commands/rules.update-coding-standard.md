@@ -36,7 +36,7 @@ The document is **lint-as-rules**. Include **only** rules that are mechanically 
    - `pnpm check:codegen` fails when generated artifacts drift
    - CI also runs `pnpm format:check`, `pnpm check`, and `pnpm test:run`
 7. Respect generated file policy:
-   - `packages/api-contract/openapi/openapi.json` and `packages/client/api/src/generated/client.ts` are generated outputs
+   - `packages/typespec/openapi/openapi.json` and `packages/frontend/api/src/generated/client.ts` are generated outputs
    - Regenerate via `pnpm gen:api-sdk`, do not hand-edit generated outputs
 
 ## Required Structure (MUST)
@@ -78,11 +78,11 @@ The document is **lint-as-rules**. Include **only** rules that are mechanically 
    - `.eslintrc-maxlines.json`
    - `.prettierrc.json`
    - `tsconfig.base.json`
-   - `packages/api-contract/main.tsp`
-   - `packages/api-contract/package.json`
-   - `packages/api-contract/tspconfig.yaml`
-   - `packages/client/api/package.json`
-   - `packages/client/api/orval.config.ts`
+   - `packages/typespec/main.tsp`
+   - `packages/typespec/package.json`
+   - `packages/typespec/tspconfig.yaml`
+   - `packages/frontend/api/package.json`
+   - `packages/frontend/api/orval.config.ts`
    - `scripts/openspec/verify-scenario-coverage.mjs`
    - `.husky/pre-commit`, `.husky/commit-msg`, `.husky/pre-push`
    - `commitlint.config.js`, `.lintstagedrc.json`

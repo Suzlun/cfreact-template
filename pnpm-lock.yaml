@@ -126,22 +126,164 @@ importers:
         specifier: ^4.57.0
         version: 4.57.0(@cloudflare/workers-types@4.20260107.1)
 
-  packages/api-contract:
+  packages/backend/app:
+    dependencies:
+      '@cfreact-template-backend/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@cfreact-template-backend/http':
+        specifier: workspace:*
+        version: link:../http
+      '@cfreact-template-backend/persistence':
+        specifier: workspace:*
+        version: link:../persistence
+      '@cfreact-template-backend/types':
+        specifier: workspace:*
+        version: link:../types
+      '@cfreact-template-backend/usecases':
+        specifier: workspace:*
+        version: link:../usecases
+      hono:
+        specifier: ^4.11.3
+        version: 4.11.3
     devDependencies:
-      '@typespec/compiler':
-        specifier: ^1.8.0
-        version: 1.8.0(@types/node@25.0.3)
-      '@typespec/http':
-        specifier: ^1.8.0
-        version: 1.8.0(@typespec/compiler@1.8.0(@types/node@25.0.3))
-      '@typespec/openapi':
-        specifier: ^1.8.0
-        version: 1.8.0(@typespec/compiler@1.8.0(@types/node@25.0.3))(@typespec/http@1.8.0(@typespec/compiler@1.8.0(@types/node@25.0.3)))
-      '@typespec/openapi3':
-        specifier: ^1.8.0
-        version: 1.8.0(@typespec/compiler@1.8.0(@types/node@25.0.3))(@typespec/http@1.8.0(@typespec/compiler@1.8.0(@types/node@25.0.3)))(@typespec/openapi@1.8.0(@typespec/compiler@1.8.0(@types/node@25.0.3))(@typespec/http@1.8.0(@typespec/compiler@1.8.0(@types/node@25.0.3))))
+      '@cloudflare/workers-types':
+        specifier: ^4.20260107.1
+        version: 4.20260107.1
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
-  packages/client/api:
+  packages/backend/domain:
+    dependencies:
+      '@cfreact-template-backend/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/backend/drizzle:
+    dependencies:
+      drizzle-orm:
+        specifier: ^0.45.1
+        version: 0.45.1(@cloudflare/workers-types@4.20260107.1)
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20260107.1
+        version: 4.20260107.1
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/backend/entry:
+    dependencies:
+      '@cfreact-template-backend/app':
+        specifier: workspace:*
+        version: link:../app
+      '@cfreact-template-backend/types':
+        specifier: workspace:*
+        version: link:../types
+      wrangler:
+        specifier: ^4.57.0
+        version: 4.57.0(@cloudflare/workers-types@4.20260107.1)
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20260107.1
+        version: 4.20260107.1
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/backend/http:
+    dependencies:
+      '@cfreact-template-backend/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@cfreact-template-backend/drizzle':
+        specifier: workspace:*
+        version: link:../drizzle
+      '@cfreact-template-backend/types':
+        specifier: workspace:*
+        version: link:../types
+      '@cfreact-template-backend/usecases':
+        specifier: workspace:*
+        version: link:../usecases
+      '@hono/zod-openapi':
+        specifier: ^1.2.0
+        version: 1.2.0(hono@4.11.3)(zod@4.3.5)
+      hono:
+        specifier: ^4.11.3
+        version: 4.11.3
+      zod:
+        specifier: ^4.3.5
+        version: 4.3.5
+    devDependencies:
+      '@cfreact-template-backend/persistence':
+        specifier: workspace:*
+        version: link:../persistence
+      '@cloudflare/vitest-pool-workers':
+        specifier: ^0.12.10
+        version: 0.12.10(@cloudflare/workers-types@4.20260107.1)(@vitest/runner@4.0.16)(@vitest/snapshot@4.0.16)(vitest@3.2.4)
+      '@cloudflare/workers-types':
+        specifier: ^4.20260107.1
+        version: 4.20260107.1
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@25.0.3)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@27.4.0)(msw@2.12.7(@types/node@25.0.3)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2)
+
+  packages/backend/persistence:
+    dependencies:
+      '@cfreact-template-backend/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@cfreact-template-backend/drizzle':
+        specifier: workspace:*
+        version: link:../drizzle
+      '@cfreact-template-backend/types':
+        specifier: workspace:*
+        version: link:../types
+      '@cfreact-template-backend/usecases':
+        specifier: workspace:*
+        version: link:../usecases
+      drizzle-orm:
+        specifier: ^0.45.1
+        version: 0.45.1(@cloudflare/workers-types@4.20260107.1)
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20260107.1
+        version: 4.20260107.1
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/backend/types:
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20260107.1
+        version: 4.20260107.1
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/backend/usecases:
+    dependencies:
+      '@cfreact-template-backend/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@cfreact-template-backend/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/frontend/api:
     devDependencies:
       openapi-typescript:
         specifier: ^7.10.1
@@ -153,17 +295,17 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/client/app:
+  packages/frontend/app:
     dependencies:
-      '@cfreact-template-client/api':
+      '@cfreact-template-frontend/api':
         specifier: workspace:*
         version: link:../api
-      '@cfreact-template-client/domain':
+      '@cfreact-template-frontend/domain':
         specifier: workspace:*
         version: link:../domain
-      '@cfreact-template/ui':
+      '@cfreact-template-frontend/ui':
         specifier: workspace:*
-        version: link:../../ui
+        version: link:../ui
       '@tanstack/react-query':
         specifier: 5.90.16
         version: 5.90.16(react@19.2.3)
@@ -214,9 +356,9 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@25.0.3)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@27.4.0)(msw@2.12.7(@types/node@25.0.3)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2)
 
-  packages/client/domain:
+  packages/frontend/domain:
     dependencies:
-      '@cfreact-template-client/api':
+      '@cfreact-template-frontend/api':
         specifier: workspace:*
         version: link:../api
       '@tanstack/react-query':
@@ -236,164 +378,7 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/drizzle:
-    dependencies:
-      drizzle-orm:
-        specifier: ^0.45.1
-        version: 0.45.1(@cloudflare/workers-types@4.20260107.1)
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^4.20260107.1
-        version: 4.20260107.1
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  packages/server/app:
-    dependencies:
-      '@cfreact-template-server/domain':
-        specifier: workspace:*
-        version: link:../domain
-      '@cfreact-template-server/http':
-        specifier: workspace:*
-        version: link:../http
-      '@cfreact-template-server/persistence':
-        specifier: workspace:*
-        version: link:../persistence
-      '@cfreact-template-server/types':
-        specifier: workspace:*
-        version: link:../types
-      '@cfreact-template-server/usecases':
-        specifier: workspace:*
-        version: link:../usecases
-      hono:
-        specifier: ^4.11.3
-        version: 4.11.3
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^4.20260107.1
-        version: 4.20260107.1
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  packages/server/domain:
-    dependencies:
-      '@cfreact-template-server/types':
-        specifier: workspace:*
-        version: link:../types
-    devDependencies:
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  packages/server/entry:
-    dependencies:
-      '@cfreact-template-server/app':
-        specifier: workspace:*
-        version: link:../app
-      '@cfreact-template-server/types':
-        specifier: workspace:*
-        version: link:../types
-      wrangler:
-        specifier: ^4.57.0
-        version: 4.57.0(@cloudflare/workers-types@4.20260107.1)
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^4.20260107.1
-        version: 4.20260107.1
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  packages/server/http:
-    dependencies:
-      '@cfreact-template-server/domain':
-        specifier: workspace:*
-        version: link:../domain
-      '@cfreact-template-server/types':
-        specifier: workspace:*
-        version: link:../types
-      '@cfreact-template-server/usecases':
-        specifier: workspace:*
-        version: link:../usecases
-      '@cfreact-template/drizzle':
-        specifier: workspace:*
-        version: link:../../drizzle
-      '@hono/zod-openapi':
-        specifier: ^1.2.0
-        version: 1.2.0(hono@4.11.3)(zod@4.3.5)
-      hono:
-        specifier: ^4.11.3
-        version: 4.11.3
-      zod:
-        specifier: ^4.3.5
-        version: 4.3.5
-    devDependencies:
-      '@cfreact-template-server/persistence':
-        specifier: workspace:*
-        version: link:../persistence
-      '@cloudflare/vitest-pool-workers':
-        specifier: ^0.12.10
-        version: 0.12.10(@cloudflare/workers-types@4.20260107.1)(@vitest/runner@4.0.16)(@vitest/snapshot@4.0.16)(vitest@3.2.4)
-      '@cloudflare/workers-types':
-        specifier: ^4.20260107.1
-        version: 4.20260107.1
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@25.0.3)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@27.4.0)(msw@2.12.7(@types/node@25.0.3)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2)
-
-  packages/server/persistence:
-    dependencies:
-      '@cfreact-template-server/domain':
-        specifier: workspace:*
-        version: link:../domain
-      '@cfreact-template-server/types':
-        specifier: workspace:*
-        version: link:../types
-      '@cfreact-template-server/usecases':
-        specifier: workspace:*
-        version: link:../usecases
-      '@cfreact-template/drizzle':
-        specifier: workspace:*
-        version: link:../../drizzle
-      drizzle-orm:
-        specifier: ^0.45.1
-        version: 0.45.1(@cloudflare/workers-types@4.20260107.1)
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^4.20260107.1
-        version: 4.20260107.1
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  packages/server/types:
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^4.20260107.1
-        version: 4.20260107.1
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  packages/server/usecases:
-    dependencies:
-      '@cfreact-template-server/domain':
-        specifier: workspace:*
-        version: link:../domain
-      '@cfreact-template-server/types':
-        specifier: workspace:*
-        version: link:../types
-    devDependencies:
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  packages/ui:
+  packages/frontend/ui:
     dependencies:
       '@emotion/react':
         specifier: ^11.14.0
@@ -453,6 +438,21 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@25.0.3)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@27.4.0)(msw@2.12.7(@types/node@25.0.3)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2)
+
+  packages/typespec:
+    devDependencies:
+      '@typespec/compiler':
+        specifier: ^1.8.0
+        version: 1.8.0(@types/node@25.0.3)
+      '@typespec/http':
+        specifier: ^1.8.0
+        version: 1.8.0(@typespec/compiler@1.8.0(@types/node@25.0.3))
+      '@typespec/openapi':
+        specifier: ^1.8.0
+        version: 1.8.0(@typespec/compiler@1.8.0(@types/node@25.0.3))(@typespec/http@1.8.0(@typespec/compiler@1.8.0(@types/node@25.0.3)))
+      '@typespec/openapi3':
+        specifier: ^1.8.0
+        version: 1.8.0(@typespec/compiler@1.8.0(@types/node@25.0.3))(@typespec/http@1.8.0(@typespec/compiler@1.8.0(@types/node@25.0.3)))(@typespec/openapi@1.8.0(@typespec/compiler@1.8.0(@types/node@25.0.3))(@typespec/http@1.8.0(@typespec/compiler@1.8.0(@types/node@25.0.3))))
 
 packages:
 
