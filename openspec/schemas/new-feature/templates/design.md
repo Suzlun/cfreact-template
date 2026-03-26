@@ -1,5 +1,9 @@
 ## Scope
 
+<!-- This file explains HOW to implement approved specs. -->
+<!-- MUST NOT introduce new product requirements that are absent from spec.md. -->
+<!-- MUST NOT replace tasks.md with a prose checklist. -->
+
 ### In Scope
 
 - <!-- TODO: Included features/requirements (user perspective). Reference Spec Units/Requirements/Scenario IDs when helpful. -->
@@ -63,13 +67,20 @@ sequenceDiagram
 
 ## UI Wireframes
 
-<!-- TODO: If this change has no UI work, write N/A and briefly explain why. -->
+<!-- Wireframes are generated separately with the `wireframe` skill (.opencode/skills/wireframe/SKILL.md). -->
+<!-- The skill outputs `{name}.wireframe.html` files. Embed them below with relative-path iframes once generated. -->
+<!-- If no wireframe files have been generated yet, write: N/A — wireframe not yet generated -->
 
-<!-- TODO: If this change includes UI implementation/modification, add one or more Draw.io wireframes exported as .drawio.svg under wireframes/. -->
+<!-- TODO: For each generated wireframe HTML, add a section like the example below. -->
 
-![<!-- TODO: Wireframe title -->](wireframes/<!-- TODO: wireframe.drawio.svg -->)
+### <!-- TODO: Screen name -->
 
-<!-- TODO: Notes: key states (default/loading/empty/error), user actions, and mapping to Scenario IDs. -->
+<iframe
+  src="<!-- TODO: relative path to {name}.wireframe.html -->"
+  title="<!-- TODO: Screen name -->"
+  width="<!-- TODO: width in px -->"
+  height="<!-- TODO: height in px -->"
+></iframe>
 
 ## Domain Model Diagram
 
@@ -116,6 +127,8 @@ erDiagram
 
 ## Implementation Plan
 
+<!-- Keep this at dependency-order design level, not a full task checklist. -->
+
 ```mermaid
 flowchart TD
   %% TODO: Show dependency order. Use branches for parallelizable work.
@@ -126,6 +139,8 @@ flowchart TD
 ```
 
 ## Test Plan
+
+<!-- The test plan maps specs to verification strategy. Do not use it as change history. -->
 
 ### User Acceptance Test (Manual)
 

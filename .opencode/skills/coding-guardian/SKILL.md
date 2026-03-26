@@ -1,70 +1,98 @@
 ---
 name: coding-guardian
-description: Enforce this repository's coding rules and spec-driven workflow (OpenSpec -> API contract -> generated -> implementation). Use when writing, modifying, refactoring, or reviewing code in this repository.
+description: Enforce this repository's real React, Hono, Drizzle, and TypeSpec rules while editing code, docs, or tooling.
 ---
 
 # Coding Guardian
 
-この skill は、実装・レビュー時にこのリポジトリの規約/ワークフローから逸脱しないようにガードします。
+この skill は、このリポジトリで実際に fail する規約と検証フローから外れないようにガードします。
 
-- 返答言語: `AGENTS.md` の方針に従う
-- 重要: `openspec/**`（要求/合意）と実装が矛盾しないように保つ
-- 重要: 生成物は手編集しない（例: `packages/frontend/api/src/generated/**`）
-- 重要: lint 回避は禁止（`eslint-disable` 等で逃げずに直す）
+- 返答言語: `AGENTS.md` に従う
+- 重要: まず `CODING_STANDARDS.md` と enforcement entrypoint を読む
+- 重要: API 契約の正は `packages/typespec/main.tsp`
+- 重要: 生成物は手編集しない
+- 重要: frontend は React + TSX + Vite + React Router であり、`packages/frontend/web` や SvelteKit 前提を持ち込まない
+- 重要: backend は TypeScript + Hono + Cloudflare Workers + Drizzle であり、Go / Gin / GORM 前提を持ち込まない
+- 重要: `pnpm lint` には OpenSpec validate と Scenario coverage check が含まれる
 
 ## Workflow
 
-### 1) Load the repository rules (before work)
+### 1) Load the repository rules before editing
 
-- `AGENTS.md` (project workflow, required commands, boundaries, OpenSpec workflow)
-- `openspec/config.yaml` (OpenSpec 設定。change ディレクトリが無い場合もある)
-- `CODING_STANDARDS.md` (コーディング規約の一次資料)
-- `CONTRIBUTING.md` (contributor workflow / required checks)
-- `eslint.config.js` (lint の実装)
+最初に次を読む。
 
-### 2) Classify the change (before editing)
+- `AGENTS.md`
+- `CODING_STANDARDS.md`
+- `CONTRIBUTING.md`
+- `.opencode/skills/coding-guardian/references/repo-entrypoints.md`
 
-- Spec/workflow: `openspec/**` / `.opencode/**`
-- Frontend: `packages/frontend/app/**`, `packages/frontend/ui/**`
-- Backend: `packages/backend/**`, `packages/backend/drizzle/**`
-- Tooling: ルート設定ファイル、CI（存在する場合）
+特に重要な enforcement entrypoint:
 
-Key dependency directions are fixed (violations fail `pnpm lint`):
+- root flow: `package.json`, `.github/workflows/ci.yml`, `.husky/pre-commit`, `.husky/commit-msg`, `.lintstagedrc.json`, `commitlint.config.js`, `eslint.config.js`
+- TypeSpec / codegen: `packages/typespec/package.json`, `packages/typespec/tspconfig.yaml`, `packages/typespec/README.md`, `packages/frontend/api/orval.config.ts`
+- frontend: `packages/frontend/app/package.json`, `packages/frontend/domain/package.json`, `packages/frontend/ui/package.json`
+- backend: `packages/backend/entry/package.json`, `packages/backend/app/package.json`, `packages/backend/http/package.json`, `packages/backend/persistence/package.json`, `packages/backend/usecases/package.json`, `packages/backend/domain/package.json`, `packages/backend/types/package.json`, `packages/backend/drizzle/package.json`, `packages/backend/http/src/contracts/openapi-contract.test.ts`
+- OpenSpec: `scripts/openspec/verify-scenario-coverage.mjs`
 
-- Client: `packages/frontend/app` -> `packages/frontend/domain` -> `packages/frontend/api`
-- Server: `packages/backend/entry` -> `packages/backend/app` -> (http/persistence/usecases) -> domain -> types
+### 2) Classify the change before editing
 
-### 3) Implement without breaking rules
+- Contract / codegen: `packages/typespec/**`, `packages/frontend/api/**`
+- Frontend: `packages/frontend/app/**`, `packages/frontend/domain/**`, `packages/frontend/ui/**`
+- Backend: `packages/backend/**`
+- Tooling / workflow: root config, scripts, hooks, CI, `.opencode/**`
 
-- 生成物（例: `packages/frontend/api/src/generated/**`）は手で直さない
-- API 契約/SDK に影響する変更は、必要に応じて `pnpm gen:api-sdk`（swagger 生成 + SDK 再生成）まで通して整合を取る
-- 仕様/要件が変わる変更は、OpenSpec を運用している場合は change（例: `openspec/changes/**`）から始める（未初期化ならスキップ）
-- Do not bypass ESLint; fix design/boundaries instead
-- 依存方向を崩さない（UI->domain->api、entry->app->...）
-- Avoid dependency backflow (especially pages <-> domains <-> api)
-- 秘密情報はコミットしない（`.env` 等）
+固定の依存方向:
 
-### 4) Local verification (before finishing)
+- Client: `packages/frontend/app -> packages/frontend/domain -> packages/frontend/api` and `packages/frontend/app -> packages/frontend/ui`
+- Server: `packages/backend/entry -> packages/backend/app -> (packages/backend/http | packages/backend/persistence | packages/backend/usecases) -> packages/backend/domain -> packages/backend/types`
+- Persistence schema: `packages/backend/persistence -> packages/backend/drizzle`
 
-Minimum expectations depending on change:
+### 3) Implement without breaking enforced rules
 
-- If API/SDK generation changed: `pnpm gen:api-sdk` の後に `git diff` で生成物が含まれている/不要な差分が無いことを確認
-- Required: `pnpm lint`
-- If possible: `pnpm test` and `pnpm build`
+- Contract を変えるときは `packages/typespec/main.tsp` を直し、`pnpm gen:api-sdk` と `pnpm check:codegen` で整合を取る
+- `packages/typespec/openapi/openapi.json` と `packages/frontend/api/src/generated/client.ts` は手で直さない
+- Frontend app / domain で `fetch`, `globalThis.fetch`, `axios`, `cross-fetch` を直接使わない
+- Frontend app の pages / components から `@cfreact-template-frontend/api` を直 import しない。domain hook を経由する
+- React と TSX はこの repo の正規 frontend 実装であり、Svelte 用の制約へ読み替えない
+- `packages/frontend/domain/src/hooks/**` では `use*` export、`{ data, actions }` 戻り値、`*Data` / `*Actions` 型注釈を守る
+- 再利用したい見た目は `@cfreact-template-frontend/ui` に寄せ、画面固有の構成だけを `packages/frontend/app` に置く
+- Backend HTTP は `packages/backend/http`、配線は `packages/backend/app`、永続化は `packages/backend/persistence` / `packages/backend/drizzle` に置く
+- `packages/backend/http` から `packages/backend/persistence` を直 import しない。`c.env` も HTTP 層で直接読まない
+- `packages/backend/domain` と `packages/backend/usecases` では adapter import や framework 依存を持ち込まない
+- `packages/**/src/**/*.{ts,tsx}` の export は、生成物とテストを除き TSDoc を付ける
+- OpenSpec を触るときは `openspec/specs/**/spec.md` の Scenario ID とテストタイトルの参照を崩さない
 
-Lightweight checks for changed files (requires deps installed):
+### 4) Verify with the real repo flow
+
+変更内容に応じて、少なくとも次を実行する。
+
+- Contract / generated 変更: `pnpm gen:api-sdk` -> `pnpm check:codegen`
+- TypeSpec 変更: `pnpm format:check` -> `pnpm check`
+- JS / TS / TSX 変更: `pnpm lint` -> `pnpm test:run`
+- Frontend-focused 変更: `pnpm test:client`
+- Backend-focused 変更: `pnpm test:server`
+- Release-ready な変更や横断変更: `pnpm build`
+- Skill 変更: `python3 .opencode/skills/opencode-skills-devkit/scripts/validate_skills.py --root .`
+
+Changed-file 向けの軽量チェック:
 
 - `.opencode/skills/coding-guardian/scripts/check_changed.sh [base]`
 
-### 5) What to report in reviews/PRs
+### 5) What to report back
 
-- 触った領域（OpenSpec / client / server / tooling）と依存方向が保てている根拠
-- 生成が必要だったか（`pnpm gen:api-sdk` 等）・実行したか・生成後の差分確認
-- Commands you ran (`pnpm lint`, etc.) and key results
+- 触った領域
+- どの enforced rule に合わせて設計したか
+- 生成が必要だったか、実行したか
+- 実行した command と結果
+- まだ未実行の verify があれば、その理由
 
 ## Common violations to prevent
 
-- 生成物（例: `packages/frontend/api/src/generated/**`）の手編集
-- 合意済み要件（`openspec/**`）と実装の不整合
-- ESLint suppression / bypassing (no inline config)
-- `packages/frontend/app` から `packages/frontend/api` を直 import（domain を介さない）
+- generated file の手編集
+- `packages/frontend/app` から `@cfreact-template-frontend/api` の直 import
+- frontend app / domain での `fetch` / `axios` / `cross-fetch`
+- hooks が `{ data, actions }` を返さない
+- export に必要な TSDoc がない
+- `packages/backend/http` から `packages/backend/persistence` の直 import
+- HTTP 層での `c.env` 直接参照
+- OpenSpec の Scenario ID とテスト参照の不整合

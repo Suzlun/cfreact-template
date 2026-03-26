@@ -150,8 +150,6 @@ permission:
     'pnpm test*': allow
     'pnpm gen*': allow
     'pnpm build*': allow
-    'go test*': allow
-    'go vet*': allow
     'rm *': deny
     'git push*': deny
 ```

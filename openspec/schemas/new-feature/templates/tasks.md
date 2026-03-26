@@ -1,5 +1,10 @@
 ## 1. <!-- TODO: Task group name (e.g., Setup / FE / BE / Migration / Tests / Docs). -->
 
+<!-- This file contains implementation work only. -->
+<!-- MUST NOT restate requirements using SHALL/MUST blocks or Customer Context. -->
+<!-- Bad: "The system SHALL provide..." -->
+<!-- Good: "Update packages/frontend/ui to..." -->
+
 - [ ] 1.1 <!-- TODO: Task description. Be concrete; include scope (modules/files) and a clear done condition. -->
 - [ ] 1.2 <!-- TODO: Task description. Keep it small (one session). Include how to verify. -->
 

@@ -10,6 +10,7 @@ fi
 
 cd "$git_root"
 
+
 files=()
 
 while IFS= read -r -d '' file; do
@@ -46,12 +47,12 @@ files=("${unique_files[@]}")
 
 eslint_files=()
 prettier_files=()
-go_files=()
 
 auto_exclude() {
   local p="$1"
   # Generated API client code is never hand-edited.
   [[ "$p" == packages/frontend/api/src/generated/* ]] && return 0
+  [[ "$p" == packages/typespec/openapi/* ]] && return 0
   return 1
 }
 
@@ -67,10 +68,7 @@ for file in "${files[@]}"; do
     *.json | *.md | *.yaml | *.yml)
       prettier_files+=("$file")
       ;;
-    *.go)
-      go_files+=("$file")
-      ;;
-  esac
+    esac
 done
 
 if [[ "${#prettier_files[@]}" -gt 0 ]]; then
@@ -95,16 +93,4 @@ if [[ "${#eslint_files[@]}" -gt 0 ]]; then
   fi
 else
   echo "ESLint: no applicable files."
-fi
-
-if [[ "${#go_files[@]}" -gt 0 ]]; then
-  echo "gofmt (check): ${#go_files[@]} file(s)"
-  if command -v gofmt >/dev/null 2>&1; then
-    gofmt -l "${go_files[@]}" | awk 'NF {exit 1}'
-  else
-    echo "Error: gofmt not found." >&2
-    exit 3
-  fi
-else
-  echo "gofmt: no applicable files."
 fi
