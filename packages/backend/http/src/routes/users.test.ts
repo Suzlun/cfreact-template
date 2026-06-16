@@ -64,15 +64,11 @@ app.use('*', async (c, next) => {
 app.route('/', openApiApp);
 
 function createExecutionContext(): ExecutionContext {
-  type Fn = () => ExecutionContext;
-  const fn: Fn = createExecutionContextRaw as Fn;
-  return fn();
+  return createExecutionContextRaw();
 }
 
 function waitOnExecutionContext(ctx: ExecutionContext): Promise<void> {
-  type Fn = (ctx: ExecutionContext) => Promise<void>;
-  const fn: Fn = waitOnExecutionContextRaw as Fn;
-  return fn(ctx);
+  return waitOnExecutionContextRaw(ctx);
 }
 
 describe('Users API', () => {

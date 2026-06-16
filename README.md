@@ -175,7 +175,7 @@ pnpm --filter @cfreact-template-frontend/api gen
    pnpm install
    ```
 
-   `pnpm-workspace.yaml` の `minimumReleaseAge: 2880` により、npm 公開から2日未満のパッケージはインストール対象から外れます。リリース前の依存追加・更新は、少なくとも2日前に完了してください。
+   `pnpm-workspace.yaml` の `minimumReleaseAge: 4320` により、npm 公開から72時間未満のパッケージはインストール対象から外れます。リリース前の依存追加・更新は、少なくとも72時間前に完了してください。
 
 2. **Wrangler をグローバルインストール:**
 
@@ -355,7 +355,7 @@ pnpm dev:all
    pnpm lint:supply-chain
    ```
 
-   依存追加・更新を含むリリースでは、対象パッケージの npm 公開から2日以上経過していることを確認してください。
+   依存追加・更新を含むリリースでは、対象パッケージの npm 公開から72時間以上経過していることを確認してください。
 
 4. **デプロイ:**
 

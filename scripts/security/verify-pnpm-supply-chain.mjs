@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import process from 'node:process';
 
 const WORKSPACE_CONFIG_PATH = 'pnpm-workspace.yaml';
-const MINIMUM_RELEASE_AGE_MINUTES = 2 * 24 * 60;
+const MINIMUM_RELEASE_AGE_MINUTES = 72 * 60;
 
 const workspaceConfig = readFileSync(WORKSPACE_CONFIG_PATH, 'utf8');
 const errors = [];
@@ -31,7 +31,7 @@ if (/^dangerouslyAllowAllBuilds:\s*true\s*$/m.test(workspaceConfig)) {
 }
 
 if (/^minimumReleaseAgeExclude:/m.test(workspaceConfig)) {
-  errors.push('Do not bypass the 2-day release-age margin with minimumReleaseAgeExclude.');
+  errors.push('Do not bypass the 72-hour release-age margin with minimumReleaseAgeExclude.');
 }
 
 if (errors.length > 0) {

@@ -991,10 +991,10 @@ fail 条件
 - サプライチェーン対策の pnpm 設定を弱めない
   - 強制: `pnpm lint:supply-chain` → `scripts/security/verify-pnpm-supply-chain.mjs`
   - 必須
-    - `pnpm-workspace.yaml` の `minimumReleaseAge` は 2880 分以上
+    - `pnpm-workspace.yaml` の `minimumReleaseAge` は 4320 分以上
     - `allowBuilds` で install script 実行を明示許可制にする
     - `dangerouslyAllowAllBuilds: true` を禁止する
-    - `minimumReleaseAgeExclude` による2日猶予の迂回を禁止する
+    - `minimumReleaseAgeExclude` による72時間猶予の迂回を禁止する
 - `pnpm check:codegen` は生成物のドリフトで失敗する
   - 強制: `scripts.check:codegen` → `package.json`
   - 実行

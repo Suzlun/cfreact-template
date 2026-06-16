@@ -20,10 +20,10 @@
   },
   "devDependencies": {
     "@cfreact-template-backend/persistence": "workspace:*",
-    "@cloudflare/vitest-pool-workers": "^0.16.16",
-    "@cloudflare/workers-types": "^4.20260616.1",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "@cloudflare/vitest-pool-workers": "^0.16.15",
+    "@cloudflare/workers-types": "^4.20260613.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.8"
   },
   "scripts": {
     "check": "tsc --noEmit"

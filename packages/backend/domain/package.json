@@ -11,7 +11,7 @@
     "@cfreact-template-backend/types": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^6.0.3"
+    "typescript": "^5.9.3"
   },
   "scripts": {
     "check": "tsc --noEmit"

@@ -33,8 +33,8 @@
 
 ## 依存関係とサプライチェーン対策
 
-- `pnpm-workspace.yaml` の `minimumReleaseAge: 2880` により、npm に公開されてから2日未満の依存パッケージは解決対象から外します。
-- リリースに含める依存追加・更新は、リリース予定日の2日以上前に完了してください。
+- `pnpm-workspace.yaml` の `minimumReleaseAge: 4320` により、npm に公開されてから72時間未満の依存パッケージは解決対象から外します。
+- リリースに含める依存追加・更新は、リリース予定日の72時間以上前に完了してください。
 - `minimumReleaseAge` の引き下げ、`minimumReleaseAgeExclude` の追加、`--config.minimumReleaseAge=0` のような迂回は行わないでください。
 - `allowBuilds` はインストール時スクリプトを許可する明示リストです。新しいパッケージを追加する前に、必要性と公開元を確認してください。
 - `dangerouslyAllowAllBuilds` は有効化しないでください。

@@ -25,8 +25,8 @@
 
 ## Supply Chain
 
-- `pnpm-workspace.yaml` enforces `minimumReleaseAge: 2880` (2 days); do not lower or bypass it.
-- Dependency additions/updates must land at least 2 days before release, unless an explicitly reviewed emergency exception is approved.
+- `pnpm-workspace.yaml` enforces `minimumReleaseAge: 4320` (72 hours); do not lower or bypass it.
+- Dependency additions/updates must land at least 72 hours before release, unless an explicitly reviewed emergency exception is approved.
 - New dependency build scripts require package-by-package approval through `allowBuilds`; never enable `dangerouslyAllowAllBuilds`.
 
 ## Architecture Notes

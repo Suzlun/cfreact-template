@@ -3,8 +3,8 @@ packages:
   - 'packages/frontend/*'
   - 'packages/backend/*'
 
-# Wait 2 days after npm publish before resolving new dependency versions.
-minimumReleaseAge: 2880
+# Wait 72 hours after npm publish before resolving new dependency versions.
+minimumReleaseAge: 4320
 
 allowBuilds:
   '@fission-ai/openspec': true
@@ -18,3 +18,8 @@ overrides:
   react: 19.2.7
   react-dom: 19.2.7
   '@tanstack/react-query': 5.101.0
+  esbuild: 0.28.1
+  ws: 8.21.0
+  'eslint-plugin-sonarjs>minimatch': 10.2.5
+  '@boundaries/elements>handlebars': 4.7.9
+  'concurrently>shell-quote': 1.8.4
