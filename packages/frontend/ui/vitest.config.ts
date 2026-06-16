@@ -24,6 +24,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@ui': fileURLToPath(new URL('./src', import.meta.url)),
+      'react-transition-group/TransitionGroupContext':
+        'react-transition-group/esm/TransitionGroupContext.js',
     },
   },
   test: {

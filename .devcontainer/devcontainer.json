@@ -35,6 +35,9 @@
       }
     }
   },
+  "mounts": [
+    "source=cfreact-template-opencode,target=${containerWorkspaceFolder}/.opencode,type=volume"
+  ],
   "forwardPorts": [5173, 8787, 24282],
   "portsAttributes": {
     "5173": {

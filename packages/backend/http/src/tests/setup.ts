@@ -1,4 +1,4 @@
-import { env as testEnv } from 'cloudflare:test';
+import { env as testEnv } from 'cloudflare:workers';
 import { beforeAll, beforeEach } from 'vitest';
 
 import type { Bindings } from '@cfreact-template-backend/types';

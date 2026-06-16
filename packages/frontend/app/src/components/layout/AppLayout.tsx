@@ -15,9 +15,9 @@ import {
 function AppLayout() {
   return (
     <Box
-      minHeight="100vh"
       sx={{
         backgroundColor: 'transparent',
+        minHeight: '100vh',
         pb: 6,
       }}
     >
@@ -36,11 +36,11 @@ function AppLayout() {
             <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '0.2px' }}>
               cfreact-template
             </Typography>
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <Link component={RouterLink} to="/" color="inherit" fontWeight={600}>
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+              <Link component={RouterLink} to="/" color="inherit" sx={{ fontWeight: 600 }}>
                 Home
               </Link>
-              <Link component={RouterLink} to="/users" color="inherit" fontWeight={600}>
+              <Link component={RouterLink} to="/users" color="inherit" sx={{ fontWeight: 600 }}>
                 Users
               </Link>
             </Stack>

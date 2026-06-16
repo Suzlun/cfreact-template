@@ -1,7 +1,7 @@
 FROM node:24-bookworm
 
 # Python と必要なツールをインストール
-# Serena MCP には Python 3.11+ (3.12+ は不可) が必要
+# Serena は uv で Python 3.13 の tool 環境として入れる
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
@@ -81,6 +81,9 @@ RUN npm install -g wrangler@4
 # OpenCode CLI をグローバルインストール
 RUN npm install -g opencode-ai@latest
 RUN opencode upgrade
+
+# Serena MCP CLI をインストール
+RUN uv tool install -p 3.13 serena-agent
 
 # OpenSpec CLI をグローバルインストール
 RUN npm install -g @fission-ai/openspec@latest

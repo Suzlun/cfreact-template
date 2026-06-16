@@ -13,13 +13,13 @@
     "@cfreact-template-backend/persistence": "workspace:*",
     "@cfreact-template-backend/types": "workspace:*",
     "@cfreact-template-backend/usecases": "workspace:*",
-    "hono": "^4.11.3"
+    "hono": "^4.12.25"
   },
   "scripts": {
     "check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260107.1",
-    "typescript": "^5.9.3"
+    "@cloudflare/workers-types": "^4.20260616.1",
+    "typescript": "^6.0.3"
   }
 }

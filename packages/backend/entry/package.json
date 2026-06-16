@@ -16,10 +16,10 @@
   "dependencies": {
     "@cfreact-template-backend/app": "workspace:*",
     "@cfreact-template-backend/types": "workspace:*",
-    "wrangler": "^4.57.0"
+    "wrangler": "^4.101.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260107.1",
-    "typescript": "^5.9.3"
+    "@cloudflare/workers-types": "^4.20260616.1",
+    "typescript": "^6.0.3"
   }
 }

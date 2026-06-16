@@ -10,9 +10,9 @@
     "check": "pnpm format:check && tsp compile . --no-emit"
   },
   "devDependencies": {
-    "@typespec/compiler": "^1.8.0",
-    "@typespec/http": "^1.8.0",
-    "@typespec/openapi": "^1.8.0",
-    "@typespec/openapi3": "^1.8.0"
+    "@typespec/compiler": "^1.13.0",
+    "@typespec/http": "^1.13.0",
+    "@typespec/openapi": "^1.13.0",
+    "@typespec/openapi3": "^1.13.0"
   }
 }

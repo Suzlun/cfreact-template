@@ -68,8 +68,9 @@ describe('SafeHTML', () => {
       const { container } = render(<SafeHTML html={html} />);
 
       const img = container.querySelector('img');
-      // DOMPurify は危険な src を削除するため、img タグが削除される
-      expect(img).toBeNull();
+      // DOMPurify は危険な src を削除する
+      expect(img).not.toBeNull();
+      expect(img?.getAttribute('src')).toBeNull();
     });
   });
 

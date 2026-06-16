@@ -1,9 +1,9 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import {
-  env as testEnv,
   createExecutionContext as createExecutionContextRaw,
   waitOnExecutionContext as waitOnExecutionContextRaw,
 } from 'cloudflare:test';
+import { env as testEnv } from 'cloudflare:workers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { User, UserCreatedNotifier } from '@cfreact-template-backend/domain';

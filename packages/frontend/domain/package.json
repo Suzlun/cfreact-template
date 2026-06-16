@@ -11,12 +11,12 @@
     "@cfreact-template-frontend/api": "workspace:*"
   },
   "peerDependencies": {
-    "@tanstack/react-query": "^5.90.7",
-    "react": "^19.0.0"
+    "@tanstack/react-query": "^5.101.0",
+    "react": "^19.2.7"
   },
   "devDependencies": {
-    "@types/react": "^19.2.7",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   }
 }

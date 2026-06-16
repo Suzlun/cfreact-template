@@ -22,12 +22,10 @@ import {
   Typography,
 } from '@cfreact-template-frontend/ui';
 
-import type { FormEvent } from 'react';
-
 function PageHeader() {
   return (
     <Stack spacing={0.5}>
-      <Typography variant="overline" color="primary" fontWeight={700} letterSpacing={1}>
+      <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: 1 }}>
         User Directory
       </Typography>
       <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: '0.2px' }}>
@@ -41,7 +39,7 @@ function PageHeader() {
 }
 
 function CreateUserForm({ data, actions }: { data: UsersData; actions: UsersActions }) {
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: { preventDefault: () => void }) => {
     event.preventDefault();
     void actions.submit();
   };
@@ -118,7 +116,7 @@ function UsersTable({ data }: { data: UsersData }) {
   if (data.list.length === 0) {
     return (
       <Paper variant="outlined" sx={{ textAlign: 'center', py: 6, borderRadius: 2 }}>
-        <Typography variant="h6" fontWeight={700} gutterBottom>
+        <Typography variant="h6" sx={{ fontWeight: 700 }} gutterBottom>
           No users found
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -183,7 +181,7 @@ function UsersPage() {
       {!data.isLoading && <UsersTable data={data} />}
 
       <Divider />
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: 'center' }}>
         <Typography variant="body2" color="text.secondary">
           Powered by Cloudflare Workers + Hono + Drizzle
         </Typography>

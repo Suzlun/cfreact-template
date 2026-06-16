@@ -9,12 +9,19 @@ export default defineConfig({
   resolve: {
     alias: {
       '@app': fileURLToPath(new URL('./src', import.meta.url)),
+      'react-transition-group/TransitionGroupContext':
+        'react-transition-group/esm/TransitionGroupContext.js',
     },
   },
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/tests/setup.ts'],
+    server: {
+      deps: {
+        inline: ['@mui/material', 'react-transition-group'],
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

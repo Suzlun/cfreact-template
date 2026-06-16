@@ -20,13 +20,13 @@ import {
 
 const techStackItems = [
   'React 19',
-  'Vite 7',
+  'Vite 8',
   'React Router 7',
   'TanStack Query 5',
-  'Material UI 6',
+  'Material UI 9',
   'Hono 4',
-  'Drizzle ORM 0.44',
-  'TypeScript 5.9',
+  'Drizzle ORM 0.45',
+  'TypeScript 6.0',
   'Cloudflare Workers',
 ];
 
@@ -93,7 +93,7 @@ function ApiHealthCard({ data }: { data: HelloData }) {
           <Stack spacing={1.5}>
             <Skeleton variant="rounded" height={18} width="60%" />
             <Skeleton variant="rounded" height={18} width="40%" />
-            <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
               <CircularProgress size={24} />
               <Typography variant="body2" color="text.secondary">
                 Fetching latest message...
@@ -111,13 +111,13 @@ function ApiHealthCard({ data }: { data: HelloData }) {
 
         {data.timestamp != null && (
           <Stack spacing={1.5} sx={{ mt: 1 }}>
-            <Typography variant="body1" fontWeight={700}>
+            <Typography variant="body1" sx={{ fontWeight: 700 }}>
               {data.message}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Timestamp: {data.timestamp.toLocaleString()}
             </Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <Chip size="small" color="success" label="200 OK" />
               <Chip size="small" variant="outlined" label="Workers" />
               <Chip size="small" variant="outlined" label="Hono" />
