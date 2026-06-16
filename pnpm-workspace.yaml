@@ -3,7 +3,8 @@ packages:
   - 'packages/frontend/*'
   - 'packages/backend/*'
 
-minimumReleaseAge: 0
+# Wait 2 days after npm publish before resolving new dependency versions.
+minimumReleaseAge: 2880
 
 allowBuilds:
   '@fission-ai/openspec': true

@@ -175,6 +175,8 @@ pnpm --filter @cfreact-template-frontend/api gen
    pnpm install
    ```
 
+   `pnpm-workspace.yaml` の `minimumReleaseAge: 2880` により、npm 公開から2日未満のパッケージはインストール対象から外れます。リリース前の依存追加・更新は、少なくとも2日前に完了してください。
+
 2. **Wrangler をグローバルインストール:**
 
    ```bash
@@ -272,18 +274,19 @@ pnpm dev:all
 
 ### 利用可能なスクリプト
 
-| スクリプト              | 説明                                        |
-| ----------------------- | ------------------------------------------- |
-| `pnpm dev:client`       | Vite 開発サーバーを起動（フロントエンド）   |
-| `pnpm dev:server`       | Wrangler 開発サーバーを起動（バックエンド） |
-| `pnpm dev:all`          | 両方のサーバーを同時に起動                  |
-| `pnpm build`            | フロントエンドとバックエンドの両方をビルド  |
-| `pnpm check`            | TypeScript 型チェックを実行                 |
-| `pnpm lint`             | ESLint ですべてのファイルをリント           |
-| `pnpm format`           | Prettier でコードをフォーマット             |
-| `pnpm migrate:generate` | Drizzle マイグレーションを生成              |
-| `pnpm migrate:studio`   | Drizzle Studio を開く                       |
-| `pnpm deploy`           | Cloudflare Workers にデプロイ               |
+| スクリプト               | 説明                                        |
+| ------------------------ | ------------------------------------------- |
+| `pnpm dev:client`        | Vite 開発サーバーを起動（フロントエンド）   |
+| `pnpm dev:server`        | Wrangler 開発サーバーを起動（バックエンド） |
+| `pnpm dev:all`           | 両方のサーバーを同時に起動                  |
+| `pnpm build`             | フロントエンドとバックエンドの両方をビルド  |
+| `pnpm check`             | TypeScript 型チェックを実行                 |
+| `pnpm lint`              | ESLint ですべてのファイルをリント           |
+| `pnpm lint:supply-chain` | pnpm のサプライチェーン防御設定を検証       |
+| `pnpm format`            | Prettier でコードをフォーマット             |
+| `pnpm migrate:generate`  | Drizzle マイグレーションを生成              |
+| `pnpm migrate:studio`    | Drizzle Studio を開く                       |
+| `pnpm deploy`            | Cloudflare Workers にデプロイ               |
 
 ### データベースマイグレーション
 
@@ -346,13 +349,21 @@ pnpm dev:all
    pnpm build
    ```
 
-3. **デプロイ:**
+3. **依存関係のリリース猶予を確認:**
+
+   ```bash
+   pnpm lint:supply-chain
+   ```
+
+   依存追加・更新を含むリリースでは、対象パッケージの npm 公開から2日以上経過していることを確認してください。
+
+4. **デプロイ:**
 
    ```bash
    pnpm deploy
    ```
 
-4. **本番環境リソースをセットアップ:**
+5. **本番環境リソースをセットアップ:**
    - 本番環境の D1 データベース、KV 名前空間、R2 バケットを作成
    - `wrangler.toml` の `[env.production]` セクションを更新
    - 本番環境データベースにマイグレーションを適用

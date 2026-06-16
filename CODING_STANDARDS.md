@@ -982,11 +982,19 @@
 
 fail 条件
 
-- `pnpm lint` は ESLint の error と OpenSpec チェックで失敗する
+- `pnpm lint` は ESLint の error、OpenSpec チェック、サプライチェーン設定チェックで失敗する
   - 強制: `scripts.lint` → `package.json`
   - 内訳
     - `pnpm lint:eslint` は `eslint .` を実行
     - `pnpm lint:openspec` は `openspec validate --all --strict` と `node scripts/openspec/verify-scenario-coverage.mjs` を実行
+    - `pnpm lint:supply-chain` は `node scripts/security/verify-pnpm-supply-chain.mjs` を実行
+- サプライチェーン対策の pnpm 設定を弱めない
+  - 強制: `pnpm lint:supply-chain` → `scripts/security/verify-pnpm-supply-chain.mjs`
+  - 必須
+    - `pnpm-workspace.yaml` の `minimumReleaseAge` は 2880 分以上
+    - `allowBuilds` で install script 実行を明示許可制にする
+    - `dangerouslyAllowAllBuilds: true` を禁止する
+    - `minimumReleaseAgeExclude` による2日猶予の迂回を禁止する
 - `pnpm check:codegen` は生成物のドリフトで失敗する
   - 強制: `scripts.check:codegen` → `package.json`
   - 実行
