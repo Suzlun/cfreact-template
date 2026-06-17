@@ -1,68 +1,33 @@
 import { Link as RouterLink, Outlet } from 'react-router';
 
-import {
-  AppBar,
-  Box,
-  Container,
-  Link,
-  Paper,
-  Stack,
-  Toolbar,
-  Typography,
-} from '@cfreact-template-frontend/ui';
+import { Button } from '@cfreact-template-frontend/ui';
 
 /** Shared layout for the main app routes. */
 function AppLayout() {
   return (
-    <Box
-      sx={{
-        backgroundColor: 'transparent',
-        minHeight: '100vh',
-        pb: 6,
-      }}
-    >
-      <AppBar
-        position="sticky"
-        color="transparent"
-        elevation={0}
-        sx={{
-          backdropFilter: 'blur(14px)',
-          backgroundColor: 'rgba(255,255,255,0.8)',
-          borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-        }}
-      >
-        <Container>
-          <Toolbar disableGutters sx={{ justifyContent: 'space-between', minHeight: 72, gap: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '0.2px' }}>
-              cfreact-template
-            </Typography>
-            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-              <Link component={RouterLink} to="/" color="inherit" sx={{ fontWeight: 600 }}>
-                Home
-              </Link>
-              <Link component={RouterLink} to="/users" color="inherit" sx={{ fontWeight: 600 }}>
-                Users
-              </Link>
-            </Stack>
-          </Toolbar>
-        </Container>
-      </AppBar>
+    <div className="min-h-screen bg-background pb-10 text-foreground">
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between gap-4">
+          <RouterLink to="/" className="text-lg font-semibold tracking-tight">
+            cfreact-template
+          </RouterLink>
+          <nav className="flex items-center gap-1" aria-label="Main navigation">
+            <Button asChild variant="ghost">
+              <RouterLink to="/">Home</RouterLink>
+            </Button>
+            <Button asChild variant="ghost">
+              <RouterLink to="/users">Users</RouterLink>
+            </Button>
+          </nav>
+        </div>
+      </header>
 
-      <Container sx={{ pt: 4 }}>
-        <Paper
-          variant="outlined"
-          sx={{
-            p: { xs: 2.5, sm: 3, md: 4 },
-            borderRadius: 3,
-            background: (theme) =>
-              `linear-gradient(135deg, ${theme.palette.background.paper} 0%, rgba(255,255,255,0.85) 100%)`,
-            boxShadow: '0px 12px 32px rgba(15, 23, 42, 0.06)',
-          }}
-        >
+      <main className="container py-6 sm:py-8">
+        <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm sm:p-6 lg:p-8">
           <Outlet />
-        </Paper>
-      </Container>
-    </Box>
+        </div>
+      </main>
+    </div>
   );
 }
 

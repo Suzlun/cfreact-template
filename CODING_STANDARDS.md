@@ -948,6 +948,16 @@
   - OK例
     - 入力元を変更して `pnpm gen:api-sdk`
 
+- shadcn/ui registry 由来コードは上流API形状を保つため lint の一部ルールを緩和する
+  - 強制: `pnpm lint` → `eslint .` → `files: ['packages/frontend/ui/src/components/ui/**/*.{ts,tsx}', 'packages/frontend/ui/src/hooks/use-mobile.tsx', 'packages/frontend/ui/src/hooks/use-toast.ts', 'packages/frontend/ui/src/lib/utils.ts']` のルール上書き → `eslint.config.js`
+  - 対象
+    - shadcn/ui のデフォルトコンポーネント実装
+    - shadcn/ui が要求する `cn`, `use-mobile`, `use-toast`
+  - 補足
+    - app 固有コンポーネントや hand-written の UI 追加には通常ルールを適用する
+  - OK例
+    - upstream registry 由来の export 形状、内部サブパス import、React 参照型は対象ファイル内で維持する
+
 - テストは制約を一部緩和する
   - 強制: `pnpm lint` → `eslint .` → `files: ['**/*.test.*', '**/*.spec.*']` のルール上書き → `eslint.config.js`
   - NG例

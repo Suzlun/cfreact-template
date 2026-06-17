@@ -2,7 +2,6 @@ import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';
 import tanstackQuery from '@tanstack/eslint-plugin-query';
 import boundaries from 'eslint-plugin-boundaries';
-import deprecation from 'eslint-plugin-deprecation';
 import eslintComments from 'eslint-plugin-eslint-comments';
 import importPlugin from 'eslint-plugin-import';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
@@ -139,7 +138,6 @@ export default tseslint.config(
       unicorn: unicorn,
       'eslint-comments': eslintComments,
       boundaries: boundaries,
-      deprecation: deprecation,
       security: security,
       sonarjs: sonarjs,
     },
@@ -1529,7 +1527,6 @@ export default tseslint.config(
     files: ['eslint.config.js'],
     rules: {
       'sonarjs/no-duplicate-string': 'off',
-      'deprecation/deprecation': 'off',
     },
   },
   {
@@ -1601,6 +1598,47 @@ export default tseslint.config(
           ],
         },
       ],
+    },
+  },
+  // shadcn/ui registry source is kept close to upstream so default components remain drop-in usable.
+  {
+    files: [
+      'packages/frontend/ui/src/components/ui/**/*.{ts,tsx}',
+      'packages/frontend/ui/src/hooks/use-mobile.tsx',
+      'packages/frontend/ui/src/hooks/use-toast.ts',
+      'packages/frontend/ui/src/lib/utils.ts',
+    ],
+    rules: {
+      '@typescript-eslint/array-type': 'off',
+      '@typescript-eslint/consistent-indexed-object-style': 'off',
+      '@typescript-eslint/consistent-type-definitions': 'off',
+      '@typescript-eslint/consistent-type-imports': 'off',
+      '@typescript-eslint/no-confusing-void-expression': 'off',
+      '@typescript-eslint/no-deprecated': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      '@typescript-eslint/no-unnecessary-condition': 'off',
+      '@typescript-eslint/no-unnecessary-template-expression': 'off',
+      '@typescript-eslint/no-unnecessary-type-conversion': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
+      '@typescript-eslint/strict-boolean-expressions': 'off',
+      'export-tsdoc/require-export-tsdoc': 'off',
+      'import/order': 'off',
+      'jsx-a11y/click-events-have-key-events': 'off',
+      'max-lines': 'off',
+      'max-lines-per-function': 'off',
+      'no-restricted-imports': 'off',
+      'prefer-arrow-callback': 'off',
+      'react-refresh/only-export-components': 'off',
+      'react/no-danger': 'off',
+      'react/no-array-index-key': 'off',
+      'security/detect-object-injection': 'off',
+      'sonarjs/no-duplicate-string': 'off',
+      'unicorn/no-array-for-each': 'off',
     },
   },
   // theme.ts は行数制約を緩和

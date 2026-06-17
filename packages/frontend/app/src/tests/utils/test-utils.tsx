@@ -1,8 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, type RenderOptions } from '@testing-library/react';
 
-import { CssBaseline, ThemeProvider } from '@cfreact-template-frontend/ui';
-import { theme } from '@cfreact-template-frontend/ui/theme';
+import '@cfreact-template-frontend/ui/styles.css';
 
 import type { ReactElement, ReactNode } from 'react';
 
@@ -30,12 +29,7 @@ interface AllTheProvidersProps {
 function AllTheProviders({ children }: AllTheProvidersProps) {
   const queryClient = createTestQueryClient();
 
-  return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </ThemeProvider>
-  );
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
 
 // カスタムレンダー関数

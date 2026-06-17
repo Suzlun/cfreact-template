@@ -6,35 +6,33 @@ import {
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
-  CircularProgress,
-  Divider,
-  LinearProgress,
-  Paper,
-  Stack,
+  CardTitle,
+  Input,
+  Label,
+  Progress,
+  Separator,
+  Spinner,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
+  TableHeader,
   TableRow,
-  TextField,
-  Typography,
 } from '@cfreact-template-frontend/ui';
 
 function PageHeader() {
   return (
-    <Stack spacing={0.5}>
-      <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: 1 }}>
+    <div className="space-y-1">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         User Directory
-      </Typography>
-      <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: '0.2px' }}>
-        Users
-      </Typography>
-      <Typography variant="body1" color="text.secondary">
+      </p>
+      <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Users</h1>
+      <p className="text-muted-foreground">
         Create users, validate inputs, and view them in a responsive table.
-      </Typography>
-    </Stack>
+      </p>
+    </div>
   );
 }
 
@@ -46,56 +44,54 @@ function CreateUserForm({ data, actions }: { data: UsersData; actions: UsersActi
 
   return (
     <Card>
-      <CardHeader
-        title="Create New User"
-        subheader="名前とメールアドレスを入力してユーザーを作成します"
-        slotProps={{ title: { sx: { fontWeight: 700 } } }}
-      />
+      <CardHeader>
+        <CardTitle>Create New User</CardTitle>
+        <CardDescription>名前とメールアドレスを入力してユーザーを作成します</CardDescription>
+      </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit}>
-          <Stack spacing={3}>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField
-                label="Name"
-                placeholder="Name"
-                value={data.form.name}
-                onChange={(e) => {
-                  actions.updateName(e.target.value);
-                }}
-                required
-                fullWidth
-                autoComplete="name"
-              />
-              <TextField
-                label="Email"
-                type="email"
-                placeholder="Email"
-                value={data.form.email}
-                onChange={(e) => {
-                  actions.updateEmail(e.target.value);
-                }}
-                required
-                fullWidth
-                autoComplete="email"
-              />
-            </Stack>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="user-name">Name</Label>
+                <Input
+                  id="user-name"
+                  placeholder="Name"
+                  value={data.form.name}
+                  onChange={(event) => {
+                    actions.updateName(event.target.value);
+                  }}
+                  required
+                  autoComplete="name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="user-email">Email</Label>
+                <Input
+                  id="user-email"
+                  type="email"
+                  placeholder="Email"
+                  value={data.form.email}
+                  onChange={(event) => {
+                    actions.updateEmail(event.target.value);
+                  }}
+                  required
+                  autoComplete="email"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 type="submit"
-                variant="contained"
-                color="primary"
                 disabled={data.isSubmitting || !data.form.isValid}
                 data-loading={data.isSubmitting ? 'true' : 'false'}
-                startIcon={
-                  data.isSubmitting ? <CircularProgress size={18} color="inherit" /> : null
-                }
               >
+                {data.isSubmitting && <Spinner className="mr-2" />}
                 Create User
               </Button>
               <Button
                 type="button"
-                variant="outlined"
-                color="secondary"
+                variant="outline"
                 disabled={data.isSubmitting}
                 onClick={() => {
                   actions.reload();
@@ -103,9 +99,9 @@ function CreateUserForm({ data, actions }: { data: UsersData; actions: UsersActi
               >
                 Refresh List
               </Button>
-            </Stack>
-            {data.isSubmitting && <LinearProgress color="primary" sx={{ borderRadius: 999 }} />}
-          </Stack>
+            </div>
+            {data.isSubmitting && <Progress value={65} />}
+          </div>
         </form>
       </CardContent>
     </Card>
@@ -115,31 +111,27 @@ function CreateUserForm({ data, actions }: { data: UsersData; actions: UsersActi
 function UsersTable({ data }: { data: UsersData }) {
   if (data.list.length === 0) {
     return (
-      <Paper variant="outlined" sx={{ textAlign: 'center', py: 6, borderRadius: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }} gutterBottom>
-          No users found
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Create one above to get started.
-        </Typography>
-      </Paper>
+      <div className="rounded-lg border p-10 text-center">
+        <h2 className="text-lg font-semibold">No users found</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Create one above to get started.</p>
+      </div>
     );
   }
 
   return (
-    <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+    <div className="overflow-hidden rounded-lg border">
       <Table>
-        <TableHead>
+        <TableHeader>
           <TableRow>
-            <TableCell>ID</TableCell>
-            <TableCell>Name</TableCell>
-            <TableCell>Email</TableCell>
-            <TableCell>Created At</TableCell>
+            <TableHead>ID</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Created At</TableHead>
           </TableRow>
-        </TableHead>
+        </TableHeader>
         <TableBody>
           {data.list.map((user) => (
-            <TableRow key={user.id} hover>
+            <TableRow key={user.id}>
               <TableCell>{user.id}</TableCell>
               <TableCell>{user.name}</TableCell>
               <TableCell>{user.email}</TableCell>
@@ -148,7 +140,7 @@ function UsersTable({ data }: { data: UsersData }) {
           ))}
         </TableBody>
       </Table>
-    </TableContainer>
+    </div>
   );
 }
 
@@ -157,22 +149,22 @@ function UsersPage() {
   const { data, actions } = useUsers();
 
   return (
-    <Stack spacing={3}>
+    <div className="space-y-6">
       <PageHeader />
       <CreateUserForm data={data} actions={actions} />
 
       {data.isLoading && (
-        <Paper
-          variant="outlined"
-          sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 2, borderRadius: 2 }}
-        >
-          <CircularProgress size={24} />
-          <Typography variant="body1">Loading users...</Typography>
-        </Paper>
+        <div className="rounded-lg border p-4">
+          <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
+            <Spinner />
+            <span>Loading users...</span>
+          </div>
+          <Progress value={45} />
+        </div>
       )}
 
       {data.error != null && (
-        <Alert severity="error" sx={{ mb: 1 }}>
+        <Alert variant="destructive">
           <AlertTitle>Error loading users</AlertTitle>
           {data.error.message}
         </Alert>
@@ -180,13 +172,11 @@ function UsersPage() {
 
       {!data.isLoading && <UsersTable data={data} />}
 
-      <Divider />
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="body2" color="text.secondary">
-          Powered by Cloudflare Workers + Hono + Drizzle
-        </Typography>
-      </Stack>
-    </Stack>
+      <Separator />
+      <div className="text-sm text-muted-foreground">
+        <p>Powered by Cloudflare Workers + Hono + Drizzle</p>
+      </div>
+    </div>
   );
 }
 
