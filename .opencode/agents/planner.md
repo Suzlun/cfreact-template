@@ -2,8 +2,8 @@
 description: Agent that produces work plans and detailed designs
 mode: subagent
 hidden: true
-model: github-copilot/gpt-5.4
-reasoningEffort: 'high'
+model: openai/gpt-5.5
+reasoningEffort: 'xhigh'
 temperature: 0.1
 permission:
   edit: deny

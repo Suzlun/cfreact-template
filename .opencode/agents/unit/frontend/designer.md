@@ -2,7 +2,7 @@
 description: Frontend UI package owner and UI/UX design specialist for shared MUI components and wireframe specifications.
 mode: subagent
 hidden: true
-model: github-copilot/claude-opus-4.6
+model: openai/gpt-5.4-mini
 temperature: 0.1
 permission:
   edit:

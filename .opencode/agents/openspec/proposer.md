@@ -1,8 +1,8 @@
 ---
 description: Create/update an OpenSpec change along the artifact graph; converge validate and drive analyzer and decisions.
 mode: subagent
-model: github-copilot/claude-sonnet-4.6
-reasoningEffort: 'high'
+model: openai/gpt-5.5
+reasoningEffort: 'xhigh'
 temperature: 0.1
 permission:
   edit: allow

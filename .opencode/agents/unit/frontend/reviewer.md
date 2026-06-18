@@ -2,8 +2,8 @@
 description: Frontend review subagent for API SDK wrappers, React app, domain hooks, designer-owned UI package work, and UI/UX specifications.
 mode: subagent
 hidden: true
-model: github-copilot/gpt-5.4
-reasoningEffort: 'high'
+model: openai/gpt-5.5
+reasoningEffort: 'xhigh'
 temperature: 0.1
 permission:
   edit: deny

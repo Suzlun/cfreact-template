@@ -2,7 +2,8 @@
 description: Backend implementation specialist for this TypeScript, Hono, Cloudflare Workers, and Drizzle backend.
 mode: subagent
 hidden: true
-model: github-copilot/gpt-5.4
+model: openai/gpt-5.5
+reasoningEffort: 'xhigh'
 temperature: 0.1
 permission:
   edit: allow

@@ -2,8 +2,8 @@
 description: Frontend implementation specialist for API SDK wrappers, React app, and domain hooks; delegates UI/UX and shared UI work to the frontend designer.
 mode: subagent
 hidden: true
-model: github-copilot/gpt-5.4
-reasoningEffort: 'medium'
+model: openai/gpt-5.5
+reasoningEffort: 'xhigh'
 temperature: 0.1
 permission:
   edit:
