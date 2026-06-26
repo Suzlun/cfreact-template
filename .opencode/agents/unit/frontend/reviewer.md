@@ -36,7 +36,6 @@ You are the `unit/frontend/reviewer` subagent. Based on the change summary and a
   - `docs/**`
   - `.opencode/**`
 - Then load `coding-guardian` via `skill` and use it as an enforcement baseline
-- Then load `claude-ux` and `gpt-ux` via `skill` as UI review references
 - Then load `orchestration-playbook` via `skill` and use its templates for acceptance
 
 ## Required inputs to verify first

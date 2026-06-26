@@ -139,6 +139,7 @@ Note: if a commit is needed, delegate it to `@unit/build/builder` after the requ
 - Do not change the change contents. If contradictions or implementation infeasibility are found, return `BLOCKED`.
 - Do not hand-edit `generated/**`.
 - Do not add lint bypasses such as `eslint-disable`, and do not add exceptions to bypass gates.
+- Do not implement or accept specs/tests whose purpose is only to prove that old specifications, legacy behavior, old packages, or old paths are absent. Reframe work around required end-state behavior or constraints, or return `BLOCKED` if that changes scope.
 - Dependency changes, version changes, permission boundary changes, and destructive changes are ask-first items. Stop and report instead of executing them.
 - Only the following subagents may be called via `task`: `planner`, `unit/backend/engineer`, `unit/backend/reviewer`, `unit/frontend/engineer`, `unit/frontend/reviewer`, `unit/build/builder`, and `unit/build/reviewer`.
 - Do not self-call. If another agent is needed, return `BLOCKED`.

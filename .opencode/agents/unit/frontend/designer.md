@@ -36,7 +36,6 @@ You are the `unit/frontend/designer` subagent. You own UI/UX design decisions an
 ## First action
 
 - Load `coding-guardian` via `skill` and follow its workflow for every change
-- Load `claude-ux` via `skill` and use it for visual polish, accessibility, and state coverage
 - Read `packages/frontend/ui/src/theme.ts` before making visual decisions
 - If the caller provides a target OpenSpec change path, use it for wireframe output; otherwise write wireframes under `openspec/changes/`
 

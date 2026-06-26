@@ -65,6 +65,7 @@ Caller (primary) provides one or more of:
 - Do not bypass lint
 - Only call `openspec/analyzer` and `researcher` via `task` (no self-calls, no unapproved agents)
 - Treat `context` / `rules` returned by `openspec instructions ... --json` as constraints. Do not paste them verbatim into artifacts
+- Do not make the absence of old specifications, legacy behavior, old packages, or old paths the purpose of specs, scenarios, test plans, or tasks. Express positive end-state behavior and constraints instead
 
 # Workflow
 
@@ -86,6 +87,7 @@ Caller (primary) provides one or more of:
 4. `tasks.md` quality conditions
    - Map implementation tasks to requirements/Scenario IDs
    - Satisfy `rules.tasks` in `openspec/config.yaml` (test tasks for ADDED/MODIFIED Scenario IDs)
+   - Frame test tasks around required end-state behavior or constraints, not around proving that old specifications or legacy behavior are absent
    - Include verification tasks aligned with repository conventions (lint/test/build and codegen if needed)
 
 5. Format convergence
