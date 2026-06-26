@@ -958,6 +958,15 @@
   - OK例
     - upstream registry 由来の export 形状、内部サブパス import、React 参照型は対象ファイル内で維持する
 
+- vendored OpenCode skill script は upstream tool として ESLint 対象から除外する
+  - 強制: `pnpm lint` → `eslint .` → `ignores: ['.opencode/skills/impeccable/scripts/**']` → `eslint.config.js`
+  - 対象
+    - `npx impeccable install --providers=opencode --scope=project --no-hooks` で導入した upstream script 群
+  - 補足
+    - skill の agent 向け Markdown は通常どおりリポジトリ内でレビューする
+  - OK例
+    - upstream script は直接 lint 修正せず、必要な場合は upstream 更新または wrapper 側で対応する
+
 - テストは制約を一部緩和する
   - 強制: `pnpm lint` → `eslint .` → `files: ['**/*.test.*', '**/*.spec.*']` のルール上書き → `eslint.config.js`
   - NG例

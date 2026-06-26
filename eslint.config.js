@@ -112,7 +112,12 @@ const exportTsdocPlugin = {
 export default tseslint.config(
   // 除外対象
   {
-    ignores: ['**/coverage/**', '**/playwright-report/**', '**/test-results/**'],
+    ignores: [
+      '**/coverage/**',
+      '**/playwright-report/**',
+      '**/test-results/**',
+      '.opencode/skills/impeccable/scripts/**',
+    ],
   },
 
   // ベース設定
