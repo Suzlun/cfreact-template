@@ -86,4 +86,4 @@ RUN opencode upgrade
 RUN uv tool install -p 3.13 serena-agent
 
 # OpenSpec CLI をグローバルインストール
-RUN npm install -g @fission-ai/openspec@latest
+RUN npm install -g @fission-ai/openspec@1.4.1
