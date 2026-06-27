@@ -135,8 +135,8 @@ cfreact-template/
    pnpm dev:all
 
    # または個別に起動:
-   pnpm dev:server  # バックエンド http://localhost:8787 （@cfreact-template-backend/entry）
-   pnpm dev:client  # フロントエンド http://localhost:5173 （@cfreact-template-frontend/app）
+   pnpm dev:backend  # バックエンド http://localhost:8787 （@cfreact-template-backend/entry）
+   pnpm dev:frontend  # フロントエンド http://localhost:5173 （@cfreact-template-frontend/app）
    ```
 
 8. **アプリケーションにアクセス:**
@@ -238,10 +238,10 @@ AI 支援開発に OpenCode と OpenSpec を使用する場合：
 
 ```bash
 # ターミナル 1: Workers バックエンドを起動
-pnpm dev:server
+pnpm dev:backend
 
 # ターミナル 2: React フロントエンドを起動
-pnpm dev:client
+pnpm dev:frontend
 
 # または両方を同時に起動
 pnpm dev:all
@@ -249,14 +249,14 @@ pnpm dev:all
 
 ### Workers Email のローカル検証
 
-`pnpm dev:server` で Wrangler を起動している状態で、`POST /api/v1/users` を叩くと
+`pnpm dev:backend` で Wrangler を起動している状態で、`POST /api/v1/users` を叩くと
 `env.EMAIL.send()` が呼ばれ、Wrangler がローカルに `.eml` ファイルを出力します。
 
 1. `wrangler.toml` の `EMAIL_FROM` と `EMAIL_TO` を開発用の値に更新
 2. サーバーを起動
 
    ```bash
-   pnpm dev:server
+   pnpm dev:backend
    ```
 
 3. 別ターミナルでユーザー作成 API を実行
@@ -267,7 +267,7 @@ pnpm dev:all
      --data '{"name":"Email Test User","email":"email-test@example.com"}'
    ```
 
-4. `pnpm dev:server` 側のログに出る `.eml` ファイルパスを確認
+4. `pnpm dev:backend` 側のログに出る `.eml` ファイルパスを確認
 
 本番で送信を有効化する場合は Cloudflare Email Routing を有効化し、`EMAIL_FROM` と `EMAIL_TO`
 を運用値に変更してください。
@@ -276,8 +276,8 @@ pnpm dev:all
 
 | スクリプト               | 説明                                        |
 | ------------------------ | ------------------------------------------- |
-| `pnpm dev:client`        | Vite 開発サーバーを起動（フロントエンド）   |
-| `pnpm dev:server`        | Wrangler 開発サーバーを起動（バックエンド） |
+| `pnpm dev:frontend`      | Vite 開発サーバーを起動（フロントエンド）   |
+| `pnpm dev:backend`       | Wrangler 開発サーバーを起動（バックエンド） |
 | `pnpm dev:all`           | 両方のサーバーを同時に起動                  |
 | `pnpm build`             | フロントエンドとバックエンドの両方をビルド  |
 | `pnpm check`             | TypeScript 型チェックを実行                 |

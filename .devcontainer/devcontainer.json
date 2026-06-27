@@ -50,7 +50,8 @@
       "onAutoForward": "notify"
     }
   },
+  "initializeCommand": "sh .devcontainer/sync-git-user.sh capture",
   "postCreateCommand": "corepack enable && pnpm install && pnpm exec playwright install",
-  "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+  "postStartCommand": "sh .devcontainer/sync-git-user.sh apply && git config --global --add safe.directory ${containerWorkspaceFolder}",
   "remoteUser": "node"
 }

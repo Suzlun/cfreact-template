@@ -47,6 +47,7 @@ coverage/
 
 # Misc
 .turbo/
+.devcontainer/.host-git/
 
 # Serena MCP Server
 .serena/cache/

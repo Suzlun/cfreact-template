@@ -112,7 +112,7 @@ After every change, run as needed:
 
 ```bash
 pnpm lint
-pnpm test:client
+pnpm test:frontend
 pnpm build
 ```
 

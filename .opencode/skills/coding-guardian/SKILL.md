@@ -69,8 +69,8 @@ description: Enforce this repository's real React, Hono, Drizzle, and TypeSpec r
 - Contract / generated 変更: `pnpm gen:api-sdk` -> `pnpm check:codegen`
 - TypeSpec 変更: `pnpm format:check` -> `pnpm check`
 - JS / TS / TSX 変更: `pnpm lint` -> `pnpm test:run`
-- Frontend-focused 変更: `pnpm test:client`
-- Backend-focused 変更: `pnpm test:server`
+- Frontend-focused 変更: `pnpm test:frontend`
+- Backend-focused 変更: `pnpm test:backend`
 - Release-ready な変更や横断変更: `pnpm build`
 - Skill 変更: `python3 .opencode/skills/opencode-skills-devkit/scripts/validate_skills.py --root .`
 
