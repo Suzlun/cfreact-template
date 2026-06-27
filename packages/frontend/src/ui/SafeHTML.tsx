@@ -128,13 +128,7 @@ function SafeHTML({ html, className, sanitizeOptions }: SafeHTMLProps) {
   }
   const finalHTML = doc.body.innerHTML;
 
-  return (
-    <div
-      className={className}
-      // eslint-disable-next-line react/no-danger -- DOMPurify でサニタイズ済み
-      dangerouslySetInnerHTML={{ __html: finalHTML }}
-    />
-  );
+  return <div className={className} dangerouslySetInnerHTML={{ __html: finalHTML }} />;
 }
 
 export type { SafeHTMLProps };

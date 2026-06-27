@@ -150,6 +150,8 @@ export default tseslint.config(
       'import/resolver': {
         typescript: {
           alwaysTryTypes: true,
+          // 層ごとの tsconfig を意図的に使うため、resolver の性能注意だけを抑止する。
+          noWarnOnMultipleProjects: true,
           project: ['./tsconfig.base.json', './packages/*/tsconfig*.json'],
         },
       },
@@ -225,8 +227,7 @@ export default tseslint.config(
           ignore: [],
         },
       ],
-      // 完全禁止する場合は以下を有効化
-      // 'eslint-comments/no-use': 'error',
+      'eslint-comments/no-use': 'error',
 
       // ===== Import/Export =====
       'import/no-duplicates': 'error',
@@ -1588,6 +1589,14 @@ export default tseslint.config(
           ],
         },
       ],
+    },
+  },
+
+  // SafeHTML は DOMPurify でサニタイズした HTML を描画する唯一の出口なので、ここだけ危険HTML警告を設定側で許可する。
+  {
+    files: ['packages/frontend/src/ui/SafeHTML.tsx'],
+    rules: {
+      'react/no-danger': 'off',
     },
   },
   // shadcn/ui registry source is kept close to upstream so default components remain drop-in usable.

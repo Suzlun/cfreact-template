@@ -195,31 +195,24 @@
     import { x } from '@cfreact-template/backend/domain';
     ```
 
-- ESLint の disable コメントは未使用を残さない
-  - 強制: `pnpm lint` → `eslint .` → `rules['eslint-comments/no-unused-disable']` → `eslint.config.js`
+- ESLint の disable コメントを書かない
+  - 強制: `pnpm lint` → `eslint .` → `rules['eslint-comments/no-use']` → `eslint.config.js`
+  - 補足
+    - 例外が必要な場合は、インラインコメントで回避せず、対象ファイルを限定した ESLint 設定で意図を明示する
   - NG例
     ```ts
     // eslint-disable-next-line no-alert
-    const x = 1;
-    ```
-  - OK例
-    ```ts
-    // eslint-disable-next-line no-alert -- legacy UI で alert が必要
     alert('ok');
     ```
-
-- ESLint の disable は enable と対にする
-  - 強制: `pnpm lint` → `eslint .` → `rules['eslint-comments/disable-enable-pair']` → `eslint.config.js`
-  - NG例
-    ```ts
-    /* eslint-disable no-alert */
-    alert('x');
-    ```
   - OK例
-    ```ts
-    /* eslint-disable no-alert */
-    alert('x');
-    /* eslint-enable no-alert */
+    ```js
+    // eslint.config.js
+    {
+      files: ['packages/frontend/src/ui/SafeHTML.tsx'],
+      rules: {
+        'react/no-danger': 'off',
+      },
+    }
     ```
 
 ## 6. 公開 API のドキュメント
