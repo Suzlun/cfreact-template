@@ -20,30 +20,23 @@ Read these files before applying `coding-guardian` in this repository.
 ## Frontend enforcement
 
 - `eslint.config.js`: frontend boundaries for `app` / `domain` / `ui`, direct API import bans, direct fetch bans, TSDoc rules, and hook structure rules
-- `packages/frontend/app/package.json`: Vite React app scripts
-- `packages/frontend/domain/package.json`: domain hook package boundary
-- `packages/frontend/ui/package.json`: shadcn/Radix-based shared UI package
-- `packages/frontend/ui/src/styles/globals.css`: design token and global style baseline used by the current app
+- `packages/frontend/package.json`: Vite React app, API SDK, domain hook, and shared UI scripts
+- `packages/frontend/tsconfig.*.json`: frontend layer-specific TypeScript boundaries
+- `packages/frontend/src/ui/styles/globals.css`: design token and global style baseline used by the current app
 
 ## Contract enforcement
 
 - `packages/typespec/package.json`: TypeSpec format, compile, and check commands
 - `packages/typespec/tspconfig.yaml`: OpenAPI emitter output path
 - `packages/typespec/README.md`: API contract package layout and outputs
-- `packages/frontend/api/orval.config.ts`: generated SDK input and output path
+- `packages/frontend/orval.config.ts`: generated SDK input and output path
 - `packages/typespec/main.tsp`: API contract source of truth
 
 ## Backend enforcement
 
-- `packages/backend/entry/package.json`: Workers entry scripts
-- `packages/backend/app/package.json`: app-layer package metadata
-- `packages/backend/http/package.json`: HTTP adapter package metadata
-- `packages/backend/persistence/package.json`: persistence package metadata
-- `packages/backend/usecases/package.json`: usecase package metadata
-- `packages/backend/domain/package.json`: domain package metadata
-- `packages/backend/types/package.json`: backend shared types package metadata
-- `packages/backend/drizzle/package.json`: Drizzle schema package metadata
-- `packages/backend/http/src/contracts/openapi-contract.test.ts`: server OpenAPI must match TypeSpec-generated OpenAPI
+- `packages/backend/package.json`: Workers, Hono, persistence, and layer check scripts
+- `packages/backend/tsconfig.*.json`: backend layer-specific TypeScript boundaries
+- `packages/backend/src/http/contracts/openapi-contract.test.ts`: server OpenAPI must match TypeSpec-generated OpenAPI
 
 ## OpenSpec enforcement
 

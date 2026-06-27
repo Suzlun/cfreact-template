@@ -135,8 +135,8 @@ cfreact-template/
    pnpm dev:all
 
    # または個別に起動:
-   pnpm dev:backend  # バックエンド http://localhost:8787 （@cfreact-template-backend/entry）
-   pnpm dev:frontend  # フロントエンド http://localhost:5173 （@cfreact-template-frontend/app）
+   pnpm dev:backend  # バックエンド http://localhost:8787 （@cfreact-template/backend）
+   pnpm dev:frontend  # フロントエンド http://localhost:5173 （@cfreact-template/frontend）
    ```
 
 8. **アプリケーションにアクセス:**
@@ -147,7 +147,7 @@ cfreact-template/
 ### API SDK の再生成 (TypeSpec -> OpenAPI -> SDK)
 
 このテンプレートでは TypeSpec を API 契約の正（Single Source of Truth）とし、
-TypeSpec から OpenAPI を生成してクライアント SDK（`packages/frontend/api`）を自動生成します。
+TypeSpec から OpenAPI を生成してクライアント SDK（`packages/frontend/src/api`）を自動生成します。
 
 ```bash
 # TypeSpec から OpenAPI を生成し、SDK を再生成
@@ -158,7 +158,7 @@ pnpm gen:api-sdk
 
 ```bash
 pnpm gen:openapi
-pnpm --filter @cfreact-template-frontend/api gen
+pnpm --filter @cfreact-template/frontend gen:api
 ```
 
 ### 方法 2: 手動セットアップ
@@ -293,7 +293,7 @@ pnpm dev:all
 このテンプレートは、データベースマイグレーションに Drizzle Kit を使用します。
 
 1. **スキーマを変更:**
-   - `packages/backend/drizzle/src/schema.ts` を編集
+   - `packages/backend/src/drizzle/schema.ts` を編集
 
 2. **マイグレーションを生成:**
 
@@ -466,7 +466,7 @@ http://localhost:24282/dashboard
 
 ### Material UI テーマ
 
-`packages/frontend/ui/src/theme.ts` でテーマをカスタマイズ：
+`packages/frontend/src/ui/theme.ts` でテーマをカスタマイズ：
 
 ```typescript
 import { createTheme, responsiveFontSizes } from '@mui/material/styles';
@@ -489,13 +489,13 @@ export const theme = responsiveFontSizes(baseTheme);
 
 ### 新しいルートの追加
 
-1. `packages/frontend/app/src/pages/` にページコンポーネントを作成
-2. `packages/frontend/app/src/router.tsx` にルートを追加
+1. `packages/frontend/src/app/pages/` にページコンポーネントを作成
+2. `packages/frontend/src/app/router.tsx` にルートを追加
 
 ### 新しい API ルートの追加
 
-1. `packages/backend/http/src/routes/` にルートハンドラーを作成
-2. `packages/backend/http/src/routes/index.ts` にルートを登録
+1. `packages/backend/src/http/routes/` にルートハンドラーを作成
+2. `packages/backend/src/http/routes/index.ts` にルートを登録
 
 ## コード品質
 

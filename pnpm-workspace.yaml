@@ -1,7 +1,5 @@
 packages:
   - 'packages/*'
-  - 'packages/frontend/*'
-  - 'packages/backend/*'
 
 # Wait 72 hours after npm publish before resolving new dependency versions.
 minimumReleaseAge: 4320

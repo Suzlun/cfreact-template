@@ -79,8 +79,8 @@ If a section has no enforceable rules beyond a short scope note, keep it brief.
    - `packages/typespec/package.json`
    - `packages/typespec/tspconfig.yaml`
    - `packages/typespec/README.md`
-   - `packages/frontend/api/orval.config.ts`
-   - `packages/backend/http/src/contracts/openapi-contract.test.ts`
+   - `packages/frontend/orval.config.ts`
+   - `packages/backend/src/http/contracts/openapi-contract.test.ts`
    - `scripts/openspec/verify-scenario-coverage.mjs`
 3. Extract only rules that actually fail in this repo, including repo-specific ones such as:
    - TypeSpec is the source of truth; generated OpenAPI and frontend SDK are not hand-edited; codegen drift fails.

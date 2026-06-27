@@ -29,36 +29,36 @@ description: Enforce this repository's real React, Hono, Drizzle, and TypeSpec r
 特に重要な enforcement entrypoint:
 
 - root flow: `package.json`, `.github/workflows/ci.yml`, `.husky/pre-commit`, `.husky/commit-msg`, `.lintstagedrc.json`, `commitlint.config.js`, `eslint.config.js`
-- TypeSpec / codegen: `packages/typespec/package.json`, `packages/typespec/tspconfig.yaml`, `packages/typespec/README.md`, `packages/frontend/api/orval.config.ts`
-- frontend: `packages/frontend/app/package.json`, `packages/frontend/domain/package.json`, `packages/frontend/ui/package.json`
-- backend: `packages/backend/entry/package.json`, `packages/backend/app/package.json`, `packages/backend/http/package.json`, `packages/backend/persistence/package.json`, `packages/backend/usecases/package.json`, `packages/backend/domain/package.json`, `packages/backend/types/package.json`, `packages/backend/drizzle/package.json`, `packages/backend/http/src/contracts/openapi-contract.test.ts`
+- TypeSpec / codegen: `packages/typespec/package.json`, `packages/typespec/tspconfig.yaml`, `packages/typespec/README.md`, `packages/frontend/orval.config.ts`
+- frontend: `packages/frontend/package.json`, `packages/frontend/tsconfig.*.json`, `packages/frontend/src/app/**`, `packages/frontend/src/domain/**`, `packages/frontend/src/api/**`, `packages/frontend/src/ui/**`
+- backend: `packages/backend/package.json`, `packages/backend/tsconfig.*.json`, `packages/backend/src/entry/**`, `packages/backend/src/app/**`, `packages/backend/src/http/**`, `packages/backend/src/persistence/**`, `packages/backend/src/usecases/**`, `packages/backend/src/domain/**`, `packages/backend/src/types/**`, `packages/backend/src/drizzle/**`, `packages/backend/src/http/contracts/openapi-contract.test.ts`
 - OpenSpec: `scripts/openspec/verify-scenario-coverage.mjs`
 
 ### 2) Classify the change before editing
 
-- Contract / codegen: `packages/typespec/**`, `packages/frontend/api/**`
-- Frontend: `packages/frontend/app/**`, `packages/frontend/domain/**`, `packages/frontend/ui/**`
+- Contract / codegen: `packages/typespec/**`, `packages/frontend/src/api/**`, `packages/frontend/orval.config.ts`
+- Frontend: `packages/frontend/src/app/**`, `packages/frontend/src/domain/**`, `packages/frontend/src/ui/**`
 - Backend: `packages/backend/**`
 - Tooling / workflow: root config, scripts, hooks, CI, `.opencode/**`
 
 固定の依存方向:
 
-- Client: `packages/frontend/app -> packages/frontend/domain -> packages/frontend/api` and `packages/frontend/app -> packages/frontend/ui`
-- Server: `packages/backend/entry -> packages/backend/app -> (packages/backend/http | packages/backend/persistence | packages/backend/usecases) -> packages/backend/domain -> packages/backend/types`
-- Persistence schema: `packages/backend/persistence -> packages/backend/drizzle`
+- Client: `packages/frontend/src/app -> packages/frontend/src/domain -> packages/frontend/src/api` and `packages/frontend/src/app -> packages/frontend/src/ui`
+- Server: `packages/backend/src/entry -> packages/backend/src/app -> (packages/backend/src/http | packages/backend/src/persistence | packages/backend/src/usecases) -> packages/backend/src/domain -> packages/backend/src/types`
+- Persistence schema: `packages/backend/src/persistence -> packages/backend/src/drizzle`
 
 ### 3) Implement without breaking enforced rules
 
 - Contract を変えるときは `packages/typespec/main.tsp` を直し、`pnpm gen:api-sdk` と `pnpm check:codegen` で整合を取る
-- `packages/typespec/openapi/openapi.json` と `packages/frontend/api/src/generated/client.ts` は手で直さない
+- `packages/typespec/openapi/openapi.json` と `packages/frontend/src/api/generated/client.ts` は手で直さない
 - Frontend app / domain で `fetch`, `globalThis.fetch`, `axios`, `cross-fetch` を直接使わない
-- Frontend app の pages / components から `@cfreact-template-frontend/api` を直 import しない。domain hook を経由する
+- Frontend app の pages / components から `@cfreact-template/frontend/api` を直 import しない。domain hook を経由する
 - React と TSX はこの repo の正規 frontend 実装であり、Svelte 用の制約へ読み替えない
-- `packages/frontend/domain/src/hooks/**` では `use*` export、`{ data, actions }` 戻り値、`*Data` / `*Actions` 型注釈を守る
-- 再利用したい見た目は `@cfreact-template-frontend/ui` に寄せ、画面固有の構成だけを `packages/frontend/app` に置く
-- Backend HTTP は `packages/backend/http`、配線は `packages/backend/app`、永続化は `packages/backend/persistence` / `packages/backend/drizzle` に置く
-- `packages/backend/http` から `packages/backend/persistence` を直 import しない。`c.env` も HTTP 層で直接読まない
-- `packages/backend/domain` と `packages/backend/usecases` では adapter import や framework 依存を持ち込まない
+- `packages/frontend/src/domain/hooks/**` では `use*` export、`{ data, actions }` 戻り値、`*Data` / `*Actions` 型注釈を守る
+- 再利用したい見た目は `@cfreact-template/frontend/ui` に寄せ、画面固有の構成だけを `packages/frontend/src/app` に置く
+- Backend HTTP は `packages/backend/src/http`、配線は `packages/backend/src/app`、永続化は `packages/backend/src/persistence` / `packages/backend/src/drizzle` に置く
+- `packages/backend/src/http` から `packages/backend/src/persistence` を直 import しない。`c.env` も HTTP 層で直接読まない
+- `packages/backend/src/domain` と `packages/backend/src/usecases` では adapter import や framework 依存を持ち込まない
 - `packages/**/src/**/*.{ts,tsx}` の export は、生成物とテストを除き TSDoc を付ける
 - OpenSpec を触るときは `openspec/specs/**/spec.md` の Scenario ID とテストタイトルの参照を崩さない
 
@@ -89,10 +89,10 @@ Changed-file 向けの軽量チェック:
 ## Common violations to prevent
 
 - generated file の手編集
-- `packages/frontend/app` から `@cfreact-template-frontend/api` の直 import
+- `packages/frontend/src/app` から `@cfreact-template/frontend/api` の直 import
 - frontend app / domain での `fetch` / `axios` / `cross-fetch`
 - hooks が `{ data, actions }` を返さない
 - export に必要な TSDoc がない
-- `packages/backend/http` から `packages/backend/persistence` の直 import
+- `packages/backend/src/http` から `packages/backend/src/persistence` の直 import
 - HTTP 層での `c.env` 直接参照
 - OpenSpec の Scenario ID とテスト参照の不整合

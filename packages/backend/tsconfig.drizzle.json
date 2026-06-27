@@ -1,0 +1,28 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist/drizzle",
+    "rootDir": "./src/drizzle",
+    "types": ["@cloudflare/workers-types"],
+    "paths": {
+      "@cfreact-template/backend": ["./src/__forbidden__/backend.ts"],
+      "@cfreact-template/backend/app": ["./src/__forbidden__/app.ts"],
+      "@cfreact-template/backend/app/*": ["./src/__forbidden__/app/*"],
+      "@cfreact-template/backend/domain": ["./src/__forbidden__/domain.ts"],
+      "@cfreact-template/backend/domain/*": ["./src/__forbidden__/domain/*"],
+      "@cfreact-template/backend/drizzle": ["./src/drizzle/index.ts"],
+      "@cfreact-template/backend/drizzle/*": ["./src/drizzle/*"],
+      "@cfreact-template/backend/entry": ["./src/__forbidden__/entry.ts"],
+      "@cfreact-template/backend/entry/*": ["./src/__forbidden__/entry/*"],
+      "@cfreact-template/backend/http": ["./src/__forbidden__/http.ts"],
+      "@cfreact-template/backend/http/*": ["./src/__forbidden__/http/*"],
+      "@cfreact-template/backend/persistence": ["./src/__forbidden__/persistence.ts"],
+      "@cfreact-template/backend/persistence/*": ["./src/__forbidden__/persistence/*"],
+      "@cfreact-template/backend/types": ["./src/__forbidden__/types.ts"],
+      "@cfreact-template/backend/types/*": ["./src/__forbidden__/types/*"],
+      "@cfreact-template/backend/usecases": ["./src/__forbidden__/usecases.ts"],
+      "@cfreact-template/backend/usecases/*": ["./src/__forbidden__/usecases/*"]
+    }
+  },
+  "include": ["src/drizzle/**/*"]
+}

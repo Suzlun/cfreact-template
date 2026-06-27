@@ -20,7 +20,7 @@ const CLOUDFLARE_D1_TOKEN = requireEnv(process.env.CLOUDFLARE_D1_TOKEN, 'CLOUDFL
 
 export default defineConfig({
   out: './drizzle/migrations',
-  schema: './packages/backend/drizzle/src/schema.ts',
+  schema: './packages/backend/src/drizzle/schema.ts',
   dialect: 'sqlite',
   driver: 'd1-http',
   dbCredentials: {

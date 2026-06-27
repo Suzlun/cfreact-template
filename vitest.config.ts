@@ -10,22 +10,22 @@ export default defineConfig({
   test: {
     projects: [
       {
-        extends: './packages/frontend/app/vitest.config.ts',
-        root: './packages/frontend/app',
+        extends: './packages/frontend/vitest.app.config.ts',
+        root: './packages/frontend',
         test: {
           name: 'frontend-app',
         },
       },
       {
-        extends: './packages/backend/http/vitest.config.ts',
-        root: './packages/backend/http',
+        extends: './packages/backend/vitest.http.config.ts',
+        root: './packages/backend',
         test: {
           name: 'backend-http',
         },
       },
       {
-        extends: './packages/frontend/ui/vitest.config.ts',
-        root: './packages/frontend/ui',
+        extends: './packages/frontend/vitest.ui.config.ts',
+        root: './packages/frontend',
         test: {
           name: 'frontend-ui',
         },

@@ -59,7 +59,7 @@ If any are missing, do not start. Reply with Status BLOCKED and list missing inp
 - Follow all guardrails enforced by `coding-guardian`
 - Treat this backend as TypeScript code on Hono and Cloudflare Workers, not Go
 - Respect the backend layering used in `eslint.config.js`
-- Keep HTTP concerns in `packages/backend/http`, dependency wiring in `packages/backend/app`, domain rules in `packages/backend/domain`, use cases in `packages/backend/usecases`, and persistence in `packages/backend/persistence`
+- Keep HTTP concerns in `packages/backend/src/http`, dependency wiring in `packages/backend/src/app`, domain rules in `packages/backend/src/domain`, use cases in `packages/backend/src/usecases`, and persistence in `packages/backend/src/persistence`
 - Do not report completion until `unit/backend/reviewer` returns `Approve`
 
 ## Mandatory review gate

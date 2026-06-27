@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "outDir": "./dist/app",
+    "paths": {
+      "@cfreact-template/frontend": ["./src/app/index.ts"],
+      "@cfreact-template/frontend/app": ["./src/app/index.ts"],
+      "@cfreact-template/frontend/app/*": ["./src/app/*"],
+      "@cfreact-template/frontend/api": ["./src/__forbidden__/api.ts"],
+      "@cfreact-template/frontend/api/*": ["./src/__forbidden__/api/*"],
+      "@cfreact-template/frontend/domain": ["./src/domain/index.ts"],
+      "@cfreact-template/frontend/domain/*": ["./src/domain/*"],
+      "@cfreact-template/frontend/ui": ["./src/ui/index.ts"],
+      "@cfreact-template/frontend/ui/*": ["./src/ui/*"]
+    }
+  },
+  "include": ["src/app/**/*", "vite.config.ts", "vitest.app.config.ts", "tailwind.config.ts"]
+}

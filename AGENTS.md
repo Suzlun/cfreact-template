@@ -57,8 +57,8 @@ Before beginning any work, you MUST summarize your understanding of the Credo be
 
 ## Architecture Notes
 
-- Client dependency direction: `frontend/app -> frontend/domain -> frontend/api`
-- Server dependency direction: `backend/entry -> backend/app -> (backend/http|backend/persistence|backend/usecases) -> backend/domain -> backend/types`
+- Client dependency direction: `frontend/src/app -> frontend/src/domain -> frontend/src/api`
+- Server dependency direction: `backend/src/entry -> backend/src/app -> (backend/src/http|backend/src/persistence|backend/src/usecases) -> backend/src/domain -> backend/src/types`
 - API contract direction: implementation must follow TypeSpec; do not generate OpenAPI from server routes for SDK input.
 
 ## OpenSpec (Spec -> Test Contract)

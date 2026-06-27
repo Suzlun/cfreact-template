@@ -1,0 +1,50 @@
+{
+  "name": "@cfreact-template/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/entry/index.ts",
+  "exports": {
+    ".": "./src/entry/index.ts",
+    "./app": "./src/app/index.ts",
+    "./domain": "./src/domain/index.ts",
+    "./drizzle": "./src/drizzle/index.ts",
+    "./drizzle/schema": "./src/drizzle/schema.ts",
+    "./entry": "./src/entry/index.ts",
+    "./http": "./src/http/index.ts",
+    "./http/context": "./src/http/context.ts",
+    "./http/schemas": "./src/http/schemas/index.ts",
+    "./persistence": "./src/persistence/index.ts",
+    "./types": "./src/types/index.ts",
+    "./usecases": "./src/usecases/index.ts"
+  },
+  "scripts": {
+    "dev": "wrangler dev --ip 0.0.0.0",
+    "build": "pnpm check:entry",
+    "deploy": "wrangler deploy",
+    "check": "pnpm check:types && pnpm check:domain && pnpm check:usecases && pnpm check:drizzle && pnpm check:persistence && pnpm check:http && pnpm check:app && pnpm check:entry",
+    "check:types": "tsc --noEmit -p tsconfig.types.json",
+    "check:domain": "tsc --noEmit -p tsconfig.domain.json",
+    "check:usecases": "tsc --noEmit -p tsconfig.usecases.json",
+    "check:drizzle": "tsc --noEmit -p tsconfig.drizzle.json",
+    "check:persistence": "tsc --noEmit -p tsconfig.persistence.json",
+    "check:http": "tsc --noEmit -p tsconfig.http.json",
+    "check:app": "tsc --noEmit -p tsconfig.app.json",
+    "check:entry": "tsc --noEmit -p tsconfig.entry.json",
+    "test": "vitest --config vitest.http.config.ts",
+    "test:run": "vitest run --config vitest.http.config.ts"
+  },
+  "dependencies": {
+    "@hono/zod-openapi": "^1.4.0",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.25",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.16.15",
+    "@cloudflare/workers-types": "^4.20260613.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.8",
+    "wrangler": "^4.100.0"
+  }
+}

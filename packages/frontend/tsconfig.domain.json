@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "outDir": "./dist/domain",
+    "paths": {
+      "@cfreact-template/frontend": ["./src/__forbidden__/frontend.ts"],
+      "@cfreact-template/frontend/app": ["./src/__forbidden__/app.ts"],
+      "@cfreact-template/frontend/app/*": ["./src/__forbidden__/app/*"],
+      "@cfreact-template/frontend/api": ["./src/api/index.ts"],
+      "@cfreact-template/frontend/api/*": ["./src/api/*"],
+      "@cfreact-template/frontend/domain": ["./src/domain/index.ts"],
+      "@cfreact-template/frontend/domain/*": ["./src/domain/*"],
+      "@cfreact-template/frontend/ui": ["./src/__forbidden__/ui.ts"],
+      "@cfreact-template/frontend/ui/*": ["./src/__forbidden__/ui/*"]
+    }
+  },
+  "include": ["src/domain/**/*"]
+}

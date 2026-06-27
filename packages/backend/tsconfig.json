@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.types.json" },
+    { "path": "./tsconfig.domain.json" },
+    { "path": "./tsconfig.usecases.json" },
+    { "path": "./tsconfig.drizzle.json" },
+    { "path": "./tsconfig.persistence.json" },
+    { "path": "./tsconfig.http.json" },
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.entry.json" }
+  ]
+}
