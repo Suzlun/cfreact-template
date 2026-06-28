@@ -74,16 +74,3 @@ RUN printf '%s\n' \
 
 # node ユーザーに切り替え
 USER node
-
-# Wrangler をグローバルインストール
-RUN npm install -g wrangler@4
-
-# OpenCode CLI をグローバルインストール
-RUN npm install -g opencode-ai@latest
-RUN opencode upgrade
-
-# Serena MCP CLI をインストール
-RUN uv tool install -p 3.13 serena-agent
-
-# OpenSpec CLI をグローバルインストール
-RUN npm install -g @fission-ai/openspec@1.4.1

@@ -11,6 +11,9 @@ permission:
     '*': deny
     'openspec/analyzer': allow
     'researcher': allow
+    'unit/frontend/engineer': allow
+    'unit/backend/engineer': allow
+    'unit/frontend/designer': allow
   read: allow
   glob: allow
   grep: allow
@@ -63,7 +66,12 @@ Caller (primary) provides one or more of:
 - Do not implement during the spec proposal phase (OpenSpec only)
 - Do not touch `generated/**`
 - Do not bypass lint
-- Only call `openspec/analyzer` and `researcher` via `task` (no self-calls, no unapproved agents)
+- Only call `openspec/analyzer`, `researcher`, `unit/frontend/engineer`, `unit/backend/engineer`, and `unit/frontend/designer` via `task` (no self-calls, no unapproved agents)
+- Delegate detailed technical design and Spec definition to the relevant unit specialist before finalizing OpenSpec artifacts:
+  - Frontend API/domain/app design and frontend-facing Spec details: `unit/frontend/engineer`
+  - Backend domain/usecase/http/persistence design and backend-facing Spec details: `unit/backend/engineer`
+  - UI/UX layout, component placement, shared UI design, user-facing copy, wireframes, and UI-facing Spec details: `unit/frontend/designer`
+- Do not invent detailed designs or Spec definitions that belong to those specialist domains when delegation is possible. Reflect specialist outputs into `proposal.md`, `design.md`, delta specs, and `tasks.md` as OpenSpec artifacts only.
 - Treat `context` / `rules` returned by `openspec instructions ... --json` as constraints. Do not paste them verbatim into artifacts
 - Do not make the absence of old specifications, legacy behavior, old packages, or old paths the purpose of specs, scenarios, test plans, or tasks. Express positive end-state behavior and constraints instead
 
@@ -84,29 +92,36 @@ Caller (primary) provides one or more of:
    - Create/update the artifact per `template` and `outputPath`
    - Iterate until all required artifacts are filled
 
-4. `tasks.md` quality conditions
+4. Specialist design and Spec delegation
+   - Before finalizing detailed design, requirements, scenarios, or implementation-ready tasks, identify which specialist domains are affected
+   - Call the relevant unit specialist via `task` with intent, current artifact paths, known constraints, affected capabilities, and the exact design/Spec decisions needed
+   - For mixed frontend/backend/UI changes, call each relevant specialist and reconcile their outputs into one coherent OpenSpec artifact set
+   - Require specialists to return implementation-neutral design guidance, Spec requirements/scenarios, task implications, risks, and verification expectations; they must not implement during proposer workflow
+   - If a required specialist cannot be called in the execution environment, return `CALLER_ACTION_REQUIRED` with the exact specialist invocation prompt and do not finalize that domain's detailed design or Spec definition from assumption alone
+
+5. `tasks.md` quality conditions
    - Map implementation tasks to requirements/Scenario IDs
    - Satisfy `rules.tasks` in `openspec/config.yaml` (test tasks for ADDED/MODIFIED Scenario IDs)
    - Frame test tasks around required end-state behavior or constraints, not around proving that old specifications or legacy behavior are absent
    - Include verification tasks aligned with repository conventions (lint/test/build and codegen if needed)
 
-5. Format convergence
+6. Format convergence
    - Run `openspec validate --type change "<change-id>" --strict --no-interactive`
    - Fix failures and rerun until PASS
 
-6. Analyzer integration
+7. Analyzer integration
    - Call `openspec/analyzer` via `task` and receive findings (Blocker/Warn/Decision)
    - Apply the received Patch plan and validate again
 
    Note: depending on the execution environment, subagents may not be able to use `task`.
    - In that case, return `CALLER_ACTION_REQUIRED` and provide the exact next analyzer/researcher invocation steps to the caller
 
-7. Decisions
+8. Decisions
    - If analyzer returns decision requests, proposer decides
    - If evidence is needed, call `researcher` via `task` and decide with evidence
    - Reflect the decision into proposal/design/spec deltas/tasks (at least one)
 
-8. Completion report
+9. Completion report
    - validate PASS
    - List remaining open questions if any (ideally zero blockers)
 

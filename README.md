@@ -31,6 +31,7 @@
 - **Prettier** 3.7.4 - コードフォーマット
 - **Dev Containers** - 一貫した開発環境
 - **Serena MCP** - セマンティックコード検索・編集（OpenCode 統合）
+- **Sentrux** - アーキテクチャ品質ゲートと OpenCode MCP 構造監視
 
 ## プロジェクト構成
 
@@ -167,6 +168,7 @@ pnpm --filter @cfreact-template/frontend gen:api
 
 - Node.js 24.12.0 以降
 - Python 3.11 以降（Serena MCP 用）
+- Sentrux CLI（`pnpm lint` の構造品質ゲート用。Dev Container では自動導入）
 
 1. **依存関係をインストール:**
 
@@ -199,9 +201,17 @@ pnpm --filter @cfreact-template/frontend gen:api
    npm install -g opencode-ai@latest
    ```
 
-5. 方法 1 のステップ 4-8 に従ってください。
+5. **Sentrux CLI をインストール（構造品質ゲート用）:**
 
-**注意:** Dev Container には、これらすべてのツールがプリインストールされています（Node.js 24、Python 3、pnpm、Wrangler、uv、OpenCode CLI、OpenSpec CLI）。
+   ```bash
+   sh .devcontainer/scripts/install-sentrux.sh
+   ```
+
+   このスクリプトは Sentrux の GitHub Releases latest を取得し、release asset の sha256 digest を検証してからインストールします。
+
+6. 方法 1 のステップ 4-8 に従ってください。
+
+**注意:** Dev Container には、これらすべてのツールがプリインストールされています（Node.js 24、Python 3、pnpm、Wrangler、uv、OpenCode CLI、OpenSpec CLI、Sentrux CLI）。
 
 ### OpenCode + OpenSpec セットアップ
 
@@ -274,19 +284,22 @@ pnpm dev:all
 
 ### 利用可能なスクリプト
 
-| スクリプト               | 説明                                        |
-| ------------------------ | ------------------------------------------- |
-| `pnpm dev:frontend`      | Vite 開発サーバーを起動（フロントエンド）   |
-| `pnpm dev:backend`       | Wrangler 開発サーバーを起動（バックエンド） |
-| `pnpm dev:all`           | 両方のサーバーを同時に起動                  |
-| `pnpm build`             | フロントエンドとバックエンドの両方をビルド  |
-| `pnpm check`             | TypeScript 型チェックを実行                 |
-| `pnpm lint`              | ESLint ですべてのファイルをリント           |
-| `pnpm lint:supply-chain` | pnpm のサプライチェーン防御設定を検証       |
-| `pnpm format`            | Prettier でコードをフォーマット             |
-| `pnpm migrate:generate`  | Drizzle マイグレーションを生成              |
-| `pnpm migrate:studio`    | Drizzle Studio を開く                       |
-| `pnpm deploy`            | Cloudflare Workers にデプロイ               |
+| スクリプト               | 説明                                                             |
+| ------------------------ | ---------------------------------------------------------------- |
+| `pnpm dev:frontend`      | Vite 開発サーバーを起動（フロントエンド）                        |
+| `pnpm dev:backend`       | Wrangler 開発サーバーを起動（バックエンド）                      |
+| `pnpm dev:all`           | 両方のサーバーを同時に起動                                       |
+| `pnpm build`             | フロントエンドとバックエンドの両方をビルド                       |
+| `pnpm check`             | TypeScript 型チェックを実行                                      |
+| `pnpm lint`              | ESLint、OpenSpec、サプライチェーン、Sentrux 構造品質ゲートを実行 |
+| `pnpm lint:supply-chain` | pnpm のサプライチェーン防御設定を検証                            |
+| `pnpm sentrux:check`     | Sentrux で循環依存と構造ルールを検査                             |
+| `pnpm sentrux:gate:save` | AI 作業前の Sentrux 品質ベースラインを保存                       |
+| `pnpm sentrux:gate`      | AI 作業後に Sentrux 品質劣化を検出                               |
+| `pnpm format`            | Prettier でコードをフォーマット                                  |
+| `pnpm migrate:generate`  | Drizzle マイグレーションを生成                                   |
+| `pnpm migrate:studio`    | Drizzle Studio を開く                                            |
+| `pnpm deploy`            | Cloudflare Workers にデプロイ                                    |
 
 ### データベースマイグレーション
 
@@ -461,6 +474,33 @@ http://localhost:24282/dashboard
 デフォルトでは `read_only: true` に設定されており、ファイルの読み取りのみが可能です。ファイル編集機能を有効にする場合は、`.serena/project.yml` で `read_only: false` に変更してください。
 
 詳細については、https://github.com/oraios/serena を参照してください。
+
+## Sentrux - アーキテクチャ品質ゲート
+
+このテンプレートには、AI 支援開発でコード構造が劣化したことを検出するための Sentrux が設定されています。Dev Container と CI は Sentrux の GitHub Releases latest を導入し、`pnpm lint` の中で `sentrux check packages` を実行します。OpenCode スキル、ルート設定、運用 scripts は対象外にし、アプリ本体の `packages/` だけを構造品質ゲートとして監視します。
+
+### 使い方
+
+```bash
+# 構造品質ゲートを単独で実行
+pnpm sentrux:check
+
+# AI エージェント作業前にベースラインを保存
+pnpm sentrux:gate:save
+
+# AI エージェント作業後に品質劣化を検出
+pnpm sentrux:gate
+```
+
+### OpenCode MCP
+
+OpenCode では `.opencode/opencode.json` に `sentrux --mcp` が登録されています。設定変更後は OpenCode を再起動すると、Sentrux MCP の `scan`、`health`、`session_start`、`session_end` などを利用できます。
+
+### 設定ファイル
+
+- **`packages/.sentrux/rules.toml`**: `packages/` 配下の循環依存、複雑度、関数行数、主要レイヤー境界の構造ルール
+- **`.devcontainer/scripts/install-applications.sh`**: Dev Container postCreate で各CLI導入スクリプトを順番に実行する処理
+- **`.devcontainer/scripts/install-*.sh`**: Wrangler、OpenCode、Serena、OpenSpec、Sentrux の個別インストール処理
 
 ## カスタマイズ
 

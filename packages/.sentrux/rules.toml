@@ -1,0 +1,92 @@
+# Sentrux architectural rules for cfreact-template application packages.
+# `pnpm lint` から `sentrux check packages` として実行し、OpenCode スキル、ルート設定、運用 scripts を除外する。
+
+[constraints]
+# 循環依存はAI作業の構造劣化を早期に示すため、常に禁止する。
+max_cycles = 0
+# packages 配下のアプリ本体だけを対象にし、過度に複雑な関数を検知する。
+max_cc = 30
+# 既存UIコンポーネントの上限を超えない範囲で、アプリ本体の関数肥大化を検知する。
+max_fn_lines = 150
+# 既存コードの初回導入で不必要に止めないため、巨大ファイル検知はスコア観測に留める。
+no_god_files = false
+
+[[layers]]
+name = "backend-types"
+paths = ["backend/src/types/**"]
+order = 5
+
+[[layers]]
+name = "backend-domain"
+paths = ["backend/src/domain/**"]
+order = 4
+
+[[layers]]
+name = "backend-usecases"
+paths = ["backend/src/usecases/**"]
+order = 3
+
+[[layers]]
+name = "backend-drizzle"
+paths = ["backend/src/drizzle/**"]
+order = 3
+
+[[layers]]
+name = "backend-persistence"
+paths = ["backend/src/persistence/**"]
+order = 2
+
+[[layers]]
+name = "backend-http"
+paths = ["backend/src/http/**"]
+order = 2
+
+[[layers]]
+name = "backend-app"
+paths = ["backend/src/app/**"]
+order = 1
+
+[[layers]]
+name = "backend-entry"
+paths = ["backend/src/entry/**"]
+order = 0
+
+[[layers]]
+name = "frontend-api"
+paths = ["frontend/src/api/**"]
+order = 2
+
+[[layers]]
+name = "frontend-domain"
+paths = ["frontend/src/domain/**"]
+order = 1
+
+[[layers]]
+name = "frontend-ui"
+paths = ["frontend/src/ui/**"]
+order = 1
+
+[[layers]]
+name = "frontend-app"
+paths = ["frontend/src/app/**"]
+order = 0
+
+[[boundaries]]
+from = "frontend/src/app/**"
+to = "frontend/src/api/**"
+reason = "Frontend app must use domain hooks instead of importing the API layer directly."
+
+[[boundaries]]
+from = "backend/src/http/**"
+to = "backend/src/persistence/**"
+reason = "Backend HTTP adapters must use use cases instead of depending on persistence directly."
+
+[[boundaries]]
+from = "backend/src/domain/**"
+to = "backend/src/http/**"
+reason = "Backend domain must not depend on HTTP adapters."
+
+[[boundaries]]
+from = "backend/src/domain/**"
+to = "backend/src/persistence/**"
+reason = "Backend domain must not depend on persistence adapters."

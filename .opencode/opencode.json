@@ -1,0 +1,28 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "serena": {
+      "type": "local",
+      "command": [
+        "serena",
+        "start-mcp-server",
+        "--project-from-cwd",
+        "--transport",
+        "stdio",
+        "--enable-web-dashboard",
+        "true",
+        "--open-web-dashboard",
+        "false"
+      ],
+      "enabled": true
+    },
+    "sentrux": {
+      "type": "local",
+      "command": ["sentrux", "--mcp"],
+      "enabled": true
+    }
+  },
+  "experimental": {
+    "mcp_timeout": 30000
+  }
+}
