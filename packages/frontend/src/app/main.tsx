@@ -1,9 +1,9 @@
+import '@cfreact-template/ui/styles.css';
+
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import '@cfreact-template/frontend/ui/styles.css';
-
-import { App } from './app';
+import { App } from '@cfreact-template/frontend/app/app';
 
 const rootElement = document.getElementById('root');
 

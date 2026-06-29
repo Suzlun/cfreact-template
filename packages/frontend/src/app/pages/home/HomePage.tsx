@@ -1,7 +1,3 @@
-import { Link as RouterLink } from 'react-router';
-
-import type { HelloData } from '@cfreact-template/frontend/domain/hooks/hello';
-import { useHello } from '@cfreact-template/frontend/domain/hooks/hello';
 import {
   Alert,
   AlertTitle,
@@ -14,7 +10,11 @@ import {
   CardTitle,
   Skeleton,
   Spinner,
-} from '@cfreact-template/frontend/ui';
+} from '@cfreact-template/ui';
+import { Link as RouterLink } from 'react-router';
+
+import type { HelloData } from '@cfreact-template/frontend/domain/hooks/hello';
+import { useHello } from '@cfreact-template/frontend/domain/hooks/hello';
 
 const techStackItems = [
   'React 19',

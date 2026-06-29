@@ -7,16 +7,27 @@
   "exports": {
     ".": "./src/entry/index.ts",
     "./app": "./src/app/index.ts",
+    "./app/dependencies": "./src/app/dependencies/index.ts",
+    "./app/dependencies/users": "./src/app/dependencies/users.ts",
+    "./app/*": "./src/app/*.ts",
     "./domain": "./src/domain/index.ts",
+    "./domain/*": "./src/domain/*.ts",
     "./drizzle": "./src/drizzle/index.ts",
+    "./drizzle/*": "./src/drizzle/*.ts",
     "./drizzle/schema": "./src/drizzle/schema.ts",
     "./entry": "./src/entry/index.ts",
+    "./entry/*": "./src/entry/*.ts",
     "./http": "./src/http/index.ts",
+    "./http/*": "./src/http/*.ts",
     "./http/context": "./src/http/context.ts",
     "./http/schemas": "./src/http/schemas/index.ts",
     "./persistence": "./src/persistence/index.ts",
+    "./persistence/*": "./src/persistence/*.ts",
     "./types": "./src/types/index.ts",
-    "./usecases": "./src/usecases/index.ts"
+    "./types/*": "./src/types/*.ts",
+    "./usecases": "./src/usecases/index.ts",
+    "./usecases/users": "./src/usecases/users/index.ts",
+    "./usecases/*": "./src/usecases/*.ts"
   },
   "scripts": {
     "dev": "wrangler dev --ip 0.0.0.0",
@@ -42,6 +53,7 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.16.15",
+    "@cfreact-template/typespec": "workspace:*",
     "@cloudflare/workers-types": "^4.20260613.1",
     "typescript": "^5.9.3",
     "vitest": "^4.1.8",

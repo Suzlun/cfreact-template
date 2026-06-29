@@ -1,5 +1,3 @@
-import type { UsersActions, UsersData } from '@cfreact-template/frontend/domain/hooks/users';
-import { useUsers } from '@cfreact-template/frontend/domain/hooks/users';
 import {
   Alert,
   AlertTitle,
@@ -20,7 +18,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@cfreact-template/frontend/ui';
+} from '@cfreact-template/ui';
+
+import type { UsersActions, UsersData } from '@cfreact-template/frontend/domain/hooks/users';
+import { useUsers } from '@cfreact-template/frontend/domain/hooks/users';
 
 function PageHeader() {
   return (

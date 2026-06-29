@@ -1,10 +1,9 @@
 import { OpenAPIHono, type Hook } from '@hono/zod-openapi';
 
 import type { AppVariables } from '@cfreact-template/backend/http/context';
+import { registerHelloRoutes } from '@cfreact-template/backend/http/routes/hello';
+import { registerUsersRoutes } from '@cfreact-template/backend/http/routes/users';
 import type { Bindings } from '@cfreact-template/backend/types';
-
-import { registerHelloRoutes } from './hello';
-import { registerUsersRoutes } from './users';
 
 interface ApiEnv {
   Bindings: Bindings;

@@ -30,20 +30,20 @@ description: Enforce this repository's real React, Hono, Drizzle, and TypeSpec r
 
 - root flow: `package.json`, `.github/workflows/ci.yml`, `.husky/pre-commit`, `.husky/commit-msg`, `.lintstagedrc.json`, `commitlint.config.js`, `eslint.config.js`
 - TypeSpec / codegen: `packages/typespec/package.json`, `packages/typespec/tspconfig.yaml`, `packages/typespec/README.md`, `packages/frontend/orval.config.ts`
-- frontend: `packages/frontend/package.json`, `packages/frontend/tsconfig.*.json`, `packages/frontend/src/app/**`, `packages/frontend/src/domain/**`, `packages/frontend/src/api/**`, `packages/frontend/src/ui/**`
+- frontend: `packages/frontend/package.json`, `packages/frontend/tsconfig.*.json`, `packages/frontend/src/app/**`, `packages/frontend/src/domain/**`, `packages/frontend/src/api/**`, `packages/ui/**`
 - backend: `packages/backend/package.json`, `packages/backend/tsconfig.*.json`, `packages/backend/src/entry/**`, `packages/backend/src/app/**`, `packages/backend/src/http/**`, `packages/backend/src/persistence/**`, `packages/backend/src/usecases/**`, `packages/backend/src/domain/**`, `packages/backend/src/types/**`, `packages/backend/src/drizzle/**`, `packages/backend/src/http/contracts/openapi-contract.test.ts`
 - OpenSpec: `scripts/openspec/verify-scenario-coverage.mjs`
 
 ### 2) Classify the change before editing
 
 - Contract / codegen: `packages/typespec/**`, `packages/frontend/src/api/**`, `packages/frontend/orval.config.ts`
-- Frontend: `packages/frontend/src/app/**`, `packages/frontend/src/domain/**`, `packages/frontend/src/ui/**`
+- Frontend: `packages/frontend/src/app/**`, `packages/frontend/src/domain/**`, `packages/ui/**`
 - Backend: `packages/backend/**`
 - Tooling / workflow: root config, scripts, hooks, CI, `.opencode/**`
 
 固定の依存方向:
 
-- Client: `packages/frontend/src/app -> packages/frontend/src/domain -> packages/frontend/src/api` and `packages/frontend/src/app -> packages/frontend/src/ui`
+- Client: `packages/frontend/src/app -> packages/frontend/src/domain -> packages/frontend/src/api` and `packages/frontend/src/app -> packages/ui`
 - Server: `packages/backend/src/entry -> packages/backend/src/app -> (packages/backend/src/http | packages/backend/src/persistence | packages/backend/src/usecases) -> packages/backend/src/domain -> packages/backend/src/types`
 - Persistence schema: `packages/backend/src/persistence -> packages/backend/src/drizzle`
 
@@ -55,7 +55,7 @@ description: Enforce this repository's real React, Hono, Drizzle, and TypeSpec r
 - Frontend app の pages / components から `@cfreact-template/frontend/api` を直 import しない。domain hook を経由する
 - React と TSX はこの repo の正規 frontend 実装であり、Svelte 用の制約へ読み替えない
 - `packages/frontend/src/domain/hooks/**` では `use*` export、`{ data, actions }` 戻り値、`*Data` / `*Actions` 型注釈を守る
-- 再利用したい見た目は `@cfreact-template/frontend/ui` に寄せ、画面固有の構成だけを `packages/frontend/src/app` に置く
+- 再利用したい見た目は `@cfreact-template/ui` に寄せ、画面固有の構成だけを `packages/frontend/src/app` に置く
 - Backend HTTP は `packages/backend/src/http`、配線は `packages/backend/src/app`、永続化は `packages/backend/src/persistence` / `packages/backend/src/drizzle` に置く
 - `packages/backend/src/http` から `packages/backend/src/persistence` を直 import しない。`c.env` も HTTP 層で直接読まない
 - `packages/backend/src/domain` と `packages/backend/src/usecases` では adapter import や framework 依存を持ち込まない

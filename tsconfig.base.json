@@ -13,8 +13,6 @@
       "@cfreact-template/frontend/domain/*": ["./packages/frontend/src/domain/*"],
       "@cfreact-template/frontend/api": ["./packages/frontend/src/api/index.ts"],
       "@cfreact-template/frontend/api/*": ["./packages/frontend/src/api/*"],
-      "@cfreact-template/frontend/ui": ["./packages/frontend/src/ui/index.ts"],
-      "@cfreact-template/frontend/ui/*": ["./packages/frontend/src/ui/*"],
       "@cfreact-template/backend": ["./packages/backend/src/entry/index.ts"],
       "@cfreact-template/backend/types": ["./packages/backend/src/types/index.ts"],
       "@cfreact-template/backend/types/*": ["./packages/backend/src/types/*"],

@@ -5,7 +5,7 @@ import {
   listUsers,
   type CreateUserInput,
   type getHelloResponse,
-} from './generated/client.js';
+} from '@cfreact-template/frontend/api/generated';
 
 export type {
   CreateUserInput,
@@ -16,7 +16,7 @@ export type {
   getHelloResponse,
   getUserResponse,
   listUsersResponse,
-} from './generated/client.js';
+} from '@cfreact-template/frontend/api/generated';
 
 /** Configuration for the API SDK default request settings. */
 /** Configuration for the API SDK default request settings. */

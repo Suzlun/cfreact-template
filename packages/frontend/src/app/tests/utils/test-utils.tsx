@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, type RenderOptions } from '@testing-library/react';
 
-import '@cfreact-template/frontend/ui/styles.css';
-
 import type { ReactElement, ReactNode } from 'react';
+
+import '@cfreact-template/ui/styles.css';
 
 // テスト用の QueryClient を作成（エラーのリトライを無効化）
 function createTestQueryClient() {

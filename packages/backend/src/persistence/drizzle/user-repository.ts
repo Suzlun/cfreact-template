@@ -3,8 +3,7 @@ import { eq } from 'drizzle-orm';
 import { users } from '@cfreact-template/backend/drizzle';
 
 import type { User, UserRepository, ValidCreateUserInput } from '@cfreact-template/backend/domain';
-
-import type { DrizzleClient } from './db';
+import type { DrizzleClient } from '@cfreact-template/backend/persistence/drizzle/db';
 
 /** Drizzle-backed implementation of the user repository. */
 export class DrizzleUserRepository implements UserRepository {

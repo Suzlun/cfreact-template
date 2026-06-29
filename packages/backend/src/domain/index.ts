@@ -1,3 +1,3 @@
-export * from './users/user';
-export * from './users/user-created-notifier';
-export * from './users/user-repository';
+export * from '@cfreact-template/backend/domain/users/user';
+export * from '@cfreact-template/backend/domain/users/user-created-notifier';
+export * from '@cfreact-template/backend/domain/users/user-repository';

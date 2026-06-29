@@ -1,2 +1,2 @@
-export type { AppVariables } from './context';
-export { getOpenApiDocument, openApiApp } from './routes/openapi-app';
+export type { AppVariables } from '@cfreact-template/backend/http/context';
+export { getOpenApiDocument, openApiApp } from '@cfreact-template/backend/http/routes/openapi-app';

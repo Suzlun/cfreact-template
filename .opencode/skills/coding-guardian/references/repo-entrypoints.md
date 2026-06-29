@@ -22,7 +22,7 @@ Read these files before applying `coding-guardian` in this repository.
 - `eslint.config.js`: frontend boundaries for `app` / `domain` / `ui`, direct API import bans, direct fetch bans, TSDoc rules, and hook structure rules
 - `packages/frontend/package.json`: Vite React app, API SDK, domain hook, and shared UI scripts
 - `packages/frontend/tsconfig.*.json`: frontend layer-specific TypeScript boundaries
-- `packages/frontend/src/ui/styles/globals.css`: design token and global style baseline used by the current app
+- `packages/ui/styles/globals.css`: design token and global style baseline used by the current app
 
 ## Contract enforcement
 

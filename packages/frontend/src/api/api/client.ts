@@ -1,6 +1,5 @@
-import { createApiSdk, type HelloResponse, type User } from '../sdk';
-
-import type { CreateUserPayload, Hello } from '../types';
+import { createApiSdk, type HelloResponse, type User } from '@cfreact-template/frontend/api/sdk';
+import type { CreateUserPayload, Hello } from '@cfreact-template/frontend/api/types';
 
 const sdk = createApiSdk();
 

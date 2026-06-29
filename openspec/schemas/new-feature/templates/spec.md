@@ -2,7 +2,7 @@
 
 <!-- This file defines enduring specification only. -->
 <!-- MUST NOT write implementation tasks, migration steps, release steps, or change-history prose here. -->
-<!-- Bad: "In this migration, replace packages/frontend/src/ui." -->
+<!-- Bad: "In this migration, replace packages/ui." -->
 <!-- Good: "The shared UI package SHALL be reusable from both public and private frontends." -->
 <!-- MUST describe only enduring end-state constraints; do not write before/after comparisons. -->
 <!-- Bad: "旧 frontend 構成は build graph に残ってはならない。" -->

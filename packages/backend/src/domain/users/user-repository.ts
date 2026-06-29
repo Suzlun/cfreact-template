@@ -1,4 +1,4 @@
-import type { User, ValidCreateUserInput } from './user';
+import type { User, ValidCreateUserInput } from '@cfreact-template/backend/domain/users/user';
 
 /** Persistence port for user data access. */
 export interface UserRepository {

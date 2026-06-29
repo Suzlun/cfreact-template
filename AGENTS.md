@@ -35,8 +35,8 @@ Before beginning any work, you MUST summarize your understanding of the Credo be
 - Dev (server): `pnpm dev:backend` (Wrangler on `http://localhost:8787`)
 - Dev (client): `pnpm dev:frontend` (Vite on `http://localhost:5173`)
 - Browser automation: `agent-browser open http://localhost:5173` and `agent-browser snapshot` (Dev Container installs CLI and Chrome/Chromium)
-- Sentrux architecture check: `pnpm sentrux:check` (runs on `packages/`; also included in `pnpm lint`)
-- Sentrux AI-session baseline: `pnpm sentrux:gate:save` before agent work, then `pnpm sentrux:gate` after agent work (both run on `packages/`)
+- Sentrux architecture check: `pnpm sentrux:check` (runs on `packages/backend` and `packages/frontend/src`; also included in `pnpm lint`)
+- Sentrux AI-session baseline: `pnpm sentrux:gate:save` before agent work, then `pnpm sentrux:gate` after agent work (both run on `packages/backend` and `packages/frontend/src`)
 
 ## API Contract (TypeSpec)
 
@@ -62,7 +62,7 @@ Before beginning any work, you MUST summarize your understanding of the Credo be
 
 ## Architecture Notes
 
-- Client dependency direction: `frontend/src/app -> frontend/src/domain -> frontend/src/api`
+- Client dependency direction: `frontend/src/app -> frontend/src/domain -> frontend/src/api`; shared UI lives in `packages/ui` and is imported as `@cfreact-template/ui`
 - Server dependency direction: `backend/src/entry -> backend/src/app -> (backend/src/http|backend/src/persistence|backend/src/usecases) -> backend/src/domain -> backend/src/types`
 - API contract direction: implementation must follow TypeSpec; do not generate OpenAPI from server routes for SDK input.
 

@@ -1,11 +1,13 @@
 import animate from 'tailwindcss-animate';
 
+import { uiTailwindContent } from '@cfreact-template/ui/tailwind-content';
+
 import type { Config } from 'tailwindcss';
 
 /** Tailwind configuration for shadcn/ui classes used by the app and UI package. */
 const config = {
   darkMode: ['class'],
-  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  content: ['./index.html', './src/**/*.{ts,tsx}', ...uiTailwindContent],
   theme: {
     container: {
       center: true,

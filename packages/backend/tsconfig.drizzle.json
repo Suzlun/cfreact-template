@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist/drizzle",
-    "rootDir": "./src/drizzle",
+    "rootDir": ".",
     "types": ["@cloudflare/workers-types"],
     "paths": {
       "@cfreact-template/backend": ["./src/__forbidden__/backend.ts"],

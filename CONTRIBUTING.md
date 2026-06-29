@@ -112,7 +112,7 @@ pnpm lint
 pnpm check
 ```
 
-`pnpm lint` には `sentrux check packages` が含まれます。Sentrux は `.opencode/skills/**`、ルート設定、運用 scripts ではなく、`packages/` 配下のアプリ本体を対象にします。AI エージェントで大きめの変更を行う場合は、作業前に `pnpm sentrux:gate:save`、作業後に `pnpm sentrux:gate` を実行して構造劣化を検出してください。
+`pnpm lint` には `sentrux check packages/backend && sentrux check packages/frontend/src` が含まれます。Sentrux は `.opencode/skills/**`、ルート設定、運用 scripts、共有UIパッケージではなく、backend/frontend のアプリ本体を対象にします。AI エージェントで大きめの変更を行う場合は、作業前に `pnpm sentrux:gate:save`、作業後に `pnpm sentrux:gate` を実行して構造劣化を検出してください。
 
 必要に応じて関連テストも実行してください。
 

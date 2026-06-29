@@ -1,11 +1,10 @@
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
-import { server } from '../../tests/mocks/server';
-import { render, screen, waitFor } from '../../tests/utils/test-utils';
-
-import { UsersPage } from './UsersPage';
+import { UsersPage } from '@cfreact-template/frontend/app/pages/users/UsersPage';
+import { server } from '@cfreact-template/frontend/app/tests/mocks/server';
+import { render, screen, waitFor } from '@cfreact-template/frontend/app/tests/utils/test-utils';
 
 describe('UsersPage', () => {
   describe('データ取得', () => {

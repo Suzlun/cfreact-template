@@ -1,6 +1,5 @@
+import { Button } from '@cfreact-template/ui';
 import { Link as RouterLink, Outlet } from 'react-router';
-
-import { Button } from '@cfreact-template/frontend/ui';
 
 /** Shared layout for the main app routes. */
 function AppLayout() {

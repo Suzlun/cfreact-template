@@ -1,1 +1,1 @@
-export type { Bindings } from './bindings';
+export type { Bindings } from '@cfreact-template/backend/types/bindings';

@@ -1,2 +1,2 @@
-export * from './app';
-export * from './router';
+export * from '@cfreact-template/frontend/app/app';
+export * from '@cfreact-template/frontend/app/router';

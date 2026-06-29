@@ -1,8 +1,7 @@
+import contractOpenApi from '@cfreact-template/typespec/openapi';
 import { describe, expect, it } from 'vitest';
 
 import { getOpenApiDocument } from '@cfreact-template/backend/http';
-
-import contractOpenApi from '../../../../typespec/openapi/openapi.json';
 
 interface OpenApiOperation {
   operationId?: string;

@@ -42,7 +42,7 @@
   - `frontend-domain`: `packages/frontend/src/domain/**/*`
   - `frontend-app`: `packages/frontend/src/app/**/*`
 - 共通
-  - `ui`: `packages/frontend/src/ui/**/*`
+  - `ui`: `packages/ui/**/*`
   - `drizzle`: `packages/backend/src/drizzle/**/*`
 - 契約生成物
   - `typespec-openapi`: `packages/typespec/openapi/openapi.json`
@@ -54,7 +54,7 @@
   - 対象
     - `packages/backend/**/src/**/*.{ts,tsx}`
     - `packages/frontend/**/src/**/*.{ts,tsx}`
-    - `packages/frontend/src/ui/**/*.{ts,tsx}`
+    - `packages/ui/**/*.{ts,tsx}`
     - `packages/backend/src/drizzle/**/*.{ts,tsx}`
   - NG例
     - `packages/backend/foo/src/x.ts`（どの層にも一致しない）
@@ -165,8 +165,8 @@
   - OK例
     ```ts
     // packages/foo/index.ts
-    export * from './src/something';
-    export { something } from './src/something';
+    export * from './something';
+    export { something } from './something';
     ```
 
 - `packages/**/src/**/*.{ts,tsx}` では相対 import を各ディレクトリの `index.ts` 経由にする
@@ -184,7 +184,7 @@
   - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js`
   - 対象
     - `packages/backend/src/**/*.{ts,tsx}`
-    - `packages/frontend/src/ui/**/*.{ts,tsx}`
+    - `packages/ui/**/*.{ts,tsx}`
     - `packages/backend/src/drizzle/**/*.ts`
   - NG例
     ```ts
@@ -208,7 +208,7 @@
     ```js
     // eslint.config.js
     {
-      files: ['packages/frontend/src/ui/SafeHTML.tsx'],
+      files: ['packages/ui/SafeHTML.tsx'],
       rules: {
         'react/no-danger': 'off',
       },
@@ -536,7 +536,7 @@
     ```tsx
     import { useEffect } from 'react';
 
-    // packages/frontend/src/ui/components/Comp.tsx
+    // packages/ui/components/Comp.tsx
 
     export function Comp({ id }: { id: string }) {
       if (id !== '') {
@@ -551,7 +551,7 @@
     ```tsx
     import { useEffect } from 'react';
 
-    // packages/frontend/src/ui/components/Comp.tsx
+    // packages/ui/components/Comp.tsx
 
     export function Comp({ id }: { id: string }) {
       useEffect(() => {
@@ -940,7 +940,7 @@
     - 入力元を変更して `pnpm gen:api-sdk`
 
 - shadcn/ui registry 由来コードは上流API形状を保つため lint の一部ルールを緩和する
-  - 強制: `pnpm lint` → `eslint .` → `files: ['packages/frontend/src/ui/components/ui/**/*.{ts,tsx}', 'packages/frontend/src/ui/hooks/use-mobile.tsx', 'packages/frontend/src/ui/hooks/use-toast.ts', 'packages/frontend/src/ui/lib/utils.ts']` のルール上書き → `eslint.config.js`
+  - 強制: `pnpm lint` → `eslint .` → `files: ['packages/ui/components/ui/**/*.{ts,tsx}', 'packages/ui/hooks/use-mobile.tsx', 'packages/ui/hooks/use-toast.ts', 'packages/ui/lib/utils.ts']` のルール上書き → `eslint.config.js`
   - 対象
     - shadcn/ui のデフォルトコンポーネント実装
     - shadcn/ui が要求する `cn`, `use-mobile`, `use-toast`
@@ -998,14 +998,14 @@ fail 条件
     - `pnpm lint:eslint` は `eslint .` を実行
     - `pnpm lint:openspec` は `openspec validate --all --strict` と `node scripts/openspec/verify-scenario-coverage.mjs` を実行
     - `pnpm lint:supply-chain` は `node scripts/security/verify-pnpm-supply-chain.mjs` を実行
-    - `pnpm sentrux:check` は `sentrux check packages` を実行
+    - `pnpm sentrux:check` は `sentrux check packages/backend && sentrux check packages/frontend/src` を実行
 - Sentrux で循環依存と構造ルールを検査する
-  - 強制: `pnpm lint` → `pnpm sentrux:check` → `packages/.sentrux/rules.toml`
+  - 強制: `pnpm lint` → `pnpm sentrux:check` → `packages/backend/.sentrux/rules.toml` と `packages/frontend/src/.sentrux/rules.toml`
   - 必須
     - `max_cycles = 0` を維持する
-    - Sentrux の対象は `packages/` に限定し、`.opencode/skills/**`、`eslint.config.js`、ルート `scripts/**` を含めない
+    - Sentrux の対象は `packages/backend` と `packages/frontend/src` に限定し、共有UIパッケージ、`.opencode/skills/**`、`eslint.config.js`、ルート `scripts/**` を含めない
     - `max_cc = 30` と `max_fn_lines = 150` を維持する
-    - backend / frontend の主要レイヤーを `packages/.sentrux/rules.toml` に定義する
+    - backend / frontend の主要レイヤーを各パッケージの `.sentrux/rules.toml` に定義する
   - NG例
     - `packages/frontend/src/app/**` から `packages/frontend/src/api/**` へ直接依存する
     - `packages/backend/src/http/**` から `packages/backend/src/persistence/**` へ直接依存する

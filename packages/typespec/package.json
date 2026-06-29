@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./openapi": "./openapi/openapi.json"
+  },
   "scripts": {
     "format": "tsp format .",
     "format:check": "tsp format . --check",

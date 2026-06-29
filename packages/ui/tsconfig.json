@@ -1,0 +1,29 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "outDir": "./dist/ui",
+    "paths": {
+      "@cfreact-template/frontend": ["./__forbidden__/frontend.ts"],
+      "@cfreact-template/frontend/app": ["./__forbidden__/app.ts"],
+      "@cfreact-template/frontend/app/*": ["./__forbidden__/app/*"],
+      "@cfreact-template/frontend/api": ["./__forbidden__/api.ts"],
+      "@cfreact-template/frontend/api/*": ["./__forbidden__/api/*"],
+      "@cfreact-template/frontend/domain": ["./__forbidden__/domain.ts"],
+      "@cfreact-template/frontend/domain/*": ["./__forbidden__/domain/*"],
+      "@cfreact-template/ui": ["./index.ts"],
+      "@cfreact-template/ui/*": ["./*"]
+    }
+  },
+  "include": [
+    "index.ts",
+    "SafeHTML.tsx",
+    "SafeHTML.test.tsx",
+    "tailwind-content.ts",
+    "components/**/*",
+    "hooks/**/*",
+    "lib/**/*",
+    "tests/**/*"
+  ]
+}

@@ -4,7 +4,6 @@
   "references": [
     { "path": "./tsconfig.api.json" },
     { "path": "./tsconfig.domain.json" },
-    { "path": "./tsconfig.ui.json" },
     { "path": "./tsconfig.app.json" }
   ]
 }

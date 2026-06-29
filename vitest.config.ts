@@ -24,10 +24,10 @@ export default defineConfig({
         },
       },
       {
-        extends: './packages/frontend/vitest.ui.config.ts',
-        root: './packages/frontend',
+        extends: './packages/ui/vitest.config.ts',
+        root: './packages/ui',
         test: {
-          name: 'frontend-ui',
+          name: 'ui',
         },
       },
     ],

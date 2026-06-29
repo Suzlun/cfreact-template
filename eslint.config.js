@@ -175,7 +175,13 @@ export default tseslint.config(
         { type: 'frontend-api', pattern: 'packages/frontend/src/api/**/*', mode: 'full' },
         { type: 'frontend-domain', pattern: 'packages/frontend/src/domain/**/*', mode: 'full' },
         { type: 'frontend-app', pattern: 'packages/frontend/src/app/**/*', mode: 'full' },
-        { type: 'ui', pattern: 'packages/frontend/src/ui/**/*', mode: 'full' },
+        { type: 'ui', pattern: 'packages/ui/index.ts', mode: 'full' },
+        { type: 'ui', pattern: 'packages/ui/SafeHTML.tsx', mode: 'full' },
+        { type: 'ui', pattern: 'packages/ui/components/**/*', mode: 'full' },
+        { type: 'ui', pattern: 'packages/ui/hooks/**/*', mode: 'full' },
+        { type: 'ui', pattern: 'packages/ui/lib/**/*', mode: 'full' },
+        { type: 'ui', pattern: 'packages/ui/styles/**/*', mode: 'full' },
+        { type: 'ui', pattern: 'packages/ui/tests/**/*', mode: 'full' },
         { type: 'drizzle', pattern: 'packages/backend/src/drizzle/**/*', mode: 'full' },
       ],
     },
@@ -272,7 +278,7 @@ export default tseslint.config(
               position: 'after',
             },
             {
-              pattern: '@cfreact-template/frontend/ui/**',
+              pattern: '@cfreact-template/ui/**',
               group: 'internal',
               position: 'after',
             },
@@ -422,7 +428,12 @@ export default tseslint.config(
     files: [
       'packages/backend/src/**/*.{ts,tsx}',
       'packages/frontend/src/**/*.{ts,tsx}',
-      'packages/frontend/src/ui/**/*.{ts,tsx}',
+      'packages/ui/index.ts',
+      'packages/ui/SafeHTML.tsx',
+      'packages/ui/components/**/*.{ts,tsx}',
+      'packages/ui/hooks/**/*.{ts,tsx}',
+      'packages/ui/lib/**/*.{ts,tsx}',
+      'packages/ui/tests/**/*.{ts,tsx}',
       'packages/backend/src/drizzle/**/*.{ts,tsx}',
     ],
     rules: {
@@ -434,9 +445,10 @@ export default tseslint.config(
 
   // エクスポートは TSDoc 必須（再エクスポートは対象外）
   {
-    files: ['packages/**/src/**/*.{ts,tsx}'],
+    files: ['packages/**/src/**/*.{ts,tsx}', 'packages/ui/**/*.{ts,tsx}'],
     ignores: [
       'packages/frontend/src/api/generated/**/*.{ts,tsx}',
+      'packages/ui/vitest.config.ts',
       '**/*.test.ts',
       '**/*.test.tsx',
       '**/*.spec.ts',
@@ -1350,7 +1362,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/frontend/src/ui/**/*.{ts,tsx}'],
+    files: ['packages/ui/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -1359,7 +1371,7 @@ export default tseslint.config(
             {
               group: ['../**'],
               message:
-                '@cfreact-template/frontend/ui/* エイリアスでパッケージ内の上位ディレクトリを参照してください。',
+                '@cfreact-template/ui/* エイリアスでパッケージ内の上位ディレクトリを参照してください。',
             },
           ],
         },
@@ -1549,9 +1561,9 @@ export default tseslint.config(
     },
   },
 
-  // packages 全体で index.ts 経由の import を強制 + 行数制約（生成コード・テストは除外）
+  // packages 全体で相対 import / export を禁止 + 行数制約（生成コード・テストは除外）
   {
-    files: ['packages/**/src/**/*.{ts,tsx}'],
+    files: ['packages/**/*.{ts,tsx}'],
     ignores: [
       '**/index.ts',
       'packages/frontend/src/api/generated/**/*.{ts,tsx}',
@@ -1583,10 +1595,24 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ['**/src/**/!(*index)', './**/!(*index)', '../**/!(*index)'],
-              message: 'import は各ディレクトリの index.ts に統一してください。',
+              group: ['./**', '../**'],
+              message:
+                '相対 import は禁止です。package export または @cfreact-template/* alias を使ってください。',
             },
           ],
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ExportNamedDeclaration[source.value=/^\\.\\.?\\//]',
+          message:
+            '相対 export は禁止です。package export または @cfreact-template/* alias を使ってください。',
+        },
+        {
+          selector: 'ExportAllDeclaration[source.value=/^\\.\\.?\\//]',
+          message:
+            '相対 export は禁止です。package export または @cfreact-template/* alias を使ってください。',
         },
       ],
     },
@@ -1594,7 +1620,7 @@ export default tseslint.config(
 
   // SafeHTML は DOMPurify でサニタイズした HTML を描画する唯一の出口なので、ここだけ危険HTML警告を設定側で許可する。
   {
-    files: ['packages/frontend/src/ui/SafeHTML.tsx'],
+    files: ['packages/ui/SafeHTML.tsx'],
     rules: {
       'react/no-danger': 'off',
     },
@@ -1602,10 +1628,10 @@ export default tseslint.config(
   // shadcn/ui registry source is kept close to upstream so default components remain drop-in usable.
   {
     files: [
-      'packages/frontend/src/ui/components/ui/**/*.{ts,tsx}',
-      'packages/frontend/src/ui/hooks/use-mobile.tsx',
-      'packages/frontend/src/ui/hooks/use-toast.ts',
-      'packages/frontend/src/ui/lib/utils.ts',
+      'packages/ui/components/ui/**/*.{ts,tsx}',
+      'packages/ui/hooks/use-mobile.tsx',
+      'packages/ui/hooks/use-toast.ts',
+      'packages/ui/lib/utils.ts',
     ],
     rules: {
       '@typescript-eslint/array-type': 'off',
@@ -1655,7 +1681,7 @@ export default tseslint.config(
   },
   // vitest config は型情報なしで lint
   {
-    files: ['packages/frontend/vitest.ui.config.ts'],
+    files: ['packages/ui/vitest.config.ts'],
     ...tseslint.configs.disableTypeChecked,
   },
 

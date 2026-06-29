@@ -2,10 +2,9 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 
+import { createUsersUseCases } from '@cfreact-template/backend/app/dependencies';
 import { openApiApp, type AppVariables } from '@cfreact-template/backend/http';
 import type { Bindings } from '@cfreact-template/backend/types';
-
-import { createUsersUseCases } from './dependencies';
 
 const app = new Hono<{ Bindings: Bindings; Variables: AppVariables }>();
 

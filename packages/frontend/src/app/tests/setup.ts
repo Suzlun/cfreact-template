@@ -11,8 +11,8 @@ Object.defineProperty(globalThis, 'localStorage', {
 
 // localStorage の上書き後に MSW 関連モジュールを読み込み、Node.js の warning を発生させない。
 const [{ resetMockData }, { server }] = await Promise.all([
-  import('./mocks/handlers'),
-  import('./mocks/server'),
+  import('@cfreact-template/frontend/app/tests/mocks/handlers'),
+  import('@cfreact-template/frontend/app/tests/mocks/server'),
 ]);
 
 // MSW サーバーの起動・停止
