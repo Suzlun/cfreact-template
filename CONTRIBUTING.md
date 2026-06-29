@@ -137,11 +137,11 @@ pnpm test:e2e      # Playwright（変更が e2e に影響する場合）
 
 ## リリース
 
-- `main` に merge されると Release Workflow が検証、ビルド、コード生成差分チェックを実行し、成功したコミットを `deploy` ブランチへ反映します。
-- Cloudflare Deploy Button では `https://deploy.workers.cloudflare.com/?url=https://github.com/[アカウント名]/[リポジトリ名]/tree/deploy` を使用します。
+- `main` の CI が成功すると Deploy Workflow が起動します。GitHub Actions側にCloudflare認証情報が設定されている場合だけ、ビルド、D1/KV/R2の作成または再利用、本番環境へのデプロイを実行します。
+- Cloudflare Deploy Button では `https://deploy.workers.cloudflare.com/?url=https://github.com/[アカウント名]/[リポジトリ名]/tree/main` を使用します。
 - Deploy Button/Workers Builds は `package.json` の `deploy` script を使い、`pnpm build && wrangler deploy --env production` を実行します。
 - D1 database、KV namespace、R2 bucket は `wrangler.toml` の production binding をCloudflare側のresource provisioning対象として扱います。
-- GitHub Actionsに `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` がある場合は、Release WorkflowがD1/KV/R2を名前で作成または再利用し、実ID入りの一時Wrangler設定で直接deployします。
+- GitHub Actionsに `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` がある場合は、Deploy WorkflowがD1/KV/R2を名前で作成または再利用し、実ID入りの一時Wrangler設定で直接deployします。
 - このrepoはrootから `pnpm build` と `wrangler deploy --env production` を実行する前提です。frontend assetsは `packages/frontend/dist`、backend entryは `packages/backend/src/entry/index.ts` です。
 - Workers Builds の build variable には `PNPM_VERSION=11.7.0` を設定し、pnpmのバージョン差によるinstall差分を避けてください。
 - Cloudflare Email Routing は送信元/送信先の検証が必要なため、Deploy Button後にCloudflare dashboardで設定してください。

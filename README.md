@@ -356,19 +356,19 @@ pnpm dev:all
 
 ## デプロイ
 
-### GitHub Release Workflow
+### GitHub Deploy Workflow
 
-`main` に merge されると `.github/workflows/release.yml` が実行され、CI と同等の検証、ビルド、コード生成差分チェックを通過したコミットだけを `deploy` ブランチへ反映します。
+`main` の CI が成功すると `.github/workflows/deploy.yml` が起動します。GitHub Actions側に Cloudflare の認証情報が設定されている場合だけ、ビルド、D1/KV/R2 の作成または再利用、本番環境へのデプロイを実行します。
 
 Cloudflare Deploy Button からデプロイする場合は、次の URL を使用します。
 
 ```text
-https://deploy.workers.cloudflare.com/?url=https://github.com/[アカウント名]/[リポジトリ名]/tree/deploy
+https://deploy.workers.cloudflare.com/?url=https://github.com/[アカウント名]/[リポジトリ名]/tree/main
 ```
 
 Cloudflare Deploy Button は、ユーザー自身の GitHub/GitLab account に repository を複製し、Workers Builds で `package.json` の `deploy` script を実行します。このテンプレートでは `pnpm build && wrangler deploy --env production` が使われ、`wrangler.toml` の production 設定にある D1 database、KV namespace、R2 bucket は Cloudflare の resource provisioning 対象になります。
 
-GitHub Actions側にも `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` が設定されている場合は、Release Workflow内でD1/KV/R2を名前で作成または再利用し、実ID入りの一時Wrangler設定を使って直接 `wrangler deploy` します。Actions CDではDeploy Buttonのresource provisioningが走らないため、公開branchにはaccount固有IDを置かず、Actions内だけで `.wrangler/release.wrangler.toml` を生成します。
+GitHub Actions側にも `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` が設定されている場合は、Deploy Workflow内でD1/KV/R2を名前で作成または再利用し、実ID入りの一時Wrangler設定を使って直接 `wrangler deploy` します。Actions CDではDeploy Buttonのresource provisioningが走らないため、公開branchにはaccount固有IDを置かず、Actions内だけで `.wrangler/release.wrangler.toml` を生成します。
 
 このrepoはrootの `wrangler.toml` から `packages/backend/src/entry/index.ts` をWorker entryとして参照し、`packages/frontend/dist` をWorkers Static Assetsとして配信します。`pnpm build` がbackend type checkとfrontend buildを実行するため、Deploy Button/Workers BuildsとGitHub Actions CDのどちらもrepo rootから実行する構造です。
 
