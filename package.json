@@ -38,6 +38,7 @@
     "lint:eslint": "eslint .",
     "lint:openspec": "pnpm exec openspec validate --all --strict && node scripts/openspec/verify-scenario-coverage.mjs",
     "lint:supply-chain": "node scripts/security/verify-pnpm-supply-chain.mjs",
+    "release:provision-cloudflare": "node scripts/release/provision-cloudflare-resources.mjs",
     "sentrux:check": "sentrux check packages",
     "sentrux:gate:save": "sentrux gate --save packages",
     "sentrux:gate": "sentrux gate packages",

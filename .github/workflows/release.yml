@@ -17,6 +17,10 @@ jobs:
   release:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      WRANGLER_ENVIRONMENT: ${{ vars.WRANGLER_ENVIRONMENT || 'production' }}
     steps:
       - name: Checkout main
         uses: actions/checkout@v7
@@ -65,3 +69,22 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git push --force origin HEAD:refs/heads/deploy
+
+      - name: Provision Cloudflare resources for Actions CD
+        id: provision
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        run: |
+          # GitHub Actions 直接CDではDeploy Buttonのprovisioningが走らないため、D1/KV/R2を冪等に用意します。
+          pnpm release:provision-cloudflare
+
+      - name: Deploy with Wrangler from Actions
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        run: |
+          # 実ID入りの一時configを使い、このrepo構造のままbackend entryとfrontend assetsを同一Workerへdeployします。
+          pnpm exec wrangler deploy --config "${{ steps.provision.outputs.wrangler_config }}" --env "${WRANGLER_ENVIRONMENT}"
+
+      - name: Skip Actions deploy
+        if: ${{ env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == '' }}
+        run: |
+          # Secret / Variable が未設定の場合はDeploy Button向けbranch更新だけで終了します。
+          printf '%s\n' 'Actions deploy skipped: set CLOUDFLARE_API_TOKEN secret and CLOUDFLARE_ACCOUNT_ID variable or secret to deploy from GitHub Actions.'
