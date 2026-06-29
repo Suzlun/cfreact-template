@@ -356,6 +356,26 @@ pnpm dev:all
 
 ## デプロイ
 
+### GitHub Release Workflow
+
+`main` に merge されると `.github/workflows/release.yml` が実行され、CI と同等の検証、ビルド、コード生成差分チェックを通過したコミットだけを `deploy` ブランチへ反映します。
+
+Cloudflare Deploy Button からデプロイする場合は、次の URL を使用します。
+
+```text
+https://deploy.workers.cloudflare.com/?url=https://github.com/[アカウント名]/[リポジトリ名]/tree/deploy
+```
+
+Cloudflare Deploy Button は、ユーザー自身の GitHub/GitLab account に repository を複製し、Workers Builds で `package.json` の `deploy` script を実行します。このテンプレートでは `pnpm build && wrangler deploy --env production` が使われ、`wrangler.toml` の production 設定にある D1 database、KV namespace、R2 bucket は Cloudflare の resource provisioning 対象になります。
+
+Deploy Button の setup 画面または Workers Builds 設定では、pnpm のバージョンを固定するために次の build variable を設定してください。
+
+| 種別     | 名前           | 値       | 用途                                              |
+| -------- | -------------- | -------- | ------------------------------------------------- |
+| Variable | `PNPM_VERSION` | `11.7.0` | Workers Builds の pnpm をリポジトリ設定に合わせる |
+
+Cloudflare Email Routing は送信元/送信先の検証が必要なため、Deploy Button の自動provision対象には含めません。メール送信を使う場合は、デプロイ後に Cloudflare dashboard で Email Routing を有効化し、verified email を設定してください。
+
 ### Cloudflare Workers にデプロイ
 
 1. **Cloudflare にログイン:**

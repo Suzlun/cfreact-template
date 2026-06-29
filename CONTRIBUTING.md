@@ -135,4 +135,13 @@ pnpm test:e2e      # Playwright（変更が e2e に影響する場合）
    - 動作確認内容（コマンド、確認手順）
    - 破壊的変更がある場合は影響範囲と移行方法
 
+## リリース
+
+- `main` に merge されると Release Workflow が検証、ビルド、コード生成差分チェックを実行し、成功したコミットを `deploy` ブランチへ反映します。
+- Cloudflare Deploy Button では `https://deploy.workers.cloudflare.com/?url=https://github.com/[アカウント名]/[リポジトリ名]/tree/deploy` を使用します。
+- Deploy Button/Workers Builds は `package.json` の `deploy` script を使い、`pnpm build && wrangler deploy --env production` を実行します。
+- D1 database、KV namespace、R2 bucket は `wrangler.toml` の production binding をCloudflare側のresource provisioning対象として扱います。
+- Workers Builds の build variable には `PNPM_VERSION=11.7.0` を設定し、pnpmのバージョン差によるinstall差分を避けてください。
+- Cloudflare Email Routing は送信元/送信先の検証が必要なため、Deploy Button後にCloudflare dashboardで設定してください。
+
 不明点があれば Issue/PR で相談してください。

@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-branch
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Setup pnpm
+        run: |
+          # リポジトリが固定する pnpm を使い、Release と CI の依存解決を一致させます。
+          corepack enable
+          corepack prepare pnpm@11.7.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Sentrux latest
+        run: sh .devcontainer/scripts/install-sentrux.sh
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm check
+
+      - name: Unit tests
+        run: pnpm test:run
+
+      - name: Codegen drift check
+        run: pnpm check:codegen
+
+      - name: Build
+        run: pnpm build
+
+      - name: Update deploy branch
+        run: |
+          # Cloudflare Deploy Button が slash なしの安定した branch を参照できるようにします。
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git push --force origin HEAD:refs/heads/deploy

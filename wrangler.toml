@@ -3,9 +3,10 @@ main = "packages/backend/src/entry/index.ts"
 compatibility_date = "2025-11-13"
 compatibility_flags = ["nodejs_compat"]
 
-# Workers Sites for serving static files (optional)
-# [site]
-# bucket = "./packages/frontend/dist"
+[assets]
+directory = "./packages/frontend/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*", "/health"]
 
 [[d1_databases]]
 binding = "DB"
@@ -29,6 +30,11 @@ EMAIL_TO = "recipient@example.com"
 
 [env.production]
 name = "cfreact-template-server-production"
+
+[env.production.assets]
+directory = "./packages/frontend/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*", "/health"]
 
 [env.production.vars]
 EMAIL_FROM = "noreply@example.com"
