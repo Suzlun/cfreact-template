@@ -25,6 +25,7 @@ permission:
   skill: allow
   bash:
     '*': ask
+    'agent-browser *': allow
     'git status*': allow
     'git diff*': allow
     'git log*': allow
@@ -91,6 +92,21 @@ If any are missing, do not start. Report the missing inputs and ask the caller a
 - When files already exist or were changed, run `node .opencode/skills/impeccable/scripts/detect.mjs --json <paths>` when feasible and address relevant findings before reporting completion
 - If the requested design direction conflicts with `impeccable` or `design-audit`, return `BLOCKED` with the conflicting rule and a compliant alternative
 
+## Browser Verification For Reviews
+
+When `unit/frontend/reviewer` asks for a read-only UI review, you must use `agent-browser` for every viewable UI surface or generated wireframe preview before returning your review result.
+
+Verify at minimum:
+
+1. The implemented UI or preview matches the specified design, wireframe, hierarchy, spacing, typography, color, alignment, and responsive behavior
+2. Interactive controls perform the intended operation, target the correct element, expose the expected state changes, and do not create accidental navigation, focus loss, or destructive side effects
+3. Keyboard navigation, focus order, visible focus states, disabled/loading/error states, and accessible names are consistent with the design intent
+4. Desktop and mobile-relevant viewport behavior is inspected when the change affects layout or interaction density
+
+Use commands such as `agent-browser open <url-or-file>`, `agent-browser snapshot`, `agent-browser click <ref-or-selector>`, `agent-browser fill <ref-or-selector> <text>`, `agent-browser press <key>`, and `agent-browser screenshot <path>` as appropriate. If no runnable app URL or preview file is available, return `BLOCKED` and state exactly what URL, command, or artifact is missing.
+
+Your review response must include the inspected URL or file, commands run, interaction cases exercised, screenshots or snapshot evidence when relevant, mismatches found, and whether the implementation is faithful to the specified design.
+
 ## UI/UX Design Workflow
 
 When asked to decide UI/UX, layout, component placement, component composition, or user-facing copy:
@@ -137,8 +153,9 @@ For wireframe-only changes under `openspec/changes/**`, at minimum inspect the w
 
 ## Reporting
 
-- Use this structure: Status, Intent echo, Caller instructions, What I did, Delivered, Design quality gate, Changed files, Wireframe paths, Risks, Evidence, Commands run
+- Use this structure: Status, Intent echo, Caller instructions, What I did, Delivered, Design quality gate, Browser verification, Changed files, Wireframe paths, Risks, Evidence, Commands run
 - Under `Changed files`, list every touched file and describe exactly what changed in that file
 - If you return implementation instructions to another agent, make them exact and stateful enough to avoid additional UI/UX invention
 - Under `Wireframe paths`, list the Markdown specification, every `.wireframe.json`, and every `.wireframe.html` preview generated for the request
 - Under `Design quality gate`, state how `impeccable`, `design-audit`, and `wireframe` were applied, detector results if run, or why detector execution was not applicable
+- Under `Browser verification`, state which `agent-browser` commands were run, what UI or preview was inspected, which interactions were exercised, and whether the observed behavior matched the specified design

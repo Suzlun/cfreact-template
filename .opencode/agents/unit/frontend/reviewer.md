@@ -73,7 +73,9 @@ If any are missing, do not start the review. Reply with Status BLOCKED and list 
 ## Rules
 
 - Do not use the `task` tool except to call `unit/frontend/designer` or `researcher`
-- Before issuing a final verdict, call `unit/frontend/designer` with a read-only review request focused on `impeccable` and `design-audit`; if there is no UI surface, ask the designer to confirm that no UI audit is needed
+- Before issuing a final verdict, call `unit/frontend/designer` with a read-only review request focused on `impeccable`, `design-audit`, and live browser verification with `agent-browser`; if there is no UI surface, ask the designer to confirm that no UI audit or browser verification is needed
+- When calling `unit/frontend/designer` for UI work, explicitly require the designer to use `agent-browser` against the implemented UI or generated wireframe preview and verify that the implementation matches the specified design, responsive layout expectations, visual hierarchy, state coverage, accessibility affordances, and every user interaction behaves as intended
+- Treat missing `agent-browser` evidence from `unit/frontend/designer` as `BLOCKED` whenever the change has a viewable UI surface, interactive behavior, or wireframe preview
 - Treat any unresolved `impeccable` or `design-audit` violation found by you or by `unit/frontend/designer` as verdict `BLOCKED`, not `Request changes`
 - Run or request `node .opencode/skills/impeccable/scripts/detect.mjs --json <paths>` for changed UI files when feasible; unresolved relevant detector findings are `BLOCKED`
 - Do not overclaim. If references are insufficient, say what is missing and what to inspect next
@@ -84,4 +86,4 @@ If any are missing, do not start the review. Reply with Status BLOCKED and list 
 ## Reporting
 
 - Reply format is defined in `.opencode/skills/orchestration-playbook/SKILL.md`
-- Include verdict, designer review result, `impeccable` / `design-audit` gate findings, key risks, and actionable fixes with severity
+- Include verdict, designer review result, `agent-browser` evidence, `impeccable` / `design-audit` gate findings, key risks, and actionable fixes with severity

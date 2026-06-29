@@ -32,6 +32,7 @@
 - **Dev Containers** - 一貫した開発環境
 - **Serena MCP** - セマンティックコード検索・編集（OpenCode 統合）
 - **Sentrux** - アーキテクチャ品質ゲートと OpenCode MCP 構造監視
+- **agent-browser** - AI エージェント向けブラウザ自動操作 CLI と OpenCode MCP
 
 ## プロジェクト構成
 
@@ -169,6 +170,7 @@ pnpm --filter @cfreact-template/frontend gen:api
 - Node.js 24.12.0 以降
 - Python 3.11 以降（Serena MCP 用）
 - Sentrux CLI（`pnpm lint` の構造品質ゲート用。Dev Container では自動導入）
+- agent-browser CLI（ブラウザ自動操作用。Dev Container では Chrome for Testing または OS Chromium とあわせて自動導入）
 
 1. **依存関係をインストール:**
 
@@ -209,9 +211,15 @@ pnpm --filter @cfreact-template/frontend gen:api
 
    このスクリプトは Sentrux の GitHub Releases latest を取得し、release asset の sha256 digest を検証してからインストールします。
 
-6. 方法 1 のステップ 4-8 に従ってください。
+6. **agent-browser CLI とブラウザをインストール（AI ブラウザ操作用）:**
 
-**注意:** Dev Container には、これらすべてのツールがプリインストールされています（Node.js 24、Python 3、pnpm、Wrangler、uv、OpenCode CLI、OpenSpec CLI、Sentrux CLI）。
+   ```bash
+   sh .devcontainer/scripts/install-agent-browser.sh
+   ```
+
+7. 方法 1 のステップ 4-8 に従ってください。
+
+**注意:** Dev Container には、これらすべてのツールがプリインストールされています（Node.js 24、Python 3、pnpm、Wrangler、uv、OpenCode CLI、OpenSpec CLI、Sentrux CLI、agent-browser CLI、Chrome for Testing または OS Chromium）。
 
 ### OpenCode + OpenSpec セットアップ
 
@@ -475,6 +483,34 @@ http://localhost:24282/dashboard
 
 詳細については、https://github.com/oraios/serena を参照してください。
 
+## agent-browser - AI ブラウザ自動操作
+
+このテンプレートには、AI エージェントがローカルの Vite アプリや外部サイトを操作するための agent-browser が設定されています。Dev Container では `agent-browser` CLI とブラウザを自動導入し、OpenCode からは `.opencode/opencode.json` の `agent-browser mcp` 経由で利用できます。Linux ARM64 では Chrome for Testing が提供されないため、Dockerfile で導入した OS Chromium を利用します。
+
+### 使い方
+
+```bash
+# ローカルフロントエンドを開く
+agent-browser open http://localhost:5173
+
+# AI が参照しやすいアクセシビリティツリーを取得
+agent-browser snapshot
+
+# スクリーンショットを保存
+agent-browser screenshot page.png
+
+# ブラウザセッションを閉じる
+agent-browser close
+```
+
+### OpenCode MCP
+
+OpenCode では `.opencode/opencode.json` に `agent-browser mcp` が登録されています。設定変更後は OpenCode を再起動すると、ブラウザ操作、スナップショット取得、スクリーンショット取得などを MCP ツールとして利用できます。
+
+### セキュリティ
+
+agent-browser の state ファイルや認証情報を含むエクスポートファイルはセッショントークンを含む可能性があります。`agent-browser state save` などで作成した認証状態ファイルはリポジトリへ追加せず、必要がなくなったら削除してください。
+
 ## Sentrux - アーキテクチャ品質ゲート
 
 このテンプレートには、AI 支援開発でコード構造が劣化したことを検出するための Sentrux が設定されています。Dev Container と CI は Sentrux の GitHub Releases latest を導入し、`pnpm lint` の中で `sentrux check packages` を実行します。OpenCode スキル、ルート設定、運用 scripts は対象外にし、アプリ本体の `packages/` だけを構造品質ゲートとして監視します。
@@ -500,7 +536,7 @@ OpenCode では `.opencode/opencode.json` に `sentrux --mcp` が登録されて
 
 - **`packages/.sentrux/rules.toml`**: `packages/` 配下の循環依存、複雑度、関数行数、主要レイヤー境界の構造ルール
 - **`.devcontainer/scripts/install-applications.sh`**: Dev Container postCreate で各CLI導入スクリプトを順番に実行する処理
-- **`.devcontainer/scripts/install-*.sh`**: Wrangler、OpenCode、Serena、OpenSpec、Sentrux の個別インストール処理
+- **`.devcontainer/scripts/install-*.sh`**: Wrangler、OpenCode、Serena、OpenSpec、Sentrux、agent-browser の個別インストール処理
 
 ## カスタマイズ
 

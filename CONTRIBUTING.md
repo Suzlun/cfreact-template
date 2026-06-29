@@ -15,6 +15,7 @@
 - Node.js 24.12+ / pnpm 11.7.0+（`corepack enable` 推奨）
 - Wrangler 4.57.0+
 - Sentrux CLI（`pnpm lint` に含まれる構造品質ゲート用。Dev Container では自動導入）
+- agent-browser CLI（ブラウザ自動操作用。Dev Container では Chrome for Testing または OS Chromium とあわせて自動導入）
 - （任意）Dev Container + Docker（推奨）
 
 ## セットアップ
@@ -35,6 +36,10 @@
    ```bash
    sh .devcontainer/scripts/install-sentrux.sh
    ```
+4. 手動環境では agent-browser を導入
+   ```bash
+   sh .devcontainer/scripts/install-agent-browser.sh
+   ```
 
 ## 依存関係とサプライチェーン対策
 
@@ -44,6 +49,7 @@
 - `allowBuilds` はインストール時スクリプトを許可する明示リストです。新しいパッケージを追加する前に、必要性と公開元を確認してください。
 - `dangerouslyAllowAllBuilds` は有効化しないでください。
 - Sentrux は GitHub Releases latest から導入します。`.devcontainer/scripts/install-sentrux.sh` の sha256 digest 検証を外したり、未検証の `curl | sh` に置き換えたりしないでください。
+- agent-browser の state ファイルや認証情報を含むエクスポートファイルはセッショントークンを含む可能性があるため、リポジトリへ追加しないでください。
 
 ## ブランチ運用
 

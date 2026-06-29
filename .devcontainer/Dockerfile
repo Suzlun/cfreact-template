@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-venv \
     git \
+    # agent-browser は Linux ARM64 で Chrome for Testing を取得できないため、OS の Chromium を利用する
+    chromium \
     # Playwright ブラウザの依存関係
     libnspr4 \
     libnss3 \
