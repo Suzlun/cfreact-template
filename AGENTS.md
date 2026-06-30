@@ -35,8 +35,6 @@ Before beginning any work, you MUST summarize your understanding of the Credo be
 - Dev (server): `pnpm dev:backend` (Wrangler on `http://localhost:8787`)
 - Dev (client): `pnpm dev:frontend` (Vite on `http://localhost:5173`)
 - Browser automation: `agent-browser open http://localhost:5173` and `agent-browser snapshot` (Dev Container installs CLI and Chrome/Chromium)
-- Sentrux architecture check: `pnpm sentrux:check` (runs on `packages/backend` and `packages/frontend/src`; also included in `pnpm lint`)
-- Sentrux AI-session baseline: `pnpm sentrux:gate:save` before agent work, then `pnpm sentrux:gate` after agent work (both run on `packages/backend` and `packages/frontend/src`)
 
 ## API Contract (TypeSpec)
 
@@ -57,7 +55,6 @@ Before beginning any work, you MUST summarize your understanding of the Credo be
 - `pnpm-workspace.yaml` enforces `minimumReleaseAge: 4320` (72 hours); do not lower or bypass it.
 - Dependency additions/updates must land at least 72 hours before release, unless an explicitly reviewed emergency exception is approved.
 - New dependency build scripts require package-by-package approval through `allowBuilds`; never enable `dangerouslyAllowAllBuilds`.
-- Sentrux is installed from the latest GitHub Release in Dev Container and CI. Keep `.devcontainer/scripts/install-sentrux.sh` digest verification intact; do not replace it with an unchecked `curl | sh` flow.
 - agent-browser is installed globally in Dev Container via npm and uses Chrome for Testing or OS Chromium depending on platform; do not commit exported browser state or authentication files.
 
 ## Architecture Notes

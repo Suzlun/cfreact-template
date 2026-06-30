@@ -20,5 +20,4 @@ sh .devcontainer/scripts/install-wrangler.sh
 sh .devcontainer/scripts/install-opencode.sh
 sh .devcontainer/scripts/install-serena.sh
 sh .devcontainer/scripts/install-openspec.sh
-sh .devcontainer/scripts/install-sentrux.sh
 sh .devcontainer/scripts/install-agent-browser.sh

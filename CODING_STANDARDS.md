@@ -992,26 +992,12 @@
 
 fail 条件
 
-- `pnpm lint` は ESLint の error、OpenSpec チェック、サプライチェーン設定チェック、Sentrux 構造品質ゲートで失敗する
+- `pnpm lint` は ESLint の error、OpenSpec チェック、サプライチェーン設定チェックで失敗する
   - 強制: `scripts.lint` → `package.json`
   - 内訳
     - `pnpm lint:eslint` は `eslint .` を実行
     - `pnpm lint:openspec` は `openspec validate --all --strict` と `node scripts/openspec/verify-scenario-coverage.mjs` を実行
     - `pnpm lint:supply-chain` は `node scripts/security/verify-pnpm-supply-chain.mjs` を実行
-    - `pnpm sentrux:check` は `sentrux check packages/backend && sentrux check packages/frontend/src` を実行
-- Sentrux で循環依存と構造ルールを検査する
-  - 強制: `pnpm lint` → `pnpm sentrux:check` → `packages/backend/.sentrux/rules.toml` と `packages/frontend/src/.sentrux/rules.toml`
-  - 必須
-    - `max_cycles = 0` を維持する
-    - Sentrux の対象は `packages/backend` と `packages/frontend/src` に限定し、共有UIパッケージ、`.opencode/skills/**`、`eslint.config.js`、ルート `scripts/**` を含めない
-    - `max_cc = 30` と `max_fn_lines = 150` を維持する
-    - backend / frontend の主要レイヤーを各パッケージの `.sentrux/rules.toml` に定義する
-  - NG例
-    - `packages/frontend/src/app/**` から `packages/frontend/src/api/**` へ直接依存する
-    - `packages/backend/src/http/**` から `packages/backend/src/persistence/**` へ直接依存する
-  - OK例
-    - frontend app は domain hook 経由で API を使う
-    - backend HTTP は usecase 経由で persistence を使う
 - サプライチェーン対策の pnpm 設定を弱めない
   - 強制: `pnpm lint:supply-chain` → `scripts/security/verify-pnpm-supply-chain.mjs`
   - 必須

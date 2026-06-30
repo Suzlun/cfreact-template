@@ -53,10 +53,6 @@ coverage/
 .serena/cache/
 .serena/*.log
 
-# Sentrux local baselines
-.sentrux/baseline.json
-packages/.sentrux/baseline.json
-
 # playwright 
 ms-playwright/.links
 playwright-report/

@@ -14,7 +14,6 @@
 
 - Node.js 24.12+ / pnpm 11.7.0+（`corepack enable` 推奨）
 - Wrangler 4.57.0+
-- Sentrux CLI（`pnpm lint` に含まれる構造品質ゲート用。Dev Container では自動導入）
 - agent-browser CLI（ブラウザ自動操作用。Dev Container では Chrome for Testing または OS Chromium とあわせて自動導入）
 - （任意）Dev Container + Docker（推奨）
 
@@ -32,11 +31,7 @@
    # または
    pnpm dev:all
    ```
-3. 手動環境では Sentrux を導入
-   ```bash
-   sh .devcontainer/scripts/install-sentrux.sh
-   ```
-4. 手動環境では agent-browser を導入
+3. 手動環境では agent-browser を導入
    ```bash
    sh .devcontainer/scripts/install-agent-browser.sh
    ```
@@ -48,7 +43,6 @@
 - `minimumReleaseAge` の引き下げ、`minimumReleaseAgeExclude` の追加、`--config.minimumReleaseAge=0` のような迂回は行わないでください。
 - `allowBuilds` はインストール時スクリプトを許可する明示リストです。新しいパッケージを追加する前に、必要性と公開元を確認してください。
 - `dangerouslyAllowAllBuilds` は有効化しないでください。
-- Sentrux は GitHub Releases latest から導入します。`.devcontainer/scripts/install-sentrux.sh` の sha256 digest 検証を外したり、未検証の `curl | sh` に置き換えたりしないでください。
 - agent-browser の state ファイルや認証情報を含むエクスポートファイルはセッショントークンを含む可能性があるため、リポジトリへ追加しないでください。
 
 ## ブランチ運用
@@ -112,7 +106,7 @@ pnpm lint
 pnpm check
 ```
 
-`pnpm lint` には `sentrux check packages/backend && sentrux check packages/frontend/src` が含まれます。Sentrux は `.opencode/skills/**`、ルート設定、運用 scripts、共有UIパッケージではなく、backend/frontend のアプリ本体を対象にします。AI エージェントで大きめの変更を行う場合は、作業前に `pnpm sentrux:gate:save`、作業後に `pnpm sentrux:gate` を実行して構造劣化を検出してください。
+`pnpm lint` には ESLint、OpenSpec、サプライチェーン設定チェックが含まれます。
 
 必要に応じて関連テストも実行してください。
 
