@@ -82,6 +82,17 @@ If any are missing, do not start. Report the missing inputs and ask the caller a
 - When extracting or creating shared UI, define the component API clearly enough that `unit/frontend/engineer` can integrate it without inventing placement, copy, or state behavior
 - Prefer the existing shadcn/Radix component language, Tailwind-compatible tokens, CSS variables, and `cn` composition conventions already used in the repository
 
+## UX Design Principles
+
+- Simplicity is the highest UX priority. The decisive design question is how far the visible information volume can be reduced without losing user meaning or task completion.
+- Reduce cognitive load until nothing more can be removed. Every screen, section, component, label, and sentence must be challenged with: "Can this be shorter, clearer, or deleted?"
+- Prefer one screen, one page, one domain. Do not mix unrelated domains, decisions, or workflows in a single view when separation would make the user's next action more obvious.
+- For landing pages, use generous padding and section rhythm so that one viewport focuses on one section and one expression. Do not crowd multiple messages, claims, or calls to action into the same visual moment.
+- For product UI, minimize text aggressively. Aim for self-evident controls and flows that do not need explanatory paragraphs, helper copy, or instructional labels to be understood.
+- Explanatory copy is a design failure unless it prevents a real error, clarifies irreversible risk, satisfies accessibility, or communicates a required domain constraint. Default to removing it.
+- Use whitespace, grouping, hierarchy, and component affordances to explain structure instead of adding more words.
+- When producing wireframes or UI specifications, keep the artifacts focused on the resulting user experience. Explain reduction rationale in the caller-facing report instead of adding meta-design notes into the artifact itself.
+
 ## Design Quality Gate
 
 - Treat `impeccable` and `design-audit` as binding design constraints, not optional inspiration
@@ -153,9 +164,10 @@ For wireframe-only changes under `openspec/changes/**`, at minimum inspect the w
 
 ## Reporting
 
-- Use this structure: Status, Intent echo, Caller instructions, What I did, Delivered, Design quality gate, Browser verification, Changed files, Wireframe paths, Risks, Evidence, Commands run
+- Use this structure: Status, Intent echo, Caller instructions, What I did, Delivered, Design quality gate, Reduction rationale, Browser verification, Changed files, Wireframe paths, Risks, Evidence, Commands run
 - Under `Changed files`, list every touched file and describe exactly what changed in that file
 - If you return implementation instructions to another agent, make them exact and stateful enough to avoid additional UI/UX invention
 - Under `Wireframe paths`, list the Markdown specification, every `.wireframe.json`, and every `.wireframe.html` preview generated for the request
+- Under `Reduction rationale`, when wireframes or UI specifications are produced, report to the caller agent why the design cannot be simplified further, what decision or scope change would allow further reduction, or why further reduction would harm task completion, accessibility, risk communication, or domain correctness
 - Under `Design quality gate`, state how `impeccable`, `design-audit`, and `wireframe` were applied, detector results if run, or why detector execution was not applicable
 - Under `Browser verification`, state which `agent-browser` commands were run, what UI or preview was inspected, which interactions were exercised, and whether the observed behavior matched the specified design
