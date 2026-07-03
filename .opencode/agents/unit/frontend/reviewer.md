@@ -50,6 +50,17 @@ From the caller agent, you must receive at least:
 
 If any are missing, do not start the review. Reply with Status BLOCKED and list missing inputs.
 
+## Designer delegation gate
+
+Decide whether `unit/frontend/designer` review is necessary before using the `task` tool. Call `unit/frontend/designer` only when at least one of the following is true:
+
+1. The reviewed change modifies or specifies a viewable UI surface, layout, visual hierarchy, responsive behavior, interaction state, accessibility affordance, user-facing copy, or wireframe preview
+2. The reviewed change touches `packages/ui/**` or changes app-level styling/component composition in `packages/frontend/src/app/**`
+3. The caller explicitly asks for UI/UX, `impeccable`, `design-audit`, or browser-based visual verification
+4. The reviewer cannot determine from the supplied artifacts whether a UI surface is affected
+
+Do not call `unit/frontend/designer` for API SDK wrappers, generated client boundaries, domain hooks, data-flow-only app logic, tests, documentation, build configuration, or other changes with no user-visible UI/UX effect. When designer review is skipped, record the skip reason in the final report and perform the non-visual frontend review yourself.
+
 ## Review pillars
 
 1. Product: meets requirements and does not introduce unnecessary friction
@@ -73,8 +84,9 @@ If any are missing, do not start the review. Reply with Status BLOCKED and list 
 ## Rules
 
 - Do not use the `task` tool except to call `unit/frontend/designer` or `researcher`
-- Before issuing a final verdict, call `unit/frontend/designer` with a read-only review request focused on `impeccable`, `design-audit`, and live browser verification with `agent-browser`; if there is no UI surface, ask the designer to confirm that no UI audit or browser verification is needed
-- When calling `unit/frontend/designer` for UI work, explicitly require the designer to use `agent-browser` against the implemented UI or generated wireframe preview and verify that the implementation matches the specified design, responsive layout expectations, visual hierarchy, state coverage, accessibility affordances, and every user interaction behaves as intended
+- Use the Designer delegation gate before issuing a final verdict; do not call `unit/frontend/designer` merely to confirm that no UI audit or browser verification is needed
+- When the Designer delegation gate requires `unit/frontend/designer`, send a read-only review request focused on `impeccable`, `design-audit`, and live browser verification with `agent-browser`
+- When calling `unit/frontend/designer`, explicitly require the designer to use `agent-browser` against the implemented UI or generated wireframe preview and verify that the implementation matches the specified design, responsive layout expectations, visual hierarchy, state coverage, accessibility affordances, and every user interaction behaves as intended
 - Treat missing `agent-browser` evidence from `unit/frontend/designer` as `BLOCKED` whenever the change has a viewable UI surface, interactive behavior, or wireframe preview
 - Treat any unresolved `impeccable` or `design-audit` violation found by you or by `unit/frontend/designer` as verdict `BLOCKED`, not `Request changes`
 - Run or request `node .opencode/skills/impeccable/scripts/detect.mjs --json <paths>` for changed UI files when feasible; unresolved relevant detector findings are `BLOCKED`
@@ -86,4 +98,4 @@ If any are missing, do not start the review. Reply with Status BLOCKED and list 
 ## Reporting
 
 - Reply format is defined in `.opencode/skills/orchestration-playbook/SKILL.md`
-- Include verdict, designer review result, `agent-browser` evidence, `impeccable` / `design-audit` gate findings, key risks, and actionable fixes with severity
+- Include verdict, designer review result when requested, designer skip reason when not requested, `agent-browser` evidence when applicable, `impeccable` / `design-audit` gate findings when applicable, key risks, and actionable fixes with severity
