@@ -36,7 +36,7 @@ op createUser(@body body: CfreactTemplate.CreateUserInput):
 @operationId("getUser")
 @get
 @route("/users/{id}")
-op getUser(@path id: int64):
+op getUser(@path id: CfreactTemplate.UserId):
   | {
       @statusCode statusCode: 200;
       @body body: CfreactTemplate.User;

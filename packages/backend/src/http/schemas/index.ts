@@ -1,16 +1,21 @@
 import { extendZodWithOpenApi } from '@hono/zod-openapi';
 import { z } from 'zod';
 
+import {
+  USER_ID_ULID_PATTERN,
+  USER_ID_ULID_PATTERN_SOURCE,
+} from '@cfreact-template/backend/domain';
+
 extendZodWithOpenApi(z);
 
-/** Standard error response payload. */
+/** 標準エラーレスポンスのJSON payload。 */
 const errorResponseSchema = z
   .object({
     error: z.string(),
   })
   .openapi('ErrorResponse');
 
-/** Hello response payload for connectivity checks. */
+/** 接続確認用のHelloレスポンスpayload。 */
 const helloResponseSchema = z
   .object({
     message: z.string(),
@@ -18,17 +23,22 @@ const helloResponseSchema = z
   })
   .openapi('HelloResponse');
 
-/** User response payload for API responses. */
+/** APIが返すユーザーレスポンスpayload。 */
 const userResponseSchema = z
   .object({
-    id: z.number().int(),
+    id: z.string().regex(USER_ID_ULID_PATTERN).openapi({
+      type: 'string',
+      format: 'ulid',
+      pattern: USER_ID_ULID_PATTERN_SOURCE,
+      example: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+    }),
     name: z.string(),
     email: z.string().openapi({ format: 'email' }),
     createdAt: z.iso.datetime(),
   })
   .openapi('User');
 
-/** Input payload to create a user. */
+/** ユーザー作成APIが受け取る入力payload。 */
 const createUserInputSchema = z
   .object({
     name: z.string(),
@@ -36,16 +46,17 @@ const createUserInputSchema = z
   })
   .openapi('CreateUserInput');
 
-/** User id params payload for single-user endpoints. */
+/** 単一ユーザーAPIが受け取るULIDパスパラメータ。 */
 const userIdParamsSchema = z.object({
-  id: z
-    .string()
-    .regex(/^\d+$/, 'Invalid id')
-    .transform((value) => Number(value))
-    .openapi({ type: 'integer', format: 'int64' }),
+  id: z.string().regex(USER_ID_ULID_PATTERN, 'Invalid id').openapi({
+    type: 'string',
+    format: 'ulid',
+    pattern: USER_ID_ULID_PATTERN_SOURCE,
+    example: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+  }),
 });
 
-/** Response payload for listing users. */
+/** ユーザー一覧APIが返すレスポンスpayload。 */
 const usersListResponseSchema = z.array(userResponseSchema);
 
 export {

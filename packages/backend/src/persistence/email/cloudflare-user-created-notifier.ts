@@ -37,7 +37,7 @@ export class CloudflareUserCreatedNotifier implements UserCreatedNotifier {
       'Content-Type: text/plain; charset=utf-8',
       '',
       'A new user was created.',
-      `id: ${String(user.id)}`,
+      `id: ${user.id}`,
       `name: ${user.name}`,
       `email: ${user.email}`,
       `createdAt: ${user.createdAt.toISOString()}`,

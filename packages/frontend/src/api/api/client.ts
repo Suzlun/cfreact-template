@@ -44,7 +44,7 @@ const usersApi = {
     }
     return toUser(response.data);
   },
-  get: async (id: number) => {
+  get: async (id: string) => {
     const response = await sdk.users.get(id);
     if (response.status !== 200) {
       return null;

@@ -18,8 +18,15 @@ export interface HelloResponse {
   timestamp: string;
 }
 
+/**
+ * @minLength 26
+ * @maxLength 26
+ * @pattern ^[0-9A-HJKMNP-TV-Z]{26}$
+ */
+export type UserId = string;
+
 export interface User {
-  id: number;
+  id: UserId;
   name: string;
   email: string;
   createdAt: string;
@@ -150,14 +157,14 @@ export type getUserResponseError = (getUserResponse400 | getUserResponse404) & {
 
 export type getUserResponse = getUserResponseSuccess | getUserResponseError;
 
-export const getGetUserUrl = (id: number) => {
+export const getGetUserUrl = (id: UserId) => {
   return `/api/v1/users/${id}`;
 };
 
 /**
  * @summary Get a user by id
  */
-export const getUser = async (id: number, options?: RequestInit): Promise<getUserResponse> => {
+export const getUser = async (id: UserId, options?: RequestInit): Promise<getUserResponse> => {
   const res = await fetch(getGetUserUrl(id), {
     ...options,
     method: 'GET',

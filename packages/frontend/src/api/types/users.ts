@@ -1,12 +1,12 @@
-/** User record mapped for client consumption. */
+/** クライアントで扱うユーザー情報。 */
 interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   createdAt: Date;
 }
 
-/** Payload to create a new user. */
+/** ユーザー作成APIへ送るpayload。 */
 interface CreateUserPayload {
   name: string;
   email: string;

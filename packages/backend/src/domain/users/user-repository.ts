@@ -1,8 +1,12 @@
-import type { User, ValidCreateUserInput } from '@cfreact-template/backend/domain/users/user';
+import type {
+  User,
+  UserId,
+  ValidCreateUserInput,
+} from '@cfreact-template/backend/domain/users/user';
 
-/** Persistence port for user data access. */
+/** ユーザーデータへアクセスする永続化ポート。 */
 export interface UserRepository {
   findAll(): Promise<User[]>;
-  findById(id: number): Promise<User | null>;
+  findById(id: UserId): Promise<User | null>;
   create(input: ValidCreateUserInput): Promise<User>;
 }

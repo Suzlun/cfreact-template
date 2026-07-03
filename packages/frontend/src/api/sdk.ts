@@ -73,7 +73,7 @@ const createApiSdk = (config?: ApiSdkConfig) => {
             defaultInit
           )
         ),
-      get: (id: number, options?: RequestInit) =>
+      get: (id: string, options?: RequestInit) =>
         getUser(id, withDefaultInit(options, defaultInit)),
     },
   };

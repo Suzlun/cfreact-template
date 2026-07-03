@@ -4,8 +4,10 @@ import {
   waitOnExecutionContext as waitOnExecutionContextRaw,
 } from 'cloudflare:test';
 import { env as testEnv } from 'cloudflare:workers';
+import { ulid } from 'ulid';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { USER_ID_ULID_PATTERN } from '@cfreact-template/backend/domain';
 import type {
   User,
   UserCreatedNotifier,
@@ -22,7 +24,7 @@ import {
 } from '@cfreact-template/backend/usecases';
 
 interface UserResponse {
-  id: number;
+  id: string;
   name: string;
   email: string;
   createdAt?: unknown;
@@ -33,17 +35,16 @@ interface ErrorResponse {
 }
 
 const env = testEnv as unknown as Bindings;
+const UNKNOWN_USER_ID = '01ARZ3NDEKTSV4RRFFQ69G5FZZ';
 
 class InMemoryUserRepository implements UserRepository {
-  private readonly users = new Map<number, User>();
-
-  private nextId = 1;
+  private readonly users = new Map<User['id'], User>();
 
   async findAll(): Promise<User[]> {
     return [...this.users.values()];
   }
 
-  async findById(id: number): Promise<User | null> {
+  async findById(id: string): Promise<User | null> {
     return this.users.get(id) ?? null;
   }
 
@@ -55,13 +56,12 @@ class InMemoryUserRepository implements UserRepository {
     }
 
     const user: User = {
-      id: this.nextId,
+      id: input.id,
       name: input.name,
       email: input.email,
       createdAt: new Date(),
     };
 
-    this.nextId += 1;
     this.users.set(user.id, user);
 
     return user;
@@ -69,6 +69,11 @@ class InMemoryUserRepository implements UserRepository {
 }
 
 let userRepository: InMemoryUserRepository;
+
+const createStoredUser = (input: Omit<ValidCreateUserInput, 'id'>): Promise<User> => {
+  // テストの事前データも本番と同じULID主キーで保存し、整数IDの前提を残さない。
+  return userRepository.create({ id: ulid(), ...input });
+};
 
 const notifyUserCreated = vi.fn(async (_user: User): Promise<void> => {
   return;
@@ -81,7 +86,7 @@ const userCreatedNotifier: UserCreatedNotifier = {
 const createUsersUseCases = () => {
   return {
     listUsers: new ListUsers(userRepository),
-    createUser: new CreateUser(userRepository, userCreatedNotifier),
+    createUser: new CreateUser(userRepository, userCreatedNotifier, ulid),
     getUser: new GetUser(userRepository),
   } satisfies UsersUseCases;
 };
@@ -128,8 +133,8 @@ describe('Users API', () => {
     });
 
     it('既存ユーザーのリストを返す', async () => {
-      await userRepository.create({ name: 'Alice', email: 'alice@example.com' });
-      await userRepository.create({ name: 'Bob', email: 'bob@example.com' });
+      await createStoredUser({ name: 'Alice', email: 'alice@example.com' });
+      await createStoredUser({ name: 'Bob', email: 'bob@example.com' });
 
       const request = new Request('http://localhost/api/v1/users');
       const ctx = createExecutionContext();
@@ -164,6 +169,7 @@ describe('Users API', () => {
       const data = await response.json<UserResponse>();
       expect(data).toMatchObject(newUser);
       expect(data.id).toBeDefined();
+      expect(data.id).toMatch(USER_ID_ULID_PATTERN);
     });
 
     it('名前が空の場合はエラーを返す', async () => {
@@ -253,7 +259,7 @@ describe('Users API', () => {
     });
 
     it('重複したメールアドレスはエラーを返す', async () => {
-      await userRepository.create({ name: 'Existing', email: 'existing@example.com' });
+      await createStoredUser({ name: 'Existing', email: 'existing@example.com' });
 
       const duplicateUser = {
         name: 'Duplicate',
@@ -288,7 +294,7 @@ describe('Users API', () => {
       expect(createResponse.status).toBe(201);
       const createdUser = await createResponse.json<UserResponse>();
 
-      const request = new Request(`http://localhost/api/v1/users/${String(createdUser.id)}`);
+      const request = new Request(`http://localhost/api/v1/users/${createdUser.id}`);
       const ctx = createExecutionContext();
       const response = await app.fetch(request, env, ctx);
       await waitOnExecutionContext(ctx);
@@ -303,7 +309,7 @@ describe('Users API', () => {
     });
 
     it('存在しないIDの場合は404を返す', async () => {
-      const request = new Request('http://localhost/api/v1/users/999');
+      const request = new Request(`http://localhost/api/v1/users/${UNKNOWN_USER_ID}`);
       const ctx = createExecutionContext();
       const response = await app.fetch(request, env, ctx);
       await waitOnExecutionContext(ctx);
@@ -311,6 +317,15 @@ describe('Users API', () => {
       expect(response.status).toBe(404);
       const data = await response.json<ErrorResponse>();
       expect(data.error).toBe('User not found');
+    });
+
+    it('ULID形式ではないIDの場合は400を返す', async () => {
+      const request = new Request('http://localhost/api/v1/users/not-a-ulid');
+      const ctx = createExecutionContext();
+      const response = await app.fetch(request, env, ctx);
+      await waitOnExecutionContext(ctx);
+
+      expect(response.status).toBe(400);
     });
   });
 });
