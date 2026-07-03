@@ -2,7 +2,7 @@
 description: Build agent helper
 mode: subagent
 hidden: false
-model: github-copilot/gpt-5.4
+model: openai/gpt-5.5
 reasoningEffort: 'high'
 permission:
   edit: allow
