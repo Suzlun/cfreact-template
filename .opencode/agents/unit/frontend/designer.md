@@ -13,6 +13,11 @@ permission:
     'packages/ui/vitest.config.ts': allow
     'packages/ui/**': allow
     'openspec/changes/**': allow
+    '*/packages/ui/package.json': allow
+    '*/packages/ui/tsconfig.json': allow
+    '*/packages/ui/vitest.config.ts': allow
+    '*/packages/ui/**': allow
+    '*/openspec/changes/**': allow
   webfetch: deny
   task:
     '*': deny

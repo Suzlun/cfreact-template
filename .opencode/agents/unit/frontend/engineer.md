@@ -22,6 +22,20 @@ permission:
     'packages/frontend/src/domain/**': allow
     'packages/ui/**': deny
     'packages/typespec/**': allow
+    '*/packages/frontend/package.json': allow
+    '*/packages/frontend/orval.config.ts': allow
+    '*/packages/frontend/tsconfig*.json': allow
+    '*/packages/frontend/vite.config.ts': allow
+    '*/packages/frontend/vitest.app.config.ts': allow
+    '*/packages/frontend/tailwind.config.ts': allow
+    '*/packages/frontend/postcss.config.js': allow
+    '*/packages/frontend/index.html': allow
+    '*/packages/frontend/src/api/**': allow
+    '*/packages/frontend/src/app/**': allow
+    '*/packages/frontend/src/domain/**': allow
+    '*/packages/typespec/**': allow
+    '*/packages/frontend/src/api/generated/**': deny
+    '*/packages/ui/**': deny
   webfetch: deny
   task:
     '*': deny
