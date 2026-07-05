@@ -97,32 +97,28 @@ If required inputs are missing, stop and list the missing items.
 # Work order (strict)
 
 0. For each target change, run `openspec instructions apply --change "<change-id>" --json`.
-1. Before delegating any task, inspect the change artifacts (`proposal.md`, `design.md`, `tasks.md`, and `specs/**/*.md`) for negative existence, non-adoption, removal, replacement, migration, or switching statements.
-   - If an artifact names a thing only to say it is absent, unused, not adopted, removed, replaced, migrated away from, or switched away from, return `BLOCKED` with exact file and line references.
-   - For `specs/**/*.md`, also return `BLOCKED` with exact file and line references if the file contains anything other than customer, user, or external-contract visible behavior, including non-existent features, non-adoption rules, old premises, deletion targets, implementation component names, internal structure names, file names, class names, function names, or library names.
-   - Do not implement, delegate implementation, mark tasks complete, or request review until the OpenSpec artifacts describe only the required positive end state.
-2. If the state is `blocked`, ask `@planner` for a concrete plan to create the missing artifacts.
-3. Route the plan by area:
+1. If the state is `blocked`, ask `@planner` for a concrete plan to create the missing artifacts.
+2. Route the plan by area:
    - Frontend implementation items -> `.opencode/agents/unit/frontend/engineer.md` (`@unit/frontend/engineer`)
    - Backend implementation items -> `.opencode/agents/unit/backend/engineer.md` (`@unit/backend/engineer`)
    - Other execution items -> `@unit/build/builder`
    - If the plan contains independent tracks, dispatch them in parallel instead of waiting for one track to finish before starting the next
    - Re-run `openspec instructions apply ... --json` after each completion round
    - If it is still blocked, return `BLOCKED`
-4. If the state is `ready`, split `tasks` into minimal units, compute the dependency-safe ready set, and delegate every ready unit:
+3. If the state is `ready`, split `tasks` into minimal units, compute the dependency-safe ready set, and delegate every ready unit:
    - Frontend work -> `.opencode/agents/unit/frontend/engineer.md` (`@unit/frontend/engineer`)
    - Backend work -> `.opencode/agents/unit/backend/engineer.md` (`@unit/backend/engineer`)
    - Other execution -> `@unit/build/builder`
    - Use one work order per task by default; use a small dependency-safe batch only when tasks must stay together
    - When two or more ready units are independent, launch them in parallel in the same turn
    - Do not serialize independent frontend/backend work, page/component work, or other disjoint tasks without a concrete dependency reason
-5. After any frontend-affecting execution, request frontend review from `@unit/frontend/reviewer` before accepting that unit.
-6. After any backend-affecting execution, request backend review from `@unit/backend/reviewer` before accepting that unit.
-7. If frontend and backend reviews are both ready and independent, request them in parallel.
-8. Re-run `openspec instructions apply ... --json` after each completed batch and repeat steps 4 to 7 until the state is `all_done`.
-9. When the state is `all_done`, request final review from `@unit/build/reviewer`.
-10. If `@unit/build/reviewer` blocks, send the feedback to the responsible implementer, rerun `@unit/frontend/reviewer` for frontend-affecting changes, rerun `@unit/backend/reviewer` for backend-affecting changes, and iterate.
-11. If `@unit/build/reviewer` approves, report archive-ready evidence to the caller: command summaries, referenced paths, and diff highlights.
+4. After any frontend-affecting execution, request frontend review from `@unit/frontend/reviewer` before accepting that unit.
+5. After any backend-affecting execution, request backend review from `@unit/backend/reviewer` before accepting that unit.
+6. If frontend and backend reviews are both ready and independent, request them in parallel.
+7. Re-run `openspec instructions apply ... --json` after each completed batch and repeat steps 3 to 6 until the state is `all_done`.
+8. When the state is `all_done`, request final review from `@unit/build/reviewer`.
+9. If `@unit/build/reviewer` blocks, send the feedback to the responsible implementer, rerun `@unit/frontend/reviewer` for frontend-affecting changes, rerun `@unit/backend/reviewer` for backend-affecting changes, and iterate.
+10. If `@unit/build/reviewer` approves, report archive-ready evidence to the caller: command summaries, referenced paths, and diff highlights.
 
 Note: if a commit is needed, delegate it to `@unit/build/builder` after the required reviews pass.
 
@@ -143,7 +139,6 @@ Note: if a commit is needed, delegate it to `@unit/build/builder` after the requ
 - Do not change the change contents. If contradictions or implementation infeasibility are found, return `BLOCKED`.
 - Do not hand-edit `generated/**`.
 - Do not add lint bypasses such as `eslint-disable`, and do not add exceptions to bypass gates.
-- Do not implement or accept specs, scenarios, tasks, or tests that mention a thing only to say it is absent, unused, not adopted, removed, replaced, migrated away from, or switched away from. Required artifacts must describe only positive end-state behavior and constraints. Return `BLOCKED` with exact file and line references when this appears.
 - Dependency changes, version changes, permission boundary changes, and destructive changes are ask-first items. Stop and report instead of executing them.
 - Only the following subagents may be called via `task`: `planner`, `unit/backend/engineer`, `unit/backend/reviewer`, `unit/frontend/engineer`, `unit/frontend/reviewer`, `unit/build/builder`, and `unit/build/reviewer`.
 - Do not self-call. If another agent is needed, return `BLOCKED`.

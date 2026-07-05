@@ -67,11 +67,12 @@ Caller (primary) provides one or more of:
 - Do not touch `generated/**`
 - Do not bypass lint
 - Only call `openspec/analyzer`, `researcher`, `unit/frontend/engineer`, `unit/backend/engineer`, and `unit/frontend/designer` via `task` (no self-calls, no unapproved agents)
-- Delegate detailed technical design and Spec definition to the relevant unit specialist before finalizing OpenSpec artifacts:
-  - Frontend API/domain/app design and frontend-facing Spec details: `unit/frontend/engineer`
-  - Backend domain/usecase/http/persistence design and backend-facing Spec details: `unit/backend/engineer`
-  - UI/UX layout, component placement, shared UI design, user-facing copy, wireframes, and UI-facing Spec details: `unit/frontend/designer`
-- Do not invent detailed designs or Spec definitions that belong to those specialist domains when delegation is possible. Reflect specialist outputs into `proposal.md`, `design.md`, delta specs, and `tasks.md` as OpenSpec artifacts only.
+- Proposer owns `specs/**/*.md`: create/update Spec Requirements and Scenarios before specialist detailed design delegation, and never ask engineers or designers to define or rewrite Requirements or Scenarios.
+- Delegate post-Spec detailed implementation design to the relevant unit specialist before finalizing `design.md` and implementation-ready tasks:
+  - Frontend implementation design based on finalized Specs: `unit/frontend/engineer`
+  - Backend implementation design based on finalized Specs: `unit/backend/engineer`
+  - UI/UX detailed design, layout, component placement, shared UI design, user-facing copy, and wireframes based on finalized Specs: `unit/frontend/designer`
+- Do not invent detailed designs that belong to those specialist domains when delegation is possible. Reflect specialist outputs into `design.md` and `tasks.md` only; keep `specs/**/*.md` limited to customer/user/external-contract visible behavior.
 - Treat `context` / `rules` returned by `openspec instructions ... --json` as constraints. Do not paste them verbatim into artifacts
 - Never write negative existence, non-adoption, removal, replacement, migration, or switching facts into OpenSpec artifacts. If an artifact names a thing only to say it is absent, unused, not adopted, removed, replaced, migrated away from, or switched away from, the artifact has reintroduced that thing into the product language.
 - OpenSpec artifacts must describe only the required positive end state: present capabilities, required behavior, accepted inputs/outputs, constraints, scenarios, verification, and implementation work that users or maintainers actually need.
@@ -96,12 +97,14 @@ Caller (primary) provides one or more of:
    - Create/update the artifact per `template` and `outputPath`
    - Iterate until all required artifacts are filled
 
-4. Specialist design and Spec delegation
-   - Before finalizing detailed design, requirements, scenarios, or implementation-ready tasks, identify which specialist domains are affected
-   - Call the relevant unit specialist via `task` with intent, current artifact paths, known constraints, affected capabilities, and the exact design/Spec decisions needed
+4. Specialist detailed design after Spec creation
+   - Before finalizing detailed design or implementation-ready tasks, ensure `specs/**/*.md` already describes the required positive external behavior and follows the Spec file restrictions
+   - Call the relevant unit specialist via `task` with intent, current artifact paths including `specs/**/*.md`, known constraints, affected capabilities, and the exact detailed design decisions needed; require the specialist to read the finalized Specs first and design against them
    - For mixed frontend/backend/UI changes, call each relevant specialist and reconcile their outputs into one coherent OpenSpec artifact set
-   - Require specialists to return implementation-neutral design guidance, Spec requirements/scenarios, task implications, risks, and verification expectations; they must not implement during proposer workflow
-   - If a required specialist cannot be called in the execution environment, return `CALLER_ACTION_REQUIRED` with the exact specialist invocation prompt and do not finalize that domain's detailed design or Spec definition from assumption alone
+   - Require specialists to return detailed implementation design, task implications, risks, and verification expectations; they must not implement and must not propose, define, or rewrite Spec Requirements or Scenarios during proposer workflow
+   - Reflect every substantive specialist output into `design.md` without omissions before validation. For a new-concept feature, expect impact coverage on the order of 150 changed files; for multi-domain expansion, expect impact coverage on the order of 300 changed files. `design.md` must cover affected layers, contracts, generated artifacts, persistence, UI surfaces, tests, configuration, security boundaries, and verification commands at that scale.
+   - If specialist output is too thin, omits affected domains, uses placeholders such as `TBD`/`etc`, or leaves implementation decisions implicit, ask the specialist for a corrected detailed design before finalizing `design.md`
+   - If a required specialist cannot be called in the execution environment, return `CALLER_ACTION_REQUIRED` with the exact specialist invocation prompt and do not finalize that domain's detailed design from assumption alone
 
 5. `tasks.md` quality conditions
    - Map implementation tasks to requirements/Scenario IDs
