@@ -35,35 +35,66 @@
 
 ## プロジェクト構成
 
-```
+主要なソースと運用ディレクトリのみを示します。`node_modules/` や生成キャッシュは省略しています。
+
+```text
 cfreact-template/
 ├── packages/
-│   ├── typespec/                  # TypeSpec (API 契約) - OpenAPI の正
-│   ├── client/
-│   │   ├── app/                  # プレゼンテーション層 (pages/components/router) - Vite
-│   │   ├── domain/               # ドメインフック層 (TanStack Query 等はここでのみ)
-│   │   └── api/                  # OpenAPI 生成 SDK + API ラッパー（React 非依存）
-│   ├── server/                   # Cloudflare Workers バックエンド（クリーンアーキ分割済み）
-│   │   ├── types/                # Bindings 等の共有型
-│   │   ├── domain/               # エンティティ/リポジトリIF
-│   │   ├── usecases/             # アプリケーションサービス
-│   │   ├── http/                 # Hono ルート（インバウンドアダプタ）
-│   │   ├── persistence/          # Drizzle などの永続化アダプタ
-│   │   ├── app/                  # DI / 配線
-│   │   └── entry/                # Workers エントリーポイント
-│   ├── drizzle/                  # Drizzle ORM スキーマ
-│   │   └── src/schema.ts         # D1 テーブル定義
-│   └── ui/                       # Material UI ベースの UI パッケージ
-│       └── src/theme.ts          # テーマ設定
+│   ├── frontend/
+│   │   └── src/
+│   │       ├── app/
+│   │       ├── domain/
+│   │       └── api/
+│   ├── backend/
+│   │   └── src/
+│   │       ├── entry/
+│   │       ├── app/
+│   │       ├── http/
+│   │       ├── usecases/
+│   │       ├── domain/
+│   │       ├── persistence/
+│   │       ├── drizzle/
+│   │       └── types/
+│   ├── ui/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── lib/
+│   │   └── styles/
+│   └── typespec/
+│       ├── main.tsp
+│       ├── src/
+│       └── openapi/
 ├── drizzle/
-│   └── migrations/           # データベースマイグレーション
-├── tests/                    # e2e などの統合テスト（Playwright）
-├── .devcontainer/            # Dev Container 設定
-├── wrangler.toml             # Cloudflare 設定
-├── drizzle.config.ts         # Drizzle Kit 設定
-├── pnpm-workspace.yaml       # pnpm ワークスペース設定
-└── package.json              # ルート package.json
+│   └── migrations/
+├── openspec/
+├── tests/
+├── scripts/
+├── docs/
+├── .devcontainer/
+├── .github/
+├── wrangler.toml
+├── drizzle.config.ts
+├── pnpm-workspace.yaml
+└── package.json
 ```
+
+| パス                                | 役割                                   |
+| ----------------------------------- | -------------------------------------- |
+| `packages/frontend/src/app/`        | React のアプリ起動、ルーター、画面     |
+| `packages/frontend/src/domain/`     | TanStack Query hooks と provider       |
+| `packages/frontend/src/api/`        | OpenAPI 生成 SDK と API ラッパー       |
+| `packages/backend/src/entry/`       | Workers エントリーポイント             |
+| `packages/backend/src/app/`         | DI とアプリケーション配線              |
+| `packages/backend/src/http/`        | Hono ルートと HTTP 契約テスト          |
+| `packages/backend/src/usecases/`    | アプリケーションサービス               |
+| `packages/backend/src/domain/`      | ドメインモデルとリポジトリ契約         |
+| `packages/backend/src/persistence/` | Drizzle 永続化アダプタ                 |
+| `packages/backend/src/drizzle/`     | Drizzle schema exports                 |
+| `packages/backend/src/types/`       | Workers Bindings などの共有型          |
+| `packages/ui/`                      | Radix UI ベースの共通 components/hooks |
+| `packages/typespec/`                | API 契約の正と OpenAPI 生成先          |
+| `drizzle/migrations/`               | D1 マイグレーション                    |
+| `openspec/`                         | OpenSpec 設定と仕様スキーマ            |
 
 ## 前提条件
 
