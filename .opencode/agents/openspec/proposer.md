@@ -22,7 +22,6 @@ permission:
   skill:
     '*': deny
     'coding-guardian': allow
-    'generate-image': allow
     'orchestration-playbook': allow
     'openspec-*': allow
   bash:
@@ -104,13 +103,9 @@ Caller (primary) provides one or more of:
    - Call the relevant unit specialist via `task` with intent, current artifact paths including `specs/**/*.md`, known constraints, affected capabilities, and the exact detailed design decisions needed; require the specialist to read the finalized Specs first and design against them
    - For mixed frontend/backend/UI changes, call each relevant specialist and reconcile their outputs into one coherent OpenSpec artifact set
    - For UI-affecting changes, require `unit/frontend/designer` to return a page/screen inventory plus `.wireframe.json` and `.wireframe.html` artifacts for every materially distinct page/screen before `design.md` is finalized
-   - Before generating each mockup, inspect existing implementation design evidence that constrains visual consistency: relevant frontend routes/surfaces, shared UI packages/components, and design token or style entrypoints documented by the repository
-   - Convert that evidence into `generate-image` CLI form fields rather than one freeform prompt: `--prompt` for the first-line deliverable directive, then `--purpose`, `--canvas`, `--subject`, `--composition`, `--style`, `--details`, `--text`/`--typography` when needed, and repeated `--constraint` values
-   - For each UI page/screen, load `generate-image` via `skill` and create a raster mockup image with `.opencode/skills/generate-image/scripts/generate-image.mjs --template ui-mockup --prompt "<first-line directive>" --purpose "<purpose>" --canvas "<canvas>" --subject "<subject>" --composition "<composition>" --style "<style>" --details "<details>" --constraint "<constraint>" --wireframe <matching-wireframe>`; the wireframe file itself MUST be passed with `--wireframe` and MUST NOT be replaced by a prompt-only summary
-   - Save generated mockups under `openspec/changes/<change-id>/mockups/<screen-slug>.mockup.png`
-   - If `generate-image` cannot produce a usable mockup for a page/screen, use `agent-browser` to open the matching `.wireframe.html` preview and capture `openspec/changes/<change-id>/mockups/<screen-slug>.wireframe-screenshot.png` as the fallback mockup image
-   - Embed only raster image files in `design.md` under `## UI Mockups` using Markdown image syntax. Do not embed wireframe HTML with `<iframe>`
-   - Include every generated/fallback mockup image and its source wireframe artifacts in `design.md` Directory Tree and New / Changed Files
+   - For each UI page/screen, use `agent-browser` to open the matching `.wireframe.html` preview and capture `openspec/changes/<change-id>/wireframe-screenshots/<screen-slug>.wireframe-screenshot.png`
+   - Embed only wireframe screenshot image files in `design.md` under `## UI Wireframe Screenshots` using Markdown image syntax. Do not embed wireframe HTML with `<iframe>` and do not generate AI mockup images during the OpenSpec proposal workflow
+   - Include every wireframe screenshot image and its source wireframe artifacts in `design.md` Directory Tree and New / Changed Files
    - Require specialists to return detailed implementation design, task implications, risks, and verification expectations; they must not implement and must not propose, define, or rewrite Spec Requirements or Scenarios during proposer workflow
    - Reflect every substantive specialist output into `design.md` without omissions before validation. For a new-concept feature, expect impact coverage on the order of 150 changed files; for multi-domain expansion, expect impact coverage on the order of 300 changed files. `design.md` must cover affected layers, contracts, generated artifacts, persistence, UI surfaces, tests, configuration, security boundaries, and verification commands at that scale.
    - If specialist output is too thin, omits affected domains, uses placeholders such as `TBD`/`etc`, or leaves implementation decisions implicit, ask the specialist for a corrected detailed design before finalizing `design.md`
