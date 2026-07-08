@@ -67,15 +67,16 @@ Caller (primary) provides one or more of:
 - Do not touch `generated/**`
 - Do not bypass lint
 - Only call `openspec/analyzer`, `researcher`, `unit/frontend/engineer`, `unit/backend/engineer`, and `unit/frontend/designer` via `task` (no self-calls, no unapproved agents)
-- Design requires a mandatory `researcher` task gate for external package opportunities before finalizing `design.md` or `tasks.md`; run it even when the expected outcome is no dependency change.
+- Use `researcher` for external package investigation only when the change could reasonably benefit from a new or changed external package, security-sensitive dependency choice, or maintainability tradeoff that requires current ecosystem evidence.
 - A package may be recommended or adopted only when Researcher verifies every criterion with evidence: GitHub stars >= 1,000, active maintenance, and direct security or maintainability improvement for the change. Package additions must also satisfy repository supply-chain constraints.
 - Do not mention rejected packages or non-adoption outcomes in OpenSpec artifacts. Reflect only qualifying selected package decisions and their implementation tasks; report no-qualifying-candidate outcomes only in the completion report.
 - Proposer owns `specs/**/*.md`: create/update Spec Requirements and Scenarios before specialist detailed design delegation, and never ask engineers or designers to define or rewrite Requirements or Scenarios.
-- Delegate post-Spec detailed implementation design to the relevant unit specialist before finalizing `design.md` and implementation-ready tasks:
+- Delegate post-Spec detailed implementation design to the relevant unit specialist only when the change has material implementation complexity, cross-domain impact, UI/UX impact, security/persistence/API implications, or decisions that require domain-specific evidence:
   - Frontend implementation design based on finalized Specs: `unit/frontend/engineer`
   - Backend implementation design based on finalized Specs: `unit/backend/engineer`
   - UI/UX detailed design, layout, component placement, shared UI design, user-facing copy, and wireframes based on finalized Specs: `unit/frontend/designer`
-- Do not invent detailed designs that belong to those specialist domains when delegation is possible. Reflect specialist outputs into `design.md` and `tasks.md` only; keep `specs/**/*.md` limited to customer/user/external-contract visible behavior.
+- For simple artifact-only changes, narrow wording/format corrections, or changes fully determined by existing instructions and repository evidence, do not delegate just to satisfy process.
+- Do not invent detailed designs that belong to those specialist domains when specialist delegation is warranted. Reflect specialist outputs into `design.md` and `tasks.md` only; keep `specs/**/*.md` limited to customer/user/external-contract visible behavior.
 - Treat `context` / `rules` returned by `openspec instructions ... --json` as constraints. Do not paste them verbatim into artifacts
 - Write all OpenSpec artifact prose in Japanese. Keep schema-required labels and terms such as `Requirement` headings, `SHALL`, `MUST`, Scenario IDs, code identifiers, paths, commands, API names, and protocol terms when the schema or technical accuracy requires them.
 - Never write negative existence, non-adoption, removal, replacement, migration, or switching facts into OpenSpec artifacts. If an artifact names a thing only to say it is absent, unused, not adopted, removed, replaced, migrated away from, or switched away from, the artifact has reintroduced that thing into the product language.
@@ -101,20 +102,23 @@ Caller (primary) provides one or more of:
    - Create/update the artifact per `template` and `outputPath`
    - Iterate until all required artifacts are filled
 
-4. External package research gate before detailed design
-   - Before finalizing `design.md`, `tasks.md`, or specialist prompts, call `researcher` via `task` to investigate applicable external packages for the target domains and repository stack
-   - Provide Researcher with the change intent, finalized `specs/**/*.md`, current repository constraints, relevant existing dependency manifests, affected layers, and security/maintainability goals
+4. External package research when relevant
+   - Before finalizing `design.md`, `tasks.md`, or specialist prompts, decide whether external package research is relevant to the change scope
+   - Call `researcher` via `task` only when the change introduces or changes an external dependency, creates a security-sensitive dependency/design choice, has a maintainability tradeoff where a package may materially help, or the caller explicitly asks for package evaluation
+   - Do not call `researcher` solely for ceremony on spec-only wording, artifact format corrections, repository-internal implementation decisions with no package question, or changes whose correct design is already determined by existing instructions and repository evidence
+   - When package research is relevant, provide Researcher with the change intent, finalized `specs/**/*.md`, current repository constraints, relevant existing dependency manifests, affected layers, and security/maintainability goals
    - Require Researcher to return candidate packages with source URLs, GitHub stars, maintenance evidence, security/maintainability value, adoption recommendation, risks/tradeoffs, and confidence
    - Treat a package as eligible only when all adoption criteria are satisfied: GitHub stars >= 1,000, active maintenance, and clear security or maintainability benefit for this change
    - Reflect eligible selected packages into `design.md` and `tasks.md` with supply-chain, installation, integration, testing, and verification implications
    - If no package satisfies all criteria, continue the design without adding package-related artifact statements and include that outcome in the completion report
-   - If Researcher cannot be called in the execution environment, return `CALLER_ACTION_REQUIRED` with the exact Researcher invocation prompt and do not finalize detailed design from assumption alone
+   - If Researcher is needed but cannot be called in the execution environment, return `CALLER_ACTION_REQUIRED` with the exact Researcher invocation prompt and do not finalize the package-related decision from assumption alone
 
-5. Specialist detailed design after Spec creation
+5. Specialist detailed design when relevant
    - Before finalizing detailed design or implementation-ready tasks, ensure `specs/**/*.md` already describes the required positive external behavior and follows the Spec file restrictions
-   - Call the relevant unit specialist via `task` with intent, current artifact paths including `specs/**/*.md`, known constraints, affected capabilities, and the exact detailed design decisions needed; require the specialist to read the finalized Specs first and design against them
-   - For mixed frontend/backend/UI changes, call each relevant specialist and reconcile their outputs into one coherent OpenSpec artifact set
-   - For UI-affecting changes, require `unit/frontend/designer` to return a page/screen inventory plus `.wireframe.json` and `.wireframe.html` artifacts for every materially distinct page/screen before `design.md` is finalized
+   - Decide whether specialist delegation is needed; skip delegation for simple artifact-only updates, narrow wording/format corrections, and changes where existing instructions and repository evidence are sufficient
+   - Call relevant unit specialists via `task` only for materially affected domains, with intent, current artifact paths including `specs/**/*.md`, known constraints, affected capabilities, and the exact detailed design decisions needed; require each specialist to read the finalized Specs first and design against them
+   - For mixed frontend/backend/UI changes with material cross-domain decisions, call each relevant specialist and reconcile their outputs into one coherent OpenSpec artifact set
+   - For UI-affecting changes with material layout, component placement, shared UI design, responsive behavior, accessibility, interaction, or user-facing copy decisions, require `unit/frontend/designer` to return a page/screen inventory plus `.wireframe.json` and `.wireframe.html` artifacts for every materially distinct page/screen before `design.md` is finalized
    - For each UI page/screen, use `agent-browser` to open the matching `.wireframe.html` preview and capture `openspec/changes/<change-id>/wireframe-screenshots/<screen-slug>.wireframe-screenshot.png`
    - Embed only wireframe screenshot image files in `design.md` under `## UI Wireframe Screenshots` using Markdown image syntax. Do not embed wireframe HTML with `<iframe>` and do not generate AI mockup images during the OpenSpec proposal workflow
    - Include every wireframe screenshot image and its source wireframe artifacts in `design.md` Directory Tree and New / Changed Files
