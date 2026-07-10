@@ -2,7 +2,7 @@
 description: Backend review subagent
 mode: subagent
 hidden: true
-model: openai/gpt-5.5
+model: openai/gpt-5.6-terra
 reasoningEffort: 'xhigh'
 temperature: 0.1
 permission:
