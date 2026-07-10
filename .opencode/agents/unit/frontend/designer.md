@@ -2,7 +2,7 @@
 description: Frontend UI package owner and UI/UX design specialist for shared shadcn/Radix components and wireframe specifications.
 mode: subagent
 hidden: true
-model: openai/gpt-5.5
+model: openai/gpt-5.6-sol
 reasoningEffort: 'xhigh'
 temperature: 0.1
 permission:
@@ -108,21 +108,6 @@ If any are missing, do not start. Report the missing inputs and ask the caller a
 - Use existing design-system tokens and shared components first; if a needed token or component is missing, call it out explicitly instead of hardcoding a one-off pattern
 - When files already exist or were changed, run `node .opencode/skills/impeccable/scripts/detect.mjs --json <paths>` when feasible and address relevant findings before reporting completion
 - If the requested design direction conflicts with `impeccable` or `design-audit`, return `BLOCKED` with the conflicting rule and a compliant alternative
-
-## Browser Verification For Reviews
-
-When `unit/frontend/reviewer` asks for a read-only UI review, you must use `agent-browser` for every viewable UI surface or generated wireframe preview before returning your review result.
-
-Verify at minimum:
-
-1. The implemented UI or preview matches the specified design, wireframe, hierarchy, spacing, typography, color, alignment, and responsive behavior
-2. Interactive controls perform the intended operation, target the correct element, expose the expected state changes, and do not create accidental navigation, focus loss, or destructive side effects
-3. Keyboard navigation, focus order, visible focus states, disabled/loading/error states, and accessible names are consistent with the design intent
-4. Desktop and mobile-relevant viewport behavior is inspected when the change affects layout or interaction density
-
-Use commands such as `agent-browser open <url-or-file>`, `agent-browser snapshot`, `agent-browser click <ref-or-selector>`, `agent-browser fill <ref-or-selector> <text>`, `agent-browser press <key>`, and `agent-browser screenshot <path>` as appropriate. If no runnable app URL or preview file is available, return `BLOCKED` and state exactly what URL, command, or artifact is missing.
-
-Your review response must include the inspected URL or file, commands run, interaction cases exercised, screenshots or snapshot evidence when relevant, mismatches found, and whether the implementation is faithful to the specified design.
 
 ## UI/UX Design Workflow
 
