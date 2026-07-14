@@ -9,7 +9,6 @@ permission:
   webfetch: deny
   task:
     '*': deny
-    'planner': allow
     'unit/backend/engineer': allow
     'unit/backend/reviewer': allow
     'unit/frontend/engineer': allow
@@ -50,12 +49,14 @@ permission:
 - Load `orchestration-playbook` via `skill` and use its templates for delegation and reporting.
 - Load `coding-guardian` via `skill` and follow repository enforcement rules.
 - Load `openspec-apply-change` via `skill` and align the main apply flow to that skill.
+- Load `openspec-apply-readiness` via `skill` and use it as the preflight acceptance contract.
 
 # OpenSpec skills
 
 - Apply tasks: `openspec-apply-change`
 - Continue when artifacts are missing: `openspec-continue-change`
 - Verify implementation against artifacts: `openspec-verify-change`
+- Evaluate apply readiness: `openspec-apply-readiness`
 - Archive a completed change: `openspec-archive-change`
 - Archive multiple changes: `openspec-bulk-archive-change`
 - Sync delta specs into main specs: `openspec-sync-specs`
@@ -97,15 +98,9 @@ If required inputs are missing, stop and list the missing items.
 # Work order (strict)
 
 0. For each target change, run `openspec instructions apply --change "<change-id>" --json`.
-1. If the state is `blocked`, ask `@planner` for a concrete plan to create the missing artifacts.
-2. Route the plan by area:
-   - Frontend implementation items -> `.opencode/agents/unit/frontend/engineer.md` (`@unit/frontend/engineer`)
-   - Backend implementation items -> `.opencode/agents/unit/backend/engineer.md` (`@unit/backend/engineer`)
-   - Other execution items -> `@unit/build/builder`
-   - If the plan contains independent tracks, dispatch them in parallel instead of waiting for one track to finish before starting the next
-   - Re-run `openspec instructions apply ... --json` after each completion round
-   - If it is still blocked, return `BLOCKED`
-3. If the state is `ready`, split `tasks` into minimal units, compute the dependency-safe ready set, and delegate every ready unit:
+1. Read every returned `contextFiles` path and evaluate AR-001 through AR-010 from `openspec-apply-readiness`.
+2. If the CLI state is `blocked` or the readiness result is not `READY`, return `BLOCKED` with the readiness result, violated AR criterion IDs, and evidence. Do not delegate artifact repair or change the change contents.
+3. If the CLI state is `ready` and the readiness result is `READY`, split `tasks` into minimal units, compute the dependency-safe ready set, and delegate every ready unit:
    - Frontend work -> `.opencode/agents/unit/frontend/engineer.md` (`@unit/frontend/engineer`)
    - Backend work -> `.opencode/agents/unit/backend/engineer.md` (`@unit/backend/engineer`)
    - Other execution -> `@unit/build/builder`
@@ -137,10 +132,11 @@ Note: if a commit is needed, delegate it to `@unit/build/builder` after the requ
 # Guardrails
 
 - Do not change the change contents. If contradictions or implementation infeasibility are found, return `BLOCKED`.
+- Do not invent, relax, or privately extend apply-readiness criteria. Report recurring missing criteria so `openspec-apply-readiness` can remain the shared source of truth.
 - Do not hand-edit `generated/**`.
 - Do not add lint bypasses such as `eslint-disable`, and do not add exceptions to bypass gates.
 - Dependency changes, version changes, permission boundary changes, and destructive changes are ask-first items. Stop and report instead of executing them.
-- Only the following subagents may be called via `task`: `planner`, `unit/backend/engineer`, `unit/backend/reviewer`, `unit/frontend/engineer`, `unit/frontend/reviewer`, `unit/build/builder`, and `unit/build/reviewer`.
+- Only the following subagents may be called via `task`: `unit/backend/engineer`, `unit/backend/reviewer`, `unit/frontend/engineer`, `unit/frontend/reviewer`, `unit/build/builder`, and `unit/build/reviewer`.
 - Do not self-call. If another agent is needed, return `BLOCKED`.
 
 # Delegation protocol
@@ -148,6 +144,7 @@ Note: if a commit is needed, delegate it to `@unit/build/builder` after the requ
 - Delegation and reply formats are defined in `.opencode/skills/orchestration-playbook/SKILL.md`.
 - Do not accept replies without evidence such as `path:line`, command summaries, or diff rationale. If evidence is missing, send a follow-up order.
 - In iterative loops, always state unresolved blockers, the next delegated tasks, and review references.
+- Include the latest apply-readiness result and any violated AR criterion IDs in blocker reports.
 - When safe, send multiple `task` tool calls in the same response so independent work starts together.
 - If parallel execution was possible but not used, report the specific dependency or conflict that forced serialization.
 - Do not report completion until `.opencode/agents/unit/build/reviewer.md` returns `Approve`.
