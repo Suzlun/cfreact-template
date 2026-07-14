@@ -2,7 +2,7 @@
 description: Backend implementation specialist for this TypeScript, Hono, Cloudflare Workers, and Drizzle backend.
 mode: subagent
 hidden: true
-model: openai/gpt-5.6-terra
+model: openai/gpt-5.6-luna
 reasoningEffort: 'xhigh'
 temperature: 0.1
 permission:
