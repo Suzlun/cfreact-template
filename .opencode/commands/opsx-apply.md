@@ -4,6 +4,10 @@ description: Implement tasks from an OpenSpec change (Experimental)
 
 Implement tasks from an OpenSpec change.
 
+Before delegating or implementing, load `openspec-apply-readiness` and require a `READY` result. A Change contains repository-scoped work only: never execute, await, or complete a task that requires release execution, deployment, environment provisioning, credential access or probes, external approval, staging or production validation, operational rehearsal, or production observation. Return the violated readiness criteria so `openspec/proposer` can remove the invalid artifact content.
+
+When UI is in scope, treat `.wireframe.json` as the visible-surface source and `.wireframe.html` as generated preview output. Resolve only self-evident implementation details that preserve existing actions, information structure, and copy. Return `BLOCKED` instead of redesigning the surface when artifacts conflict or a non-self-evident visible change is necessary.
+
 **Input**: Optionally specify a change name (e.g., `/opsx-apply add-auth`). If omitted, check if it can be inferred from conversation context. If vague or ambiguous you MUST prompt for available changes.
 
 **Steps**
@@ -41,7 +45,7 @@ Implement tasks from an OpenSpec change.
    - Dynamic instruction based on current state
 
    **Handle states:**
-   - If `state: "blocked"` (missing artifacts): show message, suggest using `/opsx-continue`
+   - If `state: "blocked"` (missing artifacts): show message, suggest using `/opsx-propose <name>` to complete missing artifacts before retrying apply
    - If `state: "all_done"`: congratulate, suggest archive
    - Otherwise: proceed to implementation
 

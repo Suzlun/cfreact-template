@@ -18,6 +18,10 @@ When ready to implement, run /opsx-apply
 
 Before starting, load `openspec-apply-readiness` via the `skill` tool and use it as the definition of apply-ready.
 
+**Change completion boundary**: A Change tracks repository-scoped work required to fully implement the requested feature in a merge-ready state. Do not place release execution, deployment, environment provisioning, credential access or probes, external approval, staging or production validation, operational rehearsal, or production observation in artifacts, tasks, acceptance criteria, or completion conditions. Record release impact in the pull request template; it never blocks Change completion.
+
+**UI artifact order**: For a user-visible UI, create the proposal first, then ask `openspec/designer` for the minimum `.wireframe.json`, then author Specs and design. The JSON is the editable visible-surface source. Its `.wireframe.html` is generated preview output, never a design source or hand-edit target. Skip this phase entirely when no user-visible UI is needed.
+
 **Steps**
 
 1. **If no input provided, ask what they want to build**
@@ -70,6 +74,7 @@ Before starting, load `openspec-apply-readiness` via the `skill` tool and use it
    - Read any completed dependency files for context
    - Create the artifact file using `template` as the structure and write it to `resolvedOutputPath`
    - Apply `context` and `rules` as constraints - but do NOT copy them into the file
+   - Immediately after creating `proposal`, and before selecting `specs` in the next loop, determine whether a user-visible UI is needed. For UI changes, call `openspec/designer` with the proposal and retain its JSON source path. For non-UI changes, continue without a wireframe artifact.
    - Show brief progress: "Created <artifact-id>"
 
    b. **Continue until all `applyRequires` artifacts are complete**
@@ -87,6 +92,8 @@ Before starting, load `openspec-apply-readiness` via the `skill` tool and use it
    - Evaluate AR-001 through AR-010 from `openspec-apply-readiness`
    - Fix every `NEEDS_FIXES` finding and ask for every required `NEEDS_DECISIONS` item
    - Do not declare the change apply-ready until the result is `READY`
+   - Reject and remove any task or completion condition that depends on an external operation; do not ask for an operator, credential, approval, or external evidence to make the Change ready
+   - Do not revise an approved wireframe for preference, internal implementation detail, or Spec wording. Escalate only when artifact evidence shows a serious business-value, safety, accessibility, or legal failure.
 
 5. **Show final status**
    ```bash
