@@ -989,7 +989,7 @@ fail 条件
   - 強制: `scripts.lint` → `package.json`
   - 内訳
     - `pnpm lint:eslint` は `eslint .` を実行
-    - `pnpm lint:openspec` は `openspec validate --all --strict` と `node scripts/openspec/verify-scenario-coverage.mjs` を実行
+    - `pnpm lint:openspec` は `openspec validate --all --strict`、Change Intent確認、Scenario IDカバレッジ、Change task scope、wireframe previewの各検査を実行
     - `pnpm lint:supply-chain` は `node scripts/security/verify-pnpm-supply-chain.mjs` を実行
 - サプライチェーン対策の pnpm 設定を弱めない
   - 強制: `pnpm lint:supply-chain` → `scripts/security/verify-pnpm-supply-chain.mjs`
@@ -1075,6 +1075,13 @@ fail 条件
     ```sh
     pnpm lint:openspec
     ```
+
+- downstream artifact は所有者確認済みの `intent.md` から作成する
+  - 強制: `pnpm lint` → `node scripts/openspec/verify-change-intent.mjs` → `scripts/openspec/verify-change-intent.mjs`
+  - NG例
+    - `Intent-Status: DRAFT` または `Owner-Confirmation: PENDING` のまま `proposal.md`、delta spec、`design.md`、`tasks.md`、wireframe を作成する
+  - OK例
+    - repository の事実、推論、仮定、反証確認を分けて所有者へ提示し、明示確認後に両 marker を `CONFIRMED` にして downstream artifact を作成する
 
 - Spec は `openspec/specs/**/spec.md` に置く
   - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs`

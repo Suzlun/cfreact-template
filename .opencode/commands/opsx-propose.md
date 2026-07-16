@@ -6,6 +6,7 @@ Propose a new change - create the change and generate all artifacts in one step.
 
 I'll create a change with artifacts:
 
+- intent.md (owner-confirmed meaning)
 - proposal.md (what & why)
 - design.md (how)
 - tasks.md (implementation steps)
@@ -18,9 +19,11 @@ When ready to implement, run /opsx-apply
 
 Before starting, load `openspec-apply-readiness` via the `skill` tool and use it as the definition of apply-ready.
 
+**Intent confirmation boundary**: Treat the request as evidence of intent, not as an implementation-ready specification. Every Change requires one explicit owner confirmation of the reconstructed intent before proposal, wireframe, Specs, design, or tasks are authored.
+
 **Change completion boundary**: A Change tracks repository-scoped work required to fully implement the requested feature in a merge-ready state. Do not place release execution, deployment, environment provisioning, credential access or probes, external approval, staging or production validation, operational rehearsal, or production observation in artifacts, tasks, acceptance criteria, or completion conditions. Record release impact in the pull request template; it never blocks Change completion.
 
-**UI artifact order**: For a user-visible UI, create the proposal first, then ask `openspec/designer` for the minimum `.wireframe.json`, then author Specs and design. The JSON is the editable visible-surface source. Its `.wireframe.html` is generated preview output, never a design source or hand-edit target. Skip this phase entirely when no user-visible UI is needed.
+**UI artifact order**: For a user-visible UI, confirm intent first, create the proposal, then ask `openspec/designer` for the minimum `.wireframe.json`, then author Specs and design. The JSON is the editable visible-surface source. Its `.wireframe.html` is generated preview output, never a design source or hand-edit target. Skip this phase entirely when no user-visible UI is needed.
 
 **Steps**
 
@@ -53,7 +56,25 @@ Before starting, load `openspec-apply-readiness` via the `skill` tool and use it
    - `artifacts`: list of all artifacts with their status and dependencies
    - `planningHome`, `changeRoot`, `artifactPaths`, and `actionContext`: path and scope context. Use these instead of assuming repo-local paths.
 
-4. **Create artifacts in sequence until apply-ready**
+4. **Reconstruct and confirm intent**
+
+   - Get the intent instructions:
+     ```bash
+     openspec instructions intent --change "<name>" --json
+     ```
+   - Inspect the relevant repository behavior, contracts, paths, and constraints before interpreting the request.
+   - Build an intent candidate containing the actor, situation, problem, desired outcome, priority, request-term classifications, repository evidence, inferences, assumptions, falsification check, invariants, boundaries, and observable success.
+   - Classify solution-shaped terms as `Required Outcome`, `Non-negotiable Constraint`, or `Candidate Means`.
+   - Do not treat familiarity, common practice, searchable examples, or an existing implementation pattern as evidence that a candidate means fits this repository.
+   - Present the complete candidate to the owner with the `question` tool. Offer these choices:
+     - この意図で確定する
+     - 意図を修正する
+     - 中止する
+   - If corrected, inspect any newly relevant evidence, revise the candidate, and ask again.
+   - Only after explicit confirmation, create `intent.md` with exact `Intent-Status: CONFIRMED` and `Owner-Confirmation: CONFIRMED` markers and record the approved statement under `## Owner Confirmation`.
+   - Do not create any downstream artifact while either status is unconfirmed or a decision remains unresolved that can change customer-visible behavior, contracts, architecture, security, data, dependencies, or scope.
+
+5. **Create downstream artifacts in sequence until apply-ready**
 
    Use the **TodoWrite tool** to track progress through the artifacts.
 
@@ -74,7 +95,8 @@ Before starting, load `openspec-apply-readiness` via the `skill` tool and use it
    - Read any completed dependency files for context
    - Create the artifact file using `template` as the structure and write it to `resolvedOutputPath`
    - Apply `context` and `rules` as constraints - but do NOT copy them into the file
-   - Immediately after creating `proposal`, and before selecting `specs` in the next loop, determine whether a user-visible UI is needed. For UI changes, call `openspec/designer` with the proposal and retain its JSON source path. For non-UI changes, continue without a wireframe artifact.
+   - Never select `proposal` or another downstream artifact until `intent.md` is confirmed.
+   - Immediately after creating `proposal`, and before selecting `specs` in the next loop, determine whether a user-visible UI is needed. For UI changes, call `openspec/designer` with the confirmed intent and proposal and retain its JSON source path. For non-UI changes, continue without a wireframe artifact.
    - Show brief progress: "Created <artifact-id>"
 
    b. **Continue until all `applyRequires` artifacts are complete**
@@ -95,7 +117,7 @@ Before starting, load `openspec-apply-readiness` via the `skill` tool and use it
    - Reject and remove any task or completion condition that depends on an external operation; do not ask for an operator, credential, approval, or external evidence to make the Change ready
    - Do not revise an approved wireframe for preference, internal implementation detail, or Spec wording. Escalate only when artifact evidence shows a serious business-value, safety, accessibility, or legal failure.
 
-5. **Show final status**
+6. **Show final status**
    ```bash
    openspec status --change "<name>"
    ```
@@ -106,6 +128,7 @@ After completing all artifacts, summarize:
 
 - Change name and location
 - List of artifacts created with brief descriptions
+- Confirmed intent path and owner-approved intent summary
 - Apply-readiness result: `READY`
 - What's ready: "All artifacts created! Ready for implementation."
 - Prompt: "Run `/opsx-apply` to start implementing."
@@ -124,7 +147,7 @@ After completing all artifacts, summarize:
 
 - Create ALL artifacts needed for implementation (as defined by schema's `apply.requires`)
 - Always read dependency artifacts before creating a new one
-- If context is critically unclear, ask the user - but prefer making reasonable decisions to keep momentum
+- Never resolve ambiguity about customer outcome, external contracts, architecture, security, data, dependencies, or scope merely to keep momentum; obtain owner confirmation
 - If a change with that name already exists, ask if user wants to continue it or create a new one
 - Verify each artifact file exists after writing before proceeding to next
 - Do not add local readiness gates or use expected file counts; use `openspec-apply-readiness`

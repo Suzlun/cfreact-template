@@ -32,7 +32,7 @@ description: Enforce this repository's real React, Hono, Drizzle, and TypeSpec r
 - TypeSpec / codegen: `packages/typespec/package.json`, `packages/typespec/tspconfig.yaml`, `packages/typespec/README.md`, `packages/frontend/orval.config.ts`
 - frontend: `packages/frontend/package.json`, `packages/frontend/tsconfig.*.json`, `packages/frontend/src/app/**`, `packages/frontend/src/domain/**`, `packages/frontend/src/api/**`, `packages/ui/**`
 - backend: `packages/backend/package.json`, `packages/backend/tsconfig.*.json`, `packages/backend/src/entry/**`, `packages/backend/src/app/**`, `packages/backend/src/http/**`, `packages/backend/src/persistence/**`, `packages/backend/src/usecases/**`, `packages/backend/src/domain/**`, `packages/backend/src/types/**`, `packages/backend/src/drizzle/**`, `packages/backend/src/http/contracts/openapi-contract.test.ts`
-- OpenSpec: `scripts/openspec/verify-scenario-coverage.mjs`
+- OpenSpec: `scripts/openspec/verify-change-intent.mjs`, `scripts/openspec/verify-scenario-coverage.mjs`, `scripts/openspec/verify-change-task-scope.mjs`, `scripts/openspec/verify-wireframe-previews.mjs`
 
 ### 2) Classify the change before editing
 

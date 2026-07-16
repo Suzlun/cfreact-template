@@ -7,7 +7,7 @@
 - コーディング規則（一次資料）: `CODING_STANDARDS.md`
   - `eslint.config.js` は規約の自動検査（実装）として追従させます
 - 仕様（契約）: `openspec/specs/**/spec.md`
-  - `pnpm lint` で `openspec validate --all --strict` と Scenario ID カバレッジ検査が走ります
+  - `pnpm lint` で `openspec validate --all --strict`、Change Intent 確認ゲート、Scenario ID カバレッジ検査が走ります
   - `openspec/changes/**` の delta spec は、`/opsx-sync` または `openspec archive` で main spec に反映してから検査対象になります
 
 ## 前提環境
@@ -75,6 +75,8 @@ Husky によりコミット時に検証されます。
 - 仕様が変わる変更は spec とテストをセットで更新する
   - `openspec/specs/**` の `#### Scenario: ... (..-S001)` に対して、テストタイトルに `[...-S001]` を含める
   - 自動化できない Scenario は `Tags: manual` を明示する
+- OpenSpec Change は、依頼の意味を repository の事実と照合して所有者が確認した`intent.md`から開始する
+  - `Intent-Status: CONFIRMED`と`Owner-Confirmation: CONFIRMED`になる前にproposal以降を作成しない
 
 ## 自動生成
 

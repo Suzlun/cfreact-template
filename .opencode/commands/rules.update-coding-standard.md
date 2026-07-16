@@ -32,7 +32,7 @@ This document is lint-as-rules. Include only rules that are mechanically enforce
 6. Use this repo's actual TypeSpec setup precisely:
    - `packages/typespec/package.json` defines `format`, `format:check`, `gen:openapi`, and `check`
    - OpenAPI output is configured by `packages/typespec/tspconfig.yaml`
-7. Mention OpenSpec exactly as implemented today through `pnpm lint:openspec` and `scripts/openspec/verify-scenario-coverage.mjs`.
+7. Mention OpenSpec exactly as implemented today through `pnpm lint:openspec`, `scripts/openspec/verify-change-intent.mjs`, `scripts/openspec/verify-scenario-coverage.mjs`, `scripts/openspec/verify-change-task-scope.mjs`, and `scripts/openspec/verify-wireframe-previews.mjs`.
 8. Use this repo's real file names and paths. Do not reference non-existent legacy paths such as `packages/frontend/web`, `packages/backend/internal/**`, `packages/backend/.golangci.yml`, `tools/scripts/*`, root `.spectral.yaml`, or `commitlint.config.cjs`.
 
 ## Required Structure
