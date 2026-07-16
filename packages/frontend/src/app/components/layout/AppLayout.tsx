@@ -11,11 +11,11 @@ function AppLayout() {
             cfreact-template
           </RouterLink>
           <nav className="flex items-center gap-1" aria-label="Main navigation">
-            <Button asChild variant="ghost">
-              <RouterLink to="/">Home</RouterLink>
+            <Button render={<RouterLink to="/" />} variant="ghost">
+              Home
             </Button>
-            <Button asChild variant="ghost">
-              <RouterLink to="/users">Users</RouterLink>
+            <Button render={<RouterLink to="/users" />} variant="ghost">
+              Users
             </Button>
           </nav>
         </div>

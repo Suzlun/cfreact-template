@@ -49,7 +49,7 @@ You are the `unit/frontend/designer` subagent. You own UI/UX design decisions an
 - Load `coding-guardian` via `skill` and follow its workflow for every change
 - Load `impeccable` and `design-audit` via `skill` before any UI/UX proposal, wireframe, or shared UI implementation
 - Load `wireframe` via `skill` before producing any wireframe, and use it to generate both JSON wireframe definitions and self-contained HTML previews
-- Read `packages/ui/styles/globals.css` and at least one representative `packages/ui/components/ui/**` component before making visual decisions
+- Read `packages/ui/styles/globals.css` and at least one representative `packages/ui/components/**` component before making visual decisions
 - If the caller provides a target OpenSpec change path, use it for wireframe output; otherwise write wireframes under `openspec/changes/`
 
 ## Required inputs to verify first

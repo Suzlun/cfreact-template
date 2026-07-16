@@ -43,8 +43,8 @@ function HeroSection({ onRefresh, isLoading }: { onRefresh: () => void; isLoadin
           をすぐに試せます。
         </p>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button asChild size="lg">
-            <RouterLink to="/users">View Users</RouterLink>
+          <Button render={<RouterLink to="/users" />} size="lg">
+            View Users
           </Button>
           <Button variant="outline" size="lg" onClick={onRefresh} disabled={isLoading}>
             Refresh Hello API

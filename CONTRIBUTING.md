@@ -111,11 +111,11 @@ pnpm check
 必要に応じて関連テストも実行してください。
 
 ```bash
-pnpm test          # すべて（vitest workspace）
+pnpm test:run        # すべての Vitest project
 pnpm test:frontend   # @cfreact-template/frontend
-pnpm test:backend   # backend-http Vitest project
-pnpm test:ui       # Vitest UI
-pnpm test:e2e      # Playwright（変更が e2e に影響する場合）
+pnpm test:backend    # backend-http Vitest project
+pnpm test:ui-package # UI package の Vitest project
+pnpm test:e2e        # migration 済み E2E 専用 D1 を使う Playwright
 ```
 
 ## プルリクエストの流れ
@@ -134,7 +134,7 @@ pnpm test:e2e      # Playwright（変更が e2e に影響する場合）
 - `main` の CI が成功すると Deploy Workflow が起動します。GitHub Actions側にCloudflare認証情報が設定されている場合だけ、ビルド、D1/KV/R2の作成または再利用、本番環境へのデプロイを実行します。
 - Cloudflare Deploy Button では `https://deploy.workers.cloudflare.com/?url=https://github.com/[アカウント名]/[リポジトリ名]/tree/main` を使用します。
 - Deploy Button/Workers Builds は `package.json` の `deploy` script を使い、`pnpm build && wrangler deploy --env production` を実行します。
-- D1 database、KV namespace、R2 bucket は `wrangler.toml` の production binding をCloudflare側のresource provisioning対象として扱います。
+- Deploy Button/Workers Builds では、`wrangler.toml` の production placeholder を有効な D1 database ID と KV namespace ID に置き換え、必要な R2 bucket を事前に用意します。
 - GitHub Actionsに `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` がある場合は、Deploy WorkflowがD1/KV/R2を名前で作成または再利用し、実ID入りの一時Wrangler設定で直接deployします。
 - このrepoはrootから `pnpm build` と `wrangler deploy --env production` を実行する前提です。frontend assetsは `packages/frontend/dist`、backend entryは `packages/backend/src/entry/index.ts` です。
 - Workers Builds の build variable には `PNPM_VERSION=11.7.0` を設定し、pnpmのバージョン差によるinstall差分を避けてください。

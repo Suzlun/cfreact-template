@@ -14,5 +14,5 @@
       "@cfreact-template/frontend/domain/*": ["./src/domain/*"]
     }
   },
-  "include": ["src/app/**/*", "vite.config.ts", "vitest.app.config.ts", "tailwind.config.ts"]
+  "include": ["src/app/**/*", "vite.config.ts", "vitest.app.config.ts"]
 }

@@ -246,6 +246,8 @@ export default tseslint.config(
           tsx: 'never',
           js: 'never',
           jsx: 'never',
+          mjs: 'never',
+          cjs: 'never',
         },
       ],
       'import/order': [
@@ -1628,9 +1630,8 @@ export default tseslint.config(
   // shadcn/ui registry source is kept close to upstream so default components remain drop-in usable.
   {
     files: [
-      'packages/ui/components/ui/**/*.{ts,tsx}',
-      'packages/ui/hooks/use-mobile.tsx',
-      'packages/ui/hooks/use-toast.ts',
+      'packages/ui/components/**/*.{ts,tsx}',
+      'packages/ui/hooks/use-mobile.ts',
       'packages/ui/lib/utils.ts',
     ],
     rules: {
@@ -1664,14 +1665,6 @@ export default tseslint.config(
       'security/detect-object-injection': 'off',
       'sonarjs/no-duplicate-string': 'off',
       'unicorn/no-array-for-each': 'off',
-    },
-  },
-  // theme.ts は行数制約を緩和
-  {
-    files: ['**/theme.ts'],
-    rules: {
-      'max-lines': 'off',
-      'max-lines-per-function': 'off',
     },
   },
   // JavaScript ファイルの設定

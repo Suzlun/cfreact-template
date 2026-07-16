@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type TestInfo } from '@playwright/test';
 
 const waitForTableOrEmptyState = async (page: Page) => {
   const tableLocator = page.locator('table');
@@ -14,10 +14,26 @@ const waitForTableOrEmptyState = async (page: Page) => {
   });
 };
 
+const createTestUser = async (page: Page, testInfo: TestInfo) => {
+  const identifier = `${testInfo.project.name}-${String(testInfo.parallelIndex)}-${String(Date.now())}`;
+  const name = `Test User ${identifier}`;
+  const email = `test-user-${identifier}@example.com`;
+
+  await page.getByPlaceholder('Name').fill(name);
+  await page.getByPlaceholder('Email').fill(email);
+  await page.getByRole('button', { name: /create user/i }).click();
+
+  await expect(page.getByPlaceholder('Name')).toHaveValue('', { timeout: 5000 });
+  await expect(page.getByPlaceholder('Email')).toHaveValue('');
+  await expect(page.getByText(name)).toBeVisible({ timeout: 5000 });
+
+  return { email, name };
+};
+
 test.describe('ユーザー管理フロー', () => {
   test.beforeEach(async ({ page }) => {
-    // ユーザーページに移動
-    await page.goto('/');
+    // ユーザー管理の操作と一覧を提供する route へ移動する。
+    await page.goto('/users');
   });
 
   test('ページが正しく表示される', async ({ page }) => {
@@ -47,39 +63,20 @@ test.describe('ユーザー管理フロー', () => {
     expect(hasTable || hasEmptyMessage).toBeTruthy();
   });
 
-  test('新しいユーザーを作成できる', async ({ page }) => {
+  test('新しいユーザーを作成できる', async ({ page }, testInfo) => {
     // データの初期状態を待つ
     await waitForTableOrEmptyState(page);
 
     // フォームに入力
-    const timestamp = Date.now();
-    const testName = `Test User ${String(timestamp)}`;
-    const testEmail = `testuser${String(timestamp)}@example.com`;
-
-    await page.getByPlaceholder('Name').fill(testName);
-    await page.getByPlaceholder('Email').fill(testEmail);
-
-    // フォームを送信
-    await page.getByRole('button', { name: /create user/i }).click();
-
-    // ローディング状態を待つ
-    await expect(page.getByRole('button', { name: /create user/i })).toBeDisabled();
-    await expect(page.getByRole('button', { name: /create user/i })).not.toBeDisabled({
-      timeout: 5000,
-    });
-
-    // フォームがクリアされることを確認
-    await expect(page.getByPlaceholder('Name')).toHaveValue('');
-    await expect(page.getByPlaceholder('Email')).toHaveValue('');
+    const user = await createTestUser(page, testInfo);
 
     // 作成したユーザーがリストに表示されることを確認
-    await expect(page.getByText(testName)).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText(testEmail)).toBeVisible();
+    await expect(page.getByText(user.email)).toBeVisible();
   });
 
   test('フォームのバリデーションが機能する', async ({ page }) => {
-    // 空のフォームで送信を試みる
-    await page.getByRole('button', { name: /create user/i }).click();
+    // 空の必須入力では作成操作を開始できない。
+    await expect(page.getByRole('button', { name: /create user/i })).toBeDisabled();
 
     // ブラウザのバリデーションメッセージが表示される（HTML5 required属性）
     const nameInput = page.getByPlaceholder('Name');
@@ -90,53 +87,43 @@ test.describe('ユーザー管理フロー', () => {
     await expect(emailInput).toHaveAttribute('type', 'email');
   });
 
-  test('複数のユーザーを連続して作成できる', async ({ page }) => {
+  test('複数のユーザーを連続して作成できる', async ({ page }, testInfo) => {
     // データの初期状態を待つ
     await waitForTableOrEmptyState(page);
 
-    const timestamp = Date.now();
+    const identifier = `${testInfo.project.name}-${String(testInfo.parallelIndex)}-${String(Date.now())}`;
 
     // 1人目のユーザーを作成
-    await page.getByPlaceholder('Name').fill(`User 1 ${String(timestamp)}`);
-    await page.getByPlaceholder('Email').fill(`user1-${String(timestamp)}@example.com`);
+    await page.getByPlaceholder('Name').fill(`User 1 ${identifier}`);
+    await page.getByPlaceholder('Email').fill(`user1-${identifier}@example.com`);
     await page.getByRole('button', { name: /create user/i }).click();
 
     // 完了を待つ
-    await expect(page.getByRole('button', { name: /create user/i })).not.toBeDisabled({
-      timeout: 5000,
-    });
-    await expect(page.getByPlaceholder('Name')).toHaveValue('');
+    await expect(page.getByText(`User 1 ${identifier}`)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByPlaceholder('Name')).toHaveValue('', { timeout: 5000 });
 
     // 2人目のユーザーを作成
-    await page.getByPlaceholder('Name').fill(`User 2 ${String(timestamp)}`);
-    await page.getByPlaceholder('Email').fill(`user2-${String(timestamp)}@example.com`);
+    await page.getByPlaceholder('Name').fill(`User 2 ${identifier}`);
+    await page.getByPlaceholder('Email').fill(`user2-${identifier}@example.com`);
     await page.getByRole('button', { name: /create user/i }).click();
 
     // 完了を待つ
-    await expect(page.getByRole('button', { name: /create user/i })).not.toBeDisabled({
-      timeout: 5000,
-    });
-
     // 両方のユーザーが表示されることを確認
-    await expect(page.getByText(`User 1 ${String(timestamp)}`)).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText(`User 2 ${String(timestamp)}`)).toBeVisible();
+    await expect(page.getByText(`User 1 ${identifier}`)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(`User 2 ${identifier}`)).toBeVisible();
   });
 
-  test('ユーザーリストがテーブル形式で表示される', async ({ page }) => {
-    // ユーザーが存在する場合のみテストを実行
-    const hasTable = await page.waitForSelector('table', { timeout: 10000 }).catch(() => null);
+  test('ユーザーリストがテーブル形式で表示される', async ({ page }, testInfo) => {
+    await createTestUser(page, testInfo);
 
-    if (hasTable !== null) {
-      // テーブルヘッダーの確認
-      await expect(page.getByRole('columnheader', { name: /id/i })).toBeVisible();
-      await expect(page.getByRole('columnheader', { name: /name/i })).toBeVisible();
-      await expect(page.getByRole('columnheader', { name: /email/i })).toBeVisible();
-      await expect(page.getByRole('columnheader', { name: /created at/i })).toBeVisible();
+    // テーブルヘッダーの確認
+    await expect(page.getByRole('columnheader', { name: /id/i })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: /name/i })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: /email/i })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: /created at/i })).toBeVisible();
 
-      // データ行が存在することを確認
-      const rows = page.getByRole('row');
-      const rowCount = await rows.count();
-      expect(rowCount).toBeGreaterThan(1); // ヘッダー行 + データ行
-    }
+    // データ行が存在することを確認
+    const rows = page.locator('table tbody tr');
+    expect(await rows.count()).toBeGreaterThan(0);
   });
 });

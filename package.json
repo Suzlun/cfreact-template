@@ -35,6 +35,8 @@
     "test:backend": "vitest run --project backend-http",
     "test:ui-package": "vitest run --project ui",
     "test:e2e": "playwright test",
+    "test:e2e:prepare-db": "node scripts/e2e/prepare-local-d1.mjs",
+    "test:e2e:backend": "pnpm build:frontend && pnpm test:e2e:prepare-db && pnpm --filter @cfreact-template/backend exec wrangler dev --cwd ../.. --ip 0.0.0.0 --persist-to .wrangler/e2e-state",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "lint": "pnpm lint:eslint && pnpm lint:openspec && pnpm lint:supply-chain",
@@ -42,8 +44,8 @@
     "lint:openspec": "pnpm exec openspec validate --all --strict && node scripts/openspec/verify-scenario-coverage.mjs && node scripts/openspec/verify-change-task-scope.mjs && node scripts/openspec/verify-wireframe-previews.mjs && node --test scripts/openspec/verify-change-task-scope.test.mjs .opencode/skills/wireframe/scripts/generate-preview.test.mjs",
     "lint:supply-chain": "node scripts/security/verify-pnpm-supply-chain.mjs",
     "release:provision-cloudflare": "node scripts/release/provision-cloudflare-resources.mjs",
-    "format": "pnpm --filter @cfreact-template/typespec format && prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "format:check": "pnpm --filter @cfreact-template/typespec format:check && prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format": "pnpm --filter @cfreact-template/typespec format && prettier --write \"**/*.{ts,tsx,js,jsx,css,json,md,yml,yaml}\"",
+    "format:check": "pnpm --filter @cfreact-template/typespec format:check && prettier --check \"**/*.{ts,tsx,js,jsx,css,json,md,yml,yaml}\"",
     "prepare": "husky"
   },
   "devDependencies": {

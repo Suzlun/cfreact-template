@@ -35,7 +35,8 @@ export default defineConfig({
       timeout: 120 * 1000,
     },
     {
-      command: 'pnpm --filter @cfreact-template/backend dev',
+      // E2E 専用 D1 state に migration を適用してから backend を起動する。
+      command: 'pnpm test:e2e:backend',
       url: 'http://localhost:8787/health',
       reuseExistingServer: process.env.CI === undefined,
       timeout: 120 * 1000,

@@ -940,10 +940,10 @@
     - 入力元を変更して `pnpm gen:api-sdk`
 
 - shadcn/ui registry 由来コードは上流API形状を保つため lint の一部ルールを緩和する
-  - 強制: `pnpm lint` → `eslint .` → `files: ['packages/ui/components/ui/**/*.{ts,tsx}', 'packages/ui/hooks/use-mobile.tsx', 'packages/ui/hooks/use-toast.ts', 'packages/ui/lib/utils.ts']` のルール上書き → `eslint.config.js`
+  - 強制: `pnpm lint` → `eslint .` → `files: ['packages/ui/components/**/*.{ts,tsx}', 'packages/ui/hooks/use-mobile.ts', 'packages/ui/lib/utils.ts']` のルール上書き → `eslint.config.js`
   - 対象
     - shadcn/ui のデフォルトコンポーネント実装
-    - shadcn/ui が要求する `cn`, `use-mobile`, `use-toast`
+    - shadcn/ui が要求する `cn`, `use-mobile`
   - 補足
     - app 固有コンポーネントや hand-written の UI 追加には通常ルールを適用する
   - OK例
@@ -964,13 +964,6 @@
     - 本番コードと同じ制約で書く必要があると思い込む
   - OK例
     - テストでは制約が一部オフになっている前提で書く
-
-- `**/theme.ts` は行数制約を除外する
-  - 強制: `pnpm lint` → `eslint .` → `files: ['**/theme.ts']` の `max-lines` オフ → `eslint.config.js`
-  - NG例
-    - theme の分割で逆に可読性が落ちる
-  - OK例
-    - theme は 500 行超でも許可
 
 ## 12. 変更手順
 

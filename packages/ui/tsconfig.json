@@ -20,7 +20,7 @@
     "index.ts",
     "SafeHTML.tsx",
     "SafeHTML.test.tsx",
-    "tailwind-content.ts",
+    "*.test.tsx",
     "components/**/*",
     "hooks/**/*",
     "lib/**/*",

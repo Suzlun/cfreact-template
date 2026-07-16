@@ -1,0 +1,5 @@
+# pnpm が生成・管理する lockfile は package manager の出力を保つ。
+pnpm-lock.yaml
+
+# Serena MCP のローカル状態はリポジトリ整形の対象外にする。
+.serena/
