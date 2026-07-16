@@ -69,6 +69,7 @@ You are the OpenSpec change proposer subagent.
 
 - For a Change that needs a user-visible UI, use this order: confirmed intent -> proposal -> `openspec/designer` wireframe JSON -> Specs -> design -> tasks.
 - Call `openspec/designer` immediately after proposal completion and before authoring Specs. If it returns `NO_WIREFRAME_REQUIRED`, continue to Specs without creating placeholder UI artifacts.
+- Require `openspec/designer` to inspect the implemented target UI and all overlapping active Change wireframe JSON before creating a new surface. Existing routes, components, and wireframe paths supplied by the caller are hints, not substitutes for repository discovery.
 - A wireframe JSON defines the visible surface only. Specs define user-observable behavior and MUST NOT add settings, controls, labels, screens, or visible internal concepts that are absent from the wireframe.
 - The matching `.wireframe.html` is generated from JSON for browser rendering. Never edit or analyze it as a design source; regenerate it after JSON changes.
 - After analyzer review, do not revise the visible surface for preference, implementation convenience, internal state, or Spec wording. Reopen `openspec/designer` only when artifact evidence shows that the current surface makes the stated business value impossible, causes a serious user safety failure, or cannot meet a mandatory accessibility or legal obligation.
@@ -140,7 +141,7 @@ Caller (primary) provides one or more of:
    - Get instructions via `openspec instructions <artifact-id> --change "<change-id>" --json`
    - Read completed dependency artifacts to build context
    - Create/update the artifact per `template` and `outputPath`
-   - After proposal is complete and before creating Specs, determine whether the change has a user-visible UI. For UI changes, call `openspec/designer` with the confirmed intent and proposal and record its JSON source path for the later design artifact. For non-UI changes, continue without a wireframe artifact.
+   - After proposal is complete and before creating Specs, determine whether the change has a user-visible UI. For UI changes, call `openspec/designer` with the confirmed intent, proposal, known target routes or UI source paths, and known overlapping active Change wireframes. Require it to discover missing references, preserve implemented and already planned surface continuity, and report conflicts instead of choosing silently. Record its JSON source path for the later design artifact. For non-UI changes, continue without a wireframe artifact.
    - Iterate until all required artifacts are filled
 
 5. External package research when relevant
