@@ -7,8 +7,8 @@
 ## What Changes
 
 <!-- TODO: User/operator-facing changes. List additions/changes/removals. Mark breaking changes with **BREAKING**. -->
-<!-- Good: "Public frontend is served via SvelteKit SSR." -->
-<!-- Bad: "Replace packages/frontend/public-app with SvelteKit." -->
+<!-- Good: "Public frontend is served as a React SPA through Cloudflare Workers Static Assets." -->
+<!-- Bad: "Replace packages/frontend/public-app with React." -->
 
 ## Spec Units
 

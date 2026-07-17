@@ -8,7 +8,7 @@
   - `eslint.config.js` は規約の自動検査（実装）として追従させます
 - 仕様（契約）: `openspec/specs/**/spec.md`
   - `pnpm lint` で `openspec validate --all --strict`、Change Intent 確認ゲート、Scenario ID カバレッジ検査が走ります
-  - `openspec/changes/**` の delta spec は、`/opsx-sync` または `openspec archive` で main spec に反映してから検査対象になります
+  - `openspec/changes/**` の delta spec は、`/opsx-sync` または `/opsx-archive` で main spec に反映してから検査対象になります
 
 ## 前提環境
 

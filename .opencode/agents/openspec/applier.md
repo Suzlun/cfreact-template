@@ -96,7 +96,7 @@ If required inputs are missing, stop and list the missing items.
 # Work order (strict)
 
 0. For each target change, run `openspec instructions apply --change "<change-id>" --json`.
-1. Read every returned `contextFiles` path, explicitly including confirmed `intent.md`, plus each `.wireframe.json` source under the target change when UI is in scope, and evaluate AR-001 through AR-010 from `openspec-apply-readiness`. Treat generated `.wireframe.html` files as render-only previews.
+1. Read every returned `contextFiles` path, explicitly including confirmed `intent.md`, plus each `.wireframe.json` source under the target change when UI is in scope, and evaluate AR-001 through AR-010 from `openspec-apply-readiness`. Treat generated `.wireframe.html` files and screenshots as `openspec/designer` rendering evidence only.
 2. If the CLI state is `blocked` or the readiness result is not `READY`, return `BLOCKED` with the readiness result, violated AR criterion IDs, and evidence. Do not delegate artifact repair or change the change contents.
 3. If the CLI state is `ready` and the readiness result is `READY`, split `tasks` into minimal units, compute the dependency-safe ready set, and delegate every ready unit:
    - Frontend work -> `.opencode/agents/unit/frontend/engineer.md` (`@unit/frontend/engineer`)
@@ -134,7 +134,7 @@ Note: if a commit is needed, delegate it to `@unit/build/builder` after the requ
 - Treat release execution, deployment, environment provisioning, credential access or probes, external approval, staging or production validation, operational rehearsal, and production observation in a task or completion condition as an artifact scope violation. Never delegate, await, or execute such work; return the violated apply-readiness criteria so the proposer can remove it.
 - Implement the approved visible surface from `.wireframe.json` without revising it. You may resolve self-evident implementation details that preserve the existing user actions, information structure, and visible copy, such as component choice, responsive mechanics, focus behavior, or accessible naming.
 - Never infer a new visible control, screen, setting, selector, explanatory copy, version, model name, or internal state. If artifacts conflict or a serious business-value, safety, accessibility, or legal failure cannot be resolved within the existing surface, block only the affected work and return the evidence to the caller. Continue dependency-safe work that is independent of the blocked UI task, but do not report the Change complete.
-- Never edit a generated `.wireframe.html` preview. Any upstream visual correction changes JSON and regenerates the preview before apply resumes.
+- Never edit or recapture generated `.wireframe.html` previews or screenshots. Any upstream visual correction returns to `openspec/designer`, changes JSON, and regenerates both evidence artifacts before apply resumes.
 - Do not invent, relax, or privately extend apply-readiness criteria. Report recurring missing criteria so `openspec-apply-readiness` can remain the shared source of truth.
 - Do not hand-edit `generated/**`.
 - Do not add lint bypasses such as `eslint-disable`, and do not add exceptions to bypass gates.

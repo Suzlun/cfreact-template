@@ -22,7 +22,7 @@ Hard rules
 - ただし Change のスコープ自体は「承認後に TypeSpec -> 生成 -> 実装 -> テスト/ビルドまで到達する一連」を含むものとして扱う（= tasks.md には実装までのチェックリストを必ず書く）
 - proposal/tasks で「この提案フェーズでは変更なし」「実装は後続 change/後続フェーズ」など Change のスコープを縮める表現を入れない（実行スコープと Change スコープを混同しない）
 - `generated/**` を手編集しない
-- 既存の OpenSpec ルールに従う（`openspec/AGENTS.md`）
+- 既存の OpenSpec ルールに従う（`openspec/config.yaml` と `openspec/schemas/new-feature/schema.yaml`）
 
 Preflight context
 
@@ -37,8 +37,8 @@ Process
 
 - Read:
   - `AGENTS.md`
-  - `openspec/AGENTS.md`
-  - `openspec/project.md`
+  - `openspec/config.yaml`
+  - `openspec/schemas/new-feature/schema.yaml`
 
 2. Interpret the design brief
 

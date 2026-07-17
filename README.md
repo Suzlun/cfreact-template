@@ -477,10 +477,11 @@ OpenSpec は仕様駆動開発（Spec-Driven Development）のためのワーク
 
 1. **Intent**: 依頼を成果・必須制約・候補手段に分け、repository の事実と照合した解釈を所有者が確認する
 2. **Proposal**: 確認済み Intent から目的・変更範囲・影響を固める
-3. **Specs**: 仕様（要求・受け入れ条件）を文書化する
-4. **Design**: 実装方針・設計を固める
-5. **Tasks**: 実装可能なタスクに分解する
-6. **Apply**: tasks に沿って実装する
+3. **Wireframe**: UIがある場合は`openspec/designer`がJSON、生成preview、screenshot evidenceを確定する
+4. **Specs**: 仕様（要求・受け入れ条件）を文書化する
+5. **Design**: 実装方針・設計を固める
+6. **Tasks**: 実装可能なタスクに分解する
+7. **Apply**: tasks に沿って実装する
 
 `intent.md`が`CONFIRMED`になる前に下流 artifact を作成することは、`pnpm lint:openspec`で拒否されます。
 
