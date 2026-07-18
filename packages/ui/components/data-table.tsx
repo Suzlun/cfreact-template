@@ -1,11 +1,5 @@
 import * as React from 'react';
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-  type ColumnDef,
-  type Row,
-} from '@tanstack/react-table';
+import { flexRender } from '@tanstack/react-table';
 
 import {
   Table,
@@ -18,6 +12,8 @@ import {
 } from '@cfreact-template/ui/components/table';
 import { cn } from '@cfreact-template/ui/lib/utils';
 
+import { useDataTableModel, type DataTableModelOptions } from './data-table-model';
+
 /**
  * 共通 DataTable の入力値。
  * 列定義と行データは TanStack Table の型で受け取り、行識別子は必要な場合だけ呼び出し元が指定する。
@@ -26,17 +22,12 @@ import { cn } from '@cfreact-template/ui/lib/utils';
  * @typeParam TData テーブルの各行が持つデータ型。
  * @typeParam TValue 各列が評価する値の型。
  */
-interface DataTableProps<TData, TValue> extends React.HTMLAttributes<HTMLDivElement> {
-  /** 列の見出し、セル表示、アクセシビリティ情報を定義する TanStack Table 列定義。 */
-  columns: ColumnDef<TData, TValue>[];
-  /** 表示する行データ。空配列の場合は emptyMessage を表示する。 */
-  data: TData[];
+interface DataTableProps<TData, TValue>
+  extends React.HTMLAttributes<HTMLDivElement>, DataTableModelOptions<TData, TValue> {
   /** 行が存在しない場合に表へ表示するメッセージ。省略時は英語の既定文言を使用する。 */
   emptyMessage?: React.ReactNode;
   /** table 要素へ付与する caption。表の目的を支援技術へ伝える場合に指定する。 */
   caption?: React.ReactNode;
-  /** 各行の安定した識別子を導出する関数。未指定時は TanStack Table の既定識別子を使用する。 */
-  getRowId?: (originalRow: TData, index: number, parent?: Row<TData>) => string;
 }
 
 /**
@@ -61,12 +52,7 @@ function DataTable<TData, TValue>({
   className,
   ...props
 }: DataTableProps<TData, TValue>) {
-  const table = useReactTable({
-    columns,
-    data,
-    getCoreRowModel: getCoreRowModel(),
-    getRowId,
-  });
+  const table = useDataTableModel({ columns, data, getRowId });
 
   return (
     <div

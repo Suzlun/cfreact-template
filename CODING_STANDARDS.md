@@ -195,24 +195,32 @@
     import { x } from '@cfreact-template/backend/domain';
     ```
 
-- ESLint の disable コメントを書かない
-  - 強制: `pnpm lint` → `eslint .` → `rules['eslint-comments/no-use']` → `eslint.config.js`
-  - 補足
-    - 例外が必要な場合は、インラインコメントで回避せず、対象ファイルを限定した ESLint 設定で意図を明示する
+- ESLint の inline 無効化は、許可リストにある単発例外を `eslint-disable-next-line` で1ルールだけ無効化する場合に限定する
+  - 強制: `pnpm lint` → `eslint .` → `eslint-comments/*`, `project/require-disable-justification` → `eslint.config.js`, `scripts/eslint/**`
+  - 必須項目
+    - `理由:`
+    - `検討した代替案:`
+    - `不採用理由:`
+    - `再評価条件:`
+  - 制約
+    - 各項目は空白を除いて15文字以上にする
+    - `TODO`, `TBD`, `FIXME`, `不明`, `仮対応`, `一時対応`などの未確定表現を書かない
+    - `eslint-disable`, `eslint-disable-line`, 複数ルールの同時無効化を使わない
+    - 境界、型安全性、Hooksの正しさ、セキュリティのルールは無効化しない
   - NG例
     ```ts
-    // eslint-disable-next-line no-alert
-    alert('ok');
+    // eslint-disable-next-line no-restricted-imports -- 必要だから
+    import { apiClient } from '@cfreact-template/frontend/api';
     ```
   - OK例
-    ```js
-    // eslint.config.js
-    {
-      files: ['packages/ui/SafeHTML.tsx'],
-      rules: {
-        'react/no-danger': 'off',
-      },
-    }
+    ```ts
+    /* eslint-disable-next-line project/no-manual-memoization --
+     * 理由: 外部ライブラリの解除APIが登録時と同一のcallback参照を要求するため。
+     * 検討した代替案: callbackをEffect内部で生成し、登録と解除を同じEffectへ閉じ込める案を検討した。
+     * 不採用理由: 外部ライブラリがEffect外の公開APIにも同じcallback参照を要求するため適用できない。
+     * 再評価条件: 外部ライブラリが購読解除関数を返すAPIへ変更された更新時に例外を削除する。
+     */
+    const callback = useCallback(handleChange, [handleChange]);
     ```
 
 ## 6. 公開 API のドキュメント
@@ -518,19 +526,19 @@
     import { useUsers } from '@cfreact-template/frontend/domain/hooks/users';
     ```
 
-- Components で使える React 組み込み Hooks は `useMemo` と `useCallback` だけ
+- Components では React 組み込み Hooks を使わない
   - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` と `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/frontend/src/app/components/**/*.{ts,tsx}']`
   - NG例
     ```tsx
-    import { useEffect } from 'react';
+    import { useMemo } from 'react';
     ```
   - OK例
     ```tsx
-    import { useMemo } from 'react';
+    const visibleUsers = users.filter((user) => user.isVisible);
     ```
 
 - React Hooks のルールを守る
-  - 強制: `pnpm lint` → `eslint .` → `rules['react-hooks/rules-of-hooks']` と `rules['react-hooks/exhaustive-deps']` → `eslint.config.js`
+  - 強制: `pnpm lint` → `eslint .` → `eslint-plugin-react-hooks` の `recommended-latest` → `eslint.config.js`
   - NG例
 
     ```tsx
@@ -544,6 +552,38 @@
       }
       return null;
     }
+    ```
+
+- frontend と UI の通常のメモ化は React Compiler に委譲する
+  - 強制: `packages/frontend/vite.config.ts`, `packages/frontend/vitest.app.config.ts`, `packages/ui/vitest.config.ts` → `@cfreact-template/build-config/react-compiler`
+  - 強制: domain と手書き UI の手動メモ化 → `project/no-manual-memoization` → `scripts/eslint/rules/no-manual-memoization.mjs`
+  - 補足
+    - domain Hook の `{ data, actions }` 契約は維持し、参照同一性を正しさの契約にしない
+    - app pages は `useState` だけを許可し、app components はReact組み込みHookを使わない
+    - domain と UI の Effect は外部システムとの同期に限定する
+    - shadcn registry由来で既存の手動メモ化を維持するファイルは `scripts/eslint/disable-policy.mjs` の `upstreamManualMemoizationFiles` だけを対象外にする
+  - NG例
+    ```ts
+    const actions = useMemo(() => ({ reload }), [reload]);
+    ```
+  - OK例
+    ```ts
+    const actions = { reload };
+    ```
+
+- 頻出する Compiler 非互換 API は専用境界へ集約する
+  - 強制: `project/enforce-library-boundaries` → `scripts/eslint/disable-policy.mjs`, `scripts/eslint/rules/enforce-library-boundaries.mjs`
+  - 現在の専用境界
+    - `@tanstack/react-table` の `useReactTable`, `getCoreRowModel` → `packages/ui/components/data-table-model.ts`
+  - NG例
+    ```ts
+    // data-table-model.ts 以外
+    import { useReactTable } from '@tanstack/react-table';
+    ```
+  - OK例
+
+    ```ts
+    import { DataTable } from '@cfreact-template/ui/components/data-table';
     ```
 
   - OK例
@@ -949,6 +989,17 @@
   - OK例
     - upstream registry 由来の export 形状、内部サブパス import、React 参照型は対象ファイル内で維持する
 
+- ESLint 例外は発生頻度で管理方法を分ける
+  - 単発でコード固有の例外
+    - 対象行へ構造化した `eslint-disable-next-line` を置く
+    - 許可ルールは `scripts/eslint/disable-policy.mjs` で管理する
+  - 今後も同じAPIで繰り返す例外
+    - 専用の内部境界へ処理を集約する
+    - 利用側からの直接importを `project/enforce-library-boundaries` で禁止する
+    - Compiler診断は専用境界ファイルだけ設定側で無効化する
+  - ファイル群が同じ由来と理由を共有する例外
+    - 生成コード、registry由来コード、テストのようなカテゴリ単位で設定する
+
 - vendored OpenCode skill script は upstream tool として ESLint 対象から除外する
   - 強制: `pnpm lint` → `eslint .` → `ignores: ['.opencode/skills/impeccable/scripts/**']` → `eslint.config.js`
   - 対象
@@ -988,7 +1039,7 @@ fail 条件
 - `pnpm lint` は ESLint の error、OpenSpec チェック、サプライチェーン設定チェックで失敗する
   - 強制: `scripts.lint` → `package.json`
   - 内訳
-    - `pnpm lint:eslint` は `eslint .` を実行
+    - `pnpm lint:eslint` はローカルESLintルールのテスト後に `eslint .` を実行
     - `pnpm lint:openspec` は `openspec validate --all --strict`、Change Intent確認、Scenario IDカバレッジ、Change task scope、wireframe previewの各検査を実行
     - `pnpm lint:supply-chain` は `node scripts/security/verify-pnpm-supply-chain.mjs` を実行
 - サプライチェーン対策の pnpm 設定を弱めない

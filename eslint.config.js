@@ -14,6 +14,13 @@ import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
 
 import maxlinesConfig from './.eslintrc-maxlines.json' with { type: 'json' };
+import {
+  inlineDisableAllowedRules,
+  recurringCompilerExceptionBoundaries,
+  restrictedDisablePatterns,
+  upstreamManualMemoizationFiles,
+} from './scripts/eslint/disable-policy.mjs';
+import { projectEslintPlugin } from './scripts/eslint/plugin.mjs';
 
 const compat = new FlatCompat();
 
@@ -128,6 +135,10 @@ export default tseslint.config(
 
   // 全体設定
   {
+    linterOptions: {
+      reportUnusedDisableDirectives: 'error',
+      reportUnusedInlineConfigs: 'error',
+    },
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -145,6 +156,7 @@ export default tseslint.config(
       boundaries: boundaries,
       security: security,
       sonarjs: sonarjs,
+      project: projectEslintPlugin,
     },
     settings: {
       'import/resolver': {
@@ -228,12 +240,26 @@ export default tseslint.config(
       'eslint-comments/no-unused-disable': 'error',
       'eslint-comments/disable-enable-pair': 'error',
       'eslint-comments/require-description': [
-        'warn',
+        'error',
         {
           ignore: [],
         },
       ],
-      'eslint-comments/no-use': 'error',
+      'eslint-comments/no-unlimited-disable': 'error',
+      'eslint-comments/no-restricted-disable': ['error', ...restrictedDisablePatterns],
+      'eslint-comments/no-use': [
+        'error',
+        {
+          allow: ['eslint-disable-next-line'],
+        },
+      ],
+      'project/require-disable-justification': [
+        'error',
+        {
+          allowedRules: inlineDisableAllowedRules,
+          minimumFieldLength: 15,
+        },
+      ],
 
       // ===== Import/Export =====
       'import/no-duplicates': 'error',
@@ -585,6 +611,7 @@ export default tseslint.config(
       },
     },
     rules: {
+      ...reactHooks.configs.flat['recommended-latest'].rules,
       // ===== React =====
       'react/jsx-key': 'error',
       'react/jsx-no-target-blank': 'error',
@@ -601,10 +628,6 @@ export default tseslint.config(
           children: 'never',
         },
       ],
-
-      // ===== React Hooks =====
-      'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'error',
 
       // ===== React Refresh (Vite HMR) =====
       'react-refresh/only-export-components': [
@@ -626,6 +649,73 @@ export default tseslint.config(
       'jsx-a11y/no-static-element-interactions': 'warn',
       'jsx-a11y/aria-props': 'error',
       'jsx-a11y/role-has-required-aria-props': 'error',
+    },
+  },
+
+  // 共有UIもCompiler診断を適用し、安全に最適化できない実装を局所化する
+  {
+    files: ['packages/ui/**/*.{ts,tsx}'],
+    plugins: {
+      'react-hooks': reactHooks,
+    },
+    rules: {
+      ...reactHooks.configs.flat['recommended-latest'].rules,
+    },
+  },
+
+  // 頻出するCompiler非互換APIは専用境界へ集約し、利用側からの直接importを禁止する
+  {
+    files: ['packages/frontend/src/**/*.{ts,tsx}', 'packages/ui/**/*.{ts,tsx}'],
+    rules: {
+      'project/enforce-library-boundaries': [
+        'error',
+        {
+          boundaries: recurringCompilerExceptionBoundaries,
+        },
+      ],
+    },
+  },
+
+  // 専用境界では既知のCompiler診断だけを設定側で管理し、利用箇所へdisableを重複させない
+  ...recurringCompilerExceptionBoundaries.flatMap((boundary) =>
+    boundary.allowedFiles.map((file) => ({
+      files: [file],
+      rules: {
+        [boundary.disabledRule]: 'off',
+      },
+    }))
+  ),
+
+  // Domainと手書きUIの通常の手動メモ化はCompilerへ委譲する
+  {
+    files: [
+      'packages/frontend/src/domain/**/*.{ts,tsx}',
+      'packages/ui/index.ts',
+      'packages/ui/SafeHTML.tsx',
+      'packages/ui/components/**/*.{ts,tsx}',
+      'packages/ui/hooks/**/*.{ts,tsx}',
+      'packages/ui/lib/**/*.{ts,tsx}',
+    ],
+    ignores: upstreamManualMemoizationFiles,
+    rules: {
+      'project/no-manual-memoization': 'error',
+    },
+  },
+
+  // appはReact名前空間の別名を禁止し、層別Hook制約をnamed importだけで検査可能にする
+  {
+    files: [
+      'packages/frontend/src/app/pages/**/*.{ts,tsx}',
+      'packages/frontend/src/app/components/**/*.{ts,tsx}',
+    ],
+    ignores: [
+      'packages/frontend/src/app/**/*.test.ts',
+      'packages/frontend/src/app/**/*.test.tsx',
+      'packages/frontend/src/app/**/*.spec.ts',
+      'packages/frontend/src/app/**/*.spec.tsx',
+    ],
+    rules: {
+      'project/no-react-namespace-imports': 'error',
     },
   },
 
@@ -1081,15 +1171,15 @@ export default tseslint.config(
         },
         {
           selector:
-            'CallExpression[callee.name=/^(useReducer|useEffect|useLayoutEffect|useInsertionEffect|useRef|useImperativeHandle|useTransition|useDeferredValue|useId|useSyncExternalStore|useOptimistic|useActionState)$/]',
+            'CallExpression[callee.name=/^(useMemo|useCallback|useReducer|useEffect|useLayoutEffect|useInsertionEffect|useRef|useImperativeHandle|useTransition|useDeferredValue|useId|useSyncExternalStore|useOptimistic|useActionState)$/]',
           message:
-            'Components 層では React の組み込み Hooks は useMemo/useCallback のみに限定し、その他は hooks 層に委譲してください。',
+            'Components 層では React の組み込み Hooks を使わず、状態と副作用は hooks 層へ、通常のメモ化はReact Compilerへ委譲してください。',
         },
         {
           selector:
-            "CallExpression[callee.object.name='React'][callee.property.name=/^(useReducer|useEffect|useLayoutEffect|useInsertionEffect|useRef|useImperativeHandle|useTransition|useDeferredValue|useId|useSyncExternalStore|useOptimistic|useActionState)$/]",
+            "CallExpression[callee.object.name='React'][callee.property.name=/^(useMemo|useCallback|useReducer|useEffect|useLayoutEffect|useInsertionEffect|useRef|useImperativeHandle|useTransition|useDeferredValue|useId|useSyncExternalStore|useOptimistic|useActionState)$/]",
           message:
-            'Components 層では React の組み込み Hooks は useMemo/useCallback のみに限定し、その他は hooks 層に委譲してください。',
+            'Components 層では React の組み込み Hooks を使わず、状態と副作用は hooks 層へ、通常のメモ化はReact Compilerへ委譲してください。',
         },
       ],
       'no-restricted-imports': [
@@ -1105,6 +1195,8 @@ export default tseslint.config(
             {
               name: 'react',
               importNames: [
+                'useMemo',
+                'useCallback',
                 'useReducer',
                 'useEffect',
                 'useLayoutEffect',
@@ -1119,7 +1211,7 @@ export default tseslint.config(
                 'useActionState',
               ],
               message:
-                'Components 層では React の組み込み Hooks は useMemo/useCallback のみに限定し、その他は hooks 層に委譲してください。',
+                'Components 層では React の組み込み Hooks を使わず、状態と副作用は hooks 層へ、通常のメモ化はReact Compilerへ委譲してください。',
             },
           ],
         },
@@ -1667,6 +1759,25 @@ export default tseslint.config(
       'unicorn/no-array-for-each': 'off',
     },
   },
+  // Node ESMの設定・テストは実行時解決に必要な拡張子を明示する
+  {
+    files: ['eslint.config.js', 'scripts/eslint/**/*.mjs'],
+    rules: {
+      'import/extensions': [
+        'error',
+        'ignorePackages',
+        {
+          js: 'always',
+          jsx: 'never',
+          mjs: 'always',
+          cjs: 'always',
+          ts: 'never',
+          tsx: 'never',
+        },
+      ],
+    },
+  },
+
   // JavaScript ファイルの設定
   {
     files: ['**/*.js', '**/*.cjs', '**/*.mjs'],

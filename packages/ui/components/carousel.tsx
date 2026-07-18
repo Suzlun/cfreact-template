@@ -11,6 +11,9 @@ type CarouselApi = UseEmblaCarouselType[1];
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
 type CarouselOptions = UseCarouselParameters[0];
 type CarouselPlugin = UseCarouselParameters[1];
+type CarouselScrollSnapshot = 'both' | 'next' | 'none' | 'previous';
+
+const EMPTY_CAROUSEL_SCROLL_SNAPSHOT: CarouselScrollSnapshot = 'none';
 
 type CarouselProps = {
   opts?: CarouselOptions;
@@ -29,6 +32,65 @@ type CarouselContextProps = {
 } & CarouselProps;
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null);
+
+/**
+ * Embla API の移動可否を参照同一性が安定した文字列 snapshot へ変換する。
+ *
+ * @param api 現在の Embla API。初期化前は undefined。
+ * @returns 前後の移動可否を表す外部ストア snapshot。
+ */
+function getCarouselScrollSnapshot(api: CarouselApi): CarouselScrollSnapshot {
+  // Embla 初期化前は両ボタンを無効にする既存状態を維持する。
+  if (!api) return EMPTY_CAROUSEL_SCROLL_SNAPSHOT;
+
+  // 一度の snapshot 取得で前後両方の可否を読み、同じ Embla 状態から結果を確定する。
+  const canScrollPrev = api.canScrollPrev();
+  const canScrollNext = api.canScrollNext();
+
+  if (canScrollPrev && canScrollNext) return 'both';
+  if (canScrollPrev) return 'previous';
+  if (canScrollNext) return 'next';
+  return EMPTY_CAROUSEL_SCROLL_SNAPSHOT;
+}
+
+/**
+ * SSR 中に利用する Carousel の固定 snapshot を返す。
+ *
+ * @returns Embla が存在しない初期状態を表す none。
+ */
+function getServerCarouselScrollSnapshot(): CarouselScrollSnapshot {
+  return EMPTY_CAROUSEL_SCROLL_SNAPSHOT;
+}
+
+/**
+ * Embla の選択位置と再初期化を React の外部ストアとして購読する。
+ *
+ * @param api 購読対象の Embla API。初期化前は undefined。
+ * @returns 現在の前後移動可否を表す安定した snapshot。
+ */
+function useCarouselScrollSnapshot(api: CarouselApi): CarouselScrollSnapshot {
+  const subscribe = React.useCallback(
+    (onStoreChange: () => void) => {
+      // API 初期化前はイベント源がないため、何も解除しない関数を返して契約を満たす。
+      if (!api) return () => undefined;
+
+      // 選択位置の変更と再初期化のどちらでも、React に最新 snapshot の取得を依頼する。
+      api.on('select', onStoreChange);
+      api.on('reInit', onStoreChange);
+
+      return () => {
+        // 登録した両イベントを同じ callback で解除し、破棄後の通知を防止する。
+        api.off('select', onStoreChange);
+        api.off('reInit', onStoreChange);
+      };
+    },
+    [api]
+  );
+
+  const getSnapshot = React.useCallback(() => getCarouselScrollSnapshot(api), [api]);
+
+  return React.useSyncExternalStore(subscribe, getSnapshot, getServerCarouselScrollSnapshot);
+}
 
 function useCarousel() {
   const context = React.useContext(CarouselContext);
@@ -56,14 +118,9 @@ function Carousel({
     },
     plugins
   );
-  const [canScrollPrev, setCanScrollPrev] = React.useState(false);
-  const [canScrollNext, setCanScrollNext] = React.useState(false);
-
-  const onSelect = React.useCallback((api: CarouselApi) => {
-    if (!api) return;
-    setCanScrollPrev(api.canScrollPrev());
-    setCanScrollNext(api.canScrollNext());
-  }, []);
+  const scrollSnapshot = useCarouselScrollSnapshot(api);
+  const canScrollPrev = scrollSnapshot === 'previous' || scrollSnapshot === 'both';
+  const canScrollNext = scrollSnapshot === 'next' || scrollSnapshot === 'both';
 
   const scrollPrev = React.useCallback(() => {
     api?.scrollPrev();
@@ -90,17 +147,6 @@ function Carousel({
     if (!api || !setApi) return;
     setApi(api);
   }, [api, setApi]);
-
-  React.useEffect(() => {
-    if (!api) return;
-    onSelect(api);
-    api.on('reInit', onSelect);
-    api.on('select', onSelect);
-
-    return () => {
-      api?.off('select', onSelect);
-    };
-  }, [api, onSelect]);
 
   return (
     <CarouselContext.Provider

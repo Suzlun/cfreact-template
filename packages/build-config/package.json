@@ -1,0 +1,19 @@
+{
+  "name": "@cfreact-template/build-config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./react-compiler": "./react-compiler.js"
+  },
+  "scripts": {
+    "check": "node --check react-compiler.js"
+  },
+  "dependencies": {
+    "@babel/core": "7.29.7",
+    "@rolldown/plugin-babel": "0.2.3",
+    "@vitejs/plugin-react": "6.0.2",
+    "babel-plugin-react-compiler": "1.0.0",
+    "vite": "8.0.16"
+  }
+}

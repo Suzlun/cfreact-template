@@ -79,6 +79,11 @@ Before beginning any work, you MUST summarize your understanding of the Credo be
 ## Architecture Notes
 
 - Client dependency direction: `frontend/src/app -> frontend/src/domain -> frontend/src/api`; shared UI lives in `packages/ui` and is imported as `@cfreact-template/ui`
+- Frontend domain is the feature-facing React Hook boundary: each `use*` hook returns the complete `{ data, actions }` contract and hides API, cache, loading, error, and workflow details from app/UI code.
+- React Compiler is mandatory for handwritten frontend/domain/UI code and is configured only through `@cfreact-template/build-config/react-compiler`; runtime source must never import build tooling.
+- App pages may use `useState` only; app components must not use React built-in Hooks. Domain/UI effects are limited to external-system synchronization.
+- Ordinary performance-only `useMemo`, `useCallback`, and `memo` are prohibited in domain and handwritten UI code; upstream registry files listed in `scripts/eslint/disable-policy.mjs` retain their external reference contracts.
+- One-off ESLint exceptions use a single structured `eslint-disable-next-line`; recurring incompatible APIs must be isolated behind a reusable boundary declared in `scripts/eslint/disable-policy.mjs`.
 - Server dependency direction: `backend/src/entry -> backend/src/app -> (backend/src/http|backend/src/persistence|backend/src/usecases) -> backend/src/domain -> backend/src/types`
 - API contract direction: implementation must follow TypeSpec; do not generate OpenAPI from server routes for SDK input.
 

@@ -1,26 +1,12 @@
 import { fileURLToPath, URL } from 'node:url';
 
-import reactPlugin from '@vitejs/plugin-react';
-import { defineConfig as defineConfigRaw } from 'vitest/config';
-
-import type { PluginOption, UserConfig } from 'vite';
-
-function react(): PluginOption {
-  type Fn = () => PluginOption;
-  const fn: Fn = reactPlugin as Fn;
-  return fn();
-}
-
-function defineConfig(config: UserConfig): UserConfig {
-  type Fn = (config: UserConfig) => UserConfig;
-  const fn: Fn = defineConfigRaw as Fn;
-  return fn(config);
-}
+import { createReactCompilerPlugins } from '@cfreact-template/build-config/react-compiler';
+import { defineConfig } from 'vitest/config';
 
 /** Vitest 設定 (ui パッケージ) */
 export default defineConfig({
   root: fileURLToPath(new URL('.', import.meta.url)),
-  plugins: [react()],
+  plugins: createReactCompilerPlugins(),
   resolve: {
     alias: {
       'react-transition-group/TransitionGroupContext':

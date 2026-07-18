@@ -31,6 +31,7 @@ description: Enforce this repository's real React, Hono, Drizzle, and TypeSpec r
 - root flow: `package.json`, `.github/workflows/ci.yml`, `.husky/pre-commit`, `.husky/commit-msg`, `.lintstagedrc.json`, `commitlint.config.js`, `eslint.config.js`
 - TypeSpec / codegen: `packages/typespec/package.json`, `packages/typespec/tspconfig.yaml`, `packages/typespec/README.md`, `packages/frontend/orval.config.ts`
 - frontend: `packages/frontend/package.json`, `packages/frontend/tsconfig.*.json`, `packages/frontend/src/app/**`, `packages/frontend/src/domain/**`, `packages/frontend/src/api/**`, `packages/ui/**`
+- React Compiler: `packages/build-config/react-compiler.js`, `packages/frontend/vite.config.ts`, `packages/frontend/vitest.app.config.ts`, `packages/ui/vitest.config.ts`, `scripts/eslint/**`
 - backend: `packages/backend/package.json`, `packages/backend/tsconfig.*.json`, `packages/backend/src/entry/**`, `packages/backend/src/app/**`, `packages/backend/src/http/**`, `packages/backend/src/persistence/**`, `packages/backend/src/usecases/**`, `packages/backend/src/domain/**`, `packages/backend/src/types/**`, `packages/backend/src/drizzle/**`, `packages/backend/src/http/contracts/openapi-contract.test.ts`
 - OpenSpec: `scripts/openspec/verify-change-intent.mjs`, `scripts/openspec/verify-scenario-coverage.mjs`, `scripts/openspec/verify-change-task-scope.mjs`, `scripts/openspec/verify-wireframe-previews.mjs`
 
@@ -54,6 +55,9 @@ description: Enforce this repository's real React, Hono, Drizzle, and TypeSpec r
 - Frontend app / domain で `fetch`, `globalThis.fetch`, `axios`, `cross-fetch` を直接使わない
 - Frontend app の pages / components から `@cfreact-template/frontend/api` を直 import しない。domain hook を経由する
 - React と TSX はこの repo の正規 frontend 実装であり、Svelte 用の制約へ読み替えない
+- frontend/domain/UI の手書き React コードは `@cfreact-template/build-config/react-compiler` の共通設定でコンパイルし、runtime source から build tooling を import しない
+- app components では React 組み込み Hook を使わず、domain と手書き UI の通常の `useMemo` / `useCallback` / `memo` は Compiler へ委譲する。上流由来の対象外は `scripts/eslint/disable-policy.mjs` へ集約する
+- ESLint の単発例外は許可リストにある1ルールだけを構造化した `eslint-disable-next-line` で管理し、頻出する非互換 API は `scripts/eslint/disable-policy.mjs` の専用境界へ集約する
 - `packages/frontend/src/domain/hooks/**` では `use*` export、`{ data, actions }` 戻り値、`*Data` / `*Actions` 型注釈を守る
 - 再利用したい見た目は `@cfreact-template/ui` に寄せ、画面固有の構成だけを `packages/frontend/src/app` に置く
 - Backend HTTP は `packages/backend/src/http`、配線は `packages/backend/src/app`、永続化は `packages/backend/src/persistence` / `packages/backend/src/drizzle` に置く
@@ -92,6 +96,9 @@ Changed-file 向けの軽量チェック:
 - `packages/frontend/src/app` から `@cfreact-template/frontend/api` の直 import
 - frontend app / domain での `fetch` / `axios` / `cross-fetch`
 - hooks が `{ data, actions }` を返さない
+- React Compiler 設定を frontend/UI ごとに複製する、または runtime source から build tooling を参照する
+- 頻出する Compiler 非互換 API を専用境界外から直接 import する
+- 理由・代替案・不採用理由・再評価条件のない `eslint-disable-next-line`
 - export に必要な TSDoc がない
 - `packages/backend/src/http` から `packages/backend/src/persistence` の直 import
 - HTTP 層での `c.env` 直接参照

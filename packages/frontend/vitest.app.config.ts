@@ -1,11 +1,11 @@
 import { fileURLToPath, URL } from 'node:url';
 
-import react from '@vitejs/plugin-react';
+import { createReactCompilerPlugins } from '@cfreact-template/build-config/react-compiler';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   root: fileURLToPath(new URL('.', import.meta.url)),
-  plugins: [react()],
+  plugins: createReactCompilerPlugins(),
   resolve: {
     alias: {
       'react-transition-group/TransitionGroupContext':

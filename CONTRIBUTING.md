@@ -69,7 +69,7 @@ Husky によりコミット時に検証されます。
 ## 変更を入れるときの原則
 
 - まず `CODING_STANDARDS.md` の意図（層の責務・依存方向）に沿って配置する
-- “例外” は最小にする（ESLint disable コメントは禁止。必要な例外は対象を限定した設定で理由を明示する）
+- ESLint 例外は `CODING_STANDARDS.md` の分類に従い、単発なら構造化した `eslint-disable-next-line`、反復する外部 API なら専用境界と import 制約で管理する
 - 自動生成ファイルは手で直さない
   - 例: `packages/frontend/src/api/generated/**`
 - 仕様が変わる変更は spec とテストをセットで更新する
@@ -77,6 +77,17 @@ Husky によりコミット時に検証されます。
   - 自動化できない Scenario は `Tags: manual` を明示する
 - OpenSpec Change は、依頼の意味を repository の事実と照合して所有者が確認した`intent.md`から開始する
   - `Intent-Status: CONFIRMED`と`Owner-Confirmation: CONFIRMED`になる前にproposal以降を作成しない
+
+## React Compiler と Hooks
+
+- frontend と UI の dev、test、build は `@cfreact-template/build-config/react-compiler` の同一設定を使用します。
+- domain Hook の `{ data, actions }` 契約は性能都合で分割せず、通常のメモ化は React Compiler に委譲します。
+- app pages で使用できる React 組み込み Hook は `useState` だけです。app components では React 組み込み Hook を使用しません。
+- domain と UI の Effect はブラウザ API、外部ストア、外部ライブラリとの同期だけに使用します。派生値を state へコピーしません。
+- `useMemo`、`useCallback`、`memo` はdomainと手書きUIへ通常の性能目的で追加しません。外部契約が参照同一性を要求する場合だけ、許可リストと構造化理由で例外化します。
+- shadcn registry由来で既存の手動メモ化を維持するファイルは `scripts/eslint/disable-policy.mjs` へ集約し、手書きUIを同じ対象外へ暗黙に含めません。
+- 同じ非互換 API が繰り返し使われる場合は inline disable を複製せず、`scripts/eslint/disable-policy.mjs` に専用境界を定義します。
+- 構造化 inline 例外の必須書式と無効化できないルールは `CODING_STANDARDS.md` を参照してください。
 
 ## 自動生成
 
