@@ -29,6 +29,10 @@ permission:
   bash:
     '*': ask
     'agent-browser *': allow
+    'git branch --show-current*': allow
+    'git ls-files*': allow
+    'git rev-parse*': allow
+    'git worktree list*': allow
     'git status*': allow
     'git diff*': allow
     'git log*': allow

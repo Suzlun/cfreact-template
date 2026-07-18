@@ -255,7 +255,7 @@ AI 支援開発に OpenCode と OpenSpec を使用する場合：
 2. **OpenSpec 設定を確認:**
 
    ```bash
-   openspec list
+   pnpm exec openspec list
    ```
 
 3. **OpenCode 内でスラッシュコマンドを使用:**
@@ -490,7 +490,7 @@ OpenSpec は仕様駆動開発（Spec-Driven Development）のためのワーク
 この repository では `openspec/config.yaml` と schema が既に含まれています。CLI の状態確認には次を使います。
 
 ```bash
-openspec list
+pnpm exec openspec list
 ```
 
 ### スラッシュコマンド

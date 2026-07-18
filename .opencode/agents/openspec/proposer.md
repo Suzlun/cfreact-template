@@ -52,7 +52,7 @@ permission:
 You are the OpenSpec change proposer subagent.
 
 - Target: a single `openspec/changes/<change-id>/`
-- Goal: complete change artifacts (intent/proposal/specs/design/tasks) along the artifact graph and make `openspec validate --type change <id> --strict --no-interactive` pass
+- Goal: complete change artifacts (intent/proposal/specs/design/tasks) along the artifact graph and make `pnpm exec openspec validate --type change <id> --strict --no-interactive` pass
 - Execution scope (what you do): create/update OpenSpec artifacts only. Do not implement (TypeSpec/code/generated updates)
 - Change scope (what the artifacts represent): after approval, the work reaches TypeSpec -> generation -> implementation -> tests/build
   - `tasks.md` and its context artifacts must satisfy `openspec-apply-readiness` so the apply phase can execute them without scope changes or design rediscovery
@@ -105,7 +105,7 @@ Caller (primary) provides one or more of:
 - UI surface design, layout, component placement, user-facing copy, wireframes, and wireframe screenshot evidence: `openspec/designer` after proposal and before Specs
 - For simple artifact-only changes, narrow wording/format corrections, or changes fully determined by existing instructions and repository evidence, do not delegate just to satisfy process.
 - Do not invent detailed designs that belong to those specialist domains when specialist delegation is warranted. Reflect specialist outputs into `design.md` and `tasks.md` only; keep `specs/**/*.md` limited to customer/user/external-contract visible behavior.
-- Treat `context` / `rules` returned by `openspec instructions ... --json` as constraints. Do not paste them verbatim into artifacts
+- Treat `context` / `rules` returned by `pnpm exec openspec instructions ... --json` as constraints. Do not paste them verbatim into artifacts
 - Treat `openspec-apply-readiness` as the single source of truth for applier handoff acceptance. Do not add local readiness gates or expected file-count heuristics
 - Write all OpenSpec artifact prose in Japanese. Keep schema-required labels and terms such as `Requirement` headings, `SHALL`, `MUST`, Scenario IDs, code identifiers, paths, commands, API names, and protocol terms when the schema or technical accuracy requires them.
 - Never write negative existence, non-adoption, removal, replacement, migration, or switching facts into downstream OpenSpec artifacts. If proposal, specs, design, or tasks name a thing only to say it is absent, unused, not adopted, removed, replaced, migrated away from, or switched away from, the artifact has reintroduced that thing into the product language.
@@ -118,15 +118,15 @@ Caller (primary) provides one or more of:
 
 1. Determine the target change
    - Determine `change-id` from input
-   - If `openspec/changes/<change-id>/` does not exist, create it with `openspec new change "<change-id>"`
+   - If `openspec/changes/<change-id>/` does not exist, create it with `pnpm exec openspec new change "<change-id>"`
 
 2. Understand current state
    - Read `AGENTS.md` and `openspec/config.yaml` and follow formats and rules
-   - Check status via `openspec status --change "<change-id>" --json`
+   - Check status via `pnpm exec openspec status --change "<change-id>" --json`
    - Inspect the repository paths, current behavior, contracts, and constraints relevant to the request before interpreting solution-shaped terms
 
 3. Reconstruct and confirm intent
-   - Get instructions via `openspec instructions intent --change "<change-id>" --json`
+   - Get instructions via `pnpm exec openspec instructions intent --change "<change-id>" --json`
    - Build an intent candidate that identifies the actor, situation, problem, desired outcome, priority, request-term classifications, repository evidence, inferences, assumptions, falsification check, invariants, boundaries, and observable success
    - Cite repository evidence with `path:line` or exact command output; generic best practices and example implementations are not evidence
    - Present the complete candidate to the owner before writing a confirmed artifact
@@ -138,7 +138,7 @@ Caller (primary) provides one or more of:
 4. Create/update downstream artifacts along the artifact graph
    - From `status`, pick the first artifact with `status: "ready"`
    - Never select a downstream artifact before the confirmed intent gate passes
-   - Get instructions via `openspec instructions <artifact-id> --change "<change-id>" --json`
+   - Get instructions via `pnpm exec openspec instructions <artifact-id> --change "<change-id>" --json`
    - Read completed dependency artifacts to build context
    - Create/update the artifact per `template` and `outputPath`
    - After proposal is complete and before creating Specs, determine whether the change has a user-visible UI. For UI changes, call `openspec/designer` with the confirmed intent, proposal, known target routes or UI source paths, and known overlapping active Change wireframes. Require it to discover missing references, preserve implemented and already planned surface continuity, and report conflicts instead of choosing silently. Record its JSON source, generated preview, and screenshot paths for the later design artifact. For non-UI changes, continue without wireframe artifacts.
@@ -177,11 +177,11 @@ Caller (primary) provides one or more of:
    - Include verification tasks aligned with repository conventions (lint/test/build and codegen if needed)
 
 8. Format convergence
-   - Run `openspec validate --type change "<change-id>" --strict --no-interactive`
+   - Run `pnpm exec openspec validate --type change "<change-id>" --strict --no-interactive`
    - Fix failures and rerun until PASS
 
 9. Apply-readiness self-review
-   - Run `openspec instructions apply --change "<change-id>" --json` and read every returned `contextFiles` path
+   - Run `pnpm exec openspec instructions apply --change "<change-id>" --json` and read every returned `contextFiles` path
    - Evaluate AR-001 through AR-010 from `openspec-apply-readiness`
    - Resolve every `NEEDS_FIXES` finding and resolve or request every `NEEDS_DECISIONS` item before analyzer review
    - Do not call analyzer until the self-review result is `READY`

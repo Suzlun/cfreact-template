@@ -19,6 +19,29 @@ permission:
   skill: allow
   bash:
     '*': ask
+    'agent-browser open http://localhost:5173*': allow
+    'agent-browser read http://localhost:5173*': allow
+    'agent-browser snapshot*': allow
+    'agent-browser get *': allow
+    'agent-browser is *': allow
+    'agent-browser hover *': allow
+    'agent-browser focus *': allow
+    'agent-browser scroll*': allow
+    'agent-browser wait*': allow
+    'agent-browser set viewport *': allow
+    'agent-browser set device *': allow
+    'agent-browser set media *': allow
+    'agent-browser screenshot /tmp/opencode/**': allow
+    'agent-browser console*': allow
+    'agent-browser errors*': allow
+    'agent-browser back*': allow
+    'agent-browser forward*': allow
+    'agent-browser reload*': allow
+    'agent-browser close*': allow
+    'git branch --show-current*': allow
+    'git ls-files*': allow
+    'git rev-parse*': allow
+    'git worktree list*': allow
     'git diff*': allow
     'git status*': allow
     'git log*': allow
@@ -81,6 +104,7 @@ When a review affects a viewable UI surface, layout, visual hierarchy, responsiv
 - Do not use the `task` tool except to call `researcher`
 - Treat any unresolved `impeccable` or `design-audit` violation found in your direct review as verdict `BLOCKED`, not `Request changes`
 - Run `node .opencode/skills/impeccable/scripts/detect.mjs --json <paths>` for changed UI files when feasible; unresolved relevant detector findings are `BLOCKED`
+- Use `agent-browser` only for read-only inspection of `http://localhost:5173`; do not click controls, submit forms, or persist browser state, and save any screenshot only under `/tmp/opencode/`
 - Do not request visible controls, settings, copy, screens, versions, model names, or internal state as review improvements. If the approved wireframe causes a serious business-value, safety, accessibility, or legal failure, return `BLOCKED` with evidence for proposal-phase escalation.
 - Do not overclaim. If references are insufficient, say what is missing and what to inspect next
 - Call out deviations from existing conventions and structure with evidence references

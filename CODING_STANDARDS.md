@@ -1040,7 +1040,7 @@ fail 条件
   - 強制: `scripts.lint` → `package.json`
   - 内訳
     - `pnpm lint:eslint` はローカルESLintルールのテスト後に `eslint .` を実行
-    - `pnpm lint:openspec` は `openspec validate --all --strict`、Change Intent確認、Scenario IDカバレッジ、Change task scope、wireframe previewの各検査を実行
+    - `pnpm lint:openspec` は `pnpm exec openspec validate --all --strict`、Change Intent確認、Scenario IDカバレッジ、Change task scope、wireframe previewの各検査を実行
     - `pnpm lint:supply-chain` は `node scripts/security/verify-pnpm-supply-chain.mjs` を実行
 - サプライチェーン対策の pnpm 設定を弱めない
   - 強制: `pnpm lint:supply-chain` → `scripts/security/verify-pnpm-supply-chain.mjs`
@@ -1118,7 +1118,7 @@ fail 条件
 
 ルール
 
-- OpenSpec の spec は `openspec validate --all --strict` を通す
+- OpenSpec の spec は `pnpm exec openspec validate --all --strict` を通す
   - 強制: `pnpm lint` → `pnpm lint:openspec` → `scripts.lint:openspec` → `package.json`
   - NG例
     - `pnpm lint` で OpenSpec validate が失敗する
