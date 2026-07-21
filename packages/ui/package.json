@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#storybook-styles": "./.storybook/storybook.css",
+    "#vite-config": "./vite.config.ts"
+  },
   "sideEffects": [
     "./styles/globals.css"
   ],
@@ -16,10 +20,13 @@
   },
   "scripts": {
     "check": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest --config vitest.config.ts",
-    "test:ui": "vitest --ui --config vitest.config.ts",
-    "test:run": "vitest run --config vitest.config.ts",
-    "test:coverage": "vitest run --coverage --config vitest.config.ts"
+    "storybook": "storybook dev --host 0.0.0.0 --port 6006 --no-open --disable-telemetry",
+    "build:storybook": "storybook build --output-dir dist/storybook --disable-telemetry",
+    "test": "vitest --config vitest.config.ts --project ui",
+    "test:ui": "vitest --ui --config vitest.config.ts --project ui",
+    "test:run": "vitest run --config vitest.config.ts --project ui",
+    "test:coverage": "vitest run --coverage --config vitest.config.ts --project ui",
+    "test:storybook": "vitest run --config vitest.config.ts --project storybook-light --project storybook-dark --project storybook-mobile-light --project storybook-mobile-dark"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -47,12 +54,20 @@
   },
   "devDependencies": {
     "@cfreact-template/build-config": "workspace:*",
+    "@storybook/addon-a11y": "10.5.2",
+    "@storybook/addon-docs": "10.5.2",
+    "@storybook/addon-themes": "10.5.2",
+    "@storybook/addon-vitest": "10.5.2",
+    "@storybook/react-vite": "10.5.2",
+    "@tailwindcss/vite": "4.2.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^25.0.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@vitest/browser-playwright": "4.1.8",
     "jsdom": "^29.1.1",
+    "storybook": "10.5.2",
     "tailwindcss": "^4.2.4",
     "typescript": "^5.9.3",
     "vite": "^8.0.16",

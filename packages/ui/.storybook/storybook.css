@@ -1,0 +1,4 @@
+@import '../styles/globals.css';
+
+/* Story の composition だけで使う utility を製品 CSS へ混入させずに生成する。 */
+@source '../stories';

@@ -84,7 +84,7 @@ When a review affects a viewable UI surface, layout, visual hierarchy, responsiv
 1. Product: meets requirements and does not introduce unnecessary friction
 2. Security: no new boundary or data-flow risks
 3. General code review: readability, maintainability, tests, error handling, naming, structure
-4. UI/UX: implementation preserves the approved wireframe's visible surface, matches the existing React + shadcn/Radix/Tailwind design language, satisfies `impeccable` and `design-audit`, and uses shared UI appropriately
+4. UI/UX: implementation preserves the approved wireframe's visible surface, matches the existing React + shadcn/ui + Base UI + Tailwind design language, satisfies `impeccable` and `design-audit`, and uses shared UI appropriately
 
 ## Check items
 

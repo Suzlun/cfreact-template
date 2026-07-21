@@ -24,7 +24,7 @@ export default defineConfig({
         },
       },
       {
-        extends: './packages/ui/vitest.config.ts',
+        extends: './packages/ui/vitest.unit.config.ts',
         root: './packages/ui',
         test: {
           name: 'ui',

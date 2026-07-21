@@ -1,5 +1,5 @@
 ---
-description: Frontend shared-UI implementation specialist for shadcn/Radix components, tokens, and visual fidelity to approved wireframes.
+description: Frontend shared-UI implementation specialist for shadcn/ui and Base UI components, tokens, and visual fidelity to approved wireframes.
 mode: subagent
 hidden: true
 model: openai/gpt-5.6-sol
@@ -86,7 +86,7 @@ If any are missing, do not start. Report the missing inputs and ask the caller a
 - UI components that can reasonably be reused must be centralized in `packages/ui` by default
 - Keep page-specific composition out of `packages/ui`; expose reusable primitives, composed widgets, theme helpers, and documented props instead
 - When extracting or creating shared UI, define the component API clearly enough that `unit/frontend/engineer` can integrate it without inventing placement, copy, or state behavior
-- Prefer the existing shadcn/Radix component language, Tailwind-compatible tokens, CSS variables, and `cn` composition conventions already used in the repository
+- Prefer the existing shadcn/ui and Base UI component language, Tailwind-compatible tokens, CSS variables, and `cn` composition conventions already used in the repository
 
 ## Design Quality Gate
 

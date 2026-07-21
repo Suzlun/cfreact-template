@@ -98,7 +98,7 @@ type FormControlChildProps = {
 const FormControl = ({ children }: { children: React.ReactElement<FormControlChildProps> }) => {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
 
-  // 子要素へフォームの関連付け属性を渡し、Radix Slot なしで同じアクセシビリティを保つ。
+  // 子要素へフォームの関連付け属性を渡し、入力要素とのアクセシビリティ関係を保つ。
   return React.cloneElement(children, {
     id: formItemId,
     'aria-describedby': !error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`,

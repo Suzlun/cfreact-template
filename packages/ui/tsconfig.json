@@ -21,9 +21,14 @@
     "SafeHTML.tsx",
     "SafeHTML.test.tsx",
     "*.test.tsx",
+    ".storybook/**/*",
     "components/**/*",
     "hooks/**/*",
     "lib/**/*",
-    "tests/**/*"
+    "stories/**/*",
+    "tests/**/*",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "vitest.unit.config.ts"
   ]
 }

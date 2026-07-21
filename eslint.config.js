@@ -10,6 +10,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import security from 'eslint-plugin-security';
 import sonarjs from 'eslint-plugin-sonarjs';
+import storybook from 'eslint-plugin-storybook';
 import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
 
@@ -132,6 +133,7 @@ export default tseslint.config(
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
   ...compat.extends('plugin:import/typescript'),
+  ...storybook.configs['flat/recommended'],
 
   // 全体設定
   {
@@ -194,6 +196,7 @@ export default tseslint.config(
         { type: 'ui', pattern: 'packages/ui/lib/**/*', mode: 'full' },
         { type: 'ui', pattern: 'packages/ui/styles/**/*', mode: 'full' },
         { type: 'ui', pattern: 'packages/ui/tests/**/*', mode: 'full' },
+        { type: 'ui-storybook', pattern: 'packages/ui/stories/**/*', mode: 'full' },
         { type: 'drizzle', pattern: 'packages/backend/src/drizzle/**/*', mode: 'full' },
       ],
     },
@@ -399,6 +402,10 @@ export default tseslint.config(
               allow: ['ui'],
             },
             {
+              from: ['ui-storybook'],
+              allow: ['ui-storybook', 'ui'],
+            },
+            {
               from: ['drizzle'],
               allow: ['drizzle'],
             },
@@ -462,6 +469,7 @@ export default tseslint.config(
       'packages/ui/hooks/**/*.{ts,tsx}',
       'packages/ui/lib/**/*.{ts,tsx}',
       'packages/ui/tests/**/*.{ts,tsx}',
+      'packages/ui/stories/**/*.{ts,tsx}',
       'packages/backend/src/drizzle/**/*.{ts,tsx}',
     ],
     rules: {
