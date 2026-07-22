@@ -1,0 +1,17 @@
+{
+  "minLines": 8,
+  "minTokens": 50,
+  "mode": "mild",
+  "reporters": ["console"],
+  "ignore": [
+    "packages/ui/.storybook/**",
+    "packages/ui/stories/**",
+    "packages/ui/tests/**",
+    "packages/ui/**/*.test.{ts,tsx}",
+    "packages/ui/**/*.spec.{ts,tsx}",
+    "packages/ui/*.{config,d}.{ts,tsx}",
+    "packages/frontend/src/app/tests/**",
+    "packages/frontend/src/app/**/*.test.{ts,tsx}",
+    "packages/frontend/src/app/**/*.spec.{ts,tsx}"
+  ]
+}

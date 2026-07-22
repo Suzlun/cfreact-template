@@ -89,6 +89,13 @@ Husky によりコミット時に検証されます。
 - 同じ非互換 API が繰り返し使われる場合は inline disable を複製せず、`scripts/eslint/disable-policy.mjs` に専用境界を定義します。
 - 構造化 inline 例外の必須書式と無効化できないルールは `CODING_STANDARDS.md` を参照してください。
 
+## 共有 UI の再利用
+
+- frontend は `@base-ui/react`、Radix、shadcn、各 widget 実装、`class-variance-authority`、`clsx`、`tailwind-merge` を直接利用せず、`@cfreact-template/ui` の公開 API を利用します。
+- app では公開 UI と同名のコンポーネントを再宣言せず、共有 UI を app package から再 export しません。
+- 公開 UI を追加するときは、同名の `packages/ui/stories/*.stories.tsx` を追加し、対応する公開 subpath から実 UI を利用します。
+- `pnpm lint:ui-reuse` は UI catalog の整合と `packages/ui` / `packages/frontend/src/app` 間のコード clone を検査します。
+
 ## 自動生成
 
 ### API
@@ -119,7 +126,7 @@ pnpm lint
 pnpm check
 ```
 
-`pnpm lint` には ESLint、OpenSpec、サプライチェーン設定チェックが含まれます。
+`pnpm lint` には UI 再利用、ESLint、OpenSpec、サプライチェーン設定チェックが含まれます。
 
 必要に応じて関連テストも実行してください。
 

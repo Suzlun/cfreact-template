@@ -22,8 +22,11 @@ import {
   upstreamManualMemoizationFiles,
 } from './scripts/eslint/disable-policy.mjs';
 import { projectEslintPlugin } from './scripts/eslint/plugin.mjs';
+import { loadPublicUiComponentNames } from './scripts/ui/public-component-catalog.mjs';
+import { directUiPrimitiveRestrictions } from './scripts/ui/ui-reuse-policy.mjs';
 
 const compat = new FlatCompat();
+const publicUiComponentNames = loadPublicUiComponentNames();
 
 const exportTsdocPlugin = {
   rules: {
@@ -532,6 +535,43 @@ export default tseslint.config(
     rules: {
       'max-lines': 'off',
       'max-lines-per-function': 'off',
+    },
+  },
+
+  // frontendは共有UIのprimitive・sanitizer・style実装を直接利用せず、packages/uiの公開APIへ集約する
+  {
+    files: ['packages/frontend/src/**/*.{ts,tsx}'],
+    ignores: [
+      'packages/frontend/src/api/generated/**/*.{ts,tsx}',
+      'packages/frontend/src/**/tests/**/*.{ts,tsx}',
+      'packages/frontend/src/**/*.test.{ts,tsx}',
+      'packages/frontend/src/**/*.spec.{ts,tsx}',
+    ],
+    rules: {
+      'project/no-direct-ui-primitives': [
+        'error',
+        {
+          restrictions: directUiPrimitiveRestrictions,
+        },
+      ],
+    },
+  },
+
+  // appはStorybookとUI sourceから解決した公開コンポーネントを再宣言・再exportしない
+  {
+    files: ['packages/frontend/src/app/**/*.{ts,tsx}'],
+    ignores: [
+      'packages/frontend/src/app/tests/**/*.{ts,tsx}',
+      'packages/frontend/src/app/**/*.test.{ts,tsx}',
+      'packages/frontend/src/app/**/*.spec.{ts,tsx}',
+    ],
+    rules: {
+      'project/no-local-ui-component-shadow': [
+        'error',
+        {
+          componentNames: publicUiComponentNames,
+        },
+      ],
     },
   },
 
@@ -1778,7 +1818,7 @@ export default tseslint.config(
   },
   // Node ESMの設定・テストは実行時解決に必要な拡張子を明示する
   {
-    files: ['eslint.config.js', 'scripts/eslint/**/*.mjs'],
+    files: ['eslint.config.js', 'scripts/eslint/**/*.mjs', 'scripts/ui/**/*.mjs'],
     rules: {
       'import/extensions': [
         'error',

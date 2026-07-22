@@ -469,6 +469,51 @@
     import { apiClient } from '@cfreact-template/frontend/api';
     ```
 
+- frontend から共有 UI の primitive、sanitizer、style 実装を直接 import / re-export しない
+  - 強制: `pnpm lint` → `eslint .` → `project/no-direct-ui-primitives` → `scripts/ui/ui-reuse-policy.mjs`
+  - 対象
+    - `@base-ui/react` と subpath
+    - `@radix-ui/react-*`, `radix-ui`, `@shadcn/react` と subpath
+    - `cmdk`, `embla-carousel-react`, `input-otp`, `react-day-picker`, `react-resizable-panels`, `recharts`, `sonner`
+    - `dompurify`
+    - `class-variance-authority`, `clsx`, `tailwind-merge`
+  - 補足
+    - `react-hook-form` は `Form` の利用契約、`@tanstack/react-table` の型と列定義は `DataTable` の利用契約なので一律禁止しない
+    - `@tanstack/react-table` の runtime model API は `project/enforce-library-boundaries` で専用境界へ限定する
+  - NG例
+    ```ts
+    import { Button } from '@base-ui/react/button';
+    import { cva } from 'class-variance-authority';
+    ```
+  - OK例
+    ```ts
+    import { Button, cn } from '@cfreact-template/ui';
+    ```
+
+- app で公開 UI と同名の値を宣言したり、共有 UI を app から再 export したりしない
+  - 強制: `pnpm lint` → `eslint .` → `project/no-local-ui-component-shadow` → `scripts/ui/public-component-catalog.mjs`
+  - 公開 UI 名は `packages/ui` の TypeScript runtime export と `packages/ui/index.ts` から解決する
+  - Storybook は公開 UI ファイルごとの実行可能 catalog として対応関係を検証する
+  - NG例
+    ```tsx
+    function Button() {
+      return <button type="button">Save</button>;
+    }
+    ```
+  - NG例
+    ```ts
+    export { Button } from '@cfreact-template/ui';
+    ```
+  - OK例
+
+    ```tsx
+    import { Button } from '@cfreact-template/ui';
+
+    function SaveAction() {
+      return <Button>Save</Button>;
+    }
+    ```
+
 - `pages/` 直下に TSX を置かない
   - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/frontend/src/app/pages/*.tsx']`
   - NG例
@@ -1033,19 +1078,29 @@
   - 強制: `.husky/commit-msg`
   - 実行
     - `pnpm commitlint --edit $1`
-- pre-push hook
-  - 強制: `.husky/pre-push`
-  - 実行
-    - `pnpm lint`
 
 fail 条件
 
-- `pnpm lint` は ESLint の error、OpenSpec チェック、サプライチェーン設定チェックで失敗する
+- `pnpm lint` は UI 再利用、ESLint、OpenSpec、サプライチェーン設定の各チェックで失敗する
   - 強制: `scripts.lint` → `package.json`
   - 内訳
+    - `pnpm lint:ui-reuse` は公開 UI と Storybook catalog の対応、UI/app 間のコード clone を検査する
     - `pnpm lint:eslint` はローカルESLintルールのテスト後に `eslint .` を実行
     - `pnpm lint:openspec` は `pnpm exec openspec validate --all --strict`、Change Intent確認、Scenario IDカバレッジ、Change task scope、wireframe previewの各検査を実行
     - `pnpm lint:supply-chain` は `node scripts/security/verify-pnpm-supply-chain.mjs` を実行
+- 公開 UI ごとに対応する Storybook catalog を置く
+  - 強制: `pnpm lint:ui-reuse` → `scripts/ui/verify-public-component-catalog.mjs`
+  - 公開 UI source、`packages/ui/package.json#exports`、`packages/ui/index.ts`、`packages/ui/stories/*.stories.tsx` の対応を検査する
+  - Story は対応する `@cfreact-template/ui/*` 公開 subpath の runtime export を少なくとも一つ利用する
+  - NG例
+    - `packages/ui/components/button.tsx` を追加して `packages/ui/stories/button.stories.tsx` を追加しない
+  - OK例
+    - 公開 source と同時に対応 Story を追加し、公開 subpath から実 UI を import する
+- `packages/ui` と `packages/frontend/src/app` のコードをコピーしない
+  - 強制: `pnpm lint:ui-reuse` → `jscpd` → `.jscpd.json`
+  - 8 行かつ 50 token 以上の cross-directory clone を検知すると失敗する
+  - Story、テスト、設定ファイルは clone 検査から除外する
+  - 無視用 baseline は作らず、検知した実装を共有 UI へ統合する
 - サプライチェーン対策の pnpm 設定を弱めない
   - 強制: `pnpm lint:supply-chain` → `scripts/security/verify-pnpm-supply-chain.mjs`
   - 必須
