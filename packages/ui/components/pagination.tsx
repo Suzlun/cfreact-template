@@ -1,8 +1,8 @@
 import * as React from 'react';
-
-import { cn } from '@cfreact-template/ui/lib/utils';
-import { Button } from '@cfreact-template/ui/components/button';
 import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
+
+import { buttonVariants, type Button } from '@cfreact-template/ui/components/button';
+import { cn } from '@cfreact-template/ui/lib/utils';
 
 function Pagination({ className, ...props }: React.ComponentProps<'nav'>) {
   return (
@@ -37,19 +37,19 @@ type PaginationLinkProps = {
 
 function PaginationLink({ className, isActive, size = 'icon', ...props }: PaginationLinkProps) {
   return (
-    <Button
-      variant={isActive ? 'outline' : 'ghost'}
-      size={size}
-      className={cn(className)}
-      nativeButton={false}
-      render={
-        <a
-          aria-current={isActive ? 'page' : undefined}
-          data-slot="pagination-link"
-          data-active={isActive}
-          {...props}
-        />
-      }
+    // ページ移動は button 操作ではないため、公式契約どおり実 anchor へ既存 Button の外観だけを適用する。
+    <a
+      aria-current={isActive ? 'page' : undefined}
+      data-slot="pagination-link"
+      data-active={isActive}
+      className={cn(
+        buttonVariants({
+          variant: isActive ? 'outline' : 'ghost',
+          size,
+        }),
+        className
+      )}
+      {...props}
     />
   );
 }

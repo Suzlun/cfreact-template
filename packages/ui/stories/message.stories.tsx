@@ -1,7 +1,31 @@
-import { expect, within } from 'storybook/test';
+import {
+  CopyIcon,
+  DownloadIcon,
+  FileTextIcon,
+  RefreshCcwIcon,
+  ThumbsDownIcon,
+  ThumbsUpIcon,
+} from 'lucide-react';
+import { fn } from 'storybook/test';
 
-import { Avatar, AvatarFallback } from '@cfreact-template/ui/components/avatar';
-import { Bubble, BubbleContent } from '@cfreact-template/ui/components/bubble';
+import {
+  Attachment,
+  AttachmentAction,
+  AttachmentActions,
+  AttachmentContent,
+  AttachmentDescription,
+  AttachmentMedia,
+  AttachmentTitle,
+} from '@cfreact-template/ui/components/attachment';
+import { Avatar, AvatarFallback, AvatarImage } from '@cfreact-template/ui/components/avatar';
+import {
+  Bubble,
+  BubbleContent,
+  BubbleGroup,
+  BubbleReactions,
+} from '@cfreact-template/ui/components/bubble';
+import { Button } from '@cfreact-template/ui/components/button';
+import { Marker, MarkerContent } from '@cfreact-template/ui/components/marker';
 import {
   Message,
   MessageAvatar,
@@ -10,149 +34,46 @@ import {
   MessageGroup,
   MessageHeader,
 } from '@cfreact-template/ui/components/message';
+import { cn } from '@cfreact-template/ui/lib/utils';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ComponentProps } from 'react';
 
-/** 開始側 alignment の API 値を、fixture、Controls、assertion の単一データ源として保持する。 */
-const START_ALIGNMENT = 'start' as const;
+/** 公式の Attachment 例で掲載されている画像 URL を、Story 間で改変せず保持する。 */
+const WORKSPACE_IMAGE_URL =
+  'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=900&auto=format&fit=crop&q=80';
 
-/** 終了側 alignment の API 値を、fixture、Controls、assertion の単一データ源として保持する。 */
-const END_ALIGNMENT = 'end' as const;
-
-/** alignment assertion が参照する公開 data 属性名を一箇所で保持する。 */
-const DATA_ALIGN_ATTRIBUTE = 'data-align';
-
-/** `Message` が公開する開始側・終了側の alignment を比較 Story と Controls で共有する。 */
-const MESSAGE_ALIGNMENTS = [START_ALIGNMENT, END_ALIGNMENT] as const satisfies readonly NonNullable<
-  ComponentProps<typeof Message>['align']
->[];
-
-/** 自然な日本語の長文でも、MessageContent と BubbleContent が読みやすく折り返すことを確認する固定値。 */
-const LONG_MESSAGE =
-  '長い文章が複数行に折り返される場合でも、メッセージは送信者、本文、時刻の順序を保ちます。表示領域が狭くなっても開始側と終了側の配置を維持し、内容を省略せずに会話の流れを読み取れることを確認します。';
-
-/** 空白を含まない長い識別子が、メッセージの利用可能幅からはみ出さないことを確認する固定値。 */
-const UNBROKEN_MESSAGE =
-  'message-catalog-entry-with-a-very-long-unbroken-identifier-0123456789-abcdefghijklmnopqrstuvwxyz';
-
-/** 一つの送信者による連続メッセージを、公開コンポーネントだけで再現するための固定入力。 */
-interface MessageFixture {
-  /** Story 内の見出し、本文、footer を一意に関連付ける固定 ID。 */
-  id: string;
-  /** `Message` へ渡す既存の alignment。 */
-  align: NonNullable<ComponentProps<typeof Message>['align']>;
-  /** `MessageHeader` とメッセージ全体のアクセシブル名に使用する汎用表示名。 */
-  sender: string;
-  /** 画像通信を行わず送信者を視覚的に識別する `AvatarFallback` の固定文字。 */
-  initials: string;
-  /** 同じ送信者から連続した本文を、順序を保って描画する固定配列。 */
-  messages: readonly string[];
-  /** `MessageFooter` に表示する固定時刻。 */
-  timestamp: string;
-  /** 可視時刻の機械可読値として `time` 要素へ渡す固定日時。 */
-  dateTime: string;
-}
-
-/** start と end、および同一送信者の連続本文を含む製品非依存の固定会話。 */
-const GROUPED_CONVERSATION = [
-  {
-    id: 'grouped-inbound-first',
-    align: START_ALIGNMENT,
-    sender: '相手',
-    initials: '相',
-    messages: ['確認用の固定メッセージです。', '同じ送信者から続けて届いた本文です。'],
-    timestamp: '10:00',
-    dateTime: '2026-01-15T10:00:00+09:00',
-  },
-  {
-    id: 'grouped-outbound',
-    align: END_ALIGNMENT,
-    sender: '自分',
-    initials: '自',
-    messages: ['内容を確認しました。'],
-    timestamp: '10:01',
-    dateTime: '2026-01-15T10:01:00+09:00',
-  },
-  {
-    id: 'grouped-inbound-last',
-    align: START_ALIGNMENT,
-    sender: '相手',
-    initials: '相',
-    messages: ['ありがとうございます。', '固定会話の最後の本文です。'],
-    timestamp: '10:02',
-    dateTime: '2026-01-15T10:02:00+09:00',
-  },
-] as const satisfies readonly MessageFixture[];
+/** icon-only action の通知を Storybook の Actions panel から個別に確認する spy。 */
+const copyMessage = fn();
+const likeMessage = fn();
+const dislikeMessage = fn();
+const retryMessage = fn();
+const downloadAttachment = fn();
 
 /**
- * 発話 ID と本文位置から、aria 関連付けに使用する安定した要素 ID を生成する。
+ * 公式例と同じ会話幅・縦方向のリズムを、各 Story の共通表示領域として提供する。
  *
- * @param messageId 一つの発話を Story 内で一意に識別する固定 ID。
- * @param index 同じ発話内にある本文の 0 始まりの位置。
- * @returns `BubbleContent` と親 article の `aria-describedby` で共有する要素 ID。
+ * @param props `section` の属性に加え、会話を識別するアクセシブルな `label` を受け取る。
+ * @returns 狭い viewport では利用可能幅へ縮み、広い viewport では公式例の幅に収まる会話領域。
  */
-function getMessageContentId(messageId: string, index: number): string {
-  // 固定入力だけを連結し、表示内容そのものを DOM ID へ含めないことで再現性を保つ。
-  return `${messageId}-content-${String(index)}`;
-}
-
-/** 一つの Message に avatar、content、header、footer と連続した Bubble を組み立てる。 */
-function MessagePreview({
-  id,
-  align,
-  sender,
-  initials,
-  messages,
-  timestamp,
-  dateTime,
-}: MessageFixture) {
-  // 全本文の ID を article の説明へ関連付け、複数 Bubble でも DOM 順と読み上げ順を一致させる。
-  const contentIds = messages.map((_message, index) => getMessageContentId(id, index));
-
+function ConversationFrame({
+  label,
+  className,
+  ...props
+}: ComponentProps<'section'> & { label: string }) {
+  // 名前付き section に固定し、静的な Story 全体を不要な live region として読み上げない。
   return (
-    <Message
-      align={align}
-      aria-describedby={contentIds.join(' ')}
-      aria-labelledby={`${id}-header`}
-      role="article"
-    >
-      <MessageAvatar>
-        {/* 外部画像を使わず、親 Avatar の一つの名前だけで送信者を支援技術へ伝える。 */}
-        <Avatar role="img" aria-label={`${sender}のアバター`}>
-          <AvatarFallback aria-hidden="true" className="text-foreground">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
-      </MessageAvatar>
-
-      <MessageContent>
-        {/* sender を article の名前へ関連付け、左右位置だけに発話者の識別を依存させない。 */}
-        <MessageHeader id={`${id}-header`}>{sender}</MessageHeader>
-
-        {messages.map((message, index) => (
-          <Bubble
-            key={`${id}-message-${String(index)}`}
-            align={align}
-            variant={align === END_ALIGNMENT ? 'default' : 'secondary'}
-          >
-            {/* 本文ごとに一意な ID を与え、article の aria-describedby と順序どおり対応させる。 */}
-            <BubbleContent id={getMessageContentId(id, index)}>{message}</BubbleContent>
-          </Bubble>
-        ))}
-
-        <MessageFooter>
-          {/* 可視時刻と機械可読日時を同じ要素へ保持し、時刻情報を footer の一箇所へ集約する。 */}
-          <time dateTime={dateTime}>{timestamp}</time>
-        </MessageFooter>
-      </MessageContent>
-    </Message>
+    <section
+      aria-label={label}
+      className={cn('mx-auto flex w-full max-w-sm min-w-0 flex-col gap-6 py-12', className)}
+      {...props}
+    />
   );
 }
 
 /**
- * `Message` と全公開サブコンポーネントを、既存 API・token だけで登録する CSF3 metadata。
- * Controls は公開 alignment に限定し、会話内容、送信者、時刻は再現可能な固定値として維持する。
+ * shadcn/ui の公式 Message 例を、既存 package import と Storybook 表示へ適合させる metadata。
+ * Controls の機械的な props 比較ではなく、会話内で意味を持つ構成と状態を各 Story で示す。
  */
 const meta = {
   title: 'Components/Message',
@@ -164,197 +85,319 @@ const meta = {
     MessageHeader,
     MessageFooter,
   },
-  args: {
-    align: START_ALIGNMENT,
-  },
-  argTypes: {
-    align: {
-      control: 'inline-radio',
-      description: 'Message を開始側または終了側へ配置する既存の alignment。',
-      options: MESSAGE_ALIGNMENTS,
-    },
-  },
   parameters: {
     layout: 'padded',
     controls: {
-      include: ['align'],
+      disable: true,
     },
     docs: {
       description: {
         component:
-          'avatar、content、header、footer を持つメッセージと、開始側・終了側の alignment、連続本文をまとめる group を確認します。Message は操作用サブコンポーネントを公開していないため、Story に独自 action は追加しません。',
+          '会話の avatar、alignment、header、footer を組み立てる Message。公式 shadcn/ui の実例に沿って、会話、連続発話、操作、送信失敗、添付を実用的な文脈で確認できます。',
       },
     },
   },
-  render: ({ align = START_ALIGNMENT }) => (
-    <MessageGroup aria-label="メッセージの基本例" className="mx-auto w-full max-w-2xl" role="log">
-      {/* Controls の alignment だけを可変にし、残る情報は同じ固定条件で比較できるようにする。 */}
-      <MessagePreview
-        id="message-playground"
-        align={align}
-        sender="利用者"
-        initials="利"
-        messages={['公開された全情報領域を含む固定メッセージです。']}
-        timestamp="10:00"
-        dateTime="2026-01-15T10:00:00+09:00"
-      />
-    </MessageGroup>
-  ),
 } satisfies Meta<typeof Message>;
 
-/** Storybook が Message の Docs、Controls、accessibility、browser tests を構築する既定 export。 */
+/** Storybook が Message catalog の Docs と theme 別 canvas を構築する既定 export。 */
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** 全公開サブコンポーネントと既定 start alignment の意味構造を確認する基本 Story。 */
-export const Playground: Story = {
-  play: async ({ canvasElement, step }) => {
-    // Story canvas 内だけを検索し、Storybook 自体の UI と固定会話を混同しないようにする。
-    const canvas = within(canvasElement);
-    const log = canvas.getByRole('log', { name: 'メッセージの基本例' });
-    const message = canvas.getByRole('article', { name: '利用者' });
-    const avatar = canvas.getByRole('img', { name: '利用者のアバター' });
+/**
+ * start・end の会話、配信状態、連続 Bubble、reaction、入力中状態を一つの自然な会話で示す。
+ * 可視コピーと構成は shadcn/ui 公式 Message の既定例を維持する。
+ */
+export const Conversation: Story = {
+  render: () => (
+    <ConversationFrame label="Deployment conversation">
+      {/* 自分の発話は end へ置き、位置だけでなく article 名でも送信者を識別できるようにする。 */}
+      <Message align="end" aria-label="Message from me" role="article">
+        <MessageAvatar>
+          <Avatar>
+            <AvatarImage alt="@me" src="/avatars/10.png" />
+            <AvatarFallback>ME</AvatarFallback>
+          </Avatar>
+        </MessageAvatar>
+        <MessageContent>
+          <Bubble>
+            <BubbleContent>Deploying to prod real quick.</BubbleContent>
+          </Bubble>
+        </MessageContent>
+      </Message>
 
-    await step('全公開領域を名前付きの会話と発話として公開する', async () => {
-      // group、message、avatar と全情報 slot が一つのアクセシブルな基本構造に含まれることを保証する。
-      await expect(log).toHaveAttribute('data-slot', 'message-group');
-      await expect(message).toHaveAttribute('data-slot', 'message');
-      await expect(message).toHaveAttribute(DATA_ALIGN_ATTRIBUTE, START_ALIGNMENT);
-      await expect(avatar).toBeVisible();
-      await expect(message.querySelector('[data-slot="message-avatar"]')).toBeInTheDocument();
-      await expect(message.querySelector('[data-slot="message-content"]')).toBeInTheDocument();
-      await expect(message.querySelector('[data-slot="message-header"]')).toHaveTextContent(
-        '利用者'
-      );
-      await expect(message.querySelector('[data-slot="message-footer"]')).toHaveTextContent(
-        '10:00'
-      );
-    });
-  },
+      {/* 相手の発話は start と muted surface を組み合わせ、公式の受信側表現を再現する。 */}
+      <Message aria-label="Message from Rabbit" role="article">
+        <MessageAvatar>
+          <Avatar>
+            <AvatarImage alt="@rabbit" src="/avatars/02.png" />
+            <AvatarFallback>R</AvatarFallback>
+          </Avatar>
+        </MessageAvatar>
+        <MessageContent>
+          <Bubble variant="muted">
+            <BubbleContent>It&apos;s 4:55 PM. On a Friday.</BubbleContent>
+          </Bubble>
+        </MessageContent>
+      </Message>
+
+      {/* footer は Bubble の直後へ置き、avatar が本文位置へ揃う既存 Message の挙動を示す。 */}
+      <Message align="end" aria-label="Delivered message from me" role="article">
+        <MessageAvatar>
+          <Avatar>
+            <AvatarImage alt="@me" src="/avatars/10.png" />
+            <AvatarFallback>ME</AvatarFallback>
+          </Avatar>
+        </MessageAvatar>
+        <MessageContent>
+          <Bubble>
+            <BubbleContent>It&apos;s a one-line change.</BubbleContent>
+          </Bubble>
+          <MessageFooter>Delivered</MessageFooter>
+        </MessageContent>
+      </Message>
+
+      {/* 同じ発話内の連続本文は BubbleGroup へまとめ、reaction を最後の本文へ関連付ける。 */}
+      <Message aria-label="Two messages from Rabbit" role="article">
+        <MessageAvatar>
+          <Avatar>
+            <AvatarImage alt="@rabbit" src="/avatars/02.png" />
+            <AvatarFallback>R</AvatarFallback>
+          </Avatar>
+        </MessageAvatar>
+        <MessageContent>
+          <BubbleGroup>
+            <Bubble variant="muted">
+              <BubbleContent>It&apos;s always a one-line change 😭.</BubbleContent>
+            </Bubble>
+            <Bubble variant="muted">
+              <BubbleContent>Alright, let me take a look.</BubbleContent>
+              <BubbleReactions aria-label="Reactions: thumbs up" role="group">
+                <span>👍</span>
+              </BubbleReactions>
+            </Bubble>
+          </BubbleGroup>
+        </MessageContent>
+      </Message>
+
+      {/* 進行中の更新だけを status とし、静的な会話全体を live region にしない。 */}
+      <Marker role="status">
+        <MarkerContent className="shimmer">
+          <span className="font-medium">Oliver</span> is typing...
+        </MarkerContent>
+      </Marker>
+    </ConversationFrame>
+  ),
 };
 
-/** 受信を表す start と送信を表す end を、同じ情報量と意味構造で比較する Story。 */
-export const InboundAndOutboundAlignments: Story = {
+/**
+ * 同じ送信者から続く複数 Message を、最後の行だけに avatar を表示してまとめる。
+ * 公式 Group 例どおり、先行行の空 MessageAvatar が本文の開始位置を維持する。
+ */
+export const ConsecutiveMessages: Story = {
   render: () => (
-    <MessageGroup
-      aria-label="受信と送信の alignment 比較"
-      className="mx-auto w-full max-w-2xl gap-6"
-      role="log"
-    >
-      {/* start は受信側の固定例として描画し、secondary Bubble も既存 token のまま利用する。 */}
-      <MessagePreview
-        id="message-inbound"
-        align={START_ALIGNMENT}
-        sender="受信側"
-        initials="受"
-        messages={['開始側へ配置する固定メッセージです。']}
-        timestamp="10:00"
-        dateTime="2026-01-15T10:00:00+09:00"
-      />
-      {/* end は送信側の固定例として描画し、DOM 順を変えずに既存 alignment だけを切り替える。 */}
-      <MessagePreview
-        id="message-outbound"
-        align={END_ALIGNMENT}
-        sender="送信側"
-        initials="送"
-        messages={['終了側へ配置する固定メッセージです。']}
-        timestamp="10:01"
-        dateTime="2026-01-15T10:01:00+09:00"
-      />
-    </MessageGroup>
-  ),
-  play: async ({ canvasElement, step }) => {
-    // 可視位置ではなく、名前と data 属性から両 alignment の契約を確認する。
-    const canvas = within(canvasElement);
-    const inbound = canvas.getByRole('article', { name: '受信側' });
-    const outbound = canvas.getByRole('article', { name: '送信側' });
+    <ConversationFrame label="Consecutive messages from the same sender">
+      <MessageGroup aria-label="Messages from Rabbit" role="group">
+        {/* 空の avatar slot で先行本文と最終本文の水平方向を揃える。 */}
+        <Message aria-label="First message from Rabbit" role="article">
+          <MessageAvatar aria-hidden="true" />
+          <MessageContent>
+            <Bubble variant="muted">
+              <BubbleContent>I checked the registry addresses.</BubbleContent>
+            </Bubble>
+          </MessageContent>
+        </Message>
 
-    await step('start と end の両 alignment を発話者名とともに公開する', async () => {
-      await expect(inbound).toHaveAttribute(DATA_ALIGN_ATTRIBUTE, START_ALIGNMENT);
-      await expect(outbound).toHaveAttribute(DATA_ALIGN_ATTRIBUTE, END_ALIGNMENT);
-      await expect(inbound.querySelector('[data-slot="bubble"]')).toHaveAttribute(
-        DATA_ALIGN_ATTRIBUTE,
-        START_ALIGNMENT
-      );
-      await expect(outbound.querySelector('[data-slot="bubble"]')).toHaveAttribute(
-        DATA_ALIGN_ATTRIBUTE,
-        END_ALIGNMENT
-      );
-    });
-  },
+        {/* 最後の行だけに送信者 avatar を置き、連続発話を一つの視覚的まとまりとして閉じる。 */}
+        <Message aria-label="Second message from Rabbit" role="article">
+          <MessageAvatar>
+            <Avatar>
+              <AvatarImage alt="@avatar" src="/avatars/02.png" />
+              <AvatarFallback>CN</AvatarFallback>
+            </Avatar>
+          </MessageAvatar>
+          <MessageContent>
+            <Bubble variant="muted">
+              <BubbleContent>
+                The component and example JSON now live under the UI registry.
+              </BubbleContent>
+            </Bubble>
+          </MessageContent>
+        </Message>
+      </MessageGroup>
+    </ConversationFrame>
+  ),
 };
 
-/** MessageGroup 内で複数発話と同一送信者の連続本文を、固定順序の会話として示す Story。 */
-export const GroupedConversation: Story = {
+/** sender 名と既読情報を、公式例どおり MessageHeader と MessageFooter へ配置する。 */
+export const HeaderAndFooter: Story = {
   render: () => (
-    <MessageGroup
-      aria-label="固定されたグループ会話"
-      className="mx-auto w-full max-w-2xl gap-6"
-      role="log"
-    >
-      {GROUPED_CONVERSATION.map((message) => (
-        // 固定 ID を React key と各 aria 関連付けに共用し、再描画後も会話順を安定させる。
-        <MessagePreview key={message.id} {...message} />
-      ))}
-    </MessageGroup>
-  ),
-  play: async ({ canvasElement, step }) => {
-    // slot 数から発話単位と連続本文の両方を検証し、group 表現の欠落を検出する。
-    const messages = canvasElement.querySelectorAll('[data-slot="message"]');
-    const bubbles = canvasElement.querySelectorAll('[data-slot="bubble"]');
+    <ConversationFrame className="gap-8" label="Messages with sender and read status">
+      {/* header を article の名前として関連付け、送信者を位置だけに依存せず公開する。 */}
+      <Message aria-labelledby="olivia-message-header" role="article">
+        <MessageContent>
+          <MessageHeader id="olivia-message-header">Olivia</MessageHeader>
+          <Bubble variant="muted">
+            <BubbleContent>I already checked the logs.</BubbleContent>
+          </Bubble>
+        </MessageContent>
+      </Message>
 
-    await step('三つの発話に五つの本文を固定順序でまとめる', async () => {
-      await expect(messages).toHaveLength(GROUPED_CONVERSATION.length);
-      await expect(bubbles).toHaveLength(5);
-      await expect(messages[0]).toHaveAttribute(DATA_ALIGN_ATTRIBUTE, START_ALIGNMENT);
-      await expect(messages[1]).toHaveAttribute(DATA_ALIGN_ATTRIBUTE, END_ALIGNMENT);
-      await expect(messages[2]).toHaveAttribute(DATA_ALIGN_ATTRIBUTE, START_ALIGNMENT);
-    });
-  },
+      {/* end 側の footer は既読状態を本文の直後へ保持し、公式の配置を確認できるようにする。 */}
+      <Message align="end" aria-label="Message from me, read yesterday" role="article">
+        <MessageContent>
+          <Bubble>
+            <BubbleContent>
+              Send the report to the team. Ping @shadcn if you need help.
+            </BubbleContent>
+          </Bubble>
+          <MessageFooter>
+            <div>
+              Read <span className="font-normal">Yesterday</span>
+            </div>
+          </MessageFooter>
+        </MessageContent>
+      </Message>
+    </ConversationFrame>
+  ),
 };
 
-/** 複数行の日本語と空白のない長い文字列を、start・end の両側で確認する Story。 */
-export const LongAndUnbrokenText: Story = {
+/**
+ * assistant の copy・feedback actions と、送信失敗時の retry action を同じ会話で示す。
+ * すべての icon-only button に公式 Accessibility 節どおり可視用途と同じ aria-label を付ける。
+ */
+export const ActionsAndFailure: Story = {
   render: () => (
-    <MessageGroup
-      aria-label="長文メッセージの折り返し例"
-      className="mx-auto w-full max-w-xl gap-6"
-      role="log"
-    >
-      {/* 自然文は start 側へ置き、複数行でも header・本文・footer の階層を維持する。 */}
-      <MessagePreview
-        id="message-long-text"
-        align={START_ALIGNMENT}
-        sender="長文の送信者"
-        initials="長"
-        messages={[LONG_MESSAGE]}
-        timestamp="10:00"
-        dateTime="2026-01-15T10:00:00+09:00"
-      />
-      {/* 空白のない識別子は end 側へ置き、既存 wrap-break-word の境界処理を確認する。 */}
-      <MessagePreview
-        id="message-unbroken-text"
-        align={END_ALIGNMENT}
-        sender="識別子の送信者"
-        initials="識"
-        messages={[UNBROKEN_MESSAGE]}
-        timestamp="10:01"
-        dateTime="2026-01-15T10:01:00+09:00"
-      />
-    </MessageGroup>
-  ),
-  play: async ({ canvasElement, step }) => {
-    // 固定本文から実際の BubbleContent を取得し、文字列の種類ごとに表示境界を検証する。
-    const canvas = within(canvasElement);
-    const longContent = canvas.getByText(LONG_MESSAGE);
-    const unbrokenContent = canvas.getByText(UNBROKEN_MESSAGE);
+    <ConversationFrame className="gap-8" label="Message actions and failed delivery">
+      {/* assistant 応答の action は MessageFooter へまとめ、本文との関連を視覚的に維持する。 */}
+      <Message aria-label="Assistant message with feedback actions" role="article">
+        <MessageContent>
+          <Bubble variant="muted">
+            <BubbleContent>The install failure is coming from the workspace package.</BubbleContent>
+          </Bubble>
+          <MessageFooter>
+            <Button
+              aria-label="Copy"
+              onClick={copyMessage}
+              size="icon"
+              title="Copy"
+              type="button"
+              variant="ghost"
+            >
+              <CopyIcon aria-hidden="true" />
+            </Button>
+            <Button
+              aria-label="Like"
+              onClick={likeMessage}
+              size="icon"
+              title="Like"
+              type="button"
+              variant="ghost"
+            >
+              <ThumbsUpIcon aria-hidden="true" />
+            </Button>
+            <Button
+              aria-label="Dislike"
+              onClick={dislikeMessage}
+              size="icon"
+              title="Dislike"
+              type="button"
+              variant="ghost"
+            >
+              <ThumbsDownIcon aria-hidden="true" />
+            </Button>
+          </MessageFooter>
+        </MessageContent>
+      </Message>
 
-    await step('長文と空白のない文字列を BubbleContent の幅へ収める', async () => {
-      await expect(longContent).toBeVisible();
-      await expect(unbrokenContent).toBeVisible();
-      await expect(longContent.scrollWidth).toBeLessThanOrEqual(longContent.clientWidth);
-      await expect(unbrokenContent.scrollWidth).toBeLessThanOrEqual(unbrokenContent.clientWidth);
-    });
-  },
+      {/* 失敗状態は destructive token の短い文言と retry action だけに限定する。 */}
+      <Message align="end" aria-label="Failed message from me" role="article">
+        <MessageContent>
+          <Bubble>
+            <BubbleContent>Okay drop me a link. Taking a look...</BubbleContent>
+          </Bubble>
+          <MessageFooter className="gap-2">
+            <span className="font-normal text-destructive">Failed to send</span>
+            <Button
+              aria-label="Retry"
+              onClick={retryMessage}
+              size="icon-xs"
+              title="Retry"
+              type="button"
+              variant="ghost"
+            >
+              <RefreshCcwIcon aria-hidden="true" />
+            </Button>
+          </MessageFooter>
+        </MessageContent>
+      </Message>
+    </ConversationFrame>
+  ),
+};
+
+/**
+ * 公式 Attachment 例の画像依頼、生成済み PDF、完了応答を一続きの会話として示す。
+ * 画像は公式掲載と同一 URL・代替テキストを使用し、download action を明示的に命名する。
+ */
+export const Attachments: Story = {
+  render: () => (
+    <ConversationFrame className="gap-8" label="Conversation with image and PDF attachments">
+      {/* 送信画像は公式の縦向き Attachment と同一ソースを使い、本文の前にプレビューする。 */}
+      <Message align="end" aria-label="Message from me with a workspace image" role="article">
+        <MessageContent>
+          <Attachment orientation="vertical">
+            <AttachmentMedia variant="image">
+              <img alt="Workspace" height="600" src={WORKSPACE_IMAGE_URL} width="900" />
+            </AttachmentMedia>
+          </Attachment>
+          <Bubble>
+            <BubbleContent>
+              Here&apos;s the image. Can you add it to the PDF? Use it for the cover page.
+            </BubbleContent>
+          </Bubble>
+        </MessageContent>
+      </Message>
+
+      {/* 生成済み PDF は名称、形式、容量、download action を一つの Attachment に集約する。 */}
+      <Message aria-label="Assistant message with the completed PDF" role="article">
+        <MessageContent>
+          <Bubble variant="muted">
+            <BubbleContent>
+              Done. Here&apos;s the PDF with the image added as the cover page.
+            </BubbleContent>
+          </Bubble>
+          <Attachment aria-label="sales-dashboard.pdf attachment" role="group">
+            <AttachmentMedia>
+              <FileTextIcon aria-hidden="true" />
+            </AttachmentMedia>
+            <AttachmentContent>
+              <AttachmentTitle>sales-dashboard.pdf</AttachmentTitle>
+              <AttachmentDescription>PDF · 2.4 MB</AttachmentDescription>
+            </AttachmentContent>
+            <AttachmentActions>
+              <AttachmentAction
+                aria-label="Download"
+                onClick={downloadAttachment}
+                size="icon-sm"
+                title="Download"
+                type="button"
+                variant="secondary"
+              >
+                <DownloadIcon aria-hidden="true" />
+              </AttachmentAction>
+            </AttachmentActions>
+          </Attachment>
+        </MessageContent>
+      </Message>
+
+      {/* 完了確認を end 側の短い応答で閉じ、添付後の会話順序を明確にする。 */}
+      <Message align="end" aria-label="Confirmation message from me" role="article">
+        <MessageContent>
+          <Bubble>
+            <BubbleContent>Thanks. Looks good.</BubbleContent>
+          </Bubble>
+        </MessageContent>
+      </Message>
+    </ConversationFrame>
+  ),
 };

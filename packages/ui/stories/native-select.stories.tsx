@@ -1,6 +1,6 @@
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 
-import { Label } from '@cfreact-template/ui/components/label';
+import { Field, FieldError, FieldLabel } from '@cfreact-template/ui/components/field';
 import {
   NativeSelect,
   NativeSelectOptGroup,
@@ -8,66 +8,143 @@ import {
 } from '@cfreact-template/ui/components/native-select';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 
-/** NativeSelect の各 Story と操作テストで共有する、製品文脈に依存しない固定選択肢。 */
-const nativeSelectOptions = [
-  { label: '赤', value: 'red' },
-  { label: '黄', value: 'yellow' },
-  { label: '青', value: 'blue' },
-  { label: '緑', value: 'green' },
-] as const;
+/** 公式 Example の各 option を、表示名と送信値の組として保持する固定契約。 */
+interface NativeSelectChoice {
+  /** 利用者と支援技術へ表示する option の名前。 */
+  readonly label: string;
+  /** ネイティブ select がフォーム値として保持する一意な値。 */
+  readonly value: string;
+}
 
-/** OptGroup の見出しと選択肢を固定順序で関連付ける、分類表示専用の固定データ。 */
-const nativeSelectGroups = [
-  { label: '暖色', options: nativeSelectOptions.slice(0, 2) },
-  { label: '寒色', options: nativeSelectOptions.slice(2) },
-] as const;
+/** 公式 Groups Example の optgroup と、その配下の選択肢を保持する固定契約。 */
+interface NativeSelectChoiceGroup {
+  /** optgroup の可視分類名兼アクセシブルネーム。 */
+  readonly label: string;
+  /** 分類内で公式順序のまま表示する選択肢。 */
+  readonly options: readonly NativeSelectChoice[];
+}
 
-/** invalid 状態の理由を NativeSelect の説明として関連付ける固定文言。 */
-const invalidDescription = '選択内容を確認してください。';
+/** 公式 Native Select Examples の用途、文言、値を Story ごとに対応付ける固定データ。 */
+const nativeSelectExamples = {
+  default: {
+    id: 'native-select-status',
+    label: 'Status',
+    name: 'status',
+    options: [
+      { label: 'Todo', value: 'todo' },
+      { label: 'In Progress', value: 'in-progress' },
+      { label: 'Done', value: 'done' },
+      { label: 'Cancelled', value: 'cancelled' },
+    ],
+    placeholder: 'Select status',
+  },
+  groups: {
+    groups: [
+      {
+        label: 'Engineering',
+        options: [
+          { label: 'Frontend', value: 'frontend' },
+          { label: 'Backend', value: 'backend' },
+          { label: 'DevOps', value: 'devops' },
+        ],
+      },
+      {
+        label: 'Sales',
+        options: [
+          { label: 'Sales Rep', value: 'sales-rep' },
+          { label: 'Account Manager', value: 'account-manager' },
+          { label: 'Sales Director', value: 'sales-director' },
+        ],
+      },
+      {
+        label: 'Operations',
+        options: [
+          { label: 'Customer Support', value: 'support' },
+          { label: 'Product Manager', value: 'product-manager' },
+          { label: 'Operations Manager', value: 'ops-manager' },
+        ],
+      },
+    ],
+    id: 'native-select-department',
+    label: 'Department',
+    name: 'department',
+    placeholder: 'Select department',
+  },
+  disabled: {
+    id: 'native-select-priority',
+    label: 'Priority',
+    name: 'priority',
+    options: [
+      { label: 'Low', value: 'low' },
+      { label: 'Medium', value: 'medium' },
+      { label: 'High', value: 'high' },
+      { label: 'Critical', value: 'critical' },
+    ],
+    placeholder: 'Select priority',
+  },
+  invalid: {
+    error: 'Select a role to continue.',
+    id: 'native-select-role',
+    label: 'Role',
+    name: 'role',
+    options: [
+      { label: 'Admin', value: 'admin' },
+      { label: 'Editor', value: 'editor' },
+      { label: 'Viewer', value: 'viewer' },
+      { label: 'Guest', value: 'guest' },
+    ],
+    placeholder: 'Select role',
+  },
+} as const;
 
-/** NativeSelect の公開 props に、Story 専用の可視ラベルと任意の説明だけを追加する。 */
-type NativeSelectStoryArgs = Omit<ComponentProps<typeof NativeSelect>, 'id'> & {
-  /** Label の `htmlFor` と NativeSelect の `id` を一致させる、Story 内で一意な固定 ID。 */
-  id: string;
-  /** NativeSelect の目的を可視表示し、アクセシブルネームにも使用する固定ラベル。 */
-  label: string;
-  /** invalid 状態で NativeSelect から参照する任意の説明。 */
-  errorMessage?: string;
+/** Story のフォーム項目へ渡せる NativeSelect 属性と、可視ラベル・エラーの固定入力。 */
+type NativeSelectFieldProps = Omit<
+  ComponentProps<typeof NativeSelect>,
+  'aria-describedby' | 'aria-invalid' | 'children' | 'className' | 'id'
+> & {
+  /** select 直下へネイティブ構造のまま配置する option または optgroup。 */
+  readonly children: ReactNode;
+  /** invalid 状態で表示し、select から参照する具体的な回復メッセージ。 */
+  readonly errorMessage?: string;
+  /** FieldLabel と NativeSelect を関連付ける Story 内で一意な ID。 */
+  readonly id: string;
+  /** NativeSelect の目的を示す可視ラベル兼アクセシブルネーム。 */
+  readonly label: string;
 };
 
-/** ラベル関連付けの検証時に、単一選択と複数選択を区別するネイティブ role。 */
-type NativeSelectRole = 'combobox' | 'listbox';
-
 /**
- * NativeSelect と Label を固定 ID で関連付け、任意のエラー説明を同じフォーム項目に表示する。
+ * 公式の NativeSelect 構造を既存 Field のラベル・エラー契約へ接続する。
  *
- * @param props NativeSelect の公開属性、固定 ID、可視ラベル、および任意のエラー説明。
- * @returns 単一選択と複数選択の双方で名前と説明を解決できる Story 用フォーム項目。
+ * @param props ネイティブ select 属性、固定 ID、可視ラベル、option、任意のエラー文言。
+ * @returns 390px 幅でも収まり、Light／Dark の既存 token と状態表現を共有するフォーム項目。
  */
-function LabeledNativeSelect({
+function NativeSelectField({
+  children,
+  disabled = false,
+  errorMessage,
   id,
   label,
-  errorMessage,
-  disabled,
-  children,
   ...nativeSelectProps
-}: NativeSelectStoryArgs) {
-  // エラーがある Story だけ説明 ID を生成し、通常状態へ不要な ARIA 参照を出力しない。
+}: NativeSelectFieldProps) {
+  // 可視エラーがある場合だけ参照先 ID と invalid semantics を生成し、存在しない説明を参照しない。
   const errorId = errorMessage === undefined ? undefined : `${id}-error`;
+  const invalid = errorMessage !== undefined;
 
   return (
-    <div
-      className="group grid w-72 max-w-full gap-2"
-      data-disabled={disabled === true ? 'true' : undefined}
+    <Field
+      className="w-80 max-w-full"
+      data-disabled={disabled ? 'true' : undefined}
+      data-invalid={invalid ? 'true' : undefined}
     >
-      {/* 可視 Label とネイティブ select を固定 ID で結び、クリック領域と名前を共有する。 */}
-      <Label htmlFor={id}>{label}</Label>
+      {/* 可視ラベルの操作をネイティブ select へ渡し、名前と focus 対象を一致させる。 */}
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <NativeSelect
         {...nativeSelectProps}
         id={id}
         aria-describedby={errorId}
+        aria-invalid={invalid || undefined}
         className="w-full"
         disabled={disabled}
       >
@@ -75,66 +152,60 @@ function LabeledNativeSelect({
       </NativeSelect>
 
       {errorMessage === undefined ? null : (
-        // 既存の destructive token で理由を示し、NativeSelect から説明として参照できる位置へ置く。
-        <p id={errorId} role="alert" className="text-sm text-destructive">
-          {errorMessage}
-        </p>
+        // FieldError の alert semantics と destructive token を使い、色だけに依存せず回復方法を伝える。
+        <FieldError id={errorId}>{errorMessage}</FieldError>
       )}
-    </div>
+    </Field>
   );
 }
 
 /**
- * 固定選択肢を、値と可視ラベルを持つ NativeSelectOption として同じ順序で描画する。
+ * 公式 Example の固定選択肢を NativeSelectOption として同じ順序で描画する。
  *
- * @returns 全 Story が同じ条件で再利用する NativeSelectOption の一覧。
+ * @param options 表示名とフォーム値を持つ固定選択肢。
+ * @returns NativeSelect または NativeSelectOptGroup の直下へ配置できる option 一覧。
  */
-function renderNativeSelectOptions() {
-  return nativeSelectOptions.map(({ label, value }) => (
-    <NativeSelectOption key={value} value={value}>
-      {label}
+function renderNativeSelectOptions(options: readonly NativeSelectChoice[]): ReactNode {
+  return options.map((option) => (
+    <NativeSelectOption key={option.value} value={option.value}>
+      {option.label}
     </NativeSelectOption>
   ));
 }
 
 /**
- * 分類付き固定データを NativeSelectOptGroup と NativeSelectOption のネイティブ構造で描画する。
+ * 公式 Groups Example の分類をネイティブ optgroup と option の構造で描画する。
  *
- * @returns 二つの分類見出しと、それぞれに属する固定選択肢。
+ * @param groups アクセシブルな分類名と固定選択肢を持つ一覧。
+ * @returns NativeSelect の直下へ配置できる optgroup 一覧。
  */
-function renderGroupedNativeSelectOptions() {
-  return nativeSelectGroups.map((group) => (
+function renderNativeSelectGroups(groups: readonly NativeSelectChoiceGroup[]): ReactNode {
+  return groups.map((group) => (
     <NativeSelectOptGroup key={group.label} label={group.label}>
-      {group.options.map(({ label, value }) => (
-        <NativeSelectOption key={value} value={value}>
-          {label}
-        </NativeSelectOption>
-      ))}
+      {renderNativeSelectOptions(group.options)}
     </NativeSelectOptGroup>
   ));
 }
 
 /**
- * 可視ラベルから NativeSelect を取得し、Label、ID、アクセシブルネームの関連付けを検証する。
+ * Story canvas 内の可視ラベルから NativeSelect を取得し、名前と ID の関連付けを検証する。
  *
- * @param canvasElement Story が描画された範囲。Storybook UI を検索対象から除外するために使用する。
- * @param expectedId Label と NativeSelect が共有する Story 内の固定 ID。
+ * @param canvasElement Story が描画された範囲。
+ * @param expectedId FieldLabel と NativeSelect が共有する固定 ID。
  * @param expectedLabel NativeSelect の可視ラベル兼アクセシブルネーム。
- * @param role 単一選択では `combobox`、複数選択では `listbox` として解決される role。
- * @returns 各状態と選択操作の assertion に続けて使用する NativeSelect 要素。
+ * @returns 状態と選択操作の assertion に続けて使うネイティブ select 要素。
  */
-async function getAccessibleNativeSelect(
+async function getLabeledNativeSelect(
   canvasElement: HTMLElement,
   expectedId: string,
-  expectedLabel: string,
-  role: NativeSelectRole = 'combobox'
+  expectedLabel: string
 ): Promise<HTMLElement> {
-  // Story の描画範囲にクエリを限定し、同じラベルを持つ別 Story の要素を誤取得しない。
+  // Storybook UI や別 Story を検索対象へ含めず、現在の canvas 内だけで関連付けを確認する。
   const canvas = within(canvasElement);
   const label = canvas.getByText(expectedLabel, { selector: 'label' });
-  const select = canvas.getByRole(role, { name: expectedLabel });
+  const select = canvas.getByRole('combobox', { name: expectedLabel });
 
-  // 明示した for と id に加え、支援技術が解決する名前も同じラベルへ一致することを保証する。
+  // DOM の for／id と支援技術が解決するアクセシブルネームを同時に保証する。
   await expect(label).toHaveAttribute('for', expectedId);
   await expect(select).toHaveAttribute('id', expectedId);
   await expect(canvas.getByLabelText(expectedLabel)).toBe(select);
@@ -143,191 +214,155 @@ async function getAccessibleNativeSelect(
   return select;
 }
 
-/**
- * NativeSelect、OptGroup、Option の主要状態を CSF3 の Docs・Controls・browser tests へ登録する。
- *
- * 固定データ、直接 import した公開コンポーネント、および既存 token だけで構成する。
- */
+/** 公式 Docs・Examples の実用途と状態を、比較表ではなく個別のフォーム項目として登録する。 */
 const meta = {
-  title: 'Forms/NativeSelect',
+  title: 'Forms/Native Select',
   component: NativeSelect,
   subcomponents: {
     NativeSelectOptGroup,
     NativeSelectOption,
   },
-  args: {
-    defaultValue: nativeSelectOptions[0].value,
-    disabled: false,
-    id: 'native-select-default',
-    label: '色',
-    multiple: false,
-    onChange: fn(),
-    onKeyDown: fn(),
-    size: 'default',
-  },
-  argTypes: {
-    children: {
-      control: false,
-      description: '固定データから描画する NativeSelectOption または NativeSelectOptGroup。',
-    },
-    errorMessage: {
-      control: false,
-      description: 'invalid 状態で NativeSelect へ関連付ける固定の説明。',
-    },
-    id: {
-      control: false,
-      description: 'NativeSelect と Label を関連付ける Story 内の固定 ID。',
-    },
-    label: {
-      control: false,
-      description: 'NativeSelect の可視ラベル兼アクセシブルネーム。',
-    },
-    onChange: {
-      control: false,
-      description: 'クリックまたはキーボードによる選択変更を観測するイベントハンドラー。',
-      table: {
-        category: 'Events',
-      },
-    },
-    onKeyDown: {
-      control: false,
-      description: 'focus 中の NativeSelect が受け取るキーボード入力を観測するイベントハンドラー。',
-      table: {
-        category: 'Events',
-      },
-    },
-  },
   parameters: {
+    controls: {
+      disable: true,
+    },
+    docs: {
+      description: {
+        component:
+          '公式 shadcn/ui の status、department groups、disabled priority、invalid role を、既存 Field によるラベル・エラー関連付けとネイティブ操作のまま確認できます。',
+      },
+    },
     layout: 'centered',
   },
-  render: (args) => (
-    <LabeledNativeSelect {...args}>{renderNativeSelectOptions()}</LabeledNativeSelect>
-  ),
-} satisfies Meta<NativeSelectStoryArgs>;
+} satisfies Meta<typeof NativeSelect>;
 
-/** Storybook が NativeSelect catalog の Docs・Controls・interaction tests を構築する既定 export。 */
+/** Storybook が Native Select の Docs と interaction tests を収集するための既定 export。 */
 export default meta;
 
+/** metadata から全 Native Select Story の CSF3 型を導出する。 */
 type Story = StoryObj<typeof meta>;
 
-/** 既定の単一選択を表示し、キーボード到達性とポインター相当の選択変更を検証する。 */
+/** 公式 Default Example に沿い、未選択の Status をキーボードで focus して選択する。 */
 export const Default: Story = {
-  args: {
-    onChange: fn(),
-    onKeyDown: fn(),
-  },
-  play: async ({ args, canvasElement, step }) => {
-    const select = await getAccessibleNativeSelect(canvasElement, args.id, args.label);
+  render: () => {
+    const example = nativeSelectExamples.default;
 
-    await step('キーボードでフォーカスして矢印キー入力を通知する', async () => {
-      // Tab だけで select へ到達した後に標準の ArrowDown を送り、公開ハンドラーまで届くことを保証する。
+    return (
+      <NativeSelectField id={example.id} label={example.label} name={example.name}>
+        <NativeSelectOption value="">{example.placeholder}</NativeSelectOption>
+        {renderNativeSelectOptions(example.options)}
+      </NativeSelectField>
+    );
+  },
+  play: async ({ canvasElement, step }) => {
+    const example = nativeSelectExamples.default;
+    const select = await getLabeledNativeSelect(canvasElement, example.id, example.label);
+
+    await step('キーボードで Status へ到達する', async () => {
+      // Tab 順序に含まれるネイティブ select へ移動し、既存 focus-visible 表現の発火条件を再現する。
+      await expect(select).toHaveValue('');
       await userEvent.tab();
       await expect(select).toHaveFocus();
-      await userEvent.keyboard('{ArrowDown}');
-      await expect(args.onKeyDown).toHaveBeenCalledTimes(1);
-      await expect(args.onKeyDown).toHaveBeenLastCalledWith(
-        expect.objectContaining({ key: 'ArrowDown' })
-      );
     });
 
-    await step('クリック操作で選択値を変更する', async () => {
-      // ネイティブ option を利用者と同じポインター経路で選び、値と変更通知を同時に確認する。
-      await expect(select).toHaveValue(nativeSelectOptions[0].value);
-      await userEvent.selectOptions(select, nativeSelectOptions[2].value);
-      await expect(select).toHaveValue(nativeSelectOptions[2].value);
+    await step('公式選択肢から Done を選ぶ', async () => {
+      // ネイティブ選択操作で値を更新し、focus を失わずに実際のフォーム値を保持することを確認する。
+      await userEvent.selectOptions(select, 'done');
+      await expect(select).toHaveValue('done');
       await expect(select).toHaveFocus();
-      await expect(args.onChange).toHaveBeenCalledTimes(1);
     });
   },
 };
 
-/** NativeSelectOptGroup による分類を表示し、各見出しがネイティブ group として解決されることを示す。 */
-export const Grouped: Story = {
-  args: {
-    defaultValue: nativeSelectOptions[1].value,
-    id: 'native-select-grouped',
-    label: '分類された色',
+/** 公式 Groups Example に沿い、Department を三つのネイティブ optgroup から選択する。 */
+export const Groups: Story = {
+  render: () => {
+    const example = nativeSelectExamples.groups;
+
+    return (
+      <NativeSelectField id={example.id} label={example.label} name={example.name}>
+        <NativeSelectOption value="">{example.placeholder}</NativeSelectOption>
+        {renderNativeSelectGroups(example.groups)}
+      </NativeSelectField>
+    );
   },
-  render: (args) => (
-    <LabeledNativeSelect {...args}>{renderGroupedNativeSelectOptions()}</LabeledNativeSelect>
-  ),
-  play: async ({ args, canvasElement }) => {
-    const select = await getAccessibleNativeSelect(canvasElement, args.id, args.label);
+  play: async ({ canvasElement, step }) => {
+    const example = nativeSelectExamples.groups;
     const canvas = within(canvasElement);
+    const select = await getLabeledNativeSelect(canvasElement, example.id, example.label);
 
-    // 見出しを持つ二つの optgroup と固定初期値が、標準 select semantics のまま保持されることを確認する。
-    await expect(canvas.getByRole('group', { name: nativeSelectGroups[0].label })).toBeVisible();
-    await expect(canvas.getByRole('group', { name: nativeSelectGroups[1].label })).toBeVisible();
-    await expect(select).toHaveValue(nativeSelectOptions[1].value);
-  },
-};
-
-/** 値を保持したまま操作できない disabled 状態と、ラベルを含む無効表現を示す。 */
-export const Disabled: Story = {
-  args: {
-    defaultValue: nativeSelectOptions[2].value,
-    disabled: true,
-    id: 'native-select-disabled',
-    label: '選択できない色',
-  },
-  play: async ({ args, canvasElement }) => {
-    const select = await getAccessibleNativeSelect(canvasElement, args.id, args.label);
-
-    // ネイティブ disabled 属性が操作を遮断し、指定した固定値を変更せず保持することを確認する。
-    await expect(select).toBeDisabled();
-    await expect(select).toHaveValue(nativeSelectOptions[2].value);
-  },
-};
-
-/** `aria-invalid` の視覚状態と、`aria-describedby` で関連付けた具体的な説明を示す。 */
-export const Invalid: Story = {
-  args: {
-    'aria-invalid': true,
-    defaultValue: nativeSelectOptions[1].value,
-    errorMessage: invalidDescription,
-    id: 'native-select-invalid',
-    label: '確認が必要な色',
-  },
-  play: async ({ args, canvasElement }) => {
-    const select = await getAccessibleNativeSelect(canvasElement, args.id, args.label);
-
-    // invalid semantics と可視説明が支援技術から同時に解決でき、操作可能性は維持されることを確認する。
-    await expect(select).toHaveAttribute('aria-invalid', 'true');
-    await expect(select).toHaveAccessibleDescription(invalidDescription);
-    await expect(select).toBeEnabled();
-  },
-};
-
-/** 公開されているネイティブ `multiple` 属性で複数値を保持し、追加選択を通知できることを示す。 */
-export const Multiple: Story = {
-  args: {
-    defaultValue: [nativeSelectOptions[0].value, nativeSelectOptions[2].value],
-    id: 'native-select-multiple',
-    label: '複数の色',
-    multiple: true,
-    onChange: fn(),
-  },
-  play: async ({ args, canvasElement, step }) => {
-    const select = await getAccessibleNativeSelect(canvasElement, args.id, args.label, 'listbox');
-
-    await step('複数の初期値をネイティブ listbox として保持する', async () => {
-      // multiple 属性と DOM 順の選択値を検証し、単一選択の combobox と役割を取り違えないようにする。
-      await expect(select).toHaveAttribute('multiple');
-      await expect(select).toHaveValue([
-        nativeSelectOptions[0].value,
-        nativeSelectOptions[2].value,
-      ]);
+    await step('公式の三分類をネイティブ group として公開する', async () => {
+      // 各 optgroup の label が支援技術から分類名として解決されることを確認する。
+      for (const group of example.groups) {
+        await expect(canvas.getByRole('group', { name: group.label })).toBeVisible();
+      }
     });
 
-    await step('クリック操作で選択値を一件追加する', async () => {
-      // 既存の二件を保持したまま別 option を選び、値配列と変更通知が一度だけ更新されることを確認する。
-      await userEvent.selectOptions(select, nativeSelectOptions[3].value);
-      await expect(select).toHaveValue([
-        nativeSelectOptions[0].value,
-        nativeSelectOptions[2].value,
-        nativeSelectOptions[3].value,
-      ]);
-      await expect(args.onChange).toHaveBeenCalledTimes(1);
+    await step('Operations から Product Manager を選ぶ', async () => {
+      // 分類を跨ぐ実用的な選択値をネイティブ select へ反映する。
+      await userEvent.selectOptions(select, 'product-manager');
+      await expect(select).toHaveValue('product-manager');
+    });
+  },
+};
+
+/** 公式 Disabled Example に沿い、Priority の選択内容を変更できない状態を示す。 */
+export const Disabled: Story = {
+  render: () => {
+    const example = nativeSelectExamples.disabled;
+
+    return (
+      <NativeSelectField disabled id={example.id} label={example.label} name={example.name}>
+        <NativeSelectOption value="">{example.placeholder}</NativeSelectOption>
+        {renderNativeSelectOptions(example.options)}
+      </NativeSelectField>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const example = nativeSelectExamples.disabled;
+    const select = await getLabeledNativeSelect(canvasElement, example.id, example.label);
+
+    // disabled 属性と初期値を同時に確認し、opacity だけへ操作不可の意味を依存させない。
+    await expect(select).toBeDisabled();
+    await expect(select).toHaveValue('');
+  },
+};
+
+/** 公式 Invalid Example に沿い、Role の invalid 表現へ可視ラベルと具体的なエラーを関連付ける。 */
+export const Invalid: Story = {
+  render: () => {
+    const example = nativeSelectExamples.invalid;
+
+    return (
+      <NativeSelectField
+        errorMessage={example.error}
+        id={example.id}
+        label={example.label}
+        name={example.name}
+      >
+        <NativeSelectOption value="">{example.placeholder}</NativeSelectOption>
+        {renderNativeSelectOptions(example.options)}
+      </NativeSelectField>
+    );
+  },
+  play: async ({ canvasElement, step }) => {
+    const example = nativeSelectExamples.invalid;
+    const canvas = within(canvasElement);
+    const select = await getLabeledNativeSelect(canvasElement, example.id, example.label);
+
+    await step('invalid semantics と回復メッセージを関連付ける', async () => {
+      // 視覚的な destructive 状態に加え、支援技術へ状態と具体的な修正方法を通知する。
+      await expect(select).toHaveAttribute('aria-invalid', 'true');
+      await expect(select).toHaveAccessibleDescription(example.error);
+      await expect(canvas.getByRole('alert')).toHaveTextContent(example.error);
+    });
+
+    await step('invalid 状態でもキーボード focus と選択操作を維持する', async () => {
+      // エラー表示が操作を遮断しないことを Tab 到達とネイティブ選択で確認する。
+      await userEvent.tab();
+      await expect(select).toHaveFocus();
+      await userEvent.selectOptions(select, 'viewer');
+      await expect(select).toHaveValue('viewer');
     });
   },
 };

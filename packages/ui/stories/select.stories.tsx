@@ -1,6 +1,7 @@
+import { Fragment } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
-import { Label } from '@cfreact-template/ui/components/label';
+import { Field, FieldError, FieldLabel } from '@cfreact-template/ui/components/field';
 import {
   Select,
   SelectContent,
@@ -15,7 +16,7 @@ import {
 } from '@cfreact-template/ui/components/select';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ComponentProps, ReactNode } from 'react';
+import type { ComponentProps, ReactElement, ReactNode } from 'react';
 
 /** SelectItem が表示する固定値、可視名、および操作可否の契約。 */
 interface SelectOption {
@@ -35,60 +36,132 @@ interface SelectOptionGroup {
   readonly options: readonly SelectOption[];
 }
 
-/** placeholder、defaultValue、および基本操作の Story で再利用する固定選択肢。 */
-const selectOptions = [
-  { value: 'option-a', label: '選択肢 A' },
-  { value: 'option-b', label: '選択肢 B' },
-  { value: 'option-c', label: '選択肢 C' },
+/**
+ * 公式 Group 構成を Select Root の items 契約へ渡せる一階層の一覧へ変換する。
+ *
+ * @param groups 可視分類名と固定順序の選択肢を持つ公式 Example の分類一覧。
+ * @returns SelectValue が選択値から公式表示名を解決するための選択肢一覧。
+ */
+function flattenSelectGroups(groups: readonly SelectOptionGroup[]): readonly SelectOption[] {
+  // 分類内と分類間の順序を変えずに連結し、Popup と Trigger で同じ value／label 対応を共有する。
+  return groups.flatMap((group) => group.options);
+}
+
+/**
+ * 固定分類名とtupleの選択肢を、型を失わず公式SelectGroupデータへまとめる。
+ *
+ * @param label SelectLabelへ表示する分類名。
+ * @param options 分類内で公式順序を保つ固定選択肢tuple。
+ * @returns 末尾項目まで静的に参照できる読み取り専用group。
+ */
+function selectGroup<const Options extends readonly SelectOption[]>(
+  label: string,
+  options: Options
+) {
+  // 可視順序や値を変換せず、繰り返していたgroup objectの外枠だけを共通化する。
+  return { label, options } as const;
+}
+
+/** 公式 Default、With Field、Disabled、Invalid で共有する fruit 選択肢。 */
+const fruitOptions = [
+  { value: 'apple', label: 'Apple' },
+  { value: 'banana', label: 'Banana' },
+  { value: 'blueberry', label: 'Blueberry' },
+  { value: 'grapes', label: 'Grapes' },
+  { value: 'pineapple', label: 'Pineapple' },
 ] as const satisfies readonly SelectOption[];
 
-/** Group、Label、Separator、および disabled Item を一つの Popup で確認する固定分類。 */
-const groupedSelectOptions = [
-  {
-    label: '基本の選択肢',
-    options: [
-      { value: 'basic-a', label: '基本 A' },
-      { value: 'basic-b', label: '基本 B' },
-    ],
-  },
-  {
-    label: '追加の選択肢',
-    options: [
-      { value: 'extra-a', label: '追加 A' },
-      { value: 'extra-disabled', label: '追加 B（選択不可）', disabled: true },
-    ],
-  },
+/** 公式 Groups Example の Fruits／Vegetables と分類間 Separator を再現する固定分類。 */
+const produceGroups = [
+  selectGroup('Fruits', [
+    { value: 'apple', label: 'Apple' },
+    { value: 'banana', label: 'Banana' },
+    { value: 'blueberry', label: 'Blueberry' },
+  ]),
+  selectGroup('Vegetables', [
+    { value: 'carrot', label: 'Carrot' },
+    { value: 'broccoli', label: 'Broccoli' },
+    { value: 'spinach', label: 'Spinach' },
+  ]),
 ] as const satisfies readonly SelectOptionGroup[];
 
-/** 分類付き Root の value 解決へ渡す、全 Group を固定順序で平坦化した選択肢。 */
-const flattenedGroupedSelectOptions: readonly SelectOption[] = [
-  ...groupedSelectOptions[0].options,
-  ...groupedSelectOptions[1].options,
-];
+/** Groups Story の SelectValue が produce の表示名を解決するための平坦な一覧。 */
+const produceOptions = flattenSelectGroups(produceGroups);
 
-/** 長い表示名、狭い幅、およびスクロール操作を同時に確認する固定選択肢。 */
-const longLabelOptions = [
-  { value: 'short-a', label: '短い選択肢 A' },
-  {
-    value: 'long-a',
-    label: '表示領域より長い選択肢名でも内容を識別できる固定表示 A',
+/** 公式 Scrollable Example の地域分類と timezone を順序・文言・値まで保持する固定データ。 */
+const timeZoneGroups = [
+  selectGroup('North America', [
+    { value: 'est', label: 'Eastern Standard Time (EST)' },
+    { value: 'cst', label: 'Central Standard Time (CST)' },
+    { value: 'mst', label: 'Mountain Standard Time (MST)' },
+    { value: 'pst', label: 'Pacific Standard Time (PST)' },
+    { value: 'akst', label: 'Alaska Standard Time (AKST)' },
+    { value: 'hst', label: 'Hawaii Standard Time (HST)' },
+  ]),
+  selectGroup('Europe & Africa', [
+    { value: 'gmt', label: 'Greenwich Mean Time (GMT)' },
+    { value: 'cet', label: 'Central European Time (CET)' },
+    { value: 'eet', label: 'Eastern European Time (EET)' },
+    { value: 'west', label: 'Western European Summer Time (WEST)' },
+    { value: 'cat', label: 'Central Africa Time (CAT)' },
+    { value: 'eat', label: 'East Africa Time (EAT)' },
+  ]),
+  selectGroup('Asia', [
+    { value: 'msk', label: 'Moscow Time (MSK)' },
+    { value: 'ist', label: 'India Standard Time (IST)' },
+    { value: 'cst_china', label: 'China Standard Time (CST)' },
+    { value: 'jst', label: 'Japan Standard Time (JST)' },
+    { value: 'kst', label: 'Korea Standard Time (KST)' },
+    {
+      value: 'ist_indonesia',
+      label: 'Indonesia Central Standard Time (WITA)',
+    },
+  ]),
+  selectGroup('Australia & Pacific', [
+    { value: 'awst', label: 'Australian Western Standard Time (AWST)' },
+    { value: 'acst', label: 'Australian Central Standard Time (ACST)' },
+    { value: 'aest', label: 'Australian Eastern Standard Time (AEST)' },
+    { value: 'nzst', label: 'New Zealand Standard Time (NZST)' },
+    { value: 'fjt', label: 'Fiji Time (FJT)' },
+  ]),
+  selectGroup('South America', [
+    { value: 'art', label: 'Argentina Time (ART)' },
+    { value: 'bot', label: 'Bolivia Time (BOT)' },
+    { value: 'brt', label: 'Brasilia Time (BRT)' },
+    { value: 'clt', label: 'Chile Standard Time (CLT)' },
+  ]),
+] as const satisfies readonly SelectOptionGroup[];
+
+/** Scrollable Story の SelectValue が timezone の表示名を解決するための平坦な一覧。 */
+const timeZoneOptions = flattenSelectGroups(timeZoneGroups);
+
+/** 公式 Example の用途・文言・フォーム名を各 Story へ対応付ける固定データ。 */
+const fruitExampleCopy = { label: 'Favorite Fruit', placeholder: 'Select a fruit' } as const;
+
+/** 公式Exampleの用途固有ID・nameと、共有される可視copyを対応付ける固定データ。 */
+const selectExamples = {
+  default: { ...fruitExampleCopy, id: 'select-favorite-fruit', name: 'favoriteFruit' },
+  selected: { ...fruitExampleCopy, id: 'select-selected-fruit', name: 'selectedFruit' },
+  groups: {
+    id: 'select-produce',
+    label: 'Produce',
+    name: 'produce',
+    placeholder: 'Select produce',
   },
-  { value: 'short-b', label: '短い選択肢 B' },
-  {
-    value: 'long-b',
-    label: '狭い画面幅でも選択操作を維持するための長い固定表示 B',
+  disabled: { ...fruitExampleCopy, id: 'select-disabled-fruit', name: 'disabledFruit' },
+  invalid: {
+    ...fruitExampleCopy,
+    error: 'Please select a valid fruit.',
+    id: 'select-invalid-fruit',
+    name: 'invalidFruit',
   },
-  { value: 'short-c', label: '短い選択肢 C' },
-  { value: 'short-d', label: '短い選択肢 D' },
-  { value: 'short-e', label: '短い選択肢 E' },
-  { value: 'short-f', label: '短い選択肢 F' },
-] as const satisfies readonly SelectOption[];
-
-/** placeholder と SelectValue の初期表示に使用する固定文言。 */
-const placeholderText = '項目を選択';
-
-/** invalid 状態の理由を Trigger へ関連付ける固定説明。 */
-const invalidMessage = '選択内容を確認してください。';
+  scrollable: {
+    id: 'select-timezone',
+    label: 'Time zone',
+    name: 'timezone',
+    placeholder: 'Select a timezone',
+  },
+} as const;
 
 /** Trigger の展開状態を pointer・keyboard の両操作で検証する固定 ARIA 属性名。 */
 const expandedAttribute = 'aria-expanded';
@@ -109,12 +182,14 @@ interface LabeledSelectProps extends SelectStoryArgs {
   readonly defaultValue?: string;
   /** Root と Trigger を一括して操作不可にする状態。 */
   readonly disabled?: boolean;
-  /** invalid 状態で Trigger から参照する任意の固定説明。 */
+  /** invalid 状態で Trigger からエラーメッセージとして参照する任意の固定説明。 */
   readonly errorMessage?: string;
-  /** Label と Root を関連付ける Story 内で一意な固定 ID。 */
+  /** FieldLabel と Trigger を関連付ける Story 内で一意な固定 ID。 */
   readonly id: string;
   /** Trigger の目的を示す可視ラベル兼アクセシブルネーム。 */
   readonly label: string;
+  /** Select がネイティブフォームへ公開する用途別の固定フィールド名。 */
+  readonly name: string;
   /** SelectValue が未選択時に表示する固定 placeholder。 */
   readonly placeholder: string;
   /** Root が選択値から可視名を解決する固定選択肢。 */
@@ -125,11 +200,23 @@ interface LabeledSelectProps extends SelectStoryArgs {
   readonly scrollable?: boolean;
 }
 
+/** 描画factoryが各公式Exampleから受け取る、ラベル付きSelectの共通固定値。 */
+type SelectExampleDefinition = Pick<LabeledSelectProps, 'id' | 'label' | 'name' | 'placeholder'>;
+
+/** 公式Exampleごとの差分だけを描画factoryへ渡すSelectの公開状態。 */
+type SelectExampleState = Pick<
+  LabeledSelectProps,
+  'defaultValue' | 'disabled' | 'errorMessage' | 'invalid' | 'scrollable'
+>;
+
+/** SelectContent直下の公式構成を遅延生成し、Story間で同じDOM構造を再利用する関数。 */
+type SelectContentRenderer = () => ReactNode;
+
 /**
- * Label、Trigger、Value、Content を既存 Select 契約で関連付け、任意の状態説明を表示する。
+ * 公式 Field、Trigger、Value、Content の構成を既存 Select 契約で関連付ける。
  *
- * @param props Root の固定 items・初期値・状態・イベント、可視ラベル、Popup の子要素。
- * @returns pointer と keyboard の双方で操作でき、名前と説明を支援技術から解決できる Select 欄。
+ * @param props Root の固定 items・フォーム名・初期値・状態・イベント、可視ラベル、Popup の子要素。
+ * @returns pointer と keyboard の双方で操作でき、名前とエラーを支援技術から解決できる Select 欄。
  */
 function LabeledSelect({
   children,
@@ -140,47 +227,55 @@ function LabeledSelect({
   invalid = false,
   items,
   label,
+  name,
   onOpenChange,
   onValueChange,
   placeholder,
   scrollable = false,
 }: LabeledSelectProps) {
-  // 説明が存在する Story だけ固定 ID を生成し、存在しない要素への ARIA 参照を出力しない。
+  // エラーが存在する Story だけ固定 ID を生成し、存在しない要素への ARIA 参照を出力しない。
   const errorId = errorMessage === undefined ? undefined : `${id}-error`;
 
   return (
-    <div className="grid w-64 max-w-full gap-2">
-      {/* Root が Trigger へ渡す ID と Label の htmlFor を一致させ、可視名と操作対象を結び付ける。 */}
-      <Label htmlFor={id}>{label}</Label>
+    <Field
+      className={scrollable ? 'w-70 max-w-full' : 'w-45 max-w-full'}
+      data-disabled={disabled ? 'true' : undefined}
+      data-invalid={invalid ? 'true' : undefined}
+    >
+      {/* 公式 FieldLabel の htmlFor と Trigger の ID を一致させ、可視名と操作対象を結び付ける。 */}
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
 
       <Select
-        id={id}
         defaultValue={defaultValue}
         disabled={disabled}
         items={items}
+        name={name}
         onOpenChange={onOpenChange}
         onValueChange={onValueChange}
       >
-        {/* 幅を親へ追従させ、長い Value は既存 line-clamp を使って Trigger 内に保持する。 */}
+        {/* Trigger を Field 幅へ追従させ、長い Value は既存 line-clamp を使って一行内に保持する。 */}
         <SelectTrigger
-          aria-describedby={errorId}
+          id={id}
+          aria-errormessage={errorId}
           aria-invalid={invalid || undefined}
           className="w-full min-w-0"
         >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
 
-        {/* scrollable Story だけ既存 max-height utility を適用し、公開スクロール矢印を発生させる。 */}
-        <SelectContent className={scrollable ? 'max-h-40' : undefined}>{children}</SelectContent>
+        {/* Scrollable は公式の長い一覧を既存 spacing で制限し、390px 内で横方向にも収める。 */}
+        <SelectContent
+          className={scrollable ? 'max-h-72 w-80 max-w-[calc(100vw-2rem)]' : undefined}
+        >
+          {children}
+        </SelectContent>
       </Select>
 
       {errorMessage === undefined ? null : (
-        // destructive token と alert semantics で理由を示し、色だけに依存しない invalid 表現にする。
-        <p id={errorId} role="alert" className="text-sm text-destructive">
-          {errorMessage}
-        </p>
+        // 公式 FieldError の alert semantics と destructive token で、色以外でも修正内容を伝える。
+        <FieldError id={errorId}>{errorMessage}</FieldError>
       )}
-    </div>
+    </Field>
   );
 }
 
@@ -220,40 +315,74 @@ function renderSelectItems(options: readonly SelectOption[], truncateLabels = fa
  * @param groups 見出しと固定選択肢を持つ分類一覧。
  * @returns Group、Label、Item、Separator の公開構成を固定順序で含む Popup 内容。
  */
-function renderGroupedSelectItems(groups: readonly SelectOptionGroup[]): ReactNode {
+function renderSelectGroups(
+  groups: readonly SelectOptionGroup[],
+  truncateLabels = false,
+  separated = false
+): ReactNode {
   return groups.map((group, index) => (
-    <SelectGroup key={group.label}>
-      {/* listbox の所有要素を option と group に限定し、装飾境界は公開 Separator の presentation role で表す。 */}
-      {index === 0 ? null : <SelectSeparator aria-orientation={undefined} role="presentation" />}
-      <SelectLabel>{group.label}</SelectLabel>
-      {renderSelectItems(group.options)}
-    </SelectGroup>
+    <Fragment key={group.label}>
+      {/* 公式 Composition と同じ Group／Label／Item の親子関係で分類名と候補を結び付ける。 */}
+      <SelectGroup>
+        <SelectLabel>{group.label}</SelectLabel>
+        {renderSelectItems(group.options, truncateLabels)}
+      </SelectGroup>
+
+      {/* Separator は分類間だけへ置き、先頭・末尾に意味のない境界を追加しない。 */}
+      {separated && index < groups.length - 1 ? <SelectSeparator /> : null}
+    </Fragment>
   ));
+}
+
+/** 公式fruit例で共通するGroup、Label、Itemを固定順序で返す副作用のない描画関数。 */
+const renderFruitSelectItems = () => renderSelectGroups([selectGroup('Fruits', fruitOptions)]);
+
+/** 公式Scrollable例の地域Groupを、長いtimezone名の省略表示付きで返す描画関数。 */
+const renderTimeZoneSelectItems = () => renderSelectGroups(timeZoneGroups, true);
+
+/**
+ * 各Storyで重複していたラベル、items、状態、event argsの配線を同じ描画契約へ集約する。
+ *
+ * @param example 可視ラベル、フォーム名、placeholder、関連付けIDを持つ公式Example。
+ * @param items Rootが選択値から可視名を解決する固定候補。
+ * @param renderContent Popup直下のItem、Group、Label、Separatorを返す描画関数。
+ * @param state disabled、invalid、初期値、scrollableなどStory固有の公開状態。
+ * @returns Storybookから受け取るevent argsを既存LabeledSelectへ接続するrender関数。
+ */
+function createSelectRenderer(
+  example: SelectExampleDefinition,
+  items: readonly SelectOption[],
+  renderContent: SelectContentRenderer,
+  state: SelectExampleState = {}
+): (args: SelectStoryArgs) => ReactElement {
+  return (args) => (
+    <LabeledSelect {...args} {...example} {...state} items={items}>
+      {renderContent()}
+    </LabeledSelect>
+  );
 }
 
 /**
  * canvas 内の可視ラベルから Trigger を取得し、Label、ID、アクセシブルネームを検証する。
  *
  * @param canvasElement Story が描画された範囲。Storybook UI を検索対象から除外するために使用する。
- * @param expectedId Label と Trigger が共有する Story 内の固定 ID。
- * @param expectedLabel Trigger の可視ラベル兼アクセシブルネーム。
+ * @param example LabelとTriggerが共有する固定ID、および可視ラベル兼アクセシブルネーム。
  * @returns 各 Story の状態・操作 assertion で続けて使用する SelectTrigger 要素。
  */
-async function getAccessibleSelectTrigger(
+async function getExampleSelectTrigger(
   canvasElement: HTMLElement,
-  expectedId: string,
-  expectedLabel: string
+  example: SelectExampleDefinition
 ): Promise<HTMLElement> {
   // Story の描画範囲へクエリを限定し、別 Story や Storybook UI の button を誤取得しない。
   const canvas = within(canvasElement);
-  const label = canvas.getByText(expectedLabel, { selector: 'label' });
-  const trigger = canvas.getByRole('combobox', { name: expectedLabel });
+  const label = canvas.getByText(example.label, { selector: 'label' });
+  const trigger = canvas.getByRole('combobox', { name: example.label });
 
   // 明示した Label 関連付けと支援技術が解決する名前が、同じ Trigger を指すことを保証する。
-  await expect(label).toHaveAttribute('for', expectedId);
-  await expect(trigger).toHaveAttribute('id', expectedId);
-  await expect(canvas.getByLabelText(expectedLabel)).toBe(trigger);
-  await expect(trigger).toHaveAccessibleName(expectedLabel);
+  await expect(label).toHaveAttribute('for', example.id);
+  await expect(trigger).toHaveAttribute('id', example.id);
+  await expect(canvas.getByLabelText(example.label)).toBe(trigger);
+  await expect(trigger).toHaveAccessibleName(example.label);
 
   return trigger;
 }
@@ -268,12 +397,60 @@ async function findSelectListbox(canvasElement: HTMLElement): Promise<HTMLElemen
   // SelectContent は Portal に描画されるため、canvas ではなく同じ document の body を検索する。
   const listbox = await within(canvasElement.ownerDocument.body).findByRole('listbox');
 
-  await waitFor(async () => {
-    // transition 中の透明な状態を読まず、利用者が操作可能な表示状態まで条件で待機する。
-    await expect(listbox).toBeVisible();
-  });
+  // transition 中の透明な状態を読まず、利用者が操作可能な表示状態まで条件で待機する。
+  await waitFor(() => expect(listbox).toBeVisible());
 
   return listbox;
+}
+
+/**
+ * Triggerをpointerで開き、Portalの開始animation完了後のlistboxを返す。
+ *
+ * @param trigger 開く対象のSelectTrigger。
+ * @param canvasElement PortalとownerDocumentを共有するStory canvas。
+ * @returns pointer操作後に可視となったSelect listbox。
+ */
+async function openSelectListbox(
+  trigger: HTMLElement,
+  canvasElement: HTMLElement
+): Promise<HTMLElement> {
+  // 各Storyで同じpointer経路を使用し、clickとPortal待機の順序を一貫させる。
+  await userEvent.click(trigger);
+  return await findSelectListbox(canvasElement);
+}
+
+/**
+ * Portal内の公開data slotから、描画済みSelectContentを安全に取得する。
+ *
+ * @param canvasElement SelectContentとownerDocumentを共有するStory canvas。
+ * @returns viewport境界とscroll buttonを実測できるSelectContent。
+ * @throws Portal内にSelectContentが存在せず、公式Popup構成が成立しない場合。
+ */
+function getSelectContent(canvasElement: HTMLElement): HTMLElement {
+  const popup = canvasElement.ownerDocument.querySelector<HTMLElement>(
+    '[data-slot="select-content"]'
+  );
+  if (popup === null) {
+    throw new TypeError('SelectContent が Portal 内に描画されていません。');
+  }
+  return popup;
+}
+
+/**
+ * Popup内の全分類が可視な名前付きgroupとして公開されることを確認する。
+ *
+ * @param listboxCanvas Portal内listboxへ限定したTesting Library query。
+ * @param groups 公式順序と可視分類名を持つ固定group一覧。
+ * @returns 全groupの表示確認が完了した時点で解決するPromise。
+ */
+async function expectSelectGroupsVisible(
+  listbox: HTMLElement,
+  groups: readonly SelectOptionGroup[]
+): Promise<void> {
+  const listboxCanvas = within(listbox);
+  for (const group of groups) {
+    await expect(listboxCanvas.getByRole('group', { name: group.label })).toBeVisible();
+  }
 }
 
 /**
@@ -291,7 +468,7 @@ async function expectSelectClosed(canvasElement: HTMLElement): Promise<void> {
   });
 }
 
-/** Select と全公開サブコンポーネントを CSF3 の Docs・accessibility・browser tests へ登録する。 */
+/** 公式 Select の実用途と状態を、比較表ではなく個別 Story として CSF3 へ登録する。 */
 const meta = {
   title: 'Forms/Select',
   component: Select,
@@ -317,22 +494,12 @@ const meta = {
     docs: {
       description: {
         component:
-          'Trigger、Value、Content、Group、Label、Item、Separator、スクロール操作と、placeholder・初期値・無効・invalid・長い表示名を既存 API と固定データで確認します。',
+          'shadcn/ui 公式 Base UI Select の Default、Groups、Disabled、Invalid、Scrollable を、既存 Field と Select の公開契約だけで確認します。light・dark と 390px の Storybook test project でも同じ構成を使用します。',
       },
     },
     layout: 'centered',
   },
-  render: (args) => (
-    <LabeledSelect
-      {...args}
-      id="select-placeholder"
-      items={selectOptions}
-      label="固定選択肢"
-      placeholder={placeholderText}
-    >
-      {renderSelectItems(selectOptions)}
-    </LabeledSelect>
-  ),
+  render: createSelectRenderer(selectExamples.default, fruitOptions, renderFruitSelectItems),
 } satisfies Meta<SelectStoryArgs>;
 
 /** Storybook が Select catalog の型、Docs、interaction tests を構築する既定 export。 */
@@ -340,58 +507,60 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** 未選択時の placeholder を示し、pointer と keyboard の開放・選択・閉鎖・focus 復帰を検証する。 */
-export const PlaceholderAndInteractions: Story = {
+/** 公式 Default／With Field 構成で fruit を pointer と keyboard の双方から選択する。 */
+export const Default: Story = {
   play: async ({ args, canvasElement, step }) => {
-    const trigger = await getAccessibleSelectTrigger(
-      canvasElement,
-      'select-placeholder',
-      '固定選択肢'
-    );
+    const example = selectExamples.default;
+    const trigger = await getExampleSelectTrigger(canvasElement, example);
 
-    await step('placeholder を表示し、pointer で開いて選択する', async () => {
+    await step('公式 placeholder を表示し、pointer で Apple を選択する', async () => {
       // 未選択の表示と閉状態を確認してから、利用者と同じ pointer 操作で Popup を開く。
-      await expect(trigger).toHaveTextContent(placeholderText);
+      await expect(trigger).toHaveTextContent(example.placeholder);
       await expect(trigger).toHaveAttribute(expandedAttribute, 'false');
-      await userEvent.click(trigger);
-
-      const listbox = await findSelectListbox(canvasElement);
+      const listbox = await openSelectListbox(trigger, canvasElement);
       const firstOption = within(listbox).getByRole('option', {
-        name: selectOptions[0].label,
+        name: fruitOptions[0].label,
       });
       await expect(trigger).toHaveAttribute(expandedAttribute, 'true');
-      await expect(firstOption).toHaveAccessibleName(selectOptions[0].label);
+      await expect(firstOption).toHaveAccessibleName(fruitOptions[0].label);
 
-      // pointer で先頭 Item を選択し、値変更、Popup 閉鎖、Trigger への focus 復帰を一続きで保証する。
+      // pointer で Apple を選択し、値変更、Popup 閉鎖、Trigger への focus 復帰を一続きで保証する。
       await userEvent.click(firstOption);
       await expect(args.onValueChange).toHaveBeenCalledWith(
-        selectOptions[0].value,
+        fruitOptions[0].value,
         expect.anything()
       );
-      await expect(trigger).toHaveTextContent(selectOptions[0].label);
+      await expect(trigger).toHaveTextContent(fruitOptions[0].label);
       await expectSelectClosed(canvasElement);
       await expect(trigger).toHaveAttribute(expandedAttribute, 'false');
       await expect(trigger).toHaveFocus();
     });
 
-    await step('keyboard で開いて末尾項目を選択する', async () => {
+    await step('keyboard で開いて Pineapple を選択する', async () => {
       // focus が戻った Trigger から Enter で開き、pointer に依存しない開放経路を確認する。
       await userEvent.keyboard('{Enter}');
       const listbox = await findSelectListbox(canvasElement);
-      const lastOption = within(listbox).getByRole('option', {
-        name: selectOptions[2].label,
+      const listboxCanvas = within(listbox);
+      const selectedOption = listboxCanvas.getByRole('option', {
+        name: fruitOptions[0].label,
+      });
+      const lastOption = listboxCanvas.getByRole('option', {
+        name: fruitOptions[4].label,
       });
       await expect(trigger).toHaveAttribute(expandedAttribute, 'true');
 
-      // End で末尾 Item へ focus を移し、Enter で選択して Popup を閉じる標準操作を検証する。
+      // keyboard open が選択済み Apple へ focus を移し終えてから、実利用と同じ次のキー操作へ進む。
+      await waitFor(() => expect(selectedOption).toHaveFocus());
+
+      // End で Pineapple へ focus を移し、同期完了後に Enter で選択して Popup を閉じる標準操作を検証する。
       await userEvent.keyboard('{End}');
-      await expect(lastOption).toHaveFocus();
+      await waitFor(() => expect(lastOption).toHaveFocus());
       await userEvent.keyboard('{Enter}');
       await expect(args.onValueChange).toHaveBeenLastCalledWith(
-        selectOptions[2].value,
+        fruitOptions[4].value,
         expect.anything()
       );
-      await expect(trigger).toHaveTextContent(selectOptions[2].label);
+      await expect(trigger).toHaveTextContent(fruitOptions[4].label);
       await expectSelectClosed(canvasElement);
       await expect(trigger).toHaveAttribute(expandedAttribute, 'false');
       await expect(trigger).toHaveFocus();
@@ -399,219 +568,158 @@ export const PlaceholderAndInteractions: Story = {
   },
 };
 
-/** 固定 defaultValue の可視名と選択状態を、閉じた Trigger と開いた Item の双方で示す。 */
-export const DefaultValue: Story = {
-  render: (args) => (
-    <LabeledSelect
-      {...args}
-      defaultValue={selectOptions[1].value}
-      id="select-default-value"
-      items={selectOptions}
-      label="初期値を持つ選択肢"
-      placeholder={placeholderText}
-    >
-      {renderSelectItems(selectOptions)}
-    </LabeledSelect>
-  ),
+/** 公式 Item Aligned Example と同じ Banana の初期選択を Trigger と Item の双方で示す。 */
+export const SelectedValue: Story = {
+  render: createSelectRenderer(selectExamples.selected, fruitOptions, renderFruitSelectItems, {
+    defaultValue: fruitOptions[1].value,
+  }),
   play: async ({ canvasElement }) => {
-    const trigger = await getAccessibleSelectTrigger(
-      canvasElement,
-      'select-default-value',
-      '初期値を持つ選択肢'
-    );
+    const example = selectExamples.selected;
+    const trigger = await getExampleSelectTrigger(canvasElement, example);
 
-    // Root の固定 defaultValue を表示名へ解決し、Popup 内でも同じ Item だけを選択済みにする。
-    await expect(trigger).toHaveTextContent(selectOptions[1].label);
-    await userEvent.click(trigger);
-    const selectedOption = within(await findSelectListbox(canvasElement)).getByRole('option', {
-      name: selectOptions[1].label,
-    });
+    // Root の Banana 値を公式表示名へ解決し、Popup 内でも同じ Item だけを選択済みにする。
+    await expect(trigger).toHaveTextContent(fruitOptions[1].label);
+    const selectedOption = within(await openSelectListbox(trigger, canvasElement)).getByRole(
+      'option',
+      {
+        name: fruitOptions[1].label,
+      }
+    );
     await expect(selectedOption).toHaveAttribute('aria-selected', 'true');
   },
 };
 
-/** Group、Label、Separator と disabled Item を表示し、分類・名前・操作不可 semantics を検証する。 */
-export const GroupedWithDisabledItem: Story = {
-  render: (args) => (
-    <LabeledSelect
-      {...args}
-      defaultValue={groupedSelectOptions[0].options[0].value}
-      id="select-grouped"
-      items={flattenedGroupedSelectOptions}
-      label="分類付きの選択肢"
-      placeholder={placeholderText}
-    >
-      {renderGroupedSelectItems(groupedSelectOptions)}
-    </LabeledSelect>
-  ),
-  play: async ({ canvasElement }) => {
-    const trigger = await getAccessibleSelectTrigger(
-      canvasElement,
-      'select-grouped',
-      '分類付きの選択肢'
-    );
-    await userEvent.click(trigger);
-    const listbox = await findSelectListbox(canvasElement);
-    const listboxCanvas = within(listbox);
-
-    // GroupLabel が各 Group の名前として解決され、分類間に装飾用の既存 Separator が一つだけ存在することを確認する。
-    await expect(
-      listboxCanvas.getByRole('group', { name: groupedSelectOptions[0].label })
-    ).toBeVisible();
-    await expect(
-      listboxCanvas.getByRole('group', { name: groupedSelectOptions[1].label })
-    ).toBeVisible();
-    await expect(listbox.querySelectorAll('[data-slot="select-separator"]')).toHaveLength(1);
-    await expect(listbox.querySelector('[data-slot="select-separator"]')).toHaveAttribute(
-      'role',
-      'presentation'
-    );
-    await expect(listbox.querySelector('[data-slot="select-separator"]')).not.toHaveAttribute(
-      'aria-orientation'
-    );
-
-    // disabled Item の完全な可視名と操作不可状態を ARIA から確認し、見た目だけの無効表現を防ぐ。
-    const disabledOption = listboxCanvas.getByRole('option', {
-      name: groupedSelectOptions[1].options[1].label,
-    });
-    await expect(disabledOption).toHaveAccessibleName(groupedSelectOptions[1].options[1].label);
-    await expect(disabledOption).toHaveAttribute('aria-disabled', 'true');
-  },
-};
-
-/** Root 全体の disabled 状態を示し、Trigger が focus・pointer 操作で Popup を開かないことを検証する。 */
-export const DisabledControl: Story = {
-  render: (args) => (
-    <LabeledSelect
-      {...args}
-      defaultValue={selectOptions[0].value}
-      disabled
-      id="select-disabled"
-      items={selectOptions}
-      label="選択できない項目"
-      placeholder={placeholderText}
-    >
-      {renderSelectItems(selectOptions)}
-    </LabeledSelect>
-  ),
-  play: async ({ canvasElement }) => {
-    const trigger = await getAccessibleSelectTrigger(
-      canvasElement,
-      'select-disabled',
-      '選択できない項目'
-    );
-
-    // ネイティブ button の disabled 契約を確認し、pointer 操作後も Portal が生成されないことを保証する。
-    await expect(trigger).toBeDisabled();
-    await userEvent.click(trigger);
-    await expect(
-      within(canvasElement.ownerDocument.body).queryByRole('listbox')
-    ).not.toBeInTheDocument();
-    await expect(trigger).toHaveAttribute(expandedAttribute, 'false');
-  },
-};
-
-/** Trigger の既存 invalid 視覚状態と、具体的なエラー説明のアクセシブルな関連付けを示す。 */
-export const Invalid: Story = {
-  render: (args) => (
-    <LabeledSelect
-      {...args}
-      defaultValue={selectOptions[1].value}
-      errorMessage={invalidMessage}
-      id="select-invalid"
-      invalid
-      items={selectOptions}
-      label="確認が必要な項目"
-      placeholder={placeholderText}
-    >
-      {renderSelectItems(selectOptions)}
-    </LabeledSelect>
-  ),
-  play: async ({ canvasElement }) => {
-    const trigger = await getAccessibleSelectTrigger(
-      canvasElement,
-      'select-invalid',
-      '確認が必要な項目'
-    );
-
-    // aria-invalid と可視 alert の説明を同時に解決し、invalid でも操作可能な状態を維持する。
-    await expect(trigger).toHaveAttribute('aria-invalid', 'true');
-    await expect(trigger).toHaveAccessibleDescription(invalidMessage);
-    await expect(trigger).toBeEnabled();
-    await expect(within(canvasElement).getByRole('alert')).toHaveTextContent(invalidMessage);
-  },
-};
-
-/** 長い表示名を狭いレスポンシブ幅へ収め、Popup の境界と上下スクロール操作を検証する。 */
-export const LongLabelsInConstrainedLayout: Story = {
-  render: (args) => (
-    <LabeledSelect
-      {...args}
-      defaultValue={longLabelOptions[1].value}
-      id="select-long-label"
-      items={longLabelOptions}
-      label="長い表示名を含む項目"
-      placeholder={placeholderText}
-      scrollable
-    >
-      {renderSelectItems(longLabelOptions, true)}
-    </LabeledSelect>
+/** 公式 Groups Example の Fruits／Vegetables、Label、Separator から produce を選択する。 */
+export const Groups: Story = {
+  render: createSelectRenderer(selectExamples.groups, produceOptions, () =>
+    renderSelectGroups(produceGroups, false, true)
   ),
   play: async ({ canvasElement, step }) => {
-    const trigger = await getAccessibleSelectTrigger(
-      canvasElement,
-      'select-long-label',
-      '長い表示名を含む項目'
-    );
+    const example = selectExamples.groups;
+    const trigger = await getExampleSelectTrigger(canvasElement, example);
+    const listbox = await openSelectListbox(trigger, canvasElement);
+    const listboxCanvas = within(listbox);
 
-    await step('長い初期値を狭い Trigger 内へ保持する', async () => {
-      // 完全な表示文字列を DOM と支援技術に残しつつ、既存 line-clamp が一行の可視領域を守ることを確認する。
-      const value = canvasElement.querySelector<HTMLElement>('[data-slot="select-value"]');
-      await expect(value).not.toBeNull();
-      if (value === null) {
-        throw new TypeError('SelectValue が Trigger 内に描画されていません。');
-      }
-      await expect(value).toHaveTextContent(longLabelOptions[1].label);
-      await expect(value).toHaveStyle({ overflow: 'hidden' });
-      await expect(trigger).toHaveClass('w-full', 'min-w-0');
+    await step('公式分類と Separator を同じ Popup 内へ表示する', async () => {
+      // GroupLabel が各 Group の名前として解決され、分類間に Separator が一つだけ存在することを確認する。
+      await expectSelectGroupsVisible(listbox, produceGroups);
+      await expect(listbox.querySelectorAll('[data-slot="select-separator"]')).toHaveLength(1);
+      await expect(listboxCanvas.getAllByRole('option')).toHaveLength(produceOptions.length);
     });
 
-    await step('Popup を viewport 内へ開き、上下スクロール操作を表示する', async () => {
-      // pointer で長い選択肢を含む Popup を開き、制限幅でも完全な accessible name を保持する。
-      await userEvent.click(trigger);
-      const listbox = await findSelectListbox(canvasElement);
-      const listboxCanvas = within(listbox);
-      await expect(
-        listboxCanvas.getByRole('option', { name: longLabelOptions[1].label })
-      ).toBeVisible();
+    await step('Vegetables から Carrot を選択する', async () => {
+      // pointer で実際の produce を選択し、分類内の値が Trigger の公式表示名へ戻ることを確認する。
+      const carrot = listboxCanvas.getByRole('option', { name: 'Carrot' });
+      await userEvent.click(carrot);
+      await expect(trigger).toHaveTextContent('Carrot');
+      await expectSelectClosed(canvasElement);
+      await expect(trigger).toHaveFocus();
+    });
+  },
+};
 
-      // Popup の実測境界が viewport を越えず、長いラベルによる横方向のはみ出しを発生させないことを保証する。
-      const popup = canvasElement.ownerDocument.querySelector<HTMLElement>(
-        '[data-slot="select-content"]'
-      );
-      await expect(popup).not.toBeNull();
-      if (popup === null) {
-        throw new TypeError('SelectContent が Portal 内に描画されていません。');
-      }
+/** 公式 Disabled Example と同じ Root 全体の操作不可状態を可視ラベル付きで示す。 */
+export const Disabled: Story = {
+  render: createSelectRenderer(selectExamples.disabled, fruitOptions, renderFruitSelectItems, {
+    disabled: true,
+  }),
+  play: async ({ canvasElement, step }) => {
+    const example = selectExamples.disabled;
+    const trigger = await getExampleSelectTrigger(canvasElement, example);
+
+    await step('disabled Trigger は pointer で Popup を開かない', async () => {
+      // ネイティブ button の disabled 契約を確認し、pointer 操作後も Portal が生成されないことを保証する。
+      await expect(trigger).toBeDisabled();
+      await userEvent.click(trigger);
+      await expect(
+        within(canvasElement.ownerDocument.body).queryByRole('listbox')
+      ).not.toBeInTheDocument();
+      await expect(trigger).toHaveAttribute(expandedAttribute, 'false');
+    });
+
+    await step('disabled Trigger は keyboard の Tab 順序へ入らない', async () => {
+      // 無効状態が opacity だけでなく focus 移動にも反映され、選択操作の対象にならないことを確認する。
+      await userEvent.tab();
+      await expect(trigger).not.toHaveFocus();
+    });
+  },
+};
+
+/** 公式 Invalid Example の Field、aria-invalid、具体的なエラー回復文を一つの項目で示す。 */
+export const Invalid: Story = {
+  render: createSelectRenderer(selectExamples.invalid, fruitOptions, renderFruitSelectItems, {
+    errorMessage: selectExamples.invalid.error,
+    invalid: true,
+  }),
+  play: async ({ canvasElement, step }) => {
+    const example = selectExamples.invalid;
+    const trigger = await getExampleSelectTrigger(canvasElement, example);
+    const alert = within(canvasElement).getByRole('alert');
+
+    await step('invalid Trigger と FieldError をアクセシブルに関連付ける', async () => {
+      // destructive の視覚状態に加え、ARIA error message と alert で同じ修正内容を通知する。
+      await expect(trigger).toHaveAttribute('aria-invalid', 'true');
+      await expect(trigger).toHaveAccessibleErrorMessage(example.error);
+      await expect(trigger).toBeEnabled();
+      await expect(alert).toHaveTextContent(example.error);
+    });
+
+    await step('invalid 状態でも keyboard focus を受け取る', async () => {
+      // validation error は操作不可を意味しないため、Tab で Trigger へ到達できることを確認する。
+      await userEvent.tab();
+      await expect(trigger).toHaveFocus();
+
+      // 既存 focus-visible ring が light／dark の双方で実際の box-shadow として描画されることを確認する。
+      const focusedStyle = trigger.ownerDocument.defaultView?.getComputedStyle(trigger);
+      await expect(focusedStyle).toBeDefined();
+      await expect(focusedStyle?.boxShadow).not.toBe('none');
+    });
+  },
+};
+
+/** 公式 Scrollable Example の timezone 全分類を、上下スクロール操作付きで示す。 */
+export const Scrollable: Story = {
+  render: createSelectRenderer(
+    selectExamples.scrollable,
+    timeZoneOptions,
+    renderTimeZoneSelectItems,
+    { scrollable: true }
+  ),
+  play: async ({ canvasElement, step }) => {
+    const example = selectExamples.scrollable;
+    const trigger = await getExampleSelectTrigger(canvasElement, example);
+
+    await step('公式 timezone placeholder を 390px 内へ保持する', async () => {
+      // Trigger は Field 幅へ追従し、狭い viewport でも自身の領域から横方向へはみ出さないことを確認する。
+      await expect(trigger).toHaveTextContent(example.placeholder);
+      await expect(trigger).toHaveClass('w-full', 'min-w-0');
+      await expect(trigger.scrollWidth).toBeLessThanOrEqual(trigger.clientWidth);
+    });
+
+    await step('Popup を viewport 内へ開き、公式の地域分類を表示する', async () => {
+      // pointer で timezone Popup を開き、分類と候補数を公式データのまま公開する。
+      const listbox = await openSelectListbox(trigger, canvasElement);
+      const listboxCanvas = within(listbox);
+      await expectSelectGroupsVisible(listbox, timeZoneGroups);
+      await expect(listboxCanvas.getAllByRole('option')).toHaveLength(timeZoneOptions.length);
+
+      // Popup の実測境界が viewport を越えず、長い timezone 名でも 390px の横幅を守ることを保証する。
+      const popup = getSelectContent(canvasElement);
       const popupRect = popup.getBoundingClientRect();
       const viewportWidth = canvasElement.ownerDocument.documentElement.clientWidth;
       await expect(popupRect.left).toBeGreaterThanOrEqual(0);
       await expect(popupRect.right).toBeLessThanOrEqual(viewportWidth);
 
-      // 初期位置では下方向、End で末尾へ移動した後は上方向の公開スクロール操作が表示される。
+      // 初期位置では下方向の公開 ScrollDownArrow が表示され、一覧に未表示の続きがあることを伝える。
       await waitFor(async () => {
         await expect(popup.querySelector('[data-slot="select-scroll-down-button"]')).toBeVisible();
       });
-      await userEvent.keyboard('{End}');
-      await waitFor(async () => {
-        await expect(popup.querySelector('[data-slot="select-scroll-up-button"]')).toBeVisible();
-      });
 
-      // Escape で選択値を変えずに閉じ、狭い Trigger へ focus が戻るまでを確認する。
+      // Escape で選択値を変えずに閉じ、Trigger へ focus と公式 placeholder が戻るまでを確認する。
       await userEvent.keyboard('{Escape}');
       await expectSelectClosed(canvasElement);
       await expect(trigger).toHaveFocus();
-      await expect(trigger).toHaveTextContent(longLabelOptions[1].label);
+      await expect(trigger).toHaveTextContent(example.placeholder);
     });
   },
 };

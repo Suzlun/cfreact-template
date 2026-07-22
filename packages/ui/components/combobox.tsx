@@ -38,6 +38,7 @@ function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
       data-slot="combobox-clear"
       render={<InputGroupButton variant="ghost" size="icon-xs" />}
       className={cn(className)}
+      aria-label="Clear selection"
       {...props}
     >
       <XIcon className="pointer-events-none" />
@@ -51,10 +52,18 @@ function ComboboxInput({
   disabled = false,
   showTrigger = true,
   showClear = false,
+  triggerLabel = 'Open popup',
+  clearLabel = 'Clear selection',
   ...props
 }: ComboboxPrimitive.Input.Props & {
+  /** Input の末尾にある icon-only Trigger を支援技術へ公開する操作名。 */
+  triggerLabel?: string;
+  /** 選択候補を開く Trigger を表示するか指定する。 */
   showTrigger?: boolean;
+  /** 選択値を解除する Clear を表示するか指定する。 */
   showClear?: boolean;
+  /** Input の末尾にある icon-only Clear を支援技術へ公開する操作名。 */
+  clearLabel?: string;
 }) {
   return (
     <InputGroup className={cn('w-auto', className)}>
@@ -64,13 +73,13 @@ function ComboboxInput({
           <InputGroupButton
             size="icon-xs"
             variant="ghost"
-            render={<ComboboxTrigger />}
+            render={<ComboboxTrigger aria-label={triggerLabel} />}
             data-slot="input-group-button"
             className="group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
             disabled={disabled}
           />
         )}
-        {showClear && <ComboboxClear disabled={disabled} />}
+        {showClear && <ComboboxClear aria-label={clearLabel} disabled={disabled} />}
       </InputGroupAddon>
       {children}
     </InputGroup>
@@ -188,6 +197,10 @@ function ComboboxSeparator({ className, ...props }: ComboboxPrimitive.Separator.
       data-slot="combobox-separator"
       className={cn('-mx-1 my-1 h-px bg-border', className)}
       {...props}
+      // GroupLabel が分類を公開しているため、分類間の罫線は listbox の owned role に混ぜず装飾として除外する。
+      aria-hidden="true"
+      aria-orientation={undefined}
+      role="presentation"
     />
   );
 }
@@ -212,10 +225,20 @@ function ComboboxChip({
   className,
   children,
   showRemove = true,
+  removeLabel,
   ...props
 }: ComboboxPrimitive.Chip.Props & {
   showRemove?: boolean;
+  /** icon-only remove button を支援技術へ公開する操作名。複雑な children を使う場合に指定する。 */
+  removeLabel?: string;
 }) {
+  // 公式の文字列 Chip は項目名を操作名へ含め、複雑な表示でも button-name を失わない既定名を使う。
+  const accessibleRemoveLabel =
+    removeLabel ??
+    (typeof children === 'string' || typeof children === 'number'
+      ? `Remove ${String(children)}`
+      : 'Remove item');
+
   return (
     <ComboboxPrimitive.Chip
       data-slot="combobox-chip"
@@ -231,6 +254,7 @@ function ComboboxChip({
           render={<Button variant="ghost" size="icon-xs" />}
           className="-ml-1 opacity-50 hover:opacity-100"
           data-slot="combobox-chip-remove"
+          aria-label={accessibleRemoveLabel}
         >
           <XIcon className="pointer-events-none" />
         </ComboboxPrimitive.ChipRemove>

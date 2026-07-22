@@ -1720,6 +1720,15 @@ export default tseslint.config(
     },
   },
 
+  // Storyは表示例・状態・interaction・a11y検証を公開対象ごとの1ファイルへ集約する実行可能カタログとして扱う。
+  {
+    files: ['packages/ui/stories/**/*.stories.{ts,tsx}'],
+    rules: {
+      'max-lines': 'off',
+      'max-lines-per-function': 'off',
+    },
+  },
+
   // SafeHTML は DOMPurify でサニタイズした HTML を描画する唯一の出口なので、ここだけ危険HTML警告を設定側で許可する。
   {
     files: ['packages/ui/SafeHTML.tsx'],

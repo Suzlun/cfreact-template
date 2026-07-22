@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 import { Button } from '@cfreact-template/ui/components/button';
 import {
@@ -23,144 +23,152 @@ import {
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-/** Combobox の固定データ一件が公開する、選択値・表示名・操作可否の契約。 */
-interface ComboboxOption {
-  /** Root と Item が同じ選択肢を識別する、Story 内で一意な固定値。 */
+/** 公式 Basic・Multiple 例で共通利用する、固定順序の framework 候補。 */
+const frameworks = ['Next.js', 'SvelteKit', 'Nuxt.js', 'Remix', 'Astro'] as const;
+
+/** 公式 Groups 例と同じ Group・Label・Collection 構成へ渡す、timezone 分類の契約。 */
+interface TimezoneGroup {
+  /** ComboboxLabel と React key の双方に利用する、一意な分類名。 */
   readonly value: string;
-  /** 入力欄、項目、チップへ一貫して表示する製品非依存の名前。 */
-  readonly label: string;
-  /** 指定された項目だけを選択不可にする任意の状態。 */
-  readonly disabled?: boolean;
+  /** ComboboxCollection が固定順序のまま描画する分類内の timezone 候補。 */
+  readonly items: readonly string[];
 }
 
-/** Group と Collection が共有する、見出し付き固定選択肢の契約。 */
-interface ComboboxOptionGroup {
-  /** GroupLabel に表示し、分類を支援技術へ関連付ける固定見出し。 */
+/** 公式 Groups 例の分類名・候補・順序をそのまま公開する timezone 候補。 */
+const timezones = [
+  {
+    value: 'Americas',
+    items: [
+      '(GMT-5) New York',
+      '(GMT-8) Los Angeles',
+      '(GMT-6) Chicago',
+      '(GMT-5) Toronto',
+      '(GMT-8) Vancouver',
+      '(GMT-3) São Paulo',
+    ],
+  },
+  {
+    value: 'Europe',
+    items: [
+      '(GMT+0) London',
+      '(GMT+1) Paris',
+      '(GMT+1) Berlin',
+      '(GMT+1) Rome',
+      '(GMT+1) Madrid',
+      '(GMT+1) Amsterdam',
+    ],
+  },
+  {
+    value: 'Asia/Pacific',
+    items: [
+      '(GMT+9) Tokyo',
+      '(GMT+8) Shanghai',
+      '(GMT+8) Singapore',
+      '(GMT+4) Dubai',
+      '(GMT+11) Sydney',
+      '(GMT+9) Seoul',
+    ],
+  },
+] as const satisfies readonly TimezoneGroup[];
+
+/** disabled item の公開 ARIA 契約を Groups 構成内で検証する固定候補。 */
+const disabledTimezone = timezones[2].items[3];
+
+/** 公式 Popup 例が Item の識別・表示・既定値へ利用する country 契約。 */
+interface Country {
+  /** Item と React key が同じ country を識別する短縮コード。 */
+  readonly code: string;
+  /** Root が選択値として保持する機械可読な country 名。 */
+  readonly value: string;
+  /** Item と Trigger に表示する利用者向け country 名。 */
   readonly label: string;
-  /** Collection が固定順序のまま描画する分類内の選択肢。 */
-  readonly items: readonly ComboboxOption[];
+  /** 公式データが country の地域分類として保持する値。 */
+  readonly continent: string;
 }
 
-/** 単一選択、検索、解除、複数選択で同じ条件を再利用する固定選択肢。 */
-const comboboxOptions = [
-  { value: 'red', label: '赤' },
-  { value: 'blue', label: '青' },
-  { value: 'green', label: '緑' },
-  { value: 'purple', label: '紫' },
-] as const satisfies readonly ComboboxOption[];
-
-/** Group、GroupLabel、Collection、Separator と無効項目を一つの例で確認する固定分類。 */
-const comboboxOptionGroups = [
+/** 公式 Popup 例と同じ既定項目と country 候補を固定順序で公開する。 */
+const countries = [
+  { code: '', value: '', continent: '', label: 'Select country' },
+  { code: 'ar', value: 'argentina', label: 'Argentina', continent: 'South America' },
+  { code: 'au', value: 'australia', label: 'Australia', continent: 'Oceania' },
+  { code: 'br', value: 'brazil', label: 'Brazil', continent: 'South America' },
+  { code: 'ca', value: 'canada', label: 'Canada', continent: 'North America' },
+  { code: 'cn', value: 'china', label: 'China', continent: 'Asia' },
+  { code: 'co', value: 'colombia', label: 'Colombia', continent: 'South America' },
+  { code: 'eg', value: 'egypt', label: 'Egypt', continent: 'Africa' },
+  { code: 'fr', value: 'france', label: 'France', continent: 'Europe' },
+  { code: 'de', value: 'germany', label: 'Germany', continent: 'Europe' },
+  { code: 'it', value: 'italy', label: 'Italy', continent: 'Europe' },
+  { code: 'jp', value: 'japan', label: 'Japan', continent: 'Asia' },
+  { code: 'ke', value: 'kenya', label: 'Kenya', continent: 'Africa' },
+  { code: 'mx', value: 'mexico', label: 'Mexico', continent: 'North America' },
+  { code: 'nz', value: 'new-zealand', label: 'New Zealand', continent: 'Oceania' },
+  { code: 'ng', value: 'nigeria', label: 'Nigeria', continent: 'Africa' },
+  { code: 'za', value: 'south-africa', label: 'South Africa', continent: 'Africa' },
+  { code: 'kr', value: 'south-korea', label: 'South Korea', continent: 'Asia' },
+  { code: 'gb', value: 'united-kingdom', label: 'United Kingdom', continent: 'Europe' },
   {
-    label: '基本色',
-    items: [comboboxOptions[0], comboboxOptions[1]],
+    code: 'us',
+    value: 'united-states',
+    label: 'United States',
+    continent: 'North America',
   },
-  {
-    label: '補助色',
-    items: [comboboxOptions[2], { value: 'yellow', label: '黄', disabled: true }],
-  },
-] as const satisfies readonly ComboboxOptionGroup[];
+] as const satisfies readonly Country[];
 
-/** 各入力形式で、検索結果が存在しないことを一貫して通知する固定表示。 */
-const emptyMessage = '一致する項目がありません。';
+/** 展開・選択済み ARIA 属性を複数の interaction check で比較する標準文字列。 */
+const ariaTrue = 'true';
 
-/** 単一選択の共通構成へ渡す、入力名・初期値・解除操作の表示条件。 */
-interface SimpleComboboxProps {
-  /** input のアクセシブルネームとして利用する固定名。 */
+/** Item の視覚的 checkmark と同じ選択状態を検証する ARIA 属性名。 */
+const ariaSelectedAttribute = 'aria-selected';
+
+/** framework 候補の List と interaction check が共有する公開名。 */
+const frameworkOptionsLabel = 'Framework options';
+
+/** country 候補の dialog・List・interaction check が共有する公開名。 */
+const countryOptionsLabel = 'Country options';
+
+/** timezone 候補の List と interaction check が共有する公開名。 */
+const timezoneOptionsLabel = 'Timezone options';
+
+/** framework selector の非制御初期値、入力名、Clear 表示を指定する契約。 */
+interface FrameworkComboboxProps {
+  /** Input が支援技術へ公開する一意な名前。 */
   readonly inputLabel: string;
-  /** 非制御 Root が初期表示する任意の固定選択肢。 */
-  readonly defaultValue?: ComboboxOption;
-  /** 選択済みのときに既存の Clear 操作を表示するかを指定する。 */
+  /** 公式例の非制御 Root が初期表示する任意の framework。 */
+  readonly defaultValue?: (typeof frameworks)[number];
+  /** 選択済みのときに公開 Clear 操作を表示するかを指定する。 */
   readonly showClear?: boolean;
 }
 
 /**
- * 固定選択肢一件を、選択・強調・無効状態を備えた公開 Item として描画する。
+ * 公式 Basic 構成を非制御 Root で描画し、検索・選択・解除を同じ契約で提供する。
  *
- * @param option Root の items と同じ参照を持つ固定選択肢。
- * @param index List または Collection が通知する固定順序上の位置。
- * @returns 表示名と選択インジケーターを持つ ComboboxItem。
+ * @param props Input のアクセシブルネーム、初期値、Clear 表示条件。
+ * @returns framework 候補を検索して一件選択できる Combobox。
  */
-function renderComboboxOption(option: ComboboxOption, index: number) {
+function FrameworkCombobox({
+  inputLabel,
+  defaultValue,
+  showClear = false,
+}: FrameworkComboboxProps) {
   return (
-    <ComboboxItem
-      key={option.value}
-      disabled={option.disabled === true}
-      index={index}
-      value={option}
-    >
-      {option.label}
-    </ComboboxItem>
-  );
-}
-
-/**
- * 単一選択系 Story で共有する、ラベル付き Input と検索結果 Popup の完全な構成。
- *
- * @param props 入力の固定名、任意の初期値、および Clear の表示条件。
- * @returns 既存 API と固定選択肢だけで検索・選択・解除できる非制御 Combobox。
- */
-function SimpleCombobox({ inputLabel, defaultValue, showClear = false }: SimpleComboboxProps) {
-  return (
-    <Combobox items={comboboxOptions} defaultValue={defaultValue}>
-      {/* Input 自体を主要操作にし、クリックと ArrowDown の双方で Popup を開ける構成に限定する。 */}
+    <Combobox items={frameworks} defaultValue={defaultValue}>
+      {/* 公式 Basic と同様に Input 自体を anchor とし、内蔵 Trigger と Clear を状態に応じて表示する。 */}
       <ComboboxInput
         aria-label={inputLabel}
-        className="w-72 max-w-full"
-        placeholder="項目を検索"
+        className="w-64 max-w-full"
+        placeholder="Select a framework"
         showClear={showClear}
-        showTrigger={false}
       />
-
-      <ComboboxContent aria-label={`${inputLabel}の候補`}>
-        {/* Empty は常時マウントする公開契約を守り、絞り込み結果が空のときだけ内容を表示する。 */}
-        <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
-        <ComboboxList>{renderComboboxOption}</ComboboxList>
-      </ComboboxContent>
-    </Combobox>
-  );
-}
-
-/**
- * Trigger 内の Value と Popup 内の検索 Input を組み合わせ、分類と無効項目を描画する。
- *
- * @returns Group、Label、Collection、Separator を含む分類付き Combobox。
- */
-function GroupedCombobox() {
-  return (
-    <Combobox items={comboboxOptionGroups}>
-      <div className="flex w-72 max-w-full flex-col items-start gap-2">
-        {/* 可視テキストを Trigger の名前へ明示的に関連付け、Value は選択前後の表示だけを担当する。 */}
-        <span id="grouped-combobox-label" className="text-sm font-medium">
-          分類付きの選択肢
-        </span>
-        <ComboboxTrigger
-          aria-labelledby="grouped-combobox-label"
-          render={<Button className="w-full justify-between" variant="outline" />}
-        >
-          <ComboboxValue placeholder="項目を選択" />
-        </ComboboxTrigger>
-      </div>
-
-      <ComboboxContent aria-label="分類付きの選択肢の候補">
-        {/* Trigger を form control とする構成では、検索 Input を Popup 内へ置いて絞り込みを提供する。 */}
-        <ComboboxInput
-          aria-label="分類付きの選択肢を検索"
-          placeholder="項目を検索"
-          showTrigger={false}
-        />
-        <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
-        <ComboboxList>
-          {(group: ComboboxOptionGroup, groupIndex: number) => (
-            <Fragment key={group.label}>
-              {/* 二分類目以降だけを既存 Separator で区切り、先頭に不要な境界線を置かない。 */}
-              {groupIndex === 0 ? null : <ComboboxSeparator />}
-              <ComboboxGroup items={group.items}>
-                <ComboboxLabel>{group.label}</ComboboxLabel>
-                {/* Group が提供する固定 items を Collection で絞り込み結果へ展開する。 */}
-                <ComboboxCollection>{renderComboboxOption}</ComboboxCollection>
-              </ComboboxGroup>
-            </Fragment>
+      <ComboboxContent>
+        {/* Empty は常時マウントし、Base UI が絞り込み結果なしのときだけ可視化する。 */}
+        <ComboboxEmpty>No items found.</ComboboxEmpty>
+        {/* Content は presentation になるため、候補一覧の名前は実際の listbox へ直接付与する。 */}
+        <ComboboxList aria-label={`${inputLabel} options`}>
+          {(framework: (typeof frameworks)[number]) => (
+            <ComboboxItem key={framework} value={framework}>
+              {framework}
+            </ComboboxItem>
           )}
         </ComboboxList>
       </ComboboxContent>
@@ -169,39 +177,115 @@ function GroupedCombobox() {
 }
 
 /**
- * 複数の選択値を Chip として表示し、Chips を Popup の配置基準として共有する。
+ * 公式 Popup 構成どおり、Button trigger と Popup 内の検索 Input で country を選択する。
  *
- * @returns 初期選択二件を持ち、入力から追加選択できる複数選択 Combobox。
+ * @returns 非制御の既定値を Trigger 内へ表示する country selector。
  */
-function MultipleCombobox() {
-  // 公開 Hook が返す ref を Chips と Content に共有し、Popup 幅と位置を同じ基準へ固定する。
+function CountryPopupCombobox() {
+  return (
+    <Combobox items={countries} defaultValue={countries[0]}>
+      {/* role=combobox は author-provided name を要するため、Value の可視文字列と同じ操作名を Trigger へ明示する。 */}
+      <ComboboxTrigger
+        aria-label="Select country"
+        render={
+          <Button className="w-64 max-w-full justify-between font-normal" variant="outline" />
+        }
+      >
+        <ComboboxValue />
+      </ComboboxTrigger>
+      <ComboboxContent aria-label={countryOptionsLabel}>
+        {/* 外部 Trigger を使うため、検索 Input は Popup 内へ移して二重 Trigger を表示しない。 */}
+        <ComboboxInput aria-label="Search countries" placeholder="Search" showTrigger={false} />
+        <ComboboxEmpty>No items found.</ComboboxEmpty>
+        {/* dialog と、その内部で候補を所有する listbox の双方を同じ文脈名で識別可能にする。 */}
+        <ComboboxList aria-label={countryOptionsLabel}>
+          {(country: Country) => (
+            <ComboboxItem key={country.code} value={country}>
+              {country.label}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
+  );
+}
+
+/**
+ * 公式 Groups 構成へ timezone 分類、分類間 Separator、disabled item を組み合わせる。
+ *
+ * @returns 検索可能な三分類と一件の無効候補を持つ非制御 Combobox。
+ */
+function GroupedTimezoneCombobox() {
+  return (
+    <Combobox items={timezones}>
+      <ComboboxInput
+        aria-label="Timezone"
+        className="w-64 max-w-full"
+        placeholder="Select a timezone"
+      />
+      <ComboboxContent>
+        <ComboboxEmpty>No timezones found.</ComboboxEmpty>
+        {/* presentation の Content ではなく、timezone option を所有する listbox 自体へ名前を渡す。 */}
+        <ComboboxList aria-label={timezoneOptionsLabel}>
+          {(group: TimezoneGroup, groupIndex: number) => (
+            <ComboboxGroup key={group.value} items={group.items}>
+              <ComboboxLabel>{group.value}</ComboboxLabel>
+              {/* Collection が Root の filter 結果を受け取り、分類内の Item と checkmark 状態を描画する。 */}
+              <ComboboxCollection>
+                {(timezone: string) => (
+                  <ComboboxItem
+                    key={timezone}
+                    disabled={timezone === disabledTimezone}
+                    value={timezone}
+                  >
+                    {timezone}
+                  </ComboboxItem>
+                )}
+              </ComboboxCollection>
+              {/* 公式 Groups 例どおり、末尾以外の Group の後だけを Separator で区切る。 */}
+              {groupIndex < timezones.length - 1 && <ComboboxSeparator />}
+            </ComboboxGroup>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
+  );
+}
+
+/**
+ * 公式 Multiple 構成どおり、Value の render 値を Chip と検索 Input へ公開する。
+ *
+ * @returns 初期選択一件へ候補を追加・解除できる複数選択 Combobox。
+ */
+function MultipleFrameworkCombobox() {
+  // Chips と Content が同じ幅・位置基準を共有できるよう、公開 anchor Hook を一度だけ生成する。
   const anchor = useComboboxAnchor();
 
   return (
-    <Combobox
-      defaultValue={[comboboxOptions[0], comboboxOptions[1]]}
-      items={comboboxOptions}
-      multiple
-    >
-      <ComboboxChips ref={anchor} className="w-80 max-w-full">
+    <Combobox autoHighlight defaultValue={[frameworks[0]]} items={frameworks} multiple>
+      <ComboboxChips ref={anchor} className="w-full max-w-xs">
         <ComboboxValue>
-          {(selectedOptions: ComboboxOption[]) => (
-            <>
-              {selectedOptions.map((option) => (
-                <ComboboxChip key={option.value} aria-label={option.label} showRemove={false}>
-                  {option.label}
-                </ComboboxChip>
+          {(values: string[]) => (
+            <Fragment>
+              {/* render が受け取る各選択値を、既定の accessible remove 操作を持つ Chip として描画する。 */}
+              {values.map((framework) => (
+                <ComboboxChip key={framework}>{framework}</ComboboxChip>
               ))}
-              {/* ChipsInput は選択済み Chip と同じ focus ring 内で検索と追加選択を受け付ける。 */}
-              <ComboboxChipsInput aria-label="複数項目を検索" placeholder="項目を追加" />
-            </>
+              <ComboboxChipsInput aria-label="Search frameworks" />
+            </Fragment>
           )}
         </ComboboxValue>
       </ComboboxChips>
-
-      <ComboboxContent anchor={anchor} aria-label="複数項目の候補">
-        <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
-        <ComboboxList>{renderComboboxOption}</ComboboxList>
+      <ComboboxContent anchor={anchor}>
+        <ComboboxEmpty>No items found.</ComboboxEmpty>
+        {/* Chips 外部 Input が制御する候補一覧を、実際の listbox 上の公開名で特定できるようにする。 */}
+        <ComboboxList aria-label={frameworkOptionsLabel}>
+          {(framework: (typeof frameworks)[number]) => (
+            <ComboboxItem key={framework} value={framework}>
+              {framework}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
       </ComboboxContent>
     </Combobox>
   );
@@ -211,14 +295,20 @@ function MultipleCombobox() {
  * Portal 内の候補一覧を Story canvas と同じ document から取得する。
  *
  * @param canvasElement Story が描画された範囲。ownerDocument の特定に利用する。
+ * @param accessibleName List が支援技術へ公開する、候補一覧固有の名前。
  * @returns 表示された listbox が見つかった時点で解決する Promise。
  */
-async function findListbox(canvasElement: HTMLElement): Promise<HTMLElement> {
+async function findListbox(
+  canvasElement: HTMLElement,
+  accessibleName: string
+): Promise<HTMLElement> {
   // Popup は Portal へ描画されるため、canvas 内ではなく同じ document の body を検索する。
-  const listbox = await within(canvasElement.ownerDocument.body).findByRole('listbox');
+  const listbox = await within(canvasElement.ownerDocument.body).findByRole('listbox', {
+    name: accessibleName,
+  });
 
   await waitFor(async () => {
-    // Popup の開始トランジションが終わるまで待ち、操作と可視性検証が透明な中間状態を読まないようにする。
+    // 開始トランジションが終わるまで待ち、操作と可視性検証が透明な中間状態を読まないようにする。
     await expect(listbox).toBeVisible();
   });
 
@@ -226,13 +316,13 @@ async function findListbox(canvasElement: HTMLElement): Promise<HTMLElement> {
 }
 
 /**
- * 単一選択後に閉鎖アニメーションが完了し、候補一覧が DOM から除去されたことを確認する。
+ * 終了トランジション後に listbox が公開ツリーから除去された状態を待つ。
  *
  * @param canvasElement Story と Portal が共有する ownerDocument の取得元。
- * @returns listbox が存在しなくなった時点で解決する Promise。
+ * @returns 公開 role の listbox が存在しなくなった時点で解決する Promise。
  */
 async function expectListboxClosed(canvasElement: HTMLElement): Promise<void> {
-  // 固定時間に依存せず、既存 transition が完了して Portal が除去されるまで条件待機する。
+  // 固定時間や生成 DOM 属性へ依存せず、利用者へ公開される role の消滅を終了状態として待つ。
   const documentBody = within(canvasElement.ownerDocument.body);
 
   await waitFor(async () => {
@@ -240,11 +330,7 @@ async function expectListboxClosed(canvasElement: HTMLElement): Promise<void> {
   });
 }
 
-/**
- * Combobox の全公開サブコンポーネントと Hook 使用例を CSF3 のカタログへ登録する。
- *
- * 固定データ、既存 Button、既存 token だけを使用し、製品固有の文脈や追加依存を持ち込まない。
- */
+/** 公式 Basic・Multiple・Groups・Popup pattern と既存の操作契約を CSF3 catalog へ登録する。 */
 const meta = {
   title: 'Forms/Combobox',
   component: Combobox,
@@ -271,171 +357,179 @@ const meta = {
     docs: {
       description: {
         component:
-          '単一選択、検索結果なし、解除、分類・無効項目、複数チップ、および useComboboxAnchor の既存契約を固定例で確認します。',
+          'shadcn/ui 公式の framework Basic・Clear・Multiple、timezone Groups、country Popup 構成で、disabled・filter・accessibility 契約を確認します。',
       },
     },
     layout: 'centered',
   },
 } satisfies Meta<typeof Combobox>;
 
-/** Storybook が Combobox catalog の Docs・accessibility・browser tests を構築する既定 export。 */
+/** Storybook が Combobox catalog の Docs と interaction checks を構築する既定 export。 */
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** 単一選択で、クリック選択とキーボードによる解除・展開・絞り込み・選択を検証する。 */
+/** 公式 Basic selector で pointer 選択、checkmark、keyboard filter、非制御値を検証する。 */
 export const SingleSelect: Story = {
-  render: () => <SimpleCombobox inputLabel="単一項目" />,
+  render: () => <FrameworkCombobox inputLabel="Framework" />,
   play: async ({ canvasElement, step }) => {
-    // 入力は canvas、候補一覧は Portal にあるため、操作対象ごとに検索範囲を分離する。
+    // Input は canvas、候補一覧は Portal にあるため、操作対象ごとに検索範囲を分離する。
     const canvas = within(canvasElement);
-    const input = canvas.getByRole('combobox', { name: '単一項目' });
+    const input = canvas.getByRole('combobox', { name: 'Framework' });
 
-    await step('クリックで開いて項目を選択する', async () => {
-      // 入力を直接クリックし、候補一覧の表示と選択結果を利用者が読む値で確認する。
+    await step('pointer で開いて framework を選択する', async () => {
+      // 内蔵 Trigger を持つ Input をクリックし、公式候補と展開 ARIA 状態を確認する。
       await userEvent.click(input);
-      const listbox = await findListbox(canvasElement);
-      await expect(input).toHaveAttribute('aria-expanded', 'true');
-      await expect(within(listbox).getAllByRole('option')).toHaveLength(comboboxOptions.length);
+      const listbox = await findListbox(canvasElement, frameworkOptionsLabel);
+      await expect(input).toHaveAttribute('aria-expanded', ariaTrue);
+      await expect(within(listbox).getAllByRole('option')).toHaveLength(frameworks.length);
 
-      await userEvent.click(within(listbox).getByRole('option', { name: '赤' }));
-      await expect(input).toHaveValue('赤');
+      // Item の pointer 選択が Input 値へ反映されることを、利用者に表示される文字列で確認する。
+      await userEvent.click(within(listbox).getByRole('option', { name: 'Next.js' }));
+      await expect(input).toHaveValue('Next.js');
+      await expectListboxClosed(canvasElement);
+
+      // 再展開した Item の aria-selected は、内蔵 ItemIndicator の checkmark と同じ選択状態を表す。
+      await userEvent.click(input);
+      const reopenedListbox = await findListbox(canvasElement, frameworkOptionsLabel);
+      await expect(
+        within(reopenedListbox).getByRole('option', { name: 'Next.js' })
+      ).toHaveAttribute(ariaSelectedAttribute, ariaTrue);
+      await userEvent.keyboard('{Escape}');
       await expectListboxClosed(canvasElement);
     });
 
-    await step('キーボードで解除し、開いて絞り込み、選択する', async () => {
-      // 選択済み表示を全選択して削除し、キーボードだけで値を解除できる入力契約を確認する。
+    await step('keyboard で解除し、絞り込み、framework を選択する', async () => {
+      // 選択値を全選択して削除し、keyboard だけで値を空へ戻す。
       await userEvent.click(input);
       await userEvent.keyboard('{Control>}a{/Control}{Backspace}');
       await expect(input).toHaveValue('');
 
-      // ArrowDown で候補一覧を開き、固定文字列の入力によって一致項目だけが残ることを確認する。
+      // ArrowDown で展開して文字列を入力し、Base UI の filter が一致候補だけを残すことを確認する。
       await userEvent.keyboard('{ArrowDown}');
-      const listbox = await findListbox(canvasElement);
-      await userEvent.type(input, '青');
-      await expect(within(listbox).getByRole('option', { name: '青' })).toBeVisible();
-      await expect(within(listbox).queryByRole('option', { name: '赤' })).not.toBeInTheDocument();
+      const listbox = await findListbox(canvasElement, frameworkOptionsLabel);
+      await userEvent.type(input, 'Nuxt');
+      await expect(within(listbox).getByRole('option', { name: 'Nuxt.js' })).toBeVisible();
+      await expect(
+        within(listbox).queryByRole('option', { name: 'Next.js' })
+      ).not.toBeInTheDocument();
 
-      // 絞り込み後の一件を ArrowDown で強調し、Enter で確定して Popup が閉じることを確認する。
+      // 絞り込み後の一件を ArrowDown で強調し、Enter で非制御値へ確定する。
       await userEvent.keyboard('{ArrowDown}{Enter}');
-      await expect(input).toHaveValue('青');
+      await expect(input).toHaveValue('Nuxt.js');
       await expectListboxClosed(canvasElement);
     });
   },
 };
 
-/** 検索文字列に一致する候補がないとき、専用 Empty が支援技術と画面の双方へ表示される。 */
+/** 公式 Popup selector で、Trigger、Popup 内検索、検索結果なしの通知を検証する。 */
 export const SearchableEmptyState: Story = {
-  render: () => <SimpleCombobox inputLabel="空状態を確認する項目" />,
+  render: () => <CountryPopupCombobox />,
   play: async ({ canvasElement, step }) => {
-    // 可視候補がなくなるまで実際の入力イベントを送り、固定 Empty 表示と option 数を検証する。
+    // Button trigger は canvas、Popup 内 Input と Empty は Portal にあるため検索範囲を分離する。
     const canvas = within(canvasElement);
-    const input = canvas.getByRole('combobox', { name: '空状態を確認する項目' });
+    const trigger = canvas.getByRole('combobox', { name: 'Select country' });
 
-    await step('検索結果が空の状態を表示する', async () => {
-      await userEvent.click(input);
-      const listbox = await findListbox(canvasElement);
-      await userEvent.type(input, '存在しない項目');
-
+    await step('Popup 内検索で empty state を表示する', async () => {
+      // Trigger の pointer 操作で開き、Popup 内 Input が検索用途の名前を公開することを確認する。
+      await userEvent.click(trigger);
+      const listbox = await findListbox(canvasElement, countryOptionsLabel);
       const documentBody = within(canvasElement.ownerDocument.body);
-      await expect(documentBody.getByText(emptyMessage)).toBeVisible();
+      const searchInput = documentBody.getByRole('combobox', { name: 'Search countries' });
+      await expect(trigger).toHaveAttribute('aria-expanded', ariaTrue);
+
+      // 存在しない country を入力し、可視 option がなく Empty の説明だけが表示されることを確認する。
+      await userEvent.type(searchInput, 'Atlantis');
+      await expect(documentBody.getByText('No items found.')).toBeVisible();
       await expect(within(listbox).queryAllByRole('option')).toHaveLength(0);
     });
   },
 };
 
-/** 選択済み Input に既存 Clear 操作を表示し、クリックで値と操作自体が消える契約を検証する。 */
+/** 公式 Basic selector の Clear 操作が、選択値を安全に解除することを検証する。 */
 export const ClearSelection: Story = {
   render: () => (
-    <SimpleCombobox defaultValue={comboboxOptions[0]} inputLabel="解除できる項目" showClear />
+    <FrameworkCombobox defaultValue={frameworks[0]} inputLabel="Clear framework" showClear />
   ),
   play: async ({ canvasElement, step }) => {
-    // Clear は公開 Input の showClear により内部描画されるため、安定した data-slot から対象を特定する。
+    // Clear は公開 Input の showClear により描画されるため、利用者へ公開される操作名で特定する。
     const canvas = within(canvasElement);
-    const input = canvas.getByRole('combobox', { name: '解除できる項目' });
-    const clearButton = canvasElement.querySelector<HTMLButtonElement>(
-      '[data-slot="combobox-clear"]'
-    );
+    const input = canvas.getByRole('combobox', { name: 'Clear framework' });
+    const clearButton = canvas.getByRole('button', { name: 'Clear selection' });
 
-    await step('解除操作をクリックして選択値を空にする', async () => {
-      await expect(input).toHaveValue('赤');
-      await expect(clearButton).not.toBeNull();
-      if (clearButton === null) {
-        // 型を安全に絞り込み、描画契約が壊れた場合は不明瞭な click 例外ではなく原因を直接通知する。
-        throw new TypeError('選択済み Combobox に解除操作が描画されていません。');
-      }
+    await step('Clear 操作で選択値を解除する', async () => {
+      await expect(input).toHaveValue('Next.js');
       await userEvent.click(clearButton);
-
-      // Root の値と入力表示が空になり、値がないときは Clear 自体も既存契約どおり非表示になる。
       await expect(input).toHaveValue('');
-      await waitFor(async () => {
-        // 終了トランジション後に Clear がアンマウントされるまで、固定時間を仮定せず条件待機する。
-        await expect(
-          canvasElement.querySelector('[data-slot="combobox-clear"]')
-        ).not.toBeInTheDocument();
-      });
     });
   },
 };
 
-/** 分類見出しと区切りを表示し、無効項目がクリックを拒否して有効項目だけを選択する。 */
+/** 公式 Groups pattern の分類・Separator・disabled item と有効候補の pointer 選択を検証する。 */
 export const GroupedAndDisabledOption: Story = {
-  render: () => <GroupedCombobox />,
+  render: () => <GroupedTimezoneCombobox />,
   play: async ({ canvasElement, step }) => {
-    // 関連付けた可視名で Trigger を取得し、Popup 内の検索 Input と取り違えないよう対象を固定する。
+    // 可視 Input のアクセシブルネームから主要操作を一意に取得する。
     const canvas = within(canvasElement);
-    const trigger = canvas.getByRole('combobox', { name: '分類付きの選択肢' });
+    const input = canvas.getByRole('combobox', { name: 'Timezone' });
 
-    await step('分類と無効項目を表示する', async () => {
-      await userEvent.click(trigger);
-      const listbox = await findListbox(canvasElement);
+    await step('分類と disabled timezone を表示する', async () => {
+      await userEvent.click(input);
+      const listbox = await findListbox(canvasElement, timezoneOptionsLabel);
       const listboxCanvas = within(listbox);
-      const disabledOption = listboxCanvas.getByRole('option', { name: '黄' });
+      const disabledOption = listboxCanvas.getByRole('option', { name: disabledTimezone });
 
-      // GroupLabel と Separator の存在に加え、無効項目が ARIA 状態を公開することを確認する。
-      await expect(listboxCanvas.getByText('基本色')).toBeVisible();
-      await expect(listboxCanvas.getByText('補助色')).toBeVisible();
-      await expect(listbox.querySelector('[data-slot="combobox-separator"]')).toBeVisible();
+      // GroupLabel、分類間 Separator、disabled option の ARIA 状態を同じ Popup 内で確認する。
+      await expect(listboxCanvas.getByText('Americas')).toBeVisible();
+      await expect(listboxCanvas.getByText('Europe')).toBeVisible();
+      await expect(listboxCanvas.getByText('Asia/Pacific')).toBeVisible();
       await expect(disabledOption).toHaveAttribute('aria-disabled', 'true');
-
-      // CSS の pointer-events を迂回した DOM click でも、無効項目が Value を変更しないことを保証する。
-      await fireEvent.click(disabledOption);
-      await expect(trigger).toHaveTextContent('項目を選択');
     });
 
-    await step('有効項目をクリックして選択する', async () => {
-      // 同じ分類一覧の有効項目を選択し、Trigger 内の Value と Popup 閉鎖を確認する。
-      const listbox = await findListbox(canvasElement);
-      await userEvent.click(within(listbox).getByRole('option', { name: '緑' }));
-      await expect(trigger).toHaveTextContent('緑');
+    await step('有効 timezone を pointer で選択する', async () => {
+      // 同じ分類一覧の有効 Item を選択し、Input に表示される timezone を確認する。
+      const listbox = await findListbox(canvasElement, timezoneOptionsLabel);
+      await userEvent.click(within(listbox).getByRole('option', { name: '(GMT+0) London' }));
+      await expect(input).toHaveValue('(GMT+0) London');
       await expectListboxClosed(canvasElement);
     });
   },
 };
 
-/** 複数の初期値を Chip で表示し、共有 anchor の Popup からクリックで選択を追加する。 */
+/** 公式 Multiple pattern の非制御 Chips、選択 checkmark、候補追加を検証する。 */
 export const MultipleWithChips: Story = {
-  render: () => <MultipleCombobox />,
+  render: () => <MultipleFrameworkCombobox />,
   play: async ({ canvasElement, step }) => {
-    // Portal 外の Chip と ChipsInput は canvas 内にあるため、選択前後の表示を同じ範囲で確認する。
+    // Chips と ChipsInput は canvas、候補一覧は Portal にあるため、選択前後で検索範囲を分ける。
     const canvas = within(canvasElement);
-    const input = canvas.getByRole('combobox', { name: '複数項目を検索' });
+    const input = canvas.getByRole('combobox', { name: 'Search frameworks' });
 
-    await step('初期選択を Chip として表示する', async () => {
-      const chips = canvasElement.querySelectorAll('[data-slot="combobox-chip"]');
-      await expect(chips).toHaveLength(2);
-      await expect(canvas.getByText('赤')).toBeVisible();
-      await expect(canvas.getByText('青')).toBeVisible();
+    await step('非制御の初期値を Chip と選択状態で表示する', async () => {
+      // 公式 defaultValue の一件が Chip として利用者へ表示されることを確認する。
+      await expect(canvas.getByText('Next.js')).toBeVisible();
+
+      // Popup の aria-selected は各 Item の内蔵 checkmark と同じ複数選択状態を支援技術へ公開する。
+      await userEvent.click(input);
+      const listbox = await findListbox(canvasElement, frameworkOptionsLabel);
+      await expect(within(listbox).getByRole('option', { name: 'Next.js' })).toHaveAttribute(
+        ariaSelectedAttribute,
+        ariaTrue
+      );
+      await expect(within(listbox).getByRole('option', { name: 'Nuxt.js' })).toHaveAttribute(
+        ariaSelectedAttribute,
+        'false'
+      );
     });
 
-    await step('候補をクリックして Chip を追加する', async () => {
-      // ChipsInput のクリックで anchor に配置された Popup を開き、未選択の固定項目を追加する。
-      await userEvent.click(input);
-      const listbox = await findListbox(canvasElement);
-      await userEvent.click(within(listbox).getByRole('option', { name: '緑' }));
-
-      await expect(canvasElement.querySelectorAll('[data-slot="combobox-chip"]')).toHaveLength(3);
-      await expect(canvas.getByText('緑')).toBeVisible();
+    await step('候補を pointer で選択して Chip を追加する', async () => {
+      // Multiple は Popup を開いたまま選択を追加し、非制御の選択値と Chip 表示を同期する。
+      const listbox = await findListbox(canvasElement, frameworkOptionsLabel);
+      await userEvent.click(within(listbox).getByRole('option', { name: 'Nuxt.js' }));
+      await expect(canvas.getByText('Nuxt.js')).toBeVisible();
+      await expect(within(listbox).getByRole('option', { name: 'Nuxt.js' })).toHaveAttribute(
+        ariaSelectedAttribute,
+        ariaTrue
+      );
     });
   },
 };

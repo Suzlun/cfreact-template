@@ -1,4 +1,4 @@
-import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import { Button } from '@cfreact-template/ui/components/button';
 import {
@@ -13,112 +13,320 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@cfreact-template/ui/components/dialog';
+import { Field, FieldGroup, FieldLabel } from '@cfreact-template/ui/components/field';
+import { Input } from '@cfreact-template/ui/components/input';
+import { Label } from '@cfreact-template/ui/components/label';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode, SyntheticEvent } from 'react';
 
 /**
- * 製品固有の文脈を持ち込まず、全 Story と interaction test で共有する固定表示。
+ * 公式 shadcn/ui の Dialog 例に合わせ、表示内容と interaction test の検索名を一元管理する。
  *
- * 各 Trigger と閉じる操作には一意な可視名を与え、Portal 内の Dialog を利用者視点の
- * role と accessible name から安定して取得できるようにする。参照以外の副作用はない。
+ * Edit Profile を主例にしつつ、既存 export が担う閉じる操作とスクロール例にも一意な
+ * accessible name と description を与える。固定値の参照以外に副作用はない。
  */
 const dialogCopy = {
-  title: '内容を確認',
-  description: 'ダイアログの見出し、説明、操作方法を確認するための固定内容です。',
   defaultClose: 'Close',
-  customClose: '確認して閉じる',
-  triggers: {
-    default: '既定のダイアログを開く',
-    customClose: '独自の閉じる操作を開く',
-    withoutClose: '閉じるボタンなしで開く',
-    footerClose: 'フッターの閉じる操作を開く',
-    longContent: '長い内容を開く',
+  profile: {
+    trigger: 'Open Dialog',
+    title: 'Edit profile',
+    description: "Make changes to your profile here. Click save when you're done.",
+    nameLabel: 'Name',
+    nameValue: 'Pedro Duarte',
+    usernameLabel: 'Username',
+    usernameValue: '@peduarte',
+    cancel: 'Cancel',
+    save: 'Save changes',
+  },
+  share: {
+    trigger: 'Share',
+    title: 'Share link',
+    description: 'Anyone who has this link will be able to view this.',
+    inputLabel: 'Link',
+    link: 'https://ui.shadcn.com/docs/installation',
+    close: 'Close',
+  },
+  withoutClose: {
+    trigger: 'No Close Button',
+    title: 'No Close Button',
+    description: "This dialog doesn't have a close button in the top-right corner.",
+  },
+  sticky: {
+    trigger: 'Sticky Footer',
+    title: 'Sticky Footer',
+    description: 'This dialog has a sticky footer that stays visible while the content scrolls.',
+    regionLabel: 'Sticky footer dialog content',
+  },
+  scroll: {
+    trigger: 'Scrollable Content',
+    title: 'Scrollable Content',
+    description: 'This is a dialog with scrollable content.',
+    regionLabel: 'Scrollable dialog content',
+    paragraph:
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
   },
 } as const;
 
-/**
- * 狭い画面での折り返しと縦方向のスクロールを確認する、製品文脈に依存しない固定段落。
- *
- * 段落は順序と内容を固定し、表示幅による差だけを比較できるようにする。
- */
-const longDialogParagraphs = [
-  'このダイアログには、複数行にわたる長い説明を表示できます。画面幅が狭い場合は、利用可能な幅に合わせて文章が自然に折り返されます。',
-  '内容が画面の高さを超える場合も、ダイアログ内部を縦方向に移動できます。見出しと閉じる操作は同じ領域に保たれ、横方向へのはみ出しは発生しません。',
-  '十分な画面幅がある場合は読みやすい最大幅を使い、段落間の余白によって情報のまとまりを判別できます。',
+/** 長文領域へ安定した React key を与え、十分な高さを確保する固定識別子。 */
+const scrollParagraphIds = [
+  'one',
+  'two',
+  'three',
+  'four',
+  'five',
+  'six',
+  'seven',
+  'eight',
+  'nine',
+  'ten',
 ] as const;
 
-/** Dialog 内で表示する閉じる操作の既存構成。 */
-type ClosePresentation = 'custom' | 'default' | 'footer' | 'none';
+/** Portal を跨ぐ Edit Profile form と、その入力・送信操作を関連付ける固定 ID。 */
+const profileFormId = 'dialog-edit-profile-form';
 
-/** Story 共通の Dialog 構成へ渡す、Root props と固定表示条件。 */
-interface DialogCatalogProps {
-  /** `DialogContent`、`DialogClose`、`DialogFooter` のどの既存契約で閉じる操作を表示するか。 */
-  closePresentation: ClosePresentation;
-  /** 短い既定内容の代わりに、固定された複数段落を表示するか。 */
-  longContent?: boolean;
-  /** Storybook と各 Story から受け取る Dialog Root の公開 props。 */
+/**
+ * Storybook 上で Edit Profile form のネイティブ送信による画面遷移だけを抑止する。
+ *
+ * @param event Story 内の form から発生した submit event。
+ * @returns 戻り値はなく、Storybook 文書の再読み込みだけを防ぐ。
+ */
+function handleProfileSubmit(event: SyntheticEvent<HTMLFormElement>): void {
+  // Story は永続化先を持たないため、フォーム本来の submit semantics を残したまま画面遷移を止める。
+  event.preventDefault();
+}
+
+/** 公式 Save changes が form submit を発火したことを、外部副作用なしで観測する Story 専用 spy。 */
+const profileSubmitSpy = fn(handleProfileSubmit);
+
+/** Dialog Root の公開 props を各固定例へ渡す共通契約。 */
+interface DialogExampleProps {
+  /** Storybook から受け取る Dialog Root の公開 props。 */
   rootProps: ComponentProps<typeof Dialog>;
-  /** Story ごとの Trigger を一意に取得するための固定表示名。 */
-  triggerLabel: string;
+}
+
+/** 各 Story の Trigger と accessible name・description を一組で扱う共通契約。 */
+interface DialogIdentity {
+  /** Dialog を開く Button の表示名。 */
+  trigger: string;
+  /** DialogTitle が提供する accessible name。 */
+  title: string;
+  /** DialogDescription が提供する accessible description。 */
+  description: string;
+}
+
+/** 公式例で共通する Root・Trigger・Content・Header の構成に固有内容を差し込む入力。 */
+interface DialogShellProps extends DialogExampleProps {
+  /** Story ごとの表示名とアクセシブルな識別情報。 */
+  identity: DialogIdentity;
+  /** Header の後へ置く、各公式例に固有の本文と操作。 */
+  children: ReactNode;
+  /** 公式例が Content に追加する任意の寸法クラス。 */
+  contentClassName?: string;
+  /** 右上の既定 close button を表示するか。 */
+  showCloseButton?: boolean;
 }
 
 /**
- * Dialog の公開サブコンポーネントを、既存の親子関係と token だけで組み立てる。
+ * 公式 Dialog 例に共通する composition を一元化し、各 Story の固有内容だけを描画する。
  *
- * @param props Root の公開 props、閉じる操作の構成、内容量、Trigger の固定表示名。
- * @returns 既定・独自・非表示・Footer の閉じる操作と長文表示を比較できる Dialog。
+ * @param props Dialog Root props、表示識別情報、Content 設定、固有の子要素。
+ * @returns 既存 primitive の DOM 順序とアクセシブルな関連付けを保つ Dialog。
  */
-function DialogCatalog({
-  closePresentation,
-  longContent = false,
+function DialogShell({
   rootProps,
-  triggerLabel,
-}: DialogCatalogProps) {
-  // 既定の icon close は対応する Story だけで有効にし、他の閉じる構成との重複を防ぐ。
-  const showDefaultClose = closePresentation === 'default';
-
+  identity,
+  children,
+  contentClassName,
+  showCloseButton = true,
+}: DialogShellProps) {
   return (
     <Dialog {...rootProps}>
-      {/* Trigger の button semantics は Base UI に委ね、既存 Button の outline variant だけを描画へ使う。 */}
-      <DialogTrigger render={<Button variant="outline" />}>{triggerLabel}</DialogTrigger>
-
-      <DialogContent
-        className={
-          longContent ? 'max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg' : undefined
-        }
-        showCloseButton={showDefaultClose}
-      >
+      <DialogTrigger render={<Button variant="outline" />}>{identity.trigger}</DialogTrigger>
+      <DialogContent className={contentClassName} showCloseButton={showCloseButton}>
         <DialogHeader>
-          {/* Title と Description を専用 primitive へ置き、dialog の名前と説明を支援技術へ関連付ける。 */}
-          <DialogTitle>{dialogCopy.title}</DialogTitle>
-          <DialogDescription>{dialogCopy.description}</DialogDescription>
+          <DialogTitle>{identity.title}</DialogTitle>
+          <DialogDescription>{identity.description}</DialogDescription>
         </DialogHeader>
-
-        {longContent && (
-          <div className="min-w-0 max-w-prose space-y-3 break-words text-muted-foreground leading-6">
-            {/* 固定文字列自体を key にし、内容が同じ限り段落の描画識別子も安定させる。 */}
-            {longDialogParagraphs.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
-          </div>
-        )}
-
-        {closePresentation === 'custom' && (
-          <DialogFooter>
-            {/* 公開 DialogClose と既存 Button を合成し、独自ラベルでも閉鎖 semantics を維持する。 */}
-            <DialogClose render={<Button variant="outline" />}>
-              {dialogCopy.customClose}
-            </DialogClose>
-          </DialogFooter>
-        )}
-
-        {closePresentation === 'footer' && (
-          /* Footer 自身の showCloseButton 契約に閉鎖処理を委ね、独自 handler を重ねない。 */
-          <DialogFooter showCloseButton />
-        )}
+        {children}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * 公式 Edit Profile 例を、既存 Dialog・Field・Input・Button の公開 API だけで構成する。
+ *
+ * @param props Storybook から受け取る Dialog Root の公開 props。
+ * @returns 名前とユーザー名を編集し、Cancel または Save changes を選べる Dialog。
+ */
+function EditProfileDialog({ rootProps }: DialogExampleProps) {
+  return (
+    <Dialog {...rootProps}>
+      {/* 公式例と同じ form 階層を保ち、Portal 内の controls は form 属性で明示的に関連付ける。 */}
+      <form id={profileFormId} onSubmit={profileSubmitSpy}>
+        <DialogTrigger render={<Button variant="outline" />}>
+          {dialogCopy.profile.trigger}
+        </DialogTrigger>
+
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            {/* 専用 primitive により、Title と Description を dialog の名前・説明として関連付ける。 */}
+            <DialogTitle>{dialogCopy.profile.title}</DialogTitle>
+            <DialogDescription>{dialogCopy.profile.description}</DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="dialog-profile-name">{dialogCopy.profile.nameLabel}</FieldLabel>
+              <Input
+                id="dialog-profile-name"
+                name="name"
+                form={profileFormId}
+                defaultValue={dialogCopy.profile.nameValue}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="dialog-profile-username">
+                {dialogCopy.profile.usernameLabel}
+              </FieldLabel>
+              <Input
+                id="dialog-profile-username"
+                name="username"
+                form={profileFormId}
+                defaultValue={dialogCopy.profile.usernameValue}
+              />
+            </Field>
+          </FieldGroup>
+
+          <DialogFooter>
+            {/* Cancel は DialogClose へ委譲し、送信せずに Dialog を閉じる。 */}
+            <DialogClose render={<Button type="button" variant="outline" />}>
+              {dialogCopy.profile.cancel}
+            </DialogClose>
+            {/* Portal 外の form を form 属性で参照し、Save changes を実際の submit action にする。 */}
+            <Button type="submit" form={profileFormId}>
+              {dialogCopy.profile.save}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </form>
+    </Dialog>
+  );
+}
+
+/**
+ * 公式 Custom Close Button 例に合わせ、既定 icon に加えて Footer の明示的な Close を表示する。
+ *
+ * @param props Storybook から受け取る Dialog Root の公開 props。
+ * @returns 読み取り専用リンクと、明示的な DialogClose action を持つ Dialog。
+ */
+function ShareLinkDialog({ rootProps }: DialogExampleProps) {
+  return (
+    <DialogShell rootProps={rootProps} identity={dialogCopy.share} contentClassName="sm:max-w-md">
+      <div className="flex items-center gap-2">
+        <div className="grid flex-1 gap-2">
+          {/* 可視ラベルを増やさず、読み取り専用 URL の名前を支援技術へ提供する。 */}
+          <Label htmlFor="dialog-share-link" className="sr-only">
+            {dialogCopy.share.inputLabel}
+          </Label>
+          <Input id="dialog-share-link" defaultValue={dialogCopy.share.link} readOnly />
+        </div>
+      </div>
+      <DialogFooter className="sm:justify-start">
+        {/* 公開 DialogClose と既存 Button を合成し、独自の Footer close を提供する。 */}
+        <DialogClose render={<Button type="button" />}>{dialogCopy.share.close}</DialogClose>
+      </DialogFooter>
+    </DialogShell>
+  );
+}
+
+/**
+ * 公式 No Close Button 例を、右上 icon の代わりに明示的な Footer close を残して構成する。
+ *
+ * @param props Storybook から受け取る Dialog Root の公開 props。
+ * @returns touch と keyboard の双方から退出でき、右上には close button を持たない Dialog。
+ */
+function NoCloseButtonDialog({ rootProps }: DialogExampleProps) {
+  return (
+    <DialogShell rootProps={rootProps} identity={dialogCopy.withoutClose} showCloseButton={false}>
+      <DialogFooter>
+        {/* 右上 icon を隠しても pointer・touch 利用者が退出できるよう、公式 registry 例の Footer close を保つ。 */}
+        <DialogClose render={<Button type="button" variant="outline" />}>
+          {dialogCopy.defaultClose}
+        </DialogClose>
+      </DialogFooter>
+    </DialogShell>
+  );
+}
+
+/** 公式の長文本文を再利用する、keyboard で focus 可能な scroll region の入力。 */
+interface ScrollableDialogBodyProps {
+  /** region の目的を読み上げる一意な accessible name。 */
+  regionLabel: string;
+}
+
+/**
+ * 公式例と同じ 10 段落を、標準 scrollbar を保った独立 scroll region として描画する。
+ *
+ * @param props Sticky Footer と Scrollable Content を識別する region label。
+ * @returns Header や Footer を移動させず、長文だけを keyboard と pointer で移動できる領域。
+ */
+function ScrollableDialogBody({ regionLabel }: ScrollableDialogBodyProps) {
+  return (
+    <div
+      role="region"
+      aria-label={regionLabel}
+      className="-mx-4 max-h-[50vh] min-w-0 space-y-4 overflow-y-auto px-4 leading-normal break-words"
+      tabIndex={0}
+    >
+      {scrollParagraphIds.map((paragraphId) => (
+        /* 固定識別子を key に使い、公式の表示順が変わらない限り DOM identity を維持する。 */
+        <p key={paragraphId}>{dialogCopy.scroll.paragraph}</p>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * 公式 Sticky Footer 例に合わせ、長文の移動中も Footer の Close を常に表示する。
+ *
+ * @param props Storybook から受け取る Dialog Root の公開 props。
+ * @returns 独立した長文領域と、領域外に固定された明示的な close action を持つ Dialog。
+ */
+function StickyFooterDialog({ rootProps }: DialogExampleProps) {
+  return (
+    <DialogShell
+      rootProps={rootProps}
+      identity={dialogCopy.sticky}
+      contentClassName="max-h-[calc(100dvh-2rem)]"
+    >
+      <ScrollableDialogBody regionLabel={dialogCopy.sticky.regionLabel} />
+      <DialogFooter>
+        {/* Footer を scroll region の兄弟に置き、長文を移動しても Close を操作可能な状態に保つ。 */}
+        <DialogClose render={<Button type="button" variant="outline" />}>
+          {dialogCopy.defaultClose}
+        </DialogClose>
+      </DialogFooter>
+    </DialogShell>
+  );
+}
+
+/**
+ * 公式 Scrollable Content 例に合わせ、Header を固定したまま本文領域だけをスクロールさせる。
+ *
+ * @param props Storybook から受け取る Dialog Root の公開 props。
+ * @returns viewport 内へ収まり、keyboard と pointer の双方で本文を移動できる Dialog。
+ */
+function ScrollableContentDialog({ rootProps }: DialogExampleProps) {
+  return (
+    <DialogShell
+      rootProps={rootProps}
+      identity={dialogCopy.scroll}
+      contentClassName="max-h-[calc(100dvh-2rem)]"
+    >
+      <ScrollableDialogBody regionLabel={dialogCopy.scroll.regionLabel} />
+    </DialogShell>
   );
 }
 
@@ -134,18 +342,21 @@ interface OpenedDialog {
  * Trigger を利用者と同じ経路で操作し、Portal 内に表示された Dialog を取得する。
  *
  * @param canvasElement Story が描画された範囲。Trigger と ownerDocument の特定に使う。
- * @param triggerLabel 操作対象の Trigger を識別する固定表示名。
- * @returns 可視性、名前、説明、focus 移動を確認できた Dialog と Trigger。
+ * @param identity 操作対象と、Dialog が持つべき accessible name・description。
+ * @returns 可視性、説明、Overlay、focus 移動を確認できた Dialog と Trigger。
  */
-async function openDialog(canvasElement: HTMLElement, triggerLabel: string): Promise<OpenedDialog> {
+async function openDialog(
+  canvasElement: HTMLElement,
+  identity: DialogIdentity
+): Promise<OpenedDialog> {
   // Trigger は Story canvas、Content と Overlay は Portal のため document body を検索範囲に分ける。
   const canvas = within(canvasElement);
   const documentBody = within(canvasElement.ownerDocument.body);
-  const trigger = canvas.getByRole('button', { name: triggerLabel });
+  const trigger = canvas.getByRole('button', { name: identity.trigger });
 
   // 実際の pointer 操作で開き、Portal の非同期描画が完了するまで role と名前から待機する。
   await userEvent.click(trigger);
-  const dialog = await documentBody.findByRole('dialog', { name: dialogCopy.title });
+  const dialog = await documentBody.findByRole('dialog', { name: identity.title });
 
   // 開始 animation 中の DOM 挿入を表示完了と誤認せず、利用者が操作できる可視状態まで待機する。
   await waitFor(async () => {
@@ -153,7 +364,7 @@ async function openDialog(canvasElement: HTMLElement, triggerLabel: string): Pro
   });
 
   // 見た目だけでなく、Title と Description が dialog の accessible name・description になることを保証する。
-  await expect(dialog).toHaveAccessibleDescription(dialogCopy.description);
+  await expect(dialog).toHaveAccessibleDescription(identity.description);
   await waitFor(async () => {
     await expect(
       canvasElement.ownerDocument.querySelector('[data-slot="dialog-overlay"]')
@@ -171,29 +382,80 @@ async function openDialog(canvasElement: HTMLElement, triggerLabel: string): Pro
 }
 
 /**
- * 閉鎖アニメーション後に Dialog が Portal から除去され、Trigger へ focus が戻ることを確認する。
+ * 閉鎖後に Dialog が Portal から除去され、Trigger へ focus が戻ることを確認する。
  *
  * @param canvasElement ownerDocument と Portal の検索範囲を特定する Story canvas。
+ * @param identity 閉鎖対象の Dialog を識別する表示情報。
  * @param trigger Dialog を開いたため、閉鎖後の focus 回復先となる要素。
  * @returns Dialog の除去と focus 回復が完了した時点で解決する Promise。
  */
-async function expectDialogClosed(canvasElement: HTMLElement, trigger: HTMLElement): Promise<void> {
+async function expectDialogClosed(
+  canvasElement: HTMLElement,
+  identity: DialogIdentity,
+  trigger: HTMLElement
+): Promise<void> {
   // animation の固定時間を仮定せず、role の消失と focus 回復の実際の状態を条件待機する。
   const documentBody = within(canvasElement.ownerDocument.body);
 
   await waitFor(async () => {
     await expect(
-      documentBody.queryByRole('dialog', { name: dialogCopy.title })
+      documentBody.queryByRole('dialog', { name: identity.title })
     ).not.toBeInTheDocument();
     await expect(trigger).toHaveFocus();
   });
 }
 
 /**
- * Dialog と全公開サブコンポーネントを CSF 3 の Docs・a11y・browser tests へ登録する。
+ * 開いている Dialog から Footer の close button を取得し、構造不備を明示的に失敗させる。
  *
- * DialogContent が DialogPortal と DialogOverlay を内部構成する既存契約を保ち、各 export は
- * `subcomponents` から直接参照する。Story 固有の表示は固定データだけから構成する。
+ * @param dialog Portal 内で取得済みの dialog 要素。
+ * @param closeLabel DialogClose の accessible name。
+ * @returns DialogFooter 内の操作対象となる close button。
+ * @throws DialogFooter が存在せず、公式 composition が崩れている場合。
+ */
+function getFooterCloseButton(dialog: HTMLElement, closeLabel: string): HTMLElement {
+  // data slot は既存 component が公開する構造識別子であり、className や DOM 順序には依存しない。
+  const footer = dialog.querySelector<HTMLElement>('[data-slot="dialog-footer"]');
+
+  if (footer === null) {
+    throw new Error('DialogFooter が見つかりません。');
+  }
+
+  return within(footer).getByRole('button', { name: closeLabel });
+}
+
+/**
+ * Sticky Footer と Scrollable Content が共有する長文領域の accessibility と overflow を検証する。
+ *
+ * @param dialog Portal 内で取得済みの dialog 要素。
+ * @param regionLabel 検証対象の scroll region を識別する accessible name。
+ * @returns 全段落と実 overflow を確認できた scroll region。
+ */
+async function expectScrollableRegion(
+  dialog: HTMLElement,
+  regionLabel: string
+): Promise<HTMLElement> {
+  const dialogCanvas = within(dialog);
+  const scrollRegion = dialogCanvas.getByRole('region', { name: regionLabel });
+
+  // 公式の高さ制限・keyboard focus・全固定段落・実 overflow を一組の契約として確認する。
+  await expect(scrollRegion).toHaveClass('max-h-[50vh]', 'overflow-y-auto');
+  await expect(scrollRegion).toHaveAttribute('tabindex', '0');
+  await expect(dialogCanvas.getAllByText(dialogCopy.scroll.paragraph)).toHaveLength(
+    scrollParagraphIds.length
+  );
+  await waitFor(async () => {
+    await expect(scrollRegion.scrollHeight).toBeGreaterThan(scrollRegion.clientHeight);
+  });
+
+  return scrollRegion;
+}
+
+/**
+ * Dialog と全公開サブコンポーネントを CSF 3 の Docs・a11y・interaction tests へ登録する。
+ *
+ * 公式 Edit Profile を主例とし、既存 export の close 配置と scroll 構成を現行 API の範囲で
+ * 保つ。Story 固有の表示以外に catalog 用の外枠や製品固有 UI は追加しない。
  */
 const meta = {
   title: 'Components/Dialog',
@@ -216,194 +478,227 @@ const meta = {
     docs: {
       description: {
         component:
-          'Trigger、Portal、Overlay、Content、Header、Footer、Title、Description、Close と、既定・独自・非表示の閉じる構成、長文表示を固定例で確認します。',
+          '公式 shadcn/ui の Edit Profile、Custom Close、No Close Button、Sticky Footer、Scrollable Content に沿って、編集、submit、scroll、focus、Escape、閉じる操作を確認します。',
       },
     },
     layout: 'centered',
   },
 } satisfies Meta<typeof Dialog>;
 
-/** Storybook が Dialog catalog の型、Docs、accessibility、interaction tests を構築するための既定 export。 */
+/** Storybook が Dialog の Docs・accessibility・interaction tests を構築するための既定 export。 */
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** 既定の icon close を持つ Dialog で、開放、focus、Escape、close button の完全な経路を検証する。 */
+/** 公式 Edit Profile を主例として示し、編集、submit、Cancel、Escape、close、focus を検証する。 */
 export const Default: Story = {
-  render: (args) => (
-    <DialogCatalog
-      closePresentation="default"
-      rootProps={args}
-      triggerLabel={dialogCopy.triggers.default}
-    />
-  ),
+  render: (args) => <EditProfileDialog rootProps={args} />,
   play: async ({ canvasElement, step }) => {
+    // Story の再実行時も今回の submit 回数だけを検証できるよう、外部副作用のない spy 履歴を初期化する。
+    profileSubmitSpy.mockClear();
     // modal が開くと背景の Trigger は inert になるため、開放前に focus 回復先の参照を保持する。
     const trigger = within(canvasElement).getByRole('button', {
-      name: dialogCopy.triggers.default,
+      name: dialogCopy.profile.trigger,
     });
 
-    await step('Trigger から Dialog を開き、Portal と focus 移動を確認する', async () => {
-      // 共通 helper で role、名前、説明、Overlay、Dialog 内 focus を一括して確認する。
-      await openDialog(canvasElement, dialogCopy.triggers.default);
+    await step('公式 Edit Profile を開き、focus、初期値、編集状態を確認する', async () => {
+      const { dialog } = await openDialog(canvasElement, dialogCopy.profile);
+      const dialogCanvas = within(dialog);
+      const nameInput = dialogCanvas.getByRole('textbox', { name: dialogCopy.profile.nameLabel });
+      const usernameInput = dialogCanvas.getByRole('textbox', {
+        name: dialogCopy.profile.usernameLabel,
+      });
+
+      // 最初の編集項目へ focus が移り、ラベル、初期値、form 関連付けが公式例と同じ意味を持つことを確認する。
+      await waitFor(async () => {
+        await expect(nameInput).toHaveFocus();
+      });
+      await expect(nameInput).toHaveValue(dialogCopy.profile.nameValue);
+      await expect(usernameInput).toHaveValue(dialogCopy.profile.usernameValue);
+      await expect(
+        dialogCanvas.getByRole('button', { name: dialogCopy.profile.cancel })
+      ).toBeVisible();
+      await expect(
+        dialogCanvas.getByRole('button', { name: dialogCopy.profile.save })
+      ).toHaveAttribute('form', profileFormId);
+
+      // 利用者と同じ入力操作で両 field を変更し、Dialog 内に編集途中の状態が保持されることを確認する。
+      await userEvent.clear(nameInput);
+      await userEvent.type(nameInput, 'Pedro Duarte Jr.');
+      await userEvent.clear(usernameInput);
+      await userEvent.type(usernameInput, '@peduarte-updated');
+      await expect(nameInput).toHaveValue('Pedro Duarte Jr.');
+      await expect(usernameInput).toHaveValue('@peduarte-updated');
+    });
+
+    await step('Save changes で編集 form を submit する', async () => {
+      const dialog = within(canvasElement.ownerDocument.body).getByRole('dialog', {
+        name: dialogCopy.profile.title,
+      });
+
+      // Portal 越しに form と関連付いた主要 action を操作し、画面遷移せず submit が一度だけ届くことを確認する。
+      await userEvent.click(within(dialog).getByRole('button', { name: dialogCopy.profile.save }));
+      await expect(profileSubmitSpy).toHaveBeenCalledTimes(1);
+      await expect(dialog).toBeVisible();
     });
 
     await step('Escape で閉じ、Trigger へ focus を戻す', async () => {
       // 開いた Dialog 内に focus がある状態で Escape を送り、Base UI の keyboard 閉鎖契約を通す。
       await userEvent.keyboard('{Escape}');
-      await expectDialogClosed(canvasElement, trigger);
+      await expectDialogClosed(canvasElement, dialogCopy.profile, trigger);
     });
 
-    await step('既定の close button で閉じる', async () => {
+    await step('既定の icon close で閉じる', async () => {
       // 再度開いて既定 icon button の accessible name を取得し、pointer 操作による閉鎖も保証する。
-      const { dialog, trigger } = await openDialog(canvasElement, dialogCopy.triggers.default);
-      const closeButton = within(dialog).getByRole('button', { name: dialogCopy.defaultClose });
-      await userEvent.click(closeButton);
-      await expectDialogClosed(canvasElement, trigger);
+      const { dialog, trigger: reopenedTrigger } = await openDialog(
+        canvasElement,
+        dialogCopy.profile
+      );
+      // 非制御 Dialog の再 mount 時に、未永続化の編集値ではなく公式の初期値へ戻ることを確認する。
+      await expect(
+        within(dialog).getByRole('textbox', { name: dialogCopy.profile.nameLabel })
+      ).toHaveValue(dialogCopy.profile.nameValue);
+      await userEvent.click(within(dialog).getByRole('button', { name: dialogCopy.defaultClose }));
+      await expectDialogClosed(canvasElement, dialogCopy.profile, reopenedTrigger);
+    });
+
+    await step('公式 Cancel action で閉じる', async () => {
+      // Footer の Cancel も DialogClose semantics を通り、同じ Trigger へ focus を復帰させることを確認する。
+      const { dialog, trigger: reopenedTrigger } = await openDialog(
+        canvasElement,
+        dialogCopy.profile
+      );
+      await userEvent.click(
+        within(dialog).getByRole('button', { name: dialogCopy.profile.cancel })
+      );
+      await expectDialogClosed(canvasElement, dialogCopy.profile, reopenedTrigger);
     });
   },
 };
 
-/** 既定 icon を非表示にして公開 DialogClose を合成し、独自ラベルの button で閉じる構成を検証する。 */
+/** 公式 Share Link の読み取り専用 URL と Footer close を、既定 icon と併用して検証する。 */
 export const CustomCloseButton: Story = {
-  render: (args) => (
-    <DialogCatalog
-      closePresentation="custom"
-      rootProps={args}
-      triggerLabel={dialogCopy.triggers.customClose}
-    />
-  ),
+  render: (args) => <ShareLinkDialog rootProps={args} />,
   play: async ({ canvasElement, step }) => {
     // modal 開放中も閉鎖後の focus 回復先を参照できるよう、操作前の Trigger を保持する。
-    const trigger = within(canvasElement).getByRole('button', {
-      name: dialogCopy.triggers.customClose,
-    });
+    const trigger = within(canvasElement).getByRole('button', { name: dialogCopy.share.trigger });
 
-    await step('既定 close を持たない Dialog を開く', async () => {
-      const { dialog } = await openDialog(canvasElement, dialogCopy.triggers.customClose);
+    await step('公式 Share Link Dialog と独自 Footer close を開く', async () => {
+      const { dialog } = await openDialog(canvasElement, dialogCopy.share);
       const dialogCanvas = within(dialog);
+      const footerCloseButton = getFooterCloseButton(dialog, dialogCopy.share.close);
 
-      // showCloseButton=false により既定の英語名を持つ button がなく、独自の可視名だけが存在することを確認する。
+      // 読み取り専用 URL、右上の既定 icon、Footer の明示的な DialogClose が公式例どおり表示されることを確認する。
       await expect(
-        dialogCanvas.queryByRole('button', { name: dialogCopy.defaultClose })
-      ).not.toBeInTheDocument();
-      await expect(
-        dialogCanvas.getByRole('button', { name: dialogCopy.customClose })
-      ).toBeVisible();
+        dialogCanvas.getByRole('textbox', { name: dialogCopy.share.inputLabel })
+      ).toHaveValue(dialogCopy.share.link);
+      await expect(dialog.querySelectorAll('[data-slot="dialog-close"]')).toHaveLength(2);
+      await expect(footerCloseButton).toBeVisible();
     });
 
-    await step('独自 DialogClose button で閉じる', async () => {
-      // Portal 内の独自ラベルを操作し、明示的な DialogClose でも focus 回復まで行われることを確認する。
+    await step('独自 Footer close で閉じる', async () => {
+      // Portal 内の可視操作を pointer で実行し、Dialog の除去と Trigger への focus 回復を確認する。
       const documentBody = within(canvasElement.ownerDocument.body);
-      await userEvent.click(documentBody.getByRole('button', { name: dialogCopy.customClose }));
-      await expectDialogClosed(canvasElement, trigger);
+      const dialog = documentBody.getByRole('dialog', { name: dialogCopy.share.title });
+      const footerCloseButton = getFooterCloseButton(dialog, dialogCopy.share.close);
+
+      await userEvent.click(footerCloseButton);
+      await expectDialogClosed(canvasElement, dialogCopy.share, trigger);
     });
   },
 };
 
-/** 可視の閉じる button を持たず、Escape を唯一の閉鎖操作として残す Dialog 構成を検証する。 */
+/** 右上 close を隠し、公式 registry 例の Footer close を明示的な退出経路として検証する。 */
 export const WithoutCloseButton: Story = {
-  render: (args) => (
-    <DialogCatalog
-      closePresentation="none"
-      rootProps={args}
-      triggerLabel={dialogCopy.triggers.withoutClose}
-    />
-  ),
+  name: 'No Close Button',
+  render: (args) => <NoCloseButtonDialog rootProps={args} />,
   play: async ({ canvasElement, step }) => {
-    // 可視 close を持たない状態でも focus 回復を確認できるよう、開放前の Trigger を保持する。
+    // 右上 close を持たない状態でも focus 回復を確認できるよう、開放前の Trigger を保持する。
     const trigger = within(canvasElement).getByRole('button', {
-      name: dialogCopy.triggers.withoutClose,
+      name: dialogCopy.withoutClose.trigger,
     });
 
-    await step('閉じる button を描画せず Dialog を開く', async () => {
-      const { dialog } = await openDialog(canvasElement, dialogCopy.triggers.withoutClose);
+    await step('右上 close を描画せず、Footer close へ focus する', async () => {
+      const { dialog } = await openDialog(canvasElement, dialogCopy.withoutClose);
+      const footerCloseButton = getFooterCloseButton(dialog, dialogCopy.defaultClose);
 
-      // DialogClose の data slot が一つもないことを確認し、見えない余分な button の混入も防ぐ。
-      await expect(dialog.querySelector('[data-slot="dialog-close"]')).not.toBeInTheDocument();
-    });
-
-    await step('閉じる button がなくても Escape で閉じる', async () => {
-      // keyboard の回復経路を実行し、閉鎖後は起点の Trigger へ focus が戻ることを確認する。
-      await userEvent.keyboard('{Escape}');
-      await expectDialogClosed(canvasElement, trigger);
-    });
-  },
-};
-
-/** DialogFooter の showCloseButton 契約で、区切られた Footer 内から閉じる構成を検証する。 */
-export const FooterCloseButton: Story = {
-  render: (args) => (
-    <DialogCatalog
-      closePresentation="footer"
-      rootProps={args}
-      triggerLabel={dialogCopy.triggers.footerClose}
-    />
-  ),
-  play: async ({ canvasElement, step }) => {
-    // Footer の close が背景を inert にする前に、閉鎖後の focus 回復先を保持する。
-    const trigger = within(canvasElement).getByRole('button', {
-      name: dialogCopy.triggers.footerClose,
-    });
-
-    await step('Footer の close button を持つ Dialog を開く', async () => {
-      const { dialog } = await openDialog(canvasElement, dialogCopy.triggers.footerClose);
-      const footerCloseButton = within(dialog).getByRole('button', {
-        name: dialogCopy.defaultClose,
+      // Content 直下の icon はなく、touch でも利用できる Footer 内の一意な close だけが残ることを確認する。
+      await expect(
+        dialog.querySelector(':scope > [data-slot="dialog-close"]')
+      ).not.toBeInTheDocument();
+      await expect(dialog.querySelectorAll('[data-slot="dialog-close"]')).toHaveLength(1);
+      await waitFor(async () => {
+        await expect(footerCloseButton).toHaveFocus();
       });
-
-      // close button が DialogFooter の data slot 内に置かれ、Content 直下の既定 icon と重複しないことを確認する。
-      await expect(footerCloseButton.closest('[data-slot="dialog-footer"]')).not.toBeNull();
-      await expect(within(dialog).getAllByRole('button')).toHaveLength(1);
+      // focusable control が一つでも、Tab と Shift+Tab が modal の外へ抜けず同じ close へ循環することを確認する。
+      await userEvent.tab();
+      await waitFor(async () => {
+        await expect(footerCloseButton).toHaveFocus();
+      });
+      await userEvent.tab({ shift: true });
+      await waitFor(async () => {
+        await expect(footerCloseButton).toHaveFocus();
+      });
     });
 
-    await step('Footer の close button で閉じる', async () => {
-      // Footer の可視操作を pointer で実行し、Dialog の除去と Trigger への focus 回復を確認する。
-      const documentBody = within(canvasElement.ownerDocument.body);
-      await userEvent.click(documentBody.getByRole('button', { name: dialogCopy.defaultClose }));
-      await expectDialogClosed(canvasElement, trigger);
+    await step('Footer close を keyboard で実行し、Trigger へ focus を戻す', async () => {
+      // focus 済みの明示的な close を Enter で実行し、pointer を使わない閉鎖経路も保証する。
+      await userEvent.keyboard('{Enter}');
+      await expectDialogClosed(canvasElement, dialogCopy.withoutClose, trigger);
     });
   },
 };
 
-/** 長い複数段落が狭い画面で折り返され、高さを超えた場合は Dialog 内で移動できる構成を示す。 */
-export const LongResponsiveContent: Story = {
-  parameters: {
-    layout: 'fullscreen',
+/** 公式 Sticky Footer と同じく、長文を移動しても Footer action を表示し続ける構成を検証する。 */
+export const FooterCloseButton: Story = {
+  name: 'Sticky Footer',
+  render: (args) => <StickyFooterDialog rootProps={args} />,
+  play: async ({ canvasElement, step }) => {
+    // 長文 modal が背景を inert にする前に、閉鎖後の focus 回復先を保持する。
+    const trigger = within(canvasElement).getByRole('button', {
+      name: dialogCopy.sticky.trigger,
+    });
+
+    await step('Sticky Footer と独立した scroll region を確認する', async () => {
+      const { dialog } = await openDialog(canvasElement, dialogCopy.sticky);
+      const scrollRegion = await expectScrollableRegion(dialog, dialogCopy.sticky.regionLabel);
+      const footerCloseButton = getFooterCloseButton(dialog, dialogCopy.defaultClose);
+
+      // 公式の高さ制限と全 10 段落を本文だけへ適用し、Footer action を scroll region の外側へ保つ。
+      await expect(scrollRegion.contains(footerCloseButton)).toBe(false);
+      await expect(footerCloseButton).toBeVisible();
+    });
+
+    await step('Sticky Footer の Close で閉じる', async () => {
+      // scroll 位置に依存しない Footer action を実行し、Dialog の除去と Trigger への focus 回復を確認する。
+      const documentBody = within(canvasElement.ownerDocument.body);
+      const dialog = documentBody.getByRole('dialog', { name: dialogCopy.sticky.title });
+      const footerCloseButton = getFooterCloseButton(dialog, dialogCopy.defaultClose);
+
+      await userEvent.click(footerCloseButton);
+      await expectDialogClosed(canvasElement, dialogCopy.sticky, trigger);
+    });
   },
-  render: (args) => (
-    <div className="flex min-h-svh items-center justify-center p-4">
-      {/* Story canvas 自体にも既存 spacing utility を使い、狭い viewport で Trigger が端へ接しないようにする。 */}
-      <DialogCatalog
-        closePresentation="default"
-        longContent
-        rootProps={args}
-        triggerLabel={dialogCopy.triggers.longContent}
-      />
-    </div>
-  ),
+};
+
+/** 公式 Scrollable Content と同じく、Header を保ちながら長文領域だけを移動できる構成を示す。 */
+export const LongResponsiveContent: Story = {
+  name: 'Scrollable Content',
+  render: (args) => <ScrollableContentDialog rootProps={args} />,
   play: async ({ canvasElement, step }) => {
     // 長文 modal の開放前に Trigger を保持し、閉鎖後の focus 回復を同じ要素で確認する。
-    const trigger = within(canvasElement).getByRole('button', {
-      name: dialogCopy.triggers.longContent,
-    });
+    const trigger = within(canvasElement).getByRole('button', { name: dialogCopy.scroll.trigger });
 
-    await step('長文 Dialog を開き、全段落の折り返し可能な表示を確認する', async () => {
-      const { dialog } = await openDialog(canvasElement, dialogCopy.triggers.longContent);
-      const dialogCanvas = within(dialog);
-
-      // 固定した全段落が同じ Dialog 内へ表示され、長文用の高さ制限と縦スクロールが適用されることを確認する。
-      for (const paragraph of longDialogParagraphs) {
-        await expect(dialogCanvas.getByText(paragraph)).toBeVisible();
-      }
-      await expect(dialog).toHaveClass('max-h-[calc(100dvh-2rem)]', 'overflow-y-auto');
+    await step('長文 Dialog を開き、独立した scroll region を確認する', async () => {
+      const { dialog } = await openDialog(canvasElement, dialogCopy.scroll);
+      await expectScrollableRegion(dialog, dialogCopy.scroll.regionLabel);
     });
 
     await step('長文表示から既定 close button で閉じる', async () => {
-      // 長文によって操作が失われていないことを、既定 close のクリックと focus 回復まで確認する。
+      // scroll region が存在しても既定 close を失わず、閉鎖後に Trigger へ focus が戻ることを確認する。
       const documentBody = within(canvasElement.ownerDocument.body);
       await userEvent.click(documentBody.getByRole('button', { name: dialogCopy.defaultClose }));
-      await expectDialogClosed(canvasElement, trigger);
+      await expectDialogClosed(canvasElement, dialogCopy.scroll, trigger);
     });
   },
 };

@@ -956,6 +956,8 @@
 
 - `packages/**/src/**/*.{ts,tsx}` は 1 ファイル 500 行以内にする
   - 強制: `pnpm lint` → `eslint .` → `rules['max-lines']` → `eslint.config.js` と `.eslintrc-maxlines.json`
+  - 例外: `packages/ui/stories/**/*.stories.{ts,tsx}`
+    - Story は表示例、状態、interaction、accessibility 検証を公開対象ごとの 1 ファイルへ集約する実行可能カタログのため、ファイル行数では分割しない
   - NG例
     - 600 行の巨大ファイル
   - OK例
@@ -963,6 +965,8 @@
 
 - `packages/**/src/**/*.{ts,tsx}` は 1 関数 100 行以内にする
   - 強制: `pnpm lint` → `eslint .` → `rules['max-lines-per-function']` → `eslint.config.js` と `.eslintrc-maxlines.json`
+  - 例外: `packages/ui/stories/**/*.stories.{ts,tsx}`
+    - Story の `render` と `play` は 1 つの利用状態と検証手順を連続して読めることを優先し、行数だけを理由に分割しない
   - NG例
     - 150 行の関数
   - OK例

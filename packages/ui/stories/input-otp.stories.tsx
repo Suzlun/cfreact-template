@@ -1,24 +1,27 @@
+import { REGEXP_ONLY_DIGITS } from 'input-otp';
+import { useState } from 'react';
 import { expect, userEvent, within } from 'storybook/test';
 
+import { Button } from '@cfreact-template/ui/components/button';
+import { Field, FieldError, FieldLabel } from '@cfreact-template/ui/components/field';
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSeparator,
   InputOTPSlot,
 } from '@cfreact-template/ui/components/input-otp';
-import { Label } from '@cfreact-template/ui/components/label';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, SubmitEvent } from 'react';
 
-/** OTP 入力を常に 6 桁として表示・検証するための固定桁数。 */
+/** 確認コードを常に 6 桁として表示・検証するための固定桁数。 */
 const otpLength = 6;
 
 /** 各 Slot の index を明示し、3 桁ずつの Group へ安定して配置する固定データ。 */
 const firstGroupIndexes = [0, 1, 2] as const;
 const secondGroupIndexes = [3, 4, 5] as const;
 
-/** Story の表示と interaction tests が共有する、決定的な 6 桁の固定値。 */
+/** Story の controlled 値と interaction tests が共有する、決定的な 6 桁の固定値。 */
 const fixedOtpValue = '123456';
 
 /** type と paste を別々に検証し、結合後に 6 桁となる固定入力値。 */
@@ -28,37 +31,39 @@ const pastedOtpSuffix = '456';
 /** 末尾を Backspace で削除した後に期待する固定値。 */
 const otpValueAfterBackspace = '12345';
 
-/** 数字以外を受け付けず、InputOTP を 6 桁の数字入力として扱う固定 pattern。 */
-const digitsOnlyPattern = '^[0-9]+$';
+/** pattern が数字以外を拒否することを検証する固定入力値。 */
+const rejectedOtpValue = 'abc';
 
-/** invalid 状態の入力欄から参照し、修正方法を伝える固定メッセージ。 */
-const invalidMessage = '6 桁の数字を入力してください。';
+/** 実際のログイン確認フォームとして意味が通る、全 Story 共通の固定文言。 */
+const verificationCopy = {
+  action: '確認する',
+  description: 'メールで受け取った6桁の確認コードを入力してください。',
+  fieldLabel: '確認コード',
+  formName: 'ログイン確認',
+  heading: 'ログインを確認',
+  invalidMessage: '確認コードは6桁の数字で入力してください。',
+} as const;
 
 /**
- * InputOTP の既存 props に、Story 内で可視ラベルと状態説明を構成する情報だけを追加する。
+ * InputOTP の既存 props に、controlled 初期値とフォーム状態の固定情報だけを追加する。
  *
- * `children` と `render` は Story 側で 6 個の Slot へ固定し、Controls から構造が崩れないようにする。
+ * `children`、`maxLength`、`minLength`、`name`、`required`、`value`、`onChange` は
+ * Story 側で固定し、公式の 3-3 構成とフォーム契約が Controls から崩れないようにする。
  */
 type InputOTPStoryArgs = Pick<
   ComponentProps<typeof InputOTP>,
-  | 'aria-invalid'
-  | 'autoComplete'
-  | 'defaultValue'
-  | 'disabled'
-  | 'inputMode'
-  | 'maxLength'
-  | 'pattern'
+  'aria-invalid' | 'autoComplete' | 'disabled' | 'inputMode' | 'pattern'
 > & {
-  /** InputOTP と Label を関連付ける、Story 内で一意な固定 ID。 */
+  /** InputOTP と FieldLabel を関連付ける、Story 内で一意な固定 ID。 */
   id: string;
-  /** 入力目的を可視表示し、InputOTP のアクセシブルネームにも使用する固定ラベル。 */
-  label: string;
+  /** controlled InputOTP が Story の mount 時に保持する固定初期値。 */
+  initialValue: string;
   /** invalid 状態で InputOTP へ関連付ける、任意の固定エラーメッセージ。 */
   errorMessage?: string;
 };
 
 /**
- * 6 個の Slot を 3 桁ずつの Group に分け、中央へ既存 Separator を描画する。
+ * 6 個の Slot を 3 桁ずつの Group に分け、中央へ公式構成と同じ Separator を描画する。
  *
  * @param invalid 実入力の invalid 状態。各 Slot の既存 destructive 表現へ同じ状態を渡す。
  * @returns InputOTP の Context を利用して固定 index の文字を表示する 6 桁構成。
@@ -84,45 +89,94 @@ function OTPSlots({ invalid }: { invalid: boolean }) {
 }
 
 /**
- * 可視 Label、6 桁の InputOTP、および任意のエラーメッセージを一つのフォーム項目として描画する。
+ * controlled InputOTP を、見出し、説明、ラベル、エラー、送信操作を備えた確認フォームへ構成する。
  *
- * @param props InputOTP の既存属性と、Story 専用の固定ラベル・状態説明。
- * @returns 入力の意味、状態、説明を支援技術からも解決できる Story 用フォーム項目。
+ * @param props InputOTP の状態属性、固定 ID、controlled 初期値、および任意のエラー説明。
+ * @returns 入力の目的と各状態を視覚・支援技術の双方から解決できるログイン確認フォーム。
  */
-function LabeledInputOTP({
+function VerificationCodeForm({
   id,
-  label,
+  initialValue,
   errorMessage,
   'aria-invalid': ariaInvalid,
+  disabled,
   ...inputProps
 }: InputOTPStoryArgs) {
-  // boolean と文字列の ARIA 値を同じ invalid 状態へ正規化し、Slot の視覚状態と一致させる。
+  // Story ごとの固定初期値から唯一の値 state を作り、InputOTP を公式 API と同じ controlled 入力にする。
+  const [value, setValue] = useState(initialValue);
+  // boolean と文字列の ARIA 値を同じ invalid 状態へ正規化し、Field、実入力、Slot の表現を一致させる。
   const invalid = ariaInvalid === true || ariaInvalid === 'true';
   // エラーが存在する Story だけ固定の説明 ID を生成し、不要な ARIA 参照を出力しない。
   const errorId = errorMessage === undefined ? undefined : `${id}-error`;
 
+  /**
+   * InputOTP が通知した次の値を controlled state へ反映する。
+   *
+   * @param nextValue pattern と桁数制約を通過した現在の確認コード。
+   */
+  function handleValueChange(nextValue: string) {
+    // DOM 値と Slot 表示を同じ state から再描画し、入力、貼り付け、削除の結果を一貫させる。
+    setValue(nextValue);
+  }
+
+  /**
+   * Story 内の送信でページ遷移を起こさず、フォームとしてのネイティブ構造だけを検証可能に保つ。
+   *
+   * @param event 確認ボタンまたは Enter キーによって form 要素から発生した submit event。
+   */
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+    // Storybook canvas を離脱しないよう既定送信だけを停止し、成功状態や通信結果は捏造しない。
+    event.preventDefault();
+  }
+
   return (
-    <div className="grid max-w-full gap-2">
-      {/* 可視 Label と透明な実入力を固定 ID で関連付け、クリックと読み上げの対象を一致させる。 */}
-      <Label htmlFor={id}>{label}</Label>
-
-      <InputOTP
-        {...inputProps}
-        id={id}
-        aria-describedby={errorId}
-        aria-invalid={ariaInvalid}
-        maxLength={otpLength}
-      >
-        <OTPSlots invalid={invalid} />
-      </InputOTP>
-
-      {errorMessage === undefined ? null : (
-        // 既存 destructive token だけで invalid の理由を表示し、実入力から説明として参照する。
-        <p id={errorId} role="alert" className="text-sm text-destructive">
-          {errorMessage}
+    <form
+      aria-label={verificationCopy.formName}
+      className="w-80 max-w-full space-y-6"
+      onSubmit={handleSubmit}
+    >
+      {/* 製品操作として必要な目的と入力指示だけを示し、デモ用の外枠や装飾見出しは追加しない。 */}
+      <div className="space-y-1.5">
+        <h2 className="text-base font-semibold">{verificationCopy.heading}</h2>
+        <p className="text-sm leading-normal text-muted-foreground">
+          {verificationCopy.description}
         </p>
-      )}
-    </div>
+      </div>
+
+      {/* Field の状態属性と ARIA を同じ根拠から設定し、色以外でも disabled・invalid を伝える。 */}
+      <Field
+        data-disabled={disabled === true ? 'true' : undefined}
+        data-invalid={invalid ? 'true' : undefined}
+      >
+        <FieldLabel htmlFor={id}>{verificationCopy.fieldLabel}</FieldLabel>
+        <InputOTP
+          {...inputProps}
+          id={id}
+          aria-describedby={errorId}
+          aria-invalid={ariaInvalid}
+          aria-required="true"
+          disabled={disabled}
+          maxLength={otpLength}
+          minLength={otpLength}
+          name="verificationCode"
+          onChange={handleValueChange}
+          required
+          value={value}
+        >
+          <OTPSlots invalid={invalid} />
+        </InputOTP>
+
+        {errorMessage === undefined ? null : (
+          // FieldError の alert semantics と既存 destructive token を利用し、修正方法を実入力へ関連付ける。
+          <FieldError id={errorId}>{errorMessage}</FieldError>
+        )}
+      </Field>
+
+      {/* 入力不可時は送信操作も無効化し、フォーム内の操作可能状態を矛盾させない。 */}
+      <Button className="w-full" type="submit" disabled={disabled}>
+        {verificationCopy.action}
+      </Button>
+    </form>
   );
 }
 
@@ -150,64 +204,62 @@ async function getAccessibleOTPInput(
   return input;
 }
 
-/** InputOTP 一式の Docs、Controls、interaction tests を CSF3 へ登録する metadata。 */
+/** InputOTP の公式構成、controlled 値、フォーム状態、interaction tests を CSF3 へ登録する metadata。 */
 const meta = {
   title: 'Forms/Input OTP',
-  component: LabeledInputOTP,
+  component: VerificationCodeForm,
   parameters: {
+    controls: {
+      disable: true,
+    },
+    docs: {
+      description: {
+        component:
+          '6桁の数字を受け取る controlled InputOTP を、公式のグループ・区切り構成と実際の確認フォームで示します。',
+      },
+    },
     layout: 'centered',
   },
   args: {
     autoComplete: 'one-time-code',
     id: 'input-otp-default',
+    initialValue: fixedOtpValue,
     inputMode: 'numeric',
-    label: 'ワンタイムコード',
-    maxLength: otpLength,
-    pattern: digitsOnlyPattern,
+    pattern: REGEXP_ONLY_DIGITS,
   },
-  argTypes: {
-    errorMessage: {
-      control: false,
-      description: 'invalid 状態で InputOTP へ関連付ける固定エラーメッセージ。',
-    },
-    id: {
-      control: false,
-      description: 'InputOTP と Label を関連付ける Story 内の固定 ID。',
-    },
-    label: {
-      control: false,
-      description: 'InputOTP の可視ラベル兼アクセシブルネーム。',
-    },
-    maxLength: {
-      control: false,
-      description: '6 個の InputOTPSlot と一致させる固定桁数。',
-    },
-  },
-  render: (args) => <LabeledInputOTP {...args} />,
-} satisfies Meta<InputOTPStoryArgs>;
+} satisfies Meta<typeof VerificationCodeForm>;
 
 /** Storybook が InputOTP catalog の metadata を読み込むための既定 export。 */
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** 6 桁の固定値と、Group・Slot・Separator を含む既定構成を表示・検証する。 */
+/** 公式の 3-3 Group 構成、Separator、controlled 値、数字 pattern をフォーム内で表示・検証する。 */
 export const Default: Story = {
-  args: {
-    defaultValue: fixedOtpValue,
-  },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
-    const input = await getAccessibleOTPInput(canvasElement, 'ワンタイムコード');
+    const input = await getAccessibleOTPInput(canvasElement, verificationCopy.fieldLabel);
 
-    await step('6 桁の固定値を一つの実入力として公開する', async () => {
-      // maxLength と初期値を検証し、見た目が分割されても単一入力として扱われることを保証する。
-      await expect(input).toHaveAttribute('maxlength', String(otpLength));
+    await step('確認フォームとして controlled の 6 桁値と入力制約を公開する', async () => {
+      // form と主操作を利用者視点で取得し、デモ用コンテナではなく実際の送信構造であることを保証する。
+      await expect(
+        canvas.getByRole('form', { name: verificationCopy.formName })
+      ).toBeInTheDocument();
+      await expect(canvas.getByRole('button', { name: verificationCopy.action })).toBeEnabled();
+
+      // 公式 API の controlled 値、数字 pattern、OTP 向け属性、厳密な桁数を実入力で検証する。
       await expect(input).toHaveValue(fixedOtpValue);
+      await expect(input).toHaveAttribute('autocomplete', 'one-time-code');
+      await expect(input).toHaveAttribute('inputmode', 'numeric');
+      await expect(input).toHaveAttribute('maxlength', String(otpLength));
+      await expect(input).toHaveAttribute('minlength', String(otpLength));
+      await expect(input).toHaveAttribute('name', 'verificationCode');
+      await expect(input).toHaveAttribute('pattern', REGEXP_ONLY_DIGITS);
+      await expect(input).toBeRequired();
     });
 
     await step('2 Group・6 Slot・1 Separator を表示する', async () => {
-      // 各 primitive の公開 data-slot と separator role を確認し、固定した 3-3 構成の欠落を検出する。
+      // 各 primitive の公開 data-slot と separator role を確認し、公式の固定 3-3 構成の欠落を検出する。
       await expect(canvasElement.querySelectorAll('[data-slot="input-otp-group"]')).toHaveLength(2);
       await expect(canvasElement.querySelectorAll('[data-slot="input-otp-slot"]')).toHaveLength(
         otpLength
@@ -217,43 +269,42 @@ export const Default: Story = {
   },
 };
 
-/** 固定値を保持した InputOTP が focus・入力・貼り付けの対象にならない disabled 状態を示す。 */
+/** controlled 値を保持した InputOTP と確認操作が focus・入力・貼り付けの対象にならない状態を示す。 */
 export const Disabled: Story = {
   args: {
-    defaultValue: fixedOtpValue,
     disabled: true,
     id: 'input-otp-disabled',
-    label: '入力できないワンタイムコード',
   },
   play: async ({ canvasElement }) => {
-    const input = await getAccessibleOTPInput(canvasElement, '入力できないワンタイムコード');
+    const canvas = within(canvasElement);
+    const input = await getAccessibleOTPInput(canvasElement, verificationCopy.fieldLabel);
 
-    // disabled semantics と固定値を同時に検証し、表示値を失わず操作対象から外れることを保証する。
+    // disabled semantics と controlled 値を同時に検証し、表示値を失わずフォーム操作の対象から外れることを保証する。
     await expect(input).toBeDisabled();
     await expect(input).toHaveValue(fixedOtpValue);
+    await expect(canvas.getByRole('button', { name: verificationCopy.action })).toBeDisabled();
   },
 };
 
-/** 6 桁に満たない固定値へ invalid semantics と具体的な説明を関連付ける。 */
+/** 6 桁に満たない controlled 値へ invalid semantics と具体的な修正説明を関連付ける。 */
 export const Invalid: Story = {
   args: {
     'aria-invalid': true,
-    defaultValue: otpValueAfterBackspace,
-    errorMessage: invalidMessage,
+    errorMessage: verificationCopy.invalidMessage,
     id: 'input-otp-invalid',
-    label: '確認が必要なワンタイムコード',
+    initialValue: otpValueAfterBackspace,
   },
   play: async ({ canvasElement, step }) => {
-    const input = await getAccessibleOTPInput(canvasElement, '確認が必要なワンタイムコード');
+    const input = await getAccessibleOTPInput(canvasElement, verificationCopy.fieldLabel);
 
     await step('invalid semantics とエラーメッセージを関連付ける', async () => {
       // 実入力の状態と説明を検証し、エラー理由が色だけに依存しないことを保証する。
       await expect(input).toHaveAttribute('aria-invalid', 'true');
-      await expect(input).toHaveAccessibleDescription(invalidMessage);
+      await expect(input).toHaveAccessibleDescription(verificationCopy.invalidMessage);
     });
 
-    await step('6 個の Slot へ既存 invalid 表現を適用する', async () => {
-      // Slot の既存 aria-invalid variant を利用し、Group の :has() 状態も同じ根拠で有効にする。
+    await step('6 個の Slot へ公式の invalid 指定を適用する', async () => {
+      // 公式ドキュメントどおり Slot へ aria-invalid を渡し、既存の border・ring 表現を同じ根拠で有効にする。
       const invalidSlots = canvasElement.querySelectorAll(
         '[data-slot="input-otp-slot"][aria-invalid="true"]'
       );
@@ -262,25 +313,29 @@ export const Invalid: Story = {
   },
 };
 
-/** paste・type・Backspace を実入力へ送り、6 桁の値が一貫して更新されることを検証する。 */
+/** pattern、paste、type、Backspace を実入力へ送り、controlled 値が一貫して更新されることを検証する。 */
 export const KeyboardInteractions: Story = {
   args: {
-    defaultValue: fixedOtpValue,
     id: 'input-otp-keyboard-interactions',
-    label: '操作を確認するワンタイムコード',
   },
   play: async ({ canvasElement, step }) => {
-    const input = await getAccessibleOTPInput(canvasElement, '操作を確認するワンタイムコード');
+    const input = await getAccessibleOTPInput(canvasElement, verificationCopy.fieldLabel);
 
-    await step('固定値をキーボードで選択し Backspace で削除する', async () => {
+    await step('controlled 値をキーボードで選択し Backspace で削除する', async () => {
       // 実入力へ focus を移し、標準の全選択と Backspace で値を空にできることを確認する。
       await userEvent.click(input);
       await userEvent.keyboard('{Control>}a{/Control}{Backspace}');
       await expect(input).toHaveValue('');
     });
 
+    await step('数字以外を pattern で拒否する', async () => {
+      // 公式の REGEXP_ONLY_DIGITS に一致しない文字列を入力し、controlled 値が変化しないことを保証する。
+      await userEvent.type(input, rejectedOtpValue);
+      await expect(input).toHaveValue('');
+    });
+
     await step('先頭 3 桁を type し、末尾 3 桁を paste する', async () => {
-      // type と paste を別操作として実行し、結合した値が固定の 6 桁へ到達することを確認する。
+      // type と paste を別操作として実行し、結合した controlled 値が固定の 6 桁へ到達することを確認する。
       await userEvent.type(input, typedOtpPrefix);
       await expect(input).toHaveValue(typedOtpPrefix);
       await userEvent.paste(pastedOtpSuffix);

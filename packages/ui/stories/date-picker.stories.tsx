@@ -1,87 +1,100 @@
 import { format } from 'date-fns';
 import { useState } from 'react';
-import { ja } from 'react-day-picker/locale';
-import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import { DatePicker, type DatePickerProps } from '@cfreact-template/ui/components/date-picker';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-/** 固定月の各日を実行環境のローカル暦日として生成し、UTC 変換による日付ずれを避ける。 */
-function createFixedJulyDate(day: number): Date {
-  // DatePicker と DayPicker が扱うローカル日付を直接生成し、現在時刻や ISO 文字列の timezone に依存させない。
+/**
+ * DatePicker と Calendar が扱う固定のローカル暦日を生成する。
+ *
+ * @param day 2026 年 7 月のうち、Story で表示または操作する日。
+ * @returns UTC 変換や実行時刻に依存しないローカル暦日の Date。
+ * @example
+ * createJulyDate(15);
+ */
+function createJulyDate(day: number): Date {
+  // Calendar と同じローカル暦日を直接生成し、ISO 文字列の timezone 変換による日付ずれを防ぐ。
   return new Date(2026, 6, day);
 }
 
-/** すべての Story で初期表示する、再現可能な 2026 年 7 月。 */
-const fixedMonth = createFixedJulyDate(1);
+/** 公式例と同じ未選択状態を伝える、簡潔で一般的な固定文言。 */
+const placeholder = 'Pick a date';
 
-/** 実行日によって today 表示が変わらないように固定する、2026 年 7 月 20 日。 */
-const fixedToday = createFixedJulyDate(20);
+/** Portal 内の Calendar を実行環境に依存せず取得するための固定月名。 */
+const fixedMonthAccessibleName = 'July 2026';
 
-/** 非制御 Story が初期選択と解除操作に使用する固定日。 */
-const uncontrolledInitialDate = createFixedJulyDate(15);
+/** すべての Story が最初に表示する固定月。 */
+const fixedMonth = createJulyDate(1);
 
-/** 非制御 Story が解除後の再選択に使用する固定日。 */
-const uncontrolledNextDate = createFixedJulyDate(16);
+/** 実行日によって today の強調が変わらないようにする固定日。 */
+const fixedToday = createJulyDate(20);
 
-/** 制御 Story が利用側 state の初期値に使用する固定日。 */
-const controlledInitialDate = createFixedJulyDate(10);
+/** 非制御利用の初期選択として表示する固定日。 */
+const uncontrolledInitialDate = createJulyDate(15);
 
-/** 制御 Story が利用側 state の更新を確認するために選択する固定日。 */
-const controlledNextDate = createFixedJulyDate(11);
+/** 非制御利用で初期選択を解除した後に選ぶ固定日。 */
+const uncontrolledNextDate = createJulyDate(16);
 
-/** `calendarProps.disabled` から内部 Calendar へ渡す固定の操作不可日。 */
-const disabledCalendarDate = createFixedJulyDate(14);
+/** 制御利用で外部 state の初期値にする固定日。 */
+const controlledInitialDate = createJulyDate(10);
 
-/** disabled 日の隣で、通常のキーボード選択が維持されることを確認する固定日。 */
-const enabledCalendarDate = createFixedJulyDate(15);
+/** 制御利用で外部 state の更新を確認する固定日。 */
+const controlledNextDate = createJulyDate(11);
 
-/** 未選択状態と解除後の Trigger に一貫して表示する固定 placeholder。 */
-const placeholder = '日付を選択';
+/** `calendarProps.disabled` で操作不可にする固定日。 */
+const disabledCalendarDate = createJulyDate(14);
 
-/** Portal 内の Calendar を固定月から安定して取得するためのアクセシブルネーム。 */
-const fixedMonthAccessibleName = '2026年7月';
+/** disabled day の隣で、通常選択が維持されることを確認する固定日。 */
+const enabledCalendarDate = createJulyDate(15);
 
-/** 現在日、初期月、locale を固定し、全 Story から実行時刻と環境 locale の差を除く。 */
+/**
+ * 公式例の `data-empty` 表現と同じく、未選択文言だけを muted token で表示する。
+ * DatePicker の公開 `className` 契約を使い、選択済みの日付には muted 表現を残さない。
+ */
+const triggerClassName = 'has-[span]:text-muted-foreground';
+
+/** 現在日と初期月を固定し、各 Story の Calendar 表示を再現可能にする。 */
 const fixedCalendarProps = {
   defaultMonth: fixedMonth,
-  locale: ja,
   today: fixedToday,
 } satisfies NonNullable<DatePickerProps['calendarProps']>;
 
-/** 非制御 Story が選択・解除通知を外部作用なしで観測する固定 spy。 */
+/** 非制御 Story の選択変更を、外部作用なしで観測する固定 spy。 */
 const uncontrolledValueChange = fn();
 
-/** 制御 Story が利用側 state と同じ変更通知を観測する固定 spy。 */
+/** 制御 Story の選択変更を、外部作用なしで観測する固定 spy。 */
 const controlledValueChange = fn();
 
-/** disabled day が変更通知を発生させないことを観測する固定 spy。 */
+/** disabled day が選択変更を通知しないことを観測する固定 spy。 */
 const disabledDayValueChange = fn();
 
-/** 制御 Story の利用側 state と変更通知を構成するために必要な固定契約。 */
+/** 制御 DatePicker を構成するために Story から受け取る変更通知。 */
 interface ControlledDatePickerProps {
-  /** DatePicker から通知された選択値を、Storybook interaction test へ公開する spy。 */
+  /** DatePicker が通知した次の値を interaction test へ公開する spy。 */
   onValueChange: NonNullable<DatePickerProps['onValueChange']>;
 }
 
 /**
- * `value` と `onValueChange` を利用側 state へ接続し、DatePicker の制御利用を再現する。
+ * 公式の単一日付 Picker を、利用側 state で制御する構成を示す。
  *
- * @param props 選択変更を観測する Storybook spy。
- * @returns 固定初期日から利用者の選択へ更新される制御 DatePicker。
+ * @param props DatePicker の変更通知を観測する callback。
+ * @returns 固定初期日から利用者が選択した日付へ更新される制御 DatePicker。
+ * @example
+ * <ControlledDatePicker onValueChange={(date) => console.log(date)} />;
  */
 function ControlledDatePicker({ onValueChange }: ControlledDatePickerProps) {
-  // 固定初期日から始め、DatePicker が通知した値だけを次の制御値として保持する。
+  // 公開 `value` 契約へ戻す値だけを保持し、派生 state や外部データを持ち込まない。
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(controlledInitialDate);
 
   /**
-   * DatePicker の変更通知を観測可能にしてから、同じ値を利用側の制御 state へ反映する。
+   * DatePicker の通知を Storybook spy と制御 state の両方へ同じ順序で反映する。
    *
-   * @param nextDate 利用者が選択または解除した次の日付。
+   * @param nextDate 利用者が選択した日付、または選択解除時の undefined。
    */
   const handleValueChange = (nextDate: Date | undefined) => {
-    // 通知と再描画を同じ操作へ閉じ込め、外部データや永続的な副作用は発生させない。
+    // 先に公開 callback へ通知し、その同じ値を次の制御表示へ反映して契約の分岐を作らない。
     onValueChange(nextDate);
     setSelectedDate(nextDate);
   };
@@ -89,6 +102,7 @@ function ControlledDatePicker({ onValueChange }: ControlledDatePickerProps) {
   return (
     <DatePicker
       calendarProps={fixedCalendarProps}
+      className={triggerClassName}
       placeholder={placeholder}
       value={selectedDate}
       onValueChange={handleValueChange}
@@ -97,40 +111,40 @@ function ControlledDatePicker({ onValueChange }: ControlledDatePickerProps) {
 }
 
 /**
- * 選択済み DatePicker Trigger が公開するアクセシブルネームを固定日から生成する。
+ * 選択済み Trigger が公開するアクセシブルネームを、表示と同じ固定書式から生成する。
  *
- * @param date Trigger に表示される固定のローカル暦日。
- * @returns DatePicker 本体の既存 `PPP` 表示と一致するアクセシブルネーム。
+ * @param date Trigger に表示する固定のローカル暦日。
+ * @returns DatePicker の既存 aria-label と一致する文字列。
  */
 function getSelectedDateAccessibleName(date: Date): string {
-  // DatePicker と同じ date-fns 書式だけを使用し、ブラウザー組み込み locale の差を持ち込まない。
+  // DatePicker 本体と同じ date-fns の `PPP` 書式を使い、表示と検証の差を作らない。
   return `Selected date: ${format(date, 'PPP')}`;
 }
 
 /**
- * Trigger を focus して Enter で開き、Portal 内に表示された固定月 Calendar を返す。
+ * Trigger を Enter で開き、Portal 内の固定月 Calendar が操作可能になるまで待機する。
  *
  * @param canvasElement Story と Portal が共有する ownerDocument の取得元。
- * @param trigger キーボードで開く DatePicker の Trigger button。
- * @returns 開始アニメーションを完了し、操作可能になった 2026 年 7 月の grid。
+ * @param trigger キーボードで開く DatePicker Trigger。
+ * @returns 可視状態になった July 2026 の Calendar grid。
  */
 async function openCalendarWithKeyboard(
   canvasElement: HTMLElement,
   trigger: HTMLElement
 ): Promise<HTMLElement> {
-  // ポインターを使わず Trigger へ focus を移し、標準 button の Enter 操作で Popover を開く。
+  // 標準 button へ focus を移して Enter を送り、pointer に依存しない Popover の開放経路を実行する。
   trigger.focus();
   await expect(trigger).toHaveFocus();
   await userEvent.keyboard('{Enter}');
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 
-  // Calendar は Portal に描画されるため、Story canvas ではなく同じ document の body を検索する。
+  // Calendar は Portal に描画されるため、canvas ではなく同じ document の body から取得する。
   const calendar = await within(canvasElement.ownerDocument.body).findByRole('grid', {
     name: fixedMonthAccessibleName,
   });
 
+  // Popover の開始 animation と位置計算が完了し、利用者が見える状態になるまで条件待機する。
   await waitFor(async () => {
-    // Popover の開始トランジションが完了するまで条件待機し、透明な中間状態を操作しない。
     await expect(calendar).toBeVisible();
   });
 
@@ -138,158 +152,151 @@ async function openCalendarWithKeyboard(
 }
 
 /**
- * 開いている Calendar を Escape で閉じ、focus が Trigger へ戻るまで待機する。
+ * 開いている Calendar を Escape で閉じ、Trigger へ focus が復帰するまで待機する。
  *
- * @param trigger 開閉状態と復帰した focus を検証する DatePicker の Trigger button。
- * @returns Popover の終了処理と focus 復帰が完了した時点で解決する Promise。
+ * @param canvasElement Portal の終了を確認する ownerDocument の取得元。
+ * @param trigger 閉状態と focus 復帰を確認する DatePicker Trigger。
+ * @returns Popover の終了処理が完了した時点で解決する Promise。
  */
-async function closeCalendarWithKeyboard(trigger: HTMLElement): Promise<void> {
-  // Calendar 内または Popover 自体にある focus から Escape を送り、既存の dismissal 契約を実行する。
+async function closeCalendarWithKeyboard(
+  canvasElement: HTMLElement,
+  trigger: HTMLElement
+): Promise<void> {
+  // Calendar 内の現在 focus から Escape を送り、Popover 標準の dismissal 経路を実行する。
   await userEvent.keyboard('{Escape}');
 
+  // 終了 animation の時間を推測せず、Portal の除去、閉状態、focus 復帰をまとめて待機する。
   await waitFor(async () => {
-    // 終了トランジション後に Trigger の展開状態と focus が同時に復元されるまで条件待機する。
+    await expect(
+      within(canvasElement.ownerDocument.body).queryByRole('grid', {
+        name: fixedMonthAccessibleName,
+      })
+    ).not.toBeInTheDocument();
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect(trigger).toHaveFocus();
   });
 }
 
 /**
- * DatePicker の既存 API と固定日だけを CSF 3 の Docs・Controls・browser tests へ登録する。
- *
- * 製品文脈や追加 token を持ち込まず、非制御、制御、空、無効、および disabled day を比較する。
+ * 既存 DatePicker を、公式 shadcn/ui の Popover・Button・Calendar 合成と同じ単一日付表示で登録する。
+ * range、preset、input は DatePicker の公開 API に存在しないため、Story から独自契約を追加しない。
  */
 const meta = {
   title: 'Forms/DatePicker',
   component: DatePicker,
   parameters: {
-    layout: 'centered',
+    controls: {
+      disable: true,
+    },
     docs: {
       description: {
         component:
-          '非制御の初期値、制御値、未選択の placeholder、全体の無効化、および calendarProps で指定する無効日を固定日で確認します。',
+          'Popover、outline Button、単一選択 Calendar を組み合わせた日付選択です。固定日で選択、解除、制御値、無効状態を確認します。',
       },
     },
-  },
-  argTypes: {
-    calendarProps: {
-      control: false,
-      description: '内部 Calendar へ渡す、単一選択以外の既存設定。',
-    },
-    className: {
-      control: false,
-      description: 'DatePicker Trigger へ追加する既存 Tailwind CSS class。',
-    },
-    defaultValue: {
-      control: false,
-      description: '非制御利用時に最初に表示する固定日。',
-    },
-    onValueChange: {
-      control: false,
-      description: '日付の選択または解除を通知する既存 callback。',
-    },
-    value: {
-      control: false,
-      description: '制御利用時に表示する固定日。',
-    },
+    layout: 'centered',
   },
 } satisfies Meta<typeof DatePicker>;
 
-/** Storybook が DatePicker catalog の Docs・Controls・browser tests を構築する既定 export。 */
+/** Storybook が DatePicker の Docs、accessibility、interaction tests を構築する既定 export。 */
 export default meta;
 
+/** metadata から各 DatePicker Story の CSF 3 型を導出する。 */
 type Story = StoryObj<typeof meta>;
 
-/** 非制御の初期値を表示し、キーボードで開く・解除する・別の日を選択する既存動作を検証する。 */
+/** 公式の単一日付 Picker を非制御で開始し、選択解除と再選択を keyboard で確認する。 */
 export const UncontrolledDefault: Story = {
   args: {
     calendarProps: fixedCalendarProps,
+    className: triggerClassName,
     defaultValue: uncontrolledInitialDate,
     onValueChange: uncontrolledValueChange,
     placeholder,
   },
   play: async ({ canvasElement, step }) => {
-    // Theme 別実行や再実行の履歴を除き、この Story 内の変更通知だけを検証対象にする。
+    // 別 theme や再実行の履歴を除き、この Story の選択通知だけを検証対象にする。
     uncontrolledValueChange.mockClear();
 
-    // Portal 外の Trigger は canvas 内から、選択済み日付を含む既存アクセシブルネームで取得する。
-    const canvas = within(canvasElement);
-    const trigger = canvas.getByRole('button', {
+    // Portal 外の Trigger は canvas から、表示日と一致するアクセシブルネームで取得する。
+    const trigger = within(canvasElement).getByRole('button', {
       name: getSelectedDateAccessibleName(uncontrolledInitialDate),
     });
 
-    await step('固定の初期値を表示して Enter で Calendar を開く', async () => {
-      // defaultValue が選択済み表示へ反映されることを確認してから、キーボードだけで Popover を開く。
+    await step('固定の初期日を表示し、Enter で Calendar を開く', async () => {
+      // 公式例と同じ `PPP` 表示を確認してから、keyboard だけで Popover を開く。
       await expect(trigger).toHaveTextContent(format(uncontrolledInitialDate, 'PPP'));
+      await expect(trigger).toBeEnabled();
     });
 
     const calendar = await openCalendarWithKeyboard(canvasElement, trigger);
 
     await step('選択済み日を Enter で再選択して解除する', async () => {
-      // 単一選択 Calendar が公開する選択済み名から初期日を取得し、標準 button の Enter を送る。
+      // React DayPicker が利用者へ公開する選択済みの accessible name で日付を特定し、標準 keyboard 操作を実行する。
       const selectedDay = within(calendar).getByRole('button', {
-        name: /2026年7月15日.*選択済み/,
+        name: /july 15(?:th)?, 2026.*selected/i,
       });
       selectedDay.focus();
       await expect(selectedDay).toHaveFocus();
       await userEvent.keyboard('{Enter}');
 
-      // 非制御 state が空へ戻り、既存 callback が undefined を一度だけ通知したことを保証する。
+      // 非制御値が空へ戻り、未選択文言と変更通知が同じ操作結果を示すまで待機する。
       await waitFor(async () => {
         await expect(trigger).toHaveAccessibleName(placeholder);
+        await expect(within(trigger).getByText(placeholder)).toBeVisible();
       });
       await expect(uncontrolledValueChange).toHaveBeenNthCalledWith(1, undefined);
     });
 
-    // 解除で再配置された focus を Escape で Trigger へ戻し、次の操作を新しい keyboard session として開始する。
-    await closeCalendarWithKeyboard(trigger);
+    // 一度閉じて Trigger へ focus を戻し、次の選択を独立した keyboard 操作として開始する。
+    await closeCalendarWithKeyboard(canvasElement, trigger);
     const reopenedCalendar = await openCalendarWithKeyboard(canvasElement, trigger);
 
-    await step('別の日を Enter で選択して非制御表示を更新する', async () => {
-      // 再度開いた Calendar の未選択日へ focus を移し、次の固定日をキーボードだけで選択する。
+    await step('別の日を Enter で選択して表示と通知を更新する', async () => {
+      // 未選択の隣接日へ focus を移し、Calendar の単一選択を keyboard で実行する。
       const nextDay = within(reopenedCalendar).getByRole('button', {
-        name: /2026年7月16日/,
+        name: /july 16(?:th)?, 2026/i,
       });
       nextDay.focus();
       await expect(nextDay).toHaveFocus();
       await userEvent.keyboard('{Enter}');
 
-      // 新しい選択を Trigger と callback の双方で確認し、表示だけの更新になっていないことを保証する。
+      // Trigger と callback が同じ固定日へ更新され、未選択用の span が残らないことを確認する。
       await waitFor(async () => {
         await expect(trigger).toHaveAccessibleName(
           getSelectedDateAccessibleName(uncontrolledNextDate)
         );
+        await expect(trigger.querySelector('span')).not.toBeInTheDocument();
       });
       await expect(uncontrolledValueChange).toHaveBeenNthCalledWith(2, uncontrolledNextDate);
     });
 
-    // 完了した Popover を Escape で閉じ、選択済み Trigger を次の操作起点として残す。
-    await closeCalendarWithKeyboard(trigger);
+    // 最後も Escape で閉じ、Trigger が次の操作起点として残る focus 契約を保証する。
+    await closeCalendarWithKeyboard(canvasElement, trigger);
   },
 };
 
-/** 利用側 state を `value` へ戻す制御利用で、キーボード選択が表示と通知を更新することを検証する。 */
+/** 利用側 state から `value` を戻す制御利用で、選択結果が表示と通知へ反映されることを確認する。 */
 export const Controlled: Story = {
   render: () => <ControlledDatePicker onValueChange={controlledValueChange} />,
   play: async ({ canvasElement, step }) => {
-    // Theme 別実行や再実行の履歴を除き、制御 Story の変更通知だけを検証対象にする。
+    // 再実行前の通知履歴を除き、今回の制御 state 更新だけを検証対象にする。
     controlledValueChange.mockClear();
 
-    const canvas = within(canvasElement);
-    const trigger = canvas.getByRole('button', {
+    const trigger = within(canvasElement).getByRole('button', {
       name: getSelectedDateAccessibleName(controlledInitialDate),
     });
-
     const calendar = await openCalendarWithKeyboard(canvasElement, trigger);
 
     await step('Enter で選択した日を利用側の制御値へ反映する', async () => {
-      // 初期値とは異なる固定日へ focus を移し、DatePicker の onValueChange 経路だけで state を更新する。
-      const nextDay = within(calendar).getByRole('button', { name: /2026年7月11日/ });
+      // 初期値とは異なる固定日へ focus を移し、DatePicker の公開 callback 経路だけで選択する。
+      const nextDay = within(calendar).getByRole('button', {
+        name: /july 11(?:th)?, 2026/i,
+      });
       nextDay.focus();
       await expect(nextDay).toHaveFocus();
       await userEvent.keyboard('{Enter}');
 
-      // 利用側から戻した value が Trigger に表示され、同じ日付が一度だけ通知されたことを確認する。
+      // 外部 state から戻した value と callback の引数が同じ固定日になることを確認する。
       await waitFor(async () => {
         await expect(trigger).toHaveAccessibleName(
           getSelectedDateAccessibleName(controlledNextDate)
@@ -299,37 +306,41 @@ export const Controlled: Story = {
       await expect(controlledValueChange).toHaveBeenCalledWith(controlledNextDate);
     });
 
-    // 制御値の検証後は Escape で閉じ、利用側へ戻る focus 契約も同じ keyboard flow で確認する。
-    await closeCalendarWithKeyboard(trigger);
+    // 選択後も開いている公式例の Popover を Escape で閉じ、Trigger へ focus を戻す。
+    await closeCalendarWithKeyboard(canvasElement, trigger);
   },
 };
 
-/** 日付が未選択のとき、指定した placeholder が可視表示とアクセシブルネームになることを示す。 */
+/** 未選択時に公式文言と muted 表現を示し、操作可能な Trigger semantics を確認する。 */
 export const EmptyPlaceholder: Story = {
   args: {
     calendarProps: fixedCalendarProps,
+    className: triggerClassName,
     placeholder,
   },
   play: async ({ canvasElement }) => {
-    // 未選択 Trigger を利用者へ見える文言で取得し、空状態でも操作可能な button であることを確認する。
+    // 可視文言をアクセシブルネームとして持つ標準 button を取得し、空状態の表現を確認する。
     const trigger = within(canvasElement).getByRole('button', { name: placeholder });
     await expect(trigger).toHaveTextContent(placeholder);
+    await expect(trigger).toHaveClass(triggerClassName);
+    await expect(within(trigger).getByText(placeholder)).toBeVisible();
     await expect(trigger).toBeEnabled();
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   },
 };
 
-/** DatePicker 全体の disabled 状態で、Trigger が focus・展開・選択操作を受け付けないことを示す。 */
+/** DatePicker 全体の disabled 状態で、Trigger が focus や展開操作を受け付けないことを確認する。 */
 export const Disabled: Story = {
   args: {
     calendarProps: fixedCalendarProps,
+    className: triggerClassName,
     disabled: true,
     placeholder,
   },
   play: async ({ canvasElement, step }) => {
     const trigger = within(canvasElement).getByRole('button', { name: placeholder });
 
-    await step('無効な Trigger はキーボード操作の対象にならない', async () => {
+    await step('disabled Trigger は keyboard 操作の対象にならない', async () => {
       // ネイティブ disabled semantics を確認し、直接 focus と Enter を試しても Popover が開かないことを保証する。
       await expect(trigger).toBeDisabled();
       trigger.focus();
@@ -345,43 +356,47 @@ export const Disabled: Story = {
   },
 };
 
-/** `calendarProps.disabled` の一日だけを操作不可にし、隣接する有効日はキーボード選択できることを示す。 */
+/** `calendarProps.disabled` の一日だけを無効にし、隣接する有効日を keyboard で選択できることを確認する。 */
 export const CalendarPropsDisabledDays: Story = {
   args: {
     calendarProps: {
       ...fixedCalendarProps,
       disabled: disabledCalendarDate,
     },
+    className: triggerClassName,
     onValueChange: disabledDayValueChange,
     placeholder,
   },
   play: async ({ canvasElement, step }) => {
-    // Theme 別実行や再実行の履歴を除き、この Story 内の選択通知だけを検証対象にする。
+    // 再実行前の通知履歴を除き、disabled day と有効日の操作差だけを検証対象にする。
     disabledDayValueChange.mockClear();
 
     const trigger = within(canvasElement).getByRole('button', { name: placeholder });
     const calendar = await openCalendarWithKeyboard(canvasElement, trigger);
 
     await step('calendarProps で指定した日だけが操作不可になる', async () => {
-      // 固定の disabled 日をアクセシブルネームで取得し、ネイティブ button の無効化 semantics を確認する。
-      const disabledDay = within(calendar).getByRole('button', { name: /2026年7月14日/ });
+      // 固定の disabled day を名前で取得し、標準 button の無効化と focus 除外を確認する。
+      const disabledDay = within(calendar).getByRole('button', {
+        name: /july 14(?:th)?, 2026/i,
+      });
       await expect(disabledDay).toBeDisabled();
-
-      // CSS の pointer-events を迂回した DOM click でも、無効日は値変更を通知しないことを保証する。
-      await fireEvent.click(disabledDay);
+      disabledDay.focus();
+      await expect(disabledDay).not.toHaveFocus();
       await expect(disabledDayValueChange).not.toHaveBeenCalled();
       await expect(trigger).toHaveAccessibleName(placeholder);
     });
 
     await step('隣接する有効日は Enter で選択できる', async () => {
-      // disabled matcher が対象日以外へ波及していないことを、隣接日の focus と Enter 選択で確認する。
-      const enabledDay = within(calendar).getByRole('button', { name: /2026年7月15日/ });
+      // disabled matcher が隣接日へ波及していないことを確認し、keyboard で通常選択を実行する。
+      const enabledDay = within(calendar).getByRole('button', {
+        name: /july 15(?:th)?, 2026/i,
+      });
       await expect(enabledDay).toBeEnabled();
       enabledDay.focus();
       await expect(enabledDay).toHaveFocus();
       await userEvent.keyboard('{Enter}');
 
-      // 有効日だけが Trigger と callback を更新し、disabled 日との状態差が操作結果へ反映されることを確認する。
+      // 有効日だけが Trigger と callback を更新し、disabled day との差が操作結果へ反映されることを確認する。
       await waitFor(async () => {
         await expect(trigger).toHaveAccessibleName(
           getSelectedDateAccessibleName(enabledCalendarDate)
@@ -391,7 +406,7 @@ export const CalendarPropsDisabledDays: Story = {
       await expect(disabledDayValueChange).toHaveBeenCalledWith(enabledCalendarDate);
     });
 
-    // 有効日の選択後は Escape で閉じ、disabled matcher の検証を完了した Trigger へ focus を戻す。
-    await closeCalendarWithKeyboard(trigger);
+    // 検証後は Escape で閉じ、選択済み Trigger へ focus を戻して keyboard flow を完了する。
+    await closeCalendarWithKeyboard(canvasElement, trigger);
   },
 };

@@ -1,4 +1,5 @@
-import { useState, type ComponentProps } from 'react';
+import { Trash2Icon } from 'lucide-react';
+import { useState } from 'react';
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import {
@@ -9,25 +10,29 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogOverlay,
+  AlertDialogPortal,
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@cfreact-template/ui/components/alert-dialog';
 import { Button } from '@cfreact-template/ui/components/button';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ComponentProps } from 'react';
 
 /**
- * 製品固有の文脈を持ち込まず、すべての Story と interaction test で共有する固定表示。
+ * 公式 shadcn/ui の destructive 例に合わせ、すべての Story と interaction test で共有する固定表示。
  *
- * 破壊的操作で失われる内容と確定操作を明記し、タイトル、説明、キャンセル、確定の
- * アクセシブルネームが検証中に変化しないよう一か所で管理する。参照以外の副作用はない。
+ * Trigger、対象、不可逆性、キャンセル、確定のアクセシブルネームが検証中に変化しないよう
+ * 一か所で管理する。参照以外の副作用はない。
  */
 const dialogCopy = {
-  trigger: '削除を確認',
-  title: '項目を削除しますか？',
-  description: 'この操作は取り消せません。続行すると、この項目は完全に削除されます。',
-  cancel: 'キャンセル',
-  confirm: '削除する',
+  trigger: 'Delete Chat',
+  title: 'Delete chat?',
+  description: 'This will permanently delete this chat conversation.',
+  cancel: 'Cancel',
+  confirm: 'Delete',
 } as const;
 
 /**
@@ -48,12 +53,12 @@ type AlertDialogStoryArgs = Omit<
 };
 
 /**
- * AlertDialog の公開サブコンポーネントを正しい親子関係で組み立てる Story 専用 catalog。
+ * 公式 destructive 例を、AlertDialog の公開サブコンポーネントと既存 token だけで組み立てる。
  *
  * @param props Root の公開 props、確定操作の disabled 状態、キャンセル・確定の spy。
- * @returns 固定表示を持ち、開く・キャンセル・確定の各状態遷移を確認できる AlertDialog。
+ * @returns 破壊的なチャット削除について、開く・キャンセル・確定の状態遷移を確認できる AlertDialog。
  */
-function AlertDialogCatalog({
+function DestructiveAlertDialog({
   actionDisabled,
   onCancel,
   onConfirm,
@@ -77,13 +82,15 @@ function AlertDialogCatalog({
 
   return (
     <AlertDialog {...rootProps} open={open} onOpenChange={setOpen}>
-      {/* Trigger の挙動は維持しつつ、既存 Button の outline variant だけで操作可能な外観を与える。 */}
-      <AlertDialogTrigger render={<Button variant="outline" />}>
-        {dialogCopy.trigger}
-      </AlertDialogTrigger>
+      {/* 破壊的操作の入口であることを、公式例と同じ destructive Button と具体的な対象名で示す。 */}
+      <AlertDialogTrigger render={<Button variant="destructive">{dialogCopy.trigger}</Button>} />
 
-      <AlertDialogContent>
+      <AlertDialogContent size="sm">
         <AlertDialogHeader>
+          {/* destructive token の media と装飾 icon で意味を補強し、読み上げ名は Title に一本化する。 */}
+          <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
+            <Trash2Icon aria-hidden />
+          </AlertDialogMedia>
           {/* Title と Description を専用 primitive へ置き、alertdialog の名前と説明を関連付ける。 */}
           <AlertDialogTitle>{dialogCopy.title}</AlertDialogTitle>
           <AlertDialogDescription>{dialogCopy.description}</AlertDialogDescription>
@@ -107,12 +114,22 @@ function AlertDialogCatalog({
 }
 
 /**
+ * 開いた AlertDialog と、閉鎖後に focus が戻る Trigger。
+ */
+interface OpenedAlertDialog {
+  /** Portal 内で可視になり、アクセシブルな名前と説明を持つ alertdialog。 */
+  dialog: HTMLElement;
+  /** AlertDialog を開き、閉鎖後の focus 回復先となる Trigger。 */
+  trigger: HTMLElement;
+}
+
+/**
  * Trigger を利用者と同じ経路で操作し、Portal 内に表示された alertdialog を取得する。
  *
  * @param canvasElement Story が描画された範囲。Trigger の検索元と ownerDocument の特定に使う。
- * @returns 表示を確認できた alertdialog 要素。
+ * @returns 可視性、説明、Overlay、安全側への初期 focus を確認できた AlertDialog と Trigger。
  */
-async function openAlertDialog(canvasElement: HTMLElement): Promise<HTMLElement> {
+async function openAlertDialog(canvasElement: HTMLElement): Promise<OpenedAlertDialog> {
   // Trigger は Story canvas、Portal は同じ document の body にあるため、責務ごとに検索範囲を分ける。
   const canvas = within(canvasElement);
   const documentBody = within(canvasElement.ownerDocument.body);
@@ -127,48 +144,76 @@ async function openAlertDialog(canvasElement: HTMLElement): Promise<HTMLElement>
     await expect(dialog).toBeVisible();
   });
 
-  // 見た目だけでなく、Title と Description が支援技術から解決できる状態を保証する。
-  await expect(within(dialog).getByText(dialogCopy.description)).toBeVisible();
+  // 見た目だけでなく、Title と Description が alertdialog の accessible name・description になることを保証する。
+  await expect(dialog).toHaveAccessibleDescription(dialogCopy.description);
+  await waitFor(async () => {
+    await expect(
+      canvasElement.ownerDocument.querySelector('[data-slot="alert-dialog-overlay"]')
+    ).toBeVisible();
+  });
 
-  return dialog;
+  // 破壊的 action より安全な Cancel が先に focus され、keyboard 利用者が誤確定しないことを保証する。
+  await waitFor(async () => {
+    await expect(within(dialog).getByRole('button', { name: dialogCopy.cancel })).toHaveFocus();
+  });
+
+  return { dialog, trigger };
 }
 
 /**
  * 閉鎖アニメーションの完了後、Portal から alertdialog が除去されたことを確認する。
  *
  * @param canvasElement ownerDocument を特定するための Story canvas。
- * @returns alertdialog が document から除去された時点で解決する Promise。
+ * @param trigger 閉鎖後に focus が戻る、AlertDialog を開いた Trigger。
+ * @returns alertdialog が document から除去され、Trigger へ focus が戻った時点で解決する Promise。
  */
-async function expectAlertDialogClosed(canvasElement: HTMLElement): Promise<void> {
-  // duration を固定時間で推測せず、既存 component が DOM を除去するまで条件待機する。
+async function expectAlertDialogClosed(
+  canvasElement: HTMLElement,
+  trigger: HTMLElement
+): Promise<void> {
+  // duration を固定時間で推測せず、既存 component の DOM 除去と focus 回復を条件待機する。
   const documentBody = within(canvasElement.ownerDocument.body);
 
   await waitFor(async () => {
     await expect(
       documentBody.queryByRole('alertdialog', { name: dialogCopy.title })
     ).not.toBeInTheDocument();
+    await expect(trigger).toHaveFocus();
   });
 }
 
 /**
- * AlertDialog と指定された全サブコンポーネントを CSF 3 の Docs・a11y・browser tests へ登録する。
+ * AlertDialog と全公開サブコンポーネントを CSF 3 の Docs・a11y・browser tests へ登録する。
  *
- * 既存 API と既存 token だけで構成し、Story 固有の状態は catalog 内へ閉じ込める。
+ * AlertDialogContent が Portal と Overlay を内部構成する契約を保ち、公式 destructive 例を
+ * 既存 API と token だけで提示する。Story 固有の状態は描画関数内へ閉じ込める。
  */
 const meta = {
   title: 'Components/AlertDialog',
   component: AlertDialog,
   subcomponents: {
     AlertDialogTrigger,
+    AlertDialogPortal,
+    AlertDialogOverlay,
     AlertDialogContent,
     AlertDialogHeader,
     AlertDialogFooter,
+    AlertDialogMedia,
     AlertDialogTitle,
     AlertDialogDescription,
     AlertDialogAction,
     AlertDialogCancel,
   },
   parameters: {
+    controls: {
+      disable: true,
+    },
+    docs: {
+      description: {
+        component:
+          '公式 shadcn/ui の destructive confirmation に沿って、Trigger、Media、Title、Description、Cancel、Action と focus 管理を確認します。',
+      },
+    },
     layout: 'centered',
   },
   argTypes: {
@@ -191,7 +236,7 @@ const meta = {
       },
     },
   },
-  render: (args) => <AlertDialogCatalog {...args} />,
+  render: (args) => <DestructiveAlertDialog {...args} />,
 } satisfies Meta<AlertDialogStoryArgs>;
 
 /** Storybook が AlertDialog catalog の Docs・Controls・interaction tests を構築するための既定 export。 */
@@ -200,7 +245,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * 破壊的な確定操作を示し、開く・キャンセル・確定の各状態遷移を利用者視点で検証する。
+ * 公式 destructive confirmation を主例として示し、開く・キャンセル・確定と focus を検証する。
  */
 export const DestructiveConfirmation: Story = {
   args: {
@@ -211,10 +256,12 @@ export const DestructiveConfirmation: Story = {
   play: async ({ args, canvasElement, step }) => {
     // Portal 内の要素を取得するため、Story canvas と同じ document の body を検索対象にする。
     const documentBody = within(canvasElement.ownerDocument.body);
+    // modal 開放中も閉鎖後の focus 回復先を参照できるよう、操作前の Trigger を保持する。
+    const trigger = within(canvasElement).getByRole('button', { name: dialogCopy.trigger });
 
     await step('Trigger から破壊的操作の確認を開く', async () => {
-      // Trigger、Title、Description の関連付けと、確定操作が有効であることを確認する。
-      const dialog = await openAlertDialog(canvasElement);
+      // Trigger、Title、Description、Overlay、初期 focus と、確定操作が有効であることを確認する。
+      const { dialog } = await openAlertDialog(canvasElement);
       await expect(within(dialog).getByRole('button', { name: dialogCopy.confirm })).toBeEnabled();
     });
 
@@ -222,16 +269,16 @@ export const DestructiveConfirmation: Story = {
       // Cancel の可視ラベルを操作し、利用側通知と既存 Close 契約による閉鎖を検証する。
       await userEvent.click(documentBody.getByRole('button', { name: dialogCopy.cancel }));
       await expect(args.onCancel).toHaveBeenCalledTimes(1);
-      await expectAlertDialogClosed(canvasElement);
+      await expectAlertDialogClosed(canvasElement, trigger);
       await expect(args.onConfirm).not.toHaveBeenCalled();
     });
 
     await step('破壊的操作を確定して確認を閉じる', async () => {
       // キャンセル後に再び開き、確定操作が一度だけ通知されて閉じる完全な利用経路を確認する。
-      const dialog = await openAlertDialog(canvasElement);
+      const { dialog } = await openAlertDialog(canvasElement);
       await userEvent.click(within(dialog).getByRole('button', { name: dialogCopy.confirm }));
       await expect(args.onConfirm).toHaveBeenCalledTimes(1);
-      await expectAlertDialogClosed(canvasElement);
+      await expectAlertDialogClosed(canvasElement, trigger);
     });
   },
 };
@@ -246,9 +293,12 @@ export const DisabledAction: Story = {
     onConfirm: fn(),
   },
   play: async ({ args, canvasElement, step }) => {
+    // disabled の確認を閉じた後も同じ起点へ focus が戻ることを検証するため、Trigger を先に保持する。
+    const trigger = within(canvasElement).getByRole('button', { name: dialogCopy.trigger });
+
     await step('disabled の破壊的操作を持つ確認を開く', async () => {
       // Portal 内の確定ボタンを名前で取得し、ネイティブの操作不可 semantics を確認する。
-      const dialog = await openAlertDialog(canvasElement);
+      const { dialog } = await openAlertDialog(canvasElement);
       const disabledAction = within(dialog).getByRole('button', { name: dialogCopy.confirm });
       await expect(disabledAction).toBeDisabled();
 
@@ -263,7 +313,7 @@ export const DisabledAction: Story = {
       const documentBody = within(canvasElement.ownerDocument.body);
       await userEvent.click(documentBody.getByRole('button', { name: dialogCopy.cancel }));
       await expect(args.onCancel).toHaveBeenCalledTimes(1);
-      await expectAlertDialogClosed(canvasElement);
+      await expectAlertDialogClosed(canvasElement, trigger);
     });
   },
 };

@@ -1,7 +1,8 @@
-import { useForm, type SubmitHandler } from 'react-hook-form';
-import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test';
+import { useState, type SubmitEvent } from 'react';
+import { useForm, type Control, type SubmitHandler } from 'react-hook-form';
 
 import { Button } from '@cfreact-template/ui/components/button';
+import { Checkbox } from '@cfreact-template/ui/components/checkbox';
 import {
   Form,
   FormControl,
@@ -10,209 +11,374 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  useFormField,
 } from '@cfreact-template/ui/components/form';
 import { Input } from '@cfreact-template/ui/components/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@cfreact-template/ui/components/select';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { SubmitEvent } from 'react';
 
-/** Story 内の単一入力欄を React Hook Form で管理するための固定データ構造。 */
-interface FormValues {
-  /** FormField の必須検証、送信、および reset で扱う表示名。 */
-  displayName: string;
+/** プロフィールフォームが編集、検証、保存する全入力値の固定契約。 */
+interface ProfileFormValues {
+  /** アカウント通知と本人確認に使用するメールアドレス。 */
+  email: string;
+  /** アカウント通知とシステムメッセージに使用する言語。 */
+  language: string;
+  /** メールアドレスを公開プロフィールへ表示するかを示す明示的な同意。 */
+  showEmail: boolean;
+  /** 他の利用者に表示する公開ユーザー名。 */
+  username: string;
 }
 
-/** Form の各状態を同じ構造で再現する Story 専用コンポーネントの入力。 */
-interface FormExampleProps {
-  /** useForm と controlled reset の双方が復元先として使う固定初期値。 */
-  defaultValues: FormValues;
-  /** React Hook Form の必須検証を通過したデータだけを受け取る観測関数。 */
-  onValidSubmit: SubmitHandler<FormValues>;
+/** 各 Story 内部フィールドへ同じ React Hook Form control を渡す入力。 */
+interface ProfileFieldProps {
+  /** 全フィールドの値、検証規則、状態を一元管理する control。 */
+  control: Control<ProfileFormValues>;
+  /** 保存処理中に入力値を変更できないよう、各 control の操作可否を統一する。 */
+  disabled: boolean;
 }
 
-/** 製品固有の前提を持ち込まず、Form の公開契約だけを説明する固定文言。 */
-const formCopy = {
-  description: '入力値は送信前に必須項目として検証されます。',
-  fieldLabel: '表示名',
-  formName: 'Form の操作例',
-  placeholder: '表示名を入力',
-  requiredMessage: '表示名を入力してください。',
-  resetButton: '初期値に戻す',
-  submitButton: '送信する',
+/** Select が値から可視名を一意に解決する言語選択肢の契約。 */
+interface LanguageOption {
+  /** SelectItem と送信値で共有する安定した言語タグ。 */
+  value: string;
+  /** Trigger と Popup の双方に表示する言語名。 */
+  label: string;
+}
+
+/** プロフィール編集の情報階層と検証結果で共有する利用者向け文言。 */
+const profileCopy = {
+  description: 'This is how others will see you on the site.',
+  emailDescription: 'We will use this address for account notifications.',
+  emailInvalid: 'Enter a valid email address.',
+  emailLabel: 'Email',
+  emailRequired: 'Enter an email address.',
+  languageDescription: 'Choose the language used for account emails and system messages.',
+  languageLabel: 'Preferred language',
+  languagePlaceholder: 'Select a language',
+  languageRequired: 'Select a preferred language.',
+  resetAction: 'Reset',
+  saveAction: 'Save changes',
+  savedMessage: 'Your profile has been saved.',
+  savingAction: 'Saving…',
+  savingMessage: 'Saving your profile…',
+  showEmailDescription: 'Your email stays private unless you choose to display it.',
+  showEmailLabel: 'Show my email address on my public profile',
+  title: 'Profile',
+  usernameDescription:
+    'This is your public display name. It must be 3–10 characters and contain only letters, numbers, and underscores.',
+  usernameInvalid: 'Use only letters, numbers, and underscores.',
+  usernameLabel: 'Username',
+  usernameMaximum: 'Username must be at most 10 characters.',
+  usernameMinimum: 'Username must be at least 3 characters.',
+  usernameRequired: 'Enter a username.',
 } as const;
 
-/** required エラー Story が未入力状態から開始するための固定初期値。 */
-const emptyFormValues: FormValues = {
-  displayName: '',
+/** React Hook Form と controlled reset が共有する現実的で再現可能な初期値。 */
+const initialProfileValues: ProfileFormValues = {
+  email: 'morgan@example.com',
+  language: '',
+  showEmail: false,
+  username: 'morgan',
 };
 
-/** controlled reset Story が復元結果を明確に示すための固定初期値。 */
-const initialFormValues: FormValues = {
-  displayName: '初期の表示名',
-};
+/** Select Root と各 SelectItem が同じ値・可視名を共有する固定選択肢。 */
+const languageOptions: LanguageOption[] = [
+  { value: 'en-US', label: 'English (United States)' },
+  { value: 'es-ES', label: 'Español' },
+  { value: 'fr-FR', label: 'Français' },
+  { value: 'ja-JP', label: '日本語' },
+];
 
-/** type と valid submit の結果を同じ期待値で検証する固定更新値。 */
-const updatedFormValues: FormValues = {
-  displayName: '更新後の表示名',
-};
+/** ブラウザー差に依存せず、空白やドメイン区切りの欠落を拒否する固定メール形式。 */
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** required エラー時に valid submit が呼ばれないことを検証する Story 専用 spy。 */
-const requiredSubmitSpy = fn<SubmitHandler<FormValues>>();
+/** 公開ユーザー名で許可する文字を、説明文と同じ英数字および underscore に限定する。 */
+const usernamePattern = /^\w+$/;
 
-/** valid submit が controlled 入力値を通知することを検証する Story 専用 spy。 */
-const validSubmitSpy = fn<SubmitHandler<FormValues>>();
+/** 外部 API を使わず、送信中 UI を知覚できる長さだけ維持する Story 専用待機時間。 */
+const submissionDelayMs = 650;
 
 /**
- * `useFormField` が公開する名前、状態、関連付け ID を非表示の検証境界へ反映する。
+ * 公開ユーザー名を説明、文字数、許可文字、インラインエラーとともに構成する。
  *
- * 可視情報は増やさず、FormControl、FormDescription、FormMessage が同じ context 契約を
- * 使用していることを interaction test から確認できるようにする。
- *
- * @returns 現在の FormField context を data 属性へ写した Story 専用要素。
+ * @param props プロフィールフォーム全体と共有する React Hook Form control。
+ * @returns アクセシブルな名前と説明を持つ controlled username field。
  */
-function FormFieldContract() {
-  // FormField と FormItem の context を読み取り、公開 Hook の戻り値を DOM 上で比較可能にする。
-  const { formDescriptionId, formItemId, formMessageId, invalid, name } = useFormField();
-
+function UsernameField({ control, disabled }: ProfileFieldProps) {
   return (
-    <span
-      aria-hidden
-      className="sr-only"
-      data-control-id={formItemId}
-      data-description-id={formDescriptionId}
-      data-field-name={name}
-      data-field-state={invalid ? 'invalid' : 'valid'}
-      data-message-id={formMessageId}
-      data-testid="form-field-contract"
+    <FormField
+      control={control}
+      name="username"
+      rules={{
+        maxLength: { value: 10, message: profileCopy.usernameMaximum },
+        minLength: { value: 3, message: profileCopy.usernameMinimum },
+        pattern: { value: usernamePattern, message: profileCopy.usernameInvalid },
+        required: profileCopy.usernameRequired,
+      }}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{profileCopy.usernameLabel}</FormLabel>
+          <FormControl>
+            <Input
+              {...field}
+              required
+              autoCapitalize="none"
+              autoComplete="username"
+              disabled={disabled}
+              maxLength={10}
+              minLength={3}
+              placeholder="morgan"
+              spellCheck={false}
+              type="text"
+            />
+          </FormControl>
+          <FormDescription>{profileCopy.usernameDescription}</FormDescription>
+          <FormMessage role="alert" />
+        </FormItem>
+      )}
     />
   );
 }
 
 /**
- * FormProvider と全 Form subcomponent を、単一の controlled Input と二つの操作へ構成する。
+ * メールアドレスを用途に適した入力属性、形式検証、インラインエラーとともに構成する。
  *
- * @param props 固定初期値と、必須検証を通過した送信だけを観測する関数。
- * @returns 説明、エラー、送信、controlled reset を確認できる Story 用フォーム。
+ * @param props プロフィールフォーム全体と共有する React Hook Form control。
+ * @returns アクセシブルな名前と説明を持つ controlled email field。
  */
-function FormExample({ defaultValues, onValidSubmit }: FormExampleProps) {
-  // 固定初期値から React Hook Form の control と form state を作り、Input の値を一元管理する。
-  const form = useForm<FormValues>({ defaultValues });
-
-  // submit 後の form state を Story 境界で購読し、子孫のエラー状態と同じ再描画周期を観測する。
-  const submissionState = form.formState.isSubmitted ? 'submitted' : 'idle';
-
-  /**
-   * React Hook Form の非同期 submit 処理を、React の同期イベントハンドラー境界から開始する。
-   *
-   * @param event 利用者の送信操作によって form 要素から発生した submit event。
-   */
-  function handleFormSubmit(event: SubmitEvent<HTMLFormElement>) {
-    // handleSubmit が返す Promise を明示的に開始し、検証結果は onValidSubmit の契約で観測する。
-    void form.handleSubmit(onValidSubmit)(event);
-  }
-
-  /**
-   * ネイティブ reset に依存せず、React Hook Form が管理する値と検証状態を固定初期値へ戻す。
-   */
-  function handleControlledReset() {
-    // Story ごとに渡した同じ初期値を使用し、入力値と field state の復元先を一致させる。
-    form.reset(defaultValues);
-  }
-
+function EmailField({ control, disabled }: ProfileFieldProps) {
   return (
-    // useForm が返す全メソッドを FormProvider へ渡し、子孫の公開 Form API から共有する。
-    <Form {...form}>
-      <form
-        noValidate
-        aria-label={formCopy.formName}
-        className="w-80 max-w-full space-y-6"
-        data-submission-state={submissionState}
-        onSubmit={handleFormSubmit}
-      >
-        {/* Controller、項目 context、ラベル、入力、説明、エラーを公開 subcomponent だけで構成する。 */}
-        <FormField
-          control={form.control}
-          name="displayName"
-          rules={{ required: formCopy.requiredMessage }}
-          render={({ field }) => {
-            // Controller の controlled field 契約を Input へ渡し、reset 後も DOM 値と form state を同期する。
-            return (
-              <FormItem>
-                <FormLabel>{formCopy.fieldLabel}</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    aria-required="true"
-                    autoComplete="off"
-                    placeholder={formCopy.placeholder}
-                    type="text"
-                  />
-                </FormControl>
-                <FormDescription>{formCopy.description}</FormDescription>
-                <FormMessage />
-                <FormFieldContract />
-              </FormItem>
-            );
-          }}
-        />
-
-        {/* 主操作を先に置き、reset は outline variant の補助操作として視覚的優先度を下げる。 */}
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit">{formCopy.submitButton}</Button>
-          <Button type="button" variant="outline" onClick={handleControlledReset}>
-            {formCopy.resetButton}
-          </Button>
-        </div>
-      </form>
-    </Form>
+    <FormField
+      control={control}
+      name="email"
+      rules={{
+        pattern: { value: emailPattern, message: profileCopy.emailInvalid },
+        required: profileCopy.emailRequired,
+      }}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{profileCopy.emailLabel}</FormLabel>
+          <FormControl>
+            <Input
+              {...field}
+              required
+              autoCapitalize="none"
+              autoComplete="email"
+              disabled={disabled}
+              inputMode="email"
+              placeholder="name@example.com"
+              spellCheck={false}
+              type="email"
+            />
+          </FormControl>
+          <FormDescription>{profileCopy.emailDescription}</FormDescription>
+          <FormMessage role="alert" />
+        </FormItem>
+      )}
+    />
   );
 }
 
 /**
- * 描画直後の Form から主要要素を取得し、ラベル、説明、および公開 Hook の ID 契約を検証する。
+ * 通知言語を controlled Select、必須検証、インラインエラーとともに構成する。
  *
- * @param canvasElement Story が描画された範囲。
- * @param expectedValue controlled Input に期待する Story 固有の固定初期値。
- * @returns 後続の操作と状態 assertion で再利用する Form 要素群。
+ * @param props プロフィールフォーム全体と共有する React Hook Form control。
+ * @returns キーボード操作と支援技術の名前解決に対応した language field。
  */
-async function assertInitialFormSemantics(canvasElement: HTMLElement, expectedValue: string) {
-  // Story canvas 内へ検索範囲を限定し、Storybook UI の同名要素を取得しないようにする。
-  const canvas = within(canvasElement);
-  const description = canvas.getByText(formCopy.description);
-  const fieldContract = canvas.getByTestId('form-field-contract');
-  const form = canvas.getByRole('form', { name: formCopy.formName });
-  const input = canvas.getByRole('textbox', { name: formCopy.fieldLabel });
-  const label = canvas.getByText(formCopy.fieldLabel, { selector: 'label' });
-  const resetButton = canvas.getByRole('button', { name: formCopy.resetButton });
-  const submitButton = canvas.getByRole('button', { name: formCopy.submitButton });
-
-  // 可視ラベル、生成 ID、アクセシブルネームを同時に確認し、FormLabel と FormControl の契約を保証する。
-  await expect(label).toHaveAttribute('for', input.id);
-  await expect(input).toHaveAccessibleName(formCopy.fieldLabel);
-  await expect(input).toHaveAttribute('aria-required', 'true');
-  await expect(input).toHaveValue(expectedValue);
-  await expect(fieldContract).toHaveAttribute('data-control-id', input.id);
-  await expect(fieldContract).toHaveAttribute('data-field-name', 'displayName');
-  await expect(fieldContract).toHaveAttribute('data-field-state', 'valid');
-
-  // エラーがない状態では説明だけを参照し、FormDescription の文言が支援技術から解決できることを確認する。
-  await expect(fieldContract).toHaveAttribute('data-description-id', description.id);
-  await expect(input).toHaveAttribute('aria-describedby', description.id);
-  await expect(input).toHaveAttribute('aria-invalid', 'false');
-  await expect(input).toHaveAccessibleDescription(formCopy.description);
-
-  return { canvas, description, fieldContract, form, input, resetButton, submitButton };
+function LanguageField({ control, disabled }: ProfileFieldProps) {
+  return (
+    <FormField
+      control={control}
+      name="language"
+      rules={{ required: profileCopy.languageRequired }}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{profileCopy.languageLabel}</FormLabel>
+          <Select
+            required
+            disabled={disabled}
+            items={languageOptions}
+            name={field.name}
+            value={field.value}
+            onValueChange={field.onChange}
+          >
+            <FormControl>
+              <SelectTrigger
+                ref={field.ref}
+                aria-required="true"
+                className="w-full"
+                onBlur={field.onBlur}
+              >
+                <SelectValue placeholder={profileCopy.languagePlaceholder} />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+              {languageOptions.map((option) => (
+                <SelectItem key={option.value} label={option.label} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FormDescription>{profileCopy.languageDescription}</FormDescription>
+          <FormMessage role="alert" />
+        </FormItem>
+      )}
+    />
+  );
 }
 
-/** Form の公開 API と interaction tests を CSF3 として登録する metadata。 */
+/**
+ * メール公開への明示的な同意を、安全な未選択状態の controlled Checkbox として構成する。
+ *
+ * @param props プロフィールフォーム全体と共有する React Hook Form control。
+ * @returns ラベルとプライバシー説明を持つ任意の email visibility field。
+ */
+function EmailVisibilityField({ control, disabled }: ProfileFieldProps) {
+  return (
+    <FormField
+      control={control}
+      name="showEmail"
+      render={({ field }) => (
+        <FormItem className="grid grid-cols-[1rem_1fr] items-start gap-x-3 gap-y-1 space-y-0 rounded-lg border p-4">
+          <FormControl>
+            <Checkbox
+              ref={field.ref}
+              checked={field.value}
+              disabled={disabled}
+              name={field.name}
+              onBlur={field.onBlur}
+              onCheckedChange={field.onChange}
+            />
+          </FormControl>
+          <div className="space-y-1">
+            <FormLabel className="leading-5">{profileCopy.showEmailLabel}</FormLabel>
+            <FormDescription className="leading-5">
+              {profileCopy.showEmailDescription}
+            </FormDescription>
+          </div>
+        </FormItem>
+      )}
+    />
+  );
+}
+
+/**
+ * 既存の Form 公開コンポーネントを、実際のプロフィール編集タスクへ構成する。
+ *
+ * 入力値は React Hook Form だけが管理し、送信時には文字数・形式・必須選択を決定的に検証する。
+ * 成功した値は新しい reset 基準へ更新し、外部 API や永続化処理は実行しない。
+ *
+ * @returns ラベル、補足説明、インラインエラー、主操作と補助操作を備えたプロフィールフォーム。
+ */
+function ProfileFormExample() {
+  // 保存結果だけを Story 内の polite live region へ保持し、外部通知基盤へ依存しない。
+  const [saveMessage, setSaveMessage] = useState('');
+
+  // 全 controlled field の初期値を一か所で定義し、検証、dirty 判定、reset の基準を一致させる。
+  const form = useForm<ProfileFormValues>({
+    defaultValues: initialProfileValues,
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
+    shouldFocusError: true,
+  });
+
+  /** 検証済み値を保存基準へ移し、視覚表示と live region へ完了を通知する。 */
+  const handleValidSubmit: SubmitHandler<ProfileFormValues> = async (values) => {
+    // Story 内だけで短い保存待機を再現し、disabled、busy、進行中ラベルを操作から確認可能にする。
+    await new Promise<void>((resolve) => {
+      globalThis.setTimeout(resolve, submissionDelayMs);
+    });
+
+    // 保存済み値を reset 基準へ移し、成功後の form を未変更状態として扱えるようにする。
+    form.reset(values);
+    setSaveMessage(profileCopy.savedMessage);
+  };
+
+  /** submit event を React Hook Form の非同期検証境界へ安全に渡す。 */
+  function handleFormSubmit(event: SubmitEvent<HTMLFormElement>) {
+    // 新しい検証または保存を開始する前に以前の成功通知を消し、現在の状態だけを伝える。
+    setSaveMessage('');
+
+    // Promise を明示的に開始し、成功処理には検証済み値だけを渡す。
+    void form.handleSubmit(handleValidSubmit)(event);
+  }
+
+  /** 最後に保存したプロフィールへ値と検証状態を戻し、以前の保存通知を取り除く。 */
+  function handleReset() {
+    // 現在の reset 基準を再利用し、DOM と React Hook Form の内部状態を同時に復元する。
+    form.reset();
+    setSaveMessage('');
+  }
+
+  // React Hook Form の送信状態を全 control、操作、busy 属性、live region で一貫して共有する。
+  const isSubmitting = form.formState.isSubmitting;
+
+  // 編集再開後に古い成功通知を残さず、現在進行中か直近完了の状態だけを伝える。
+  const statusMessage = isSubmitting
+    ? profileCopy.savingMessage
+    : form.formState.isDirty
+      ? ''
+      : saveMessage;
+
+  return (
+    <section aria-labelledby="profile-form-title" className="w-[calc(100vw-2rem)] max-w-lg">
+      {/* タスク名と目的だけを示し、フォーム API の説明や catalog 用装飾は表示しない。 */}
+      <header className="border-b pb-6">
+        <h1 id="profile-form-title" className="text-xl font-semibold tracking-tight text-balance">
+          {profileCopy.title}
+        </h1>
+        <p className="mt-2 max-w-prose text-sm leading-6 text-muted-foreground text-pretty">
+          {profileCopy.description}
+        </p>
+      </header>
+
+      {/* FormProvider を一度だけ置き、分割した全フィールドへ同じ control と状態を共有する。 */}
+      <Form {...form}>
+        <form
+          noValidate
+          aria-busy={isSubmitting}
+          aria-labelledby="profile-form-title"
+          className="space-y-6 pt-6"
+          onSubmit={handleFormSubmit}
+        >
+          <UsernameField control={form.control} disabled={isSubmitting} />
+          <EmailField control={form.control} disabled={isSubmitting} />
+          <LanguageField control={form.control} disabled={isSubmitting} />
+          <EmailVisibilityField control={form.control} disabled={isSubmitting} />
+
+          {/* 保存を唯一の主操作とし、reset は outline variant の補助操作として優先度を下げる。 */}
+          <footer className="flex flex-wrap items-center gap-3 border-t pt-6">
+            <Button disabled={isSubmitting} type="submit">
+              {isSubmitting ? profileCopy.savingAction : profileCopy.saveAction}
+            </Button>
+            <Button disabled={isSubmitting} type="button" variant="outline" onClick={handleReset}>
+              {profileCopy.resetAction}
+            </Button>
+            <p
+              aria-live="polite"
+              role="status"
+              className="min-h-5 basis-full text-sm text-muted-foreground sm:basis-auto"
+            >
+              {statusMessage}
+            </p>
+          </footer>
+        </form>
+      </Form>
+    </section>
+  );
+}
+
+/** 実際のプロフィール編集タスクとして Form の構成と状態を表示する Story metadata。 */
 const meta = {
   title: 'Forms/Form',
-  component: FormExample,
-  args: {
-    defaultValues: emptyFormValues,
-    onValidSubmit: requiredSubmitSpy,
-  },
+  component: ProfileFormExample,
   parameters: {
     controls: {
       disable: true,
@@ -220,95 +386,18 @@ const meta = {
     docs: {
       description: {
         component:
-          'React Hook Form と組み合わせた Form のラベル、説明、検証エラー、送信、controlled reset の契約を示します。',
+          'React Hook Form と共有 Form primitives を使用した、検証、説明、エラー、reset を備えるプロフィール編集フォームです。',
       },
     },
     layout: 'centered',
   },
-} satisfies Meta<typeof FormExample>;
+} satisfies Meta<typeof ProfileFormExample>;
 
-/** Storybook が Form catalog の Docs・描画・browser tests を構築するための既定 export。 */
+/** Storybook がプロフィールフォームを描画するための既定 export。 */
 export default meta;
 
-/** metadata から Form Story の CSF3 型を導出する。 */
+/** metadata からプロフィールフォーム Story の CSF3 型を導出する。 */
 type Story = StoryObj<typeof meta>;
 
-/** 説明の ARIA 関連付けを保ったまま、未入力 submit で required エラーへ遷移する。 */
-export const DescriptionAndRequiredValidation: Story = {
-  play: async ({ canvasElement, step }) => {
-    // 前回の Story 実行結果を消去し、今回の invalid submit だけを観測対象にする。
-    requiredSubmitSpy.mockClear();
-    const { canvas, description, fieldContract, form, input, submitButton } =
-      await assertInitialFormSemantics(canvasElement, emptyFormValues.displayName);
-
-    await step('送信ボタンをクリックしてから未入力の form を submit する', async () => {
-      // 利用者と同じクリックを行い、未入力の required Input が修正対象として focus されることを確認する。
-      await userEvent.click(submitButton);
-      await expect(input).toHaveFocus();
-
-      // form の submit event を明示的に発火し、React Hook Form の必須検証を実行する。
-      await fireEvent.submit(form);
-      const message = await canvas.findByText(formCopy.requiredMessage);
-
-      // invalid 状態では説明とエラーの双方を参照し、同じ文言を視覚と支援技術へ伝える。
-      await expect(input).toHaveAttribute('aria-invalid', 'true');
-      await expect(input).toHaveAttribute('aria-describedby', `${description.id} ${message.id}`);
-      await expect(input).toHaveAccessibleDescription(
-        `${formCopy.description} ${formCopy.requiredMessage}`
-      );
-      await expect(fieldContract).toHaveAttribute('data-field-state', 'invalid');
-      await expect(fieldContract).toHaveAttribute('data-message-id', message.id);
-      await expect(form).toHaveAttribute('data-submission-state', 'submitted');
-      await expect(message).toBeVisible();
-
-      // required エラーがある間は valid submit callback へ値を通知しないことを保証する。
-      await expect(requiredSubmitSpy).not.toHaveBeenCalled();
-    });
-  },
-};
-
-/** controlled Input の更新値を送信し、補助操作で固定初期値へ復元する。 */
-export const ValidSubmissionAndControlledReset: Story = {
-  args: {
-    defaultValues: initialFormValues,
-    onValidSubmit: validSubmitSpy,
-  },
-  play: async ({ canvasElement, step }) => {
-    // 前回の Story 実行結果を消去し、今回の valid submit 回数と引数だけを検証する。
-    validSubmitSpy.mockClear();
-    const { form, input, resetButton } = await assertInitialFormSemantics(
-      canvasElement,
-      initialFormValues.displayName
-    );
-
-    await step('controlled Input を固定更新値へ変更する', async () => {
-      // 初期値を消去してから文字入力を行い、Controller が DOM 値を form state と同期することを確認する。
-      await userEvent.clear(input);
-      await userEvent.type(input, updatedFormValues.displayName);
-      await expect(input).toHaveValue(updatedFormValues.displayName);
-    });
-
-    await step('valid な controlled 値を form submit で通知する', async () => {
-      // form 要素の submit event を明示的に発火し、ボタンのクリックだけに依存しない送信契約を検証する。
-      await fireEvent.submit(form);
-
-      // React Hook Form の非同期 submit 処理を待ち、固定更新値が一度だけ callback へ渡ることを保証する。
-      await waitFor(async () => {
-        await expect(validSubmitSpy).toHaveBeenCalledTimes(1);
-      });
-      await expect(validSubmitSpy).toHaveBeenCalledWith(updatedFormValues, expect.anything());
-      await expect(form).toHaveAttribute('data-submission-state', 'submitted');
-    });
-
-    await step('補助ボタンのクリックで controlled 値を固定初期値へ戻す', async () => {
-      // FormExample の form.reset handler を操作し、ネイティブ DOM だけでなく form state も復元する。
-      await userEvent.click(resetButton);
-      await expect(input).toHaveValue(initialFormValues.displayName);
-      await expect(input).toHaveAttribute('aria-invalid', 'false');
-      await expect(form).toHaveAttribute('data-submission-state', 'idle');
-
-      // reset は新しい submit を発生させず、直前の valid submit 観測結果を保持することを確認する。
-      await expect(validSubmitSpy).toHaveBeenCalledTimes(1);
-    });
-  },
-};
+/** API catalog ではなく、一つの完結したプロフィール編集タスクを表示する。 */
+export const ProfileForm: Story = {};

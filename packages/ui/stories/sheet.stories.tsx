@@ -1,6 +1,9 @@
-import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { useId } from 'react';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import { Button } from '@cfreact-template/ui/components/button';
+import { Input } from '@cfreact-template/ui/components/input';
+import { Label } from '@cfreact-template/ui/components/label';
 import {
   Sheet,
   SheetClose,
@@ -13,153 +16,163 @@ import {
 } from '@cfreact-template/ui/components/sheet';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ComponentProps } from 'react';
+import type { SyntheticEvent } from 'react';
 
-/**
- * 製品固有の文脈を持ち込まず、全 Story と interaction test で共有する固定表示。
- *
- * Trigger、見出し、説明、本文、Footer 操作の可視名を一か所へ集約し、Portal 内の
- * dialog を利用者視点の role と accessible name から安定して取得できるようにする。
- * 文字列の参照以外に外部作用はない。
- */
-const sheetCopy = {
-  title: 'パネルの内容',
-  description: '補足情報と操作を確認するための固定内容です。',
-  body: 'このパネルは、配置方向、開閉操作、フォーカス移動を確認するために表示しています。',
-  defaultClose: 'Close',
-  cancel: 'キャンセル',
-  apply: '適用して閉じる',
-  remove: '削除して閉じる',
-  triggers: {
-    top: '上辺のシートを開く',
-    right: '右辺のシートを開く',
-    bottom: '下辺のシートを開く',
-    left: '左辺のシートを開く',
-    destructive: '破壊的操作のシートを開く',
-    longContent: '長い内容のシートを開く',
-  },
+/** shadcn/ui 公式 Sheet 例の表示文言を、Story と interaction test で共有する。 */
+const profileCopy = {
+  trigger: 'Open',
+  title: 'Edit profile',
+  description: "Make changes to your profile here. Click save when you're done.",
+  nameLabel: 'Name',
+  nameValue: 'Pedro Duarte',
+  usernameLabel: 'Username',
+  usernameValue: '@peduarte',
+  save: 'Save changes',
+  close: 'Close',
 } as const;
 
-/**
- * 狭い幅と低い高さでの折り返し、内部スクロール、Footer の維持を確認する固定段落。
- *
- * 各段落は製品データを模倣せず、Sheet のレスポンシブな表示特性だけを比較できる内容にする。
- */
-const longSheetParagraphs = [
-  'このシートには、複数行にわたる長い説明を表示できます。画面幅が狭い場合は、利用可能な幅に合わせて文章が自然に折り返されます。',
-  '見出しと説明は内容の目的を先に伝え、本文が長い場合でもパネル全体の情報階層を保ちます。',
-  '本文領域は縦方向へ移動できるため、画面の高さを超える内容も閉じる操作を失わずに確認できます。',
-  '左右から表示する場合は既定の幅を使い、上下から表示する場合は画面幅に沿って内容を配置します。',
-  '長い単語や連続した文字列が含まれる場合も、本文領域の内側で折り返して横方向へのはみ出しを防ぎます。',
-  '操作は既存のボタン表現へ統一し、通常操作と破壊的操作の意味を同じコンポーネント体系で区別します。',
-  'キーボード利用時はフォーカスが開いたパネル内に留まり、閉じた後は起点の操作へ戻ります。',
-] as const;
+/** 公式 Side 例が公開する順序を保った、SheetContent の四つの配置方向。 */
+const sheetSides = ['top', 'right', 'bottom', 'left'] as const;
 
-/** Footer の確定操作へ適用する、既存 Button variant に対応した意味上の区分。 */
-type ActionTone = 'destructive' | 'standard';
+/** 公式 Side 例から導出した、SheetContent が受け付ける配置方向。 */
+type SheetSide = (typeof sheetSides)[number];
 
-/** `SheetContent` が受け付ける配置方向から `undefined` を除いた公開型。 */
-type SheetSide = NonNullable<ComponentProps<typeof SheetContent>['side']>;
-
-/** Story 共通の Sheet 構成へ渡す、Root props と固定表示条件。 */
-interface SheetCatalogProps {
-  /** Footer の確定操作を通常または破壊的な既存 Button variant で表示する。 */
-  actionTone: ActionTone;
-  /** 短い既定本文の代わりに、内部スクロールを確認する固定段落を表示するか。 */
-  longContent?: boolean;
-  /** Storybook と各 Story から受け取る Sheet Root の公開 props。 */
-  rootProps: ComponentProps<typeof Sheet>;
-  /** `SheetContent` の配置辺へ渡す、既存 API が支援する方向。 */
-  side: SheetSide;
-  /** Story ごとの Trigger を一意に取得するための固定表示名。 */
-  triggerLabel: string;
+/** 公式 Edit profile を固定Storyとして構成するための表示条件。 */
+interface EditProfileSheetProps {
+  /** Story を描画した時点から Sheet を開いた状態にするか。 */
+  defaultOpen?: boolean;
+  /** Save changes を通常の送信操作ではなく、公式 Side 例と同じ閉じる操作にするか。 */
+  saveCloses?: boolean;
+  /** SheetContent を表示する画面端。 */
+  side?: SheetSide;
+  /** SheetTrigger に表示する、利用者が識別可能な名前。 */
+  triggerLabel?: string;
 }
 
+/** Trigger 操作後に取得した Sheet と、閉鎖後のfocus復帰先。 */
+interface OpenedSheet {
+  /** Portal 内へ表示された、accessible name を持つ dialog。 */
+  sheet: HTMLElement;
+  /** Sheet を開いたため、閉鎖後にfocusが戻るTrigger。 */
+  trigger: HTMLElement;
+}
+
+/** Sheet を開く際に使う、pointerまたはkeyboardの利用経路。 */
+type OpenMethod = 'click' | 'keyboard';
+
 /**
- * Sheet の全公開サブコンポーネントを、既存の親子関係と token だけで組み立てる。
+ * Story内のプロフィールフォーム送信によるdocument navigationだけを抑止する。
  *
- * Footer の確定操作は `SheetClose` と既存 `Button` を合成するため、外部データの変更や
- * 永続化を行わず、Sheet 自身の閉鎖状態だけを安全に確認できる。
+ * 公式例のsubmit semanticsは維持しつつ、保存先を持たないStoryへ製品固有の副作用を追加しない。
  *
- * @param props Root の公開 props、配置方向、内容量、操作の意味、Trigger の固定表示名。
- * @returns 見出し、説明、本文、Footer、既定 Close を持つ操作可能な Sheet。
+ * @param event Edit profileフォームから発生したsubmit event。
+ * @returns 戻り値はなく、ブラウザー既定の送信処理だけを停止する。
  */
-function SheetCatalog({
-  actionTone,
-  longContent = false,
-  rootProps,
-  side,
-  triggerLabel,
-}: SheetCatalogProps) {
-  // 操作の意味から既存 Button variant と可視ラベルを導出し、表示と semantics の対応を固定する。
-  const destructiveAction = actionTone === 'destructive';
-  const actionLabel = destructiveAction ? sheetCopy.remove : sheetCopy.apply;
-  const actionVariant = destructiveAction ? 'destructive' : 'default';
+function preventProfileNavigation(event: SyntheticEvent<HTMLFormElement>): void {
+  // Storyの編集状態を同じ画面で確認できるよう、外部送信とページ遷移だけを停止する。
+  event.preventDefault();
+}
+
+/** Save changes のsubmitを、外部保存処理なしで観測するStory専用spy。 */
+const profileSubmitSpy = fn(preventProfileNavigation);
+
+/**
+ * shadcn/ui公式のEdit profile Sheetを、既存primitiveとtokenだけで構成する。
+ *
+ * 公式demoではSave changesがsubmit、CloseがSheetCloseである一方、Side例では
+ * Save changes自身がSheetCloseになる。その可視構造と開閉差だけを固定条件で再現する。
+ *
+ * @param props 初期開状態、配置方向、Saveの開閉契約、Triggerの表示名。
+ * @returns 二つの編集項目と公式Footer操作を持つSheet。
+ */
+function EditProfileSheet({
+  defaultOpen = false,
+  saveCloses = false,
+  side = 'right',
+  triggerLabel = profileCopy.trigger,
+}: EditProfileSheetProps) {
+  // Docsで複数Storyが同時描画されても、各Labelが自身のInputだけを参照する一意IDを生成する。
+  const formId = useId();
+  const nameId = useId();
+  const usernameId = useId();
 
   return (
-    <Sheet {...rootProps}>
-      {/* Trigger の button semantics は Base UI に委ね、既存 Button の outline variant だけを描画へ使う。 */}
+    <Sheet defaultOpen={defaultOpen}>
+      {/* Base UIのbutton semanticsを保ち、公式例と同じoutline ButtonをTriggerへ合成する。 */}
       <SheetTrigger render={<Button type="button" variant="outline" />}>
         {triggerLabel}
       </SheetTrigger>
 
-      <SheetContent className={longContent ? 'overflow-hidden' : undefined} side={side}>
+      <SheetContent side={side}>
         <SheetHeader>
-          {/* Title と Description を専用 primitive へ置き、dialog の名前と説明を支援技術へ関連付ける。 */}
-          <SheetTitle>{sheetCopy.title}</SheetTitle>
-          <SheetDescription>{sheetCopy.description}</SheetDescription>
+          {/* 専用primitiveにより、TitleとDescriptionをdialogの名前・説明へ関連付ける。 */}
+          <SheetTitle>{profileCopy.title}</SheetTitle>
+          <SheetDescription>{profileCopy.description}</SheetDescription>
         </SheetHeader>
 
-        <div
-          className={
-            longContent ? 'min-h-0 min-w-0 flex-1 overflow-y-auto px-4 pb-4' : 'min-w-0 px-4'
-          }
+        <form
+          id={formId}
+          className="grid min-h-0 flex-1 auto-rows-min gap-6 overflow-y-auto px-4"
+          onSubmit={profileSubmitSpy}
         >
-          <p className="max-w-prose break-words text-sm leading-6">{sheetCopy.body}</p>
+          {/* 公式demoの縦積みfield構造を保ち、狭いSheetでもlabelと入力値を切らさない。 */}
+          <div className="grid min-w-0 gap-3">
+            <Label htmlFor={nameId}>{profileCopy.nameLabel}</Label>
+            <Input id={nameId} name="name" defaultValue={profileCopy.nameValue} />
+          </div>
+          <div className="grid min-w-0 gap-3">
+            <Label htmlFor={usernameId}>{profileCopy.usernameLabel}</Label>
+            <Input id={usernameId} name="username" defaultValue={profileCopy.usernameValue} />
+          </div>
+        </form>
 
-          {longContent && (
-            <div className="max-w-prose space-y-3 pt-3 break-words text-muted-foreground leading-6">
-              {/* 固定文字列自体を key にし、内容が同じ限り段落の描画識別子も安定させる。 */}
-              {longSheetParagraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-            </div>
+        <SheetFooter>
+          {saveCloses ? (
+            // 公式Side例ではSave changes自体がSheetCloseとなり、選択した方向のSheetを閉じる。
+            <SheetClose render={<Button type="button" />}>{profileCopy.save}</SheetClose>
+          ) : (
+            // 公式demoの主要操作として、Portal内からform属性で編集フォームを送信する。
+            <Button type="submit" form={formId}>
+              {profileCopy.save}
+            </Button>
           )}
-        </div>
 
-        <SheetFooter className="sm:flex-row sm:justify-end">
-          {/* 二つの Footer 操作はどちらも公開 SheetClose を使い、独自の状態管理や外部作用を追加しない。 */}
-          <SheetClose render={<Button type="button" variant="outline" />}>
-            {sheetCopy.cancel}
-          </SheetClose>
-          <SheetClose render={<Button type="button" variant={actionVariant} />}>
-            {actionLabel}
-          </SheetClose>
+          {!saveCloses && (
+            // 公式demoの副次操作をSheetCloseへ委譲し、独自の開閉stateを持ち込まない。
+            <SheetClose render={<Button type="button" variant="outline" />}>
+              {profileCopy.close}
+            </SheetClose>
+          )}
         </SheetFooter>
       </SheetContent>
     </Sheet>
   );
 }
 
-/** Trigger 操作後に取得した Sheet と、閉鎖後の focus 回復先。 */
-interface OpenedSheet {
-  /** Portal 内で可視になった dialog 要素。 */
-  sheet: HTMLElement;
-  /** Sheet を開き、閉鎖後に focus が戻る Trigger。 */
-  trigger: HTMLElement;
+/**
+ * shadcn/ui公式Side例と同じ2列のTriggerから、四方向のEdit profileを開けるようにする。
+ *
+ * @returns top、right、bottom、leftを一つずつ比較できる固定Story。
+ */
+function SheetSideVariants() {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {sheetSides.map((side) => (
+        /* 配置方向自体を安定keyとTrigger名に使い、公式例の順序と表示を維持する。 */
+        <EditProfileSheet key={side} saveCloses side={side} triggerLabel={side} />
+      ))}
+    </div>
+  );
 }
 
-/** Sheet を開く interaction test の入力経路。 */
-type OpenMethod = 'click' | 'keyboard';
-
 /**
- * Trigger を click または keyboard で操作し、Portal 内に表示された Sheet を取得する。
+ * Triggerを利用者と同じclickまたはkeyboard経路で操作し、Portal内のSheetを取得する。
  *
- * @param canvasElement Story が描画された範囲。Trigger と ownerDocument の特定に使う。
- * @param triggerLabel 操作対象の Trigger を識別する固定表示名。
- * @param side 表示後に検証する `SheetContent` の配置方向。
- * @param method 利用者が Sheet を開く pointer または keyboard の経路。
- * @returns 可視性、名前、説明、focus 移動を確認できた Sheet と Trigger。
+ * @param canvasElement Storyが描画された範囲とownerDocument。
+ * @param triggerLabel 操作するTriggerのaccessible name。
+ * @param side 表示後に確認するSheetContentの配置方向。
+ * @param method pointer clickまたはkeyboard Enterの開放経路。
+ * @returns 名前、説明、方向、focus移動を確認したSheetとTrigger。
  */
 async function openSheet(
   canvasElement: HTMLElement,
@@ -167,129 +180,90 @@ async function openSheet(
   side: SheetSide,
   method: OpenMethod
 ): Promise<OpenedSheet> {
-  // Trigger は Story canvas、Content と Overlay は Portal のため document body を検索範囲に分ける。
+  // Triggerはcanvas、SheetContentはPortal内にあるため、検索範囲を描画責務ごとに分ける。
   const canvas = within(canvasElement);
   const documentBody = within(canvasElement.ownerDocument.body);
   const trigger = canvas.getByRole('button', { name: triggerLabel });
 
-  // 初期状態に同名 dialog がないことを確認し、前の操作結果を新しい開放と誤認しない。
-  await expect(
-    documentBody.queryByRole('dialog', { name: sheetCopy.title })
-  ).not.toBeInTheDocument();
+  // 初期の閉状態を確認し、別の操作で残ったdialogを今回の開放結果と誤認しない。
+  await expect(documentBody.queryByRole('dialog', { name: profileCopy.title })).toBeNull();
 
   if (method === 'click') {
-    // 実際の pointer 操作で非制御 Sheet を開き、Trigger の既存 click 契約を通す。
+    // pointer経路では実際のclickを送り、Triggerの非制御開閉契約を通す。
     await userEvent.click(trigger);
   } else {
-    // Trigger へ keyboard で移動して Enter を送り、pointer に依存しない開放経路を通す。
+    // keyboard経路ではTriggerへfocusしてEnterを送り、pointerなしで開けることを確認する。
     trigger.focus();
     await expect(trigger).toHaveFocus();
     await userEvent.keyboard('{Enter}');
   }
 
-  // Portal の非同期描画と開始 animation が完了し、利用者が操作できる可視状態まで待機する。
-  const sheet = await documentBody.findByRole('dialog', { name: sheetCopy.title });
+  // Portalのmountと開始transitionを待ち、利用者が操作できるdialogを後続検証へ渡す。
+  const sheet = await documentBody.findByRole('dialog', { name: profileCopy.title });
   await waitFor(async () => {
     await expect(sheet).toBeVisible();
   });
 
-  // Title、Description、方向、Overlay を公開 semantics と data slot から確認する。
-  await expect(sheet).toHaveAccessibleDescription(sheetCopy.description);
+  // 公開semanticsとdata属性から、説明、方向、Overlay、modal内focusを確認する。
+  await expect(sheet).toHaveAccessibleDescription(profileCopy.description);
   await expect(sheet).toHaveAttribute('data-side', side);
   await waitFor(async () => {
     await expect(
       canvasElement.ownerDocument.querySelector('[data-slot="sheet-overlay"]')
     ).toBeVisible();
-  });
-
-  // Base UI の modal focus 管理が、背景ではなく開いた Sheet またはその子要素へ移動したことを待つ。
-  await waitFor(async () => {
     const activeElement = canvasElement.ownerDocument.activeElement;
-    await expect(activeElement !== null).toBe(true);
-    await expect(activeElement === sheet || sheet.contains(activeElement)).toBe(true);
+    await expect(activeElement !== null && sheet.contains(activeElement)).toBe(true);
   });
 
   return { sheet, trigger };
 }
 
 /**
- * Sheet 内の先頭・末尾操作間を Tab で循環し、modal の focus trap を検証する。
+ * 閉鎖transition後にSheetが除去され、起点のTriggerへfocusが戻ることを確認する。
  *
- * @param sheet 開放済みで、Footer 操作と既定 Close を含む dialog 要素。
- * @returns 前後両方向の focus 循環を確認した時点で解決する Promise。
- * @throws 操作可能な button が一つもなく、focus trap の境界を構成できない場合。
- */
-async function expectSheetFocusTrap(sheet: HTMLElement): Promise<void> {
-  // DOM 順の先頭は Footer のキャンセル、末尾は SheetContent が付加する既定 Close になる。
-  const buttons = within(sheet).getAllByRole('button');
-  const firstButton = buttons[0];
-  const lastButton = buttons.at(-1);
-
-  if (firstButton === undefined || lastButton === undefined) {
-    // Catalog 契約が壊れた場合は曖昧な assertion failure にせず、欠落した focus 境界を明示する。
-    throw new TypeError('Sheet の focus trap を検証する button が見つかりません。');
-  }
-
-  // 末尾から Tab を送った場合、focus が背景へ抜けずに Sheet 内の先頭操作へ循環する。
-  lastButton.focus();
-  await expect(lastButton).toHaveFocus();
-  await userEvent.tab();
-  await waitFor(async () => {
-    // Base UI の focus guard が Tab を受けた後、先頭操作へ focus を転送するまで条件待機する。
-    await expect(firstButton).toHaveFocus();
-  });
-
-  // 先頭から Shift+Tab を送った場合も、逆方向に Sheet 内の末尾操作へ循環する。
-  await userEvent.tab({ shift: true });
-  await waitFor(async () => {
-    // 逆方向も focus guard の転送完了を待ち、theme や描画速度による timing 差へ依存しない。
-    await expect(lastButton).toHaveFocus();
-  });
-}
-
-/**
- * 閉鎖アニメーション後に Sheet が Portal から除去され、Trigger へ focus が戻ることを確認する。
- *
- * @param canvasElement ownerDocument と Portal の検索範囲を特定する Story canvas。
- * @param trigger Sheet を開いたため、閉鎖後の focus 回復先となる要素。
- * @returns Sheet の除去と focus 回復が完了した時点で解決する Promise。
+ * @param canvasElement PortalのownerDocumentを特定するStory canvas。
+ * @param trigger Sheetを開いたため、閉鎖後のfocus復帰先となる要素。
+ * @returns Sheetの除去とfocus復帰が完了した時点で解決するPromise。
  */
 async function expectSheetClosed(canvasElement: HTMLElement, trigger: HTMLElement): Promise<void> {
-  // animation の固定時間を仮定せず、role の消失と focus 回復の実際の状態を条件待機する。
+  // 固定時間を仮定せず、dialogの消失とfocus回復という利用者に見える状態を待つ。
   const documentBody = within(canvasElement.ownerDocument.body);
-
   await waitFor(async () => {
-    await expect(
-      documentBody.queryByRole('dialog', { name: sheetCopy.title })
-    ).not.toBeInTheDocument();
+    await expect(documentBody.queryByRole('dialog', { name: profileCopy.title })).toBeNull();
     await expect(trigger).toHaveFocus();
   });
 }
 
 /**
- * 指定方向の Sheet を click で開き、公開方向と Escape による閉鎖を同じ手順で検証する。
+ * Tabの進行方向に関係なく、modalを開いている間のfocusがSheet内に留まることを確認する。
  *
- * @param canvasElement Story が描画された範囲。
- * @param triggerLabel 方向別 Story が固定した Trigger の可視名。
- * @param side Story が固定した既存の配置方向。
- * @returns 方向、Escape 閉鎖、focus 回復を確認した時点で解決する Promise。
+ * focus guardや各controlのDOM順はBase UIの内部実装であるため固定せず、利用者へ公開される
+ * modal focusの最終状態だけを検証する。
+ *
+ * @param sheet 開放済みで、keyboard focusを内側へ保持するdialog。
+ * @returns TabとShift+Tabの各操作後にfocus containmentを確認した時点で解決するPromise。
  */
-async function verifySheetSide(
-  canvasElement: HTMLElement,
-  triggerLabel: string,
-  side: SheetSide
-): Promise<void> {
-  // 共通 helper が data-side と可視状態を確認するため、方向別 Story は開閉経路だけを追加検証する。
-  const { trigger } = await openSheet(canvasElement, triggerLabel, side, 'click');
-  await userEvent.keyboard('{Escape}');
-  await expectSheetClosed(canvasElement, trigger);
+async function expectSheetFocusContainment(sheet: HTMLElement): Promise<void> {
+  // 前方向へ移動した後も、背景ではなく開いているSheet内へfocusが留まることを確認する。
+  await userEvent.tab();
+  await waitFor(async () => {
+    const activeElement = sheet.ownerDocument.activeElement;
+    await expect(activeElement !== null && sheet.contains(activeElement)).toBe(true);
+  });
+
+  // 逆方向でも同じ公開結果を確認し、特定controlやfocus guardの配置には依存しない。
+  await userEvent.tab({ shift: true });
+  await waitFor(async () => {
+    const activeElement = sheet.ownerDocument.activeElement;
+    await expect(activeElement !== null && sheet.contains(activeElement)).toBe(true);
+  });
 }
 
 /**
- * Sheet と全公開サブコンポーネントを CSF 3 の Docs・a11y・browser tests へ登録する。
+ * Sheetを公式Docs・Examples・registry/sourceに沿った固定実例としてStorybookへ登録する。
  *
- * 既存 API、既存 token、固定データだけを使い、全配置方向、通常・破壊的操作、長文、
- * click・keyboard 開放、focus trap、Escape、Close の各契約を比較できる。
+ * props一覧ではなく、Edit profile、四方向、閉状態からの開閉、初期Open状態、form、
+ * keyboard focusを、既存のSheet・Button・Input・Labelだけで確認できるようにする。
  */
 const meta = {
   title: 'Components/Sheet',
@@ -310,195 +284,111 @@ const meta = {
     docs: {
       description: {
         component:
-          'Trigger、Content、Header、Footer、Title、Description、Close、全 side、通常・破壊的操作、レスポンシブな長文、modal focus 管理を固定例で確認します。',
+          'shadcn/ui公式のEdit profileとSide例に沿って、閉状態からの開閉、初期Open状態、四方向、form、keyboard focusを実操作で確認します。',
       },
     },
     layout: 'centered',
   },
 } satisfies Meta<typeof Sheet>;
 
-/** Storybook が Sheet catalog の型、Docs、accessibility、interaction tests を構築するための既定 export。 */
+/** StorybookがSheetのDocs、accessibility、interaction testsを構築する既定export。 */
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * 既定の右辺 Sheet で、click・keyboard 開放、全公開構成、focus trap、Escape、既定 Close を検証する。
- */
-export const RightSide: Story = {
-  render: (args) => (
-    <SheetCatalog
-      actionTone="standard"
-      rootProps={args}
-      side="right"
-      triggerLabel={sheetCopy.triggers.right}
-    />
-  ),
+/** 公式Edit profileを閉状態からkeyboardで開き、編集、submit、Close、Escape、focusを確認する。 */
+export const Default: Story = {
+  render: () => <EditProfileSheet />,
   play: async ({ canvasElement, step }) => {
-    // modal が背景を inert にする前に Trigger を保持し、Escape 閉鎖後の focus 回復先を追跡する。
-    const trigger = within(canvasElement).getByRole('button', {
-      name: sheetCopy.triggers.right,
-    });
+    // theme・viewportごとに今回のSave操作だけを数えられるよう、共有spyの履歴を初期化する。
+    profileSubmitSpy.mockClear();
+    const documentBody = within(canvasElement.ownerDocument.body);
+    // Sheetが背景をinertにする前に、閉鎖後のfocus復帰先となる公開Triggerを保持する。
+    const trigger = within(canvasElement).getByRole('button', { name: profileCopy.trigger });
 
-    await step('click で右辺 Sheet を開き、公開構成と focus trap を確認する', async () => {
-      const { sheet } = await openSheet(canvasElement, sheetCopy.triggers.right, 'right', 'click');
+    await step('keyboardで開き、公式Edit profileとmodal focusを確認する', async () => {
+      const { sheet } = await openSheet(canvasElement, profileCopy.trigger, 'right', 'keyboard');
       const sheetScope = within(sheet);
+      const nameInput = sheetScope.getByRole('textbox', { name: profileCopy.nameLabel });
+      const usernameInput = sheetScope.getByRole('textbox', {
+        name: profileCopy.usernameLabel,
+      });
 
-      // 明示した全構成と通常操作を確認し、subcomponents の登録だけで描画漏れを隠さない。
-      await expect(sheet.querySelector('[data-slot="sheet-header"]')).toBeInTheDocument();
-      await expect(sheet.querySelector('[data-slot="sheet-footer"]')).toBeInTheDocument();
-      await expect(sheetScope.getByText(sheetCopy.body)).toBeVisible();
-      await expect(sheetScope.getByRole('button', { name: sheetCopy.cancel })).toBeVisible();
-      await expect(sheetScope.getByRole('button', { name: sheetCopy.apply })).toBeVisible();
-      await expectSheetFocusTrap(sheet);
+      // 公式の初期値を確認し、特定のDOM順を固定せずmodal focusの公開結果を検証する。
+      await expect(nameInput).toHaveValue(profileCopy.nameValue);
+      await expect(usernameInput).toHaveValue(profileCopy.usernameValue);
+      await expectSheetFocusContainment(sheet);
+
+      // 利用者と同じ入力操作で値を変更し、狭幅でも編集途中の状態が失われないことを確認する。
+      await userEvent.clear(nameInput);
+      await userEvent.type(nameInput, 'Pedro Duarte Jr.');
+      await userEvent.clear(usernameInput);
+      await userEvent.type(usernameInput, '@peduarte-updated');
+      await expect(nameInput).toHaveValue('Pedro Duarte Jr.');
+      await expect(usernameInput).toHaveValue('@peduarte-updated');
     });
 
-    await step('Escape で閉じ、Trigger へ focus を戻す', async () => {
-      // focus trap の末尾操作から Escape を送り、modal の標準キーボード閉鎖経路を通す。
+    await step('Save changesでformをsubmitし、SheetのOpen状態を保つ', async () => {
+      const sheet = documentBody.getByRole('dialog', { name: profileCopy.title });
+
+      // 公式の主要操作を実行し、製品固有の保存を追加せずsubmit semanticsだけを観測する。
+      await userEvent.click(within(sheet).getByRole('button', { name: profileCopy.save }));
+      await expect(profileSubmitSpy).toHaveBeenCalledTimes(1);
+      await expect(sheet).toBeVisible();
+    });
+
+    await step('FooterのCloseで閉じ、Triggerへfocusを戻す', async () => {
+      const sheet = documentBody.getByRole('dialog', { name: profileCopy.title });
+
+      // 既定icon Closeではなく、公式Footerで利用者に可視なbutton文言から閉鎖操作を選ぶ。
+      await userEvent.click(within(sheet).getByText(profileCopy.close, { selector: 'button' }));
+      await expectSheetClosed(canvasElement, trigger);
+    });
+
+    await step('pointerで再度開き、Escapeで閉じてfocusを戻す', async () => {
+      // 明示Closeとは別の標準keyboard閉鎖経路でも、同じTriggerへfocusが戻ることを確認する。
+      const { trigger } = await openSheet(canvasElement, profileCopy.trigger, 'right', 'click');
       await userEvent.keyboard('{Escape}');
       await expectSheetClosed(canvasElement, trigger);
     });
-
-    await step('keyboard で再度開き、既定 Close で閉じる', async () => {
-      // Enter による開放後、SheetContent が付加する icon-only Close の accessible name から操作する。
-      const { sheet, trigger } = await openSheet(
-        canvasElement,
-        sheetCopy.triggers.right,
-        'right',
-        'keyboard'
-      );
-      await userEvent.click(within(sheet).getByRole('button', { name: sheetCopy.defaultClose }));
-      await expectSheetClosed(canvasElement, trigger);
-    });
   },
 };
 
-/** 上辺から表示する Sheet を示し、公開 `side="top"` と Escape 閉鎖を検証する。 */
-export const TopSide: Story = {
-  render: (args) => (
-    <SheetCatalog
-      actionTone="standard"
-      rootProps={args}
-      side="top"
-      triggerLabel={sheetCopy.triggers.top}
-    />
-  ),
+/** 公式Side例と同じ四つのTriggerから、top、right、bottom、leftの開閉状態を比較する。 */
+export const SideVariants: Story = {
+  render: () => <SheetSideVariants />,
   play: async ({ canvasElement, step }) => {
-    await step('上辺の配置と Escape 閉鎖を確認する', async () => {
-      await verifySheetSide(canvasElement, sheetCopy.triggers.top, 'top');
-    });
-  },
-};
+    // 各方向を順番に開閉し、390pxを含む各viewportで前のPortalを残さず検証する。
+    for (const side of sheetSides) {
+      await step(`${side}側のSheetを開き、Save changesで閉じる`, async () => {
+        const { sheet, trigger } = await openSheet(canvasElement, side, side, 'click');
 
-/** 下辺から表示する Sheet を示し、公開 `side="bottom"` と Escape 閉鎖を検証する。 */
-export const BottomSide: Story = {
-  render: (args) => (
-    <SheetCatalog
-      actionTone="standard"
-      rootProps={args}
-      side="bottom"
-      triggerLabel={sheetCopy.triggers.bottom}
-    />
-  ),
-  play: async ({ canvasElement, step }) => {
-    await step('下辺の配置と Escape 閉鎖を確認する', async () => {
-      await verifySheetSide(canvasElement, sheetCopy.triggers.bottom, 'bottom');
-    });
-  },
-};
-
-/** 左辺から表示する Sheet を示し、公開 `side="left"` と Escape 閉鎖を検証する。 */
-export const LeftSide: Story = {
-  render: (args) => (
-    <SheetCatalog
-      actionTone="standard"
-      rootProps={args}
-      side="left"
-      triggerLabel={sheetCopy.triggers.left}
-    />
-  ),
-  play: async ({ canvasElement, step }) => {
-    await step('左辺の配置と Escape 閉鎖を確認する', async () => {
-      await verifySheetSide(canvasElement, sheetCopy.triggers.left, 'left');
-    });
-  },
-};
-
-/**
- * 既存 Button の destructive variant を SheetClose へ合成し、外部作用なしで破壊的操作を示す。
- */
-export const DestructiveAction: Story = {
-  render: (args) => (
-    <SheetCatalog
-      actionTone="destructive"
-      rootProps={args}
-      side="right"
-      triggerLabel={sheetCopy.triggers.destructive}
-    />
-  ),
-  play: async ({ canvasElement, step }) => {
-    await step('破壊的操作を表示し、SheetClose として閉じる', async () => {
-      const { sheet, trigger } = await openSheet(
-        canvasElement,
-        sheetCopy.triggers.destructive,
-        'right',
-        'click'
-      );
-      const destructiveButton = within(sheet).getByRole('button', { name: sheetCopy.remove });
-
-      // 既存 destructive token の class を持ち、操作後はデータ変更を行わず Sheet のみ閉じることを確認する。
-      await expect(destructiveButton).toHaveClass('text-destructive');
-      await userEvent.click(destructiveButton);
-      await expectSheetClosed(canvasElement, trigger);
-    });
-  },
-};
-
-/**
- * 長い固定内容を狭い Sheet 内で折り返し、本文だけを縦スクロールできるレスポンシブ構成を示す。
- */
-export const LongResponsiveContent: Story = {
-  parameters: {
-    layout: 'fullscreen',
-  },
-  render: (args) => (
-    <div className="flex min-h-svh items-center justify-center p-4">
-      {/* Story canvas に既存 spacing utility を使い、狭い viewport でも Trigger が端へ接しないようにする。 */}
-      <SheetCatalog
-        actionTone="standard"
-        longContent
-        rootProps={args}
-        side="right"
-        triggerLabel={sheetCopy.triggers.longContent}
-      />
-    </div>
-  ),
-  play: async ({ canvasElement, step }) => {
-    await step(
-      '長文 Sheet を開き、折り返し可能な全段落と内部スクロール領域を確認する',
-      async () => {
-        const { sheet, trigger } = await openSheet(
-          canvasElement,
-          sheetCopy.triggers.longContent,
-          'right',
-          'click'
-        );
-        const sheetScope = within(sheet);
-        const scrollRegion = sheet.querySelector('[data-slot="sheet-header"]')?.nextElementSibling;
-
-        // 本文だけが残り高さを使って縦移動し、Sheet 全体や Footer をスクロール領域へ巻き込まない。
-        await expect(scrollRegion).toHaveClass('min-h-0', 'min-w-0', 'flex-1', 'overflow-y-auto');
-        await expect(sheet.querySelector('[data-slot="sheet-footer"]')).toBeVisible();
-
-        // 固定した全段落が同じ Sheet 内に存在し、長文でも可視内容が欠落しないことを確認する。
-        for (const paragraph of longSheetParagraphs) {
-          await expect(sheetScope.getByText(paragraph)).toBeVisible();
-        }
-
-        // 長文の末尾にある通常操作を SheetClose として実行し、外部作用なしで focus 回復まで確認する。
-        await userEvent.click(sheetScope.getByRole('button', { name: sheetCopy.apply }));
+        // 公式Side例の主要操作が、選択方向に関係なくSheetCloseとして機能することを確認する。
+        await userEvent.click(within(sheet).getByRole('button', { name: profileCopy.save }));
         await expectSheetClosed(canvasElement, trigger);
-      }
-    );
+      });
+    }
+  },
+};
+
+/** 公式Edit profileを初期Open状態で表示し、テーマ・狭幅ごとの完成状態と初期focusを確認する。 */
+export const Open: Story = {
+  render: () => <EditProfileSheet defaultOpen />,
+  play: async ({ canvasElement, step }) => {
+    await step('初期Open状態の名前、説明、方向、focusを確認する', async () => {
+      // 初期状態ではTrigger操作を行わず、Portalへ既に表示されたdialogを利用者向けroleから取得する。
+      const sheet = await within(canvasElement.ownerDocument.body).findByRole('dialog', {
+        name: profileCopy.title,
+      });
+
+      // Light/Darkと390pxで、Open状態のsemanticsとmodal内focusという公開結果を保証する。
+      await expect(sheet).toBeVisible();
+      await expect(sheet).toHaveAccessibleDescription(profileCopy.description);
+      await expect(sheet).toHaveAttribute('data-side', 'right');
+      await waitFor(async () => {
+        const activeElement = canvasElement.ownerDocument.activeElement;
+        await expect(activeElement !== null && sheet.contains(activeElement)).toBe(true);
+      });
+    });
   },
 };

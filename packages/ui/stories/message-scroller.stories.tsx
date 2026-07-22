@@ -1,6 +1,14 @@
-import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { expect, waitFor, within } from 'storybook/test';
 
-import { Button } from '@cfreact-template/ui/components/button';
+import { Bubble, BubbleContent } from '@cfreact-template/ui/components/bubble';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@cfreact-template/ui/components/card';
+import { Message, MessageContent } from '@cfreact-template/ui/components/message';
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -8,232 +16,172 @@ import {
   MessageScrollerItem,
   MessageScrollerProvider,
   MessageScrollerViewport,
-  useMessageScroller,
-  useMessageScrollerScrollable,
-  useMessageScrollerVisibility,
 } from '@cfreact-template/ui/components/message-scroller';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ComponentProps } from 'react';
 
-/** Story と interaction test で共有する、製品文脈に依存しない固定メッセージ。 */
-const fixedMessages = [
-  {
-    id: 'message-1',
-    title: 'メッセージ 1',
-    body: '先頭位置では、終了方向へスクロールできることを確認します。',
-  },
-  {
-    id: 'message-2',
-    title: 'メッセージ 2',
-    body: '固定された内容と高さにより、毎回同じスクロール条件を再現します。',
-  },
-  {
-    id: 'message-3',
-    title: 'メッセージ 3',
-    body: 'Viewport の範囲外に項目が続き、縦方向の overflow が発生します。',
-  },
-  {
-    id: 'message-4',
-    title: 'メッセージ 4',
-    body: 'この項目を固定アンカーとして、公開フックによる移動を確認します。',
-  },
-  {
-    id: 'message-5',
-    title: 'メッセージ 5',
-    body: 'アンカーの後にも項目を置き、先頭・アンカー・末尾を区別します。',
-  },
-  {
-    id: 'message-6',
-    title: 'メッセージ 6',
-    body: 'スクロール後も Item の順序と内容は変化しません。',
-  },
-  {
-    id: 'message-7',
-    title: 'メッセージ 7',
-    body: '末尾へ近づくと、終了方向ボタンの表示状態が切り替わります。',
-  },
-  {
-    id: 'message-8',
-    title: 'メッセージ 8',
-    body: '末尾位置では、開始方向へ戻る操作だけが利用できます。',
-  },
-] as const;
+/** 公式の保存済み会話例に含まれる一つの発話を、表示順と turn anchor 情報ごと保持する。 */
+interface TranscriptMessage {
+  /** MessageScroller が発話位置を復元するときに参照する安定 ID。 */
+  id: string;
+  /** 発話者の表示方向と turn anchor 判定を決める公式の会話 role。 */
+  role: 'user' | 'assistant';
+  /** 発話本文を意味のある段落単位で保持する固定コピー。 */
+  paragraphs: readonly string[];
+  /** 公式回答内の「Recommended follow-up」を意味的な番号付きリストとして表す項目。 */
+  recommendations?: readonly string[];
+  /** 番号付きリストの後に続く、公式回答の結論段落。 */
+  conclusion?: string;
+}
 
-/** `scrollAnchor` と `scrollToMessage` の両方で参照する固定メッセージ ID。 */
-const anchorMessageId = 'message-4';
+/** `MessageScrollerProvider` が受け付ける初期スクロール位置だけを Story 内部で共有する。 */
+type TranscriptOpeningPosition = NonNullable<
+  ComponentProps<typeof MessageScrollerProvider>['defaultScrollPosition']
+>;
 
-/** `Viewport` を支援技術と interaction test の双方から一意に識別する名前。 */
-const viewportLabel = '固定メッセージ履歴';
+/** 公式 shadcn `Opening Position` 例の可視コピーと発話順を変更せず保持する。 */
+const OPENING_POSITION_MESSAGES = [
+  {
+    id: 'open-1',
+    role: 'user',
+    paragraphs: ['This is the first message the user sent in the conversation.'],
+  },
+  {
+    id: 'open-2',
+    role: 'assistant',
+    paragraphs: ['Workspace creation rose 8%, but first invite completion only rose 2%.'],
+  },
+  {
+    id: 'open-3',
+    role: 'user',
+    paragraphs: ['This is the last message the user sent in the conversation.'],
+  },
+  {
+    id: 'open-4',
+    role: 'assistant',
+    paragraphs: [
+      'Start with the invite step. Teams are creating workspaces but waiting to add collaborators.',
+      'Recommended follow-up:',
+    ],
+    recommendations: [
+      'Compare invite drop-off by account size.',
+      'Check whether users who skip invites still return within 24 hours.',
+      'Review the empty-state copy on the first project screen.',
+      'Segment activation by template, since template users may not need invites right away.',
+    ],
+    conclusion:
+      'If that pattern holds, the next experiment should make collaboration useful earlier instead of prompting for invites harder.',
+  },
+] as const satisfies readonly TranscriptMessage[];
 
-/** 公開フックの現在値を通知する status 領域の名前。 */
-const statusLabel = 'MessageScroller の公開フック状態';
+/** Story と interaction test が同じアクセシブル名で scroll viewport を参照する。 */
+const VIEWPORT_LABEL = 'Saved conversation';
 
-/** `MessageScrollerButton` の方向と操作内容を日本語で対応付ける固定ラベル。 */
-const scrollerButtonLabels = {
-  start: '先頭へスクロール',
-  end: '末尾へスクロール',
-} as const;
+/** Story と interaction test が同じアクセシブル名で会話ログを参照する。 */
+const TRANSCRIPT_LABEL = 'Conversation transcript';
 
-/** `useMessageScroller` の各移動関数を interaction test から操作する固定ラベル。 */
-const hookButtonLabels = {
-  start: 'フックで先頭へ移動',
-  anchor: 'フックでアンカーへ移動',
-  end: 'フックで末尾へ移動',
-} as const;
+/** 最新発話へ戻る操作を、アイコンの方向だけに依存せず支援技術へ伝える。 */
+const LATEST_REPLY_LABEL = 'Jump to latest reply';
+
+/** interaction test が先頭再開状態を可視本文から一意に確認するための公式コピー。 */
+const FIRST_MESSAGE = OPENING_POSITION_MESSAGES[0].paragraphs[0];
+
+/** interaction test が last-anchor 再開状態を可視本文から一意に確認するための公式コピー。 */
+const LAST_USER_MESSAGE = OPENING_POSITION_MESSAGES[2].paragraphs[0];
 
 /**
- * 公開された三つの hook を同じ Provider 配下で利用し、操作と現在値を観測可能にする。
+ * 一つの公式発話を、role に対応する配置と読み上げ名を持つ Message として描画する。
  *
- * @returns `useMessageScroller` の移動操作と、scrollable・visibility の現在値を持つ状態領域。
- * @remarks 各操作は Story 内の Viewport だけを同期的にスクロールし、外部通信や永続化を行わない。
- * @example
- * ```tsx
- * <MessageScrollerProvider>
- *   <MessageScrollerStatusProbe />
- *   <MessageScroller>{/* Viewport と Content *\/}</MessageScroller>
- * </MessageScrollerProvider>
- * ```
+ * @param message 公式例から取得した安定 ID、role、段落、任意の推奨項目と結論。
+ * @returns MessageScrollerItem で計測可能な、意味的な一発話。
+ * @remarks user 発話だけを turn anchor にし、外部通信や状態変更は行わない。
  */
-function MessageScrollerStatusProbe() {
-  // 操作 hook から三つの公開移動関数を取得し、Story 専用ボタンへ直接接続する。
-  const { scrollToEnd, scrollToMessage, scrollToStart } = useMessageScroller();
-  // 移動可能な方向を取得し、Button の表示条件と同じ状態を status へ公開する。
-  const scrollable = useMessageScrollerScrollable();
-  // 現在のアンカーと表示中の Item ID を取得し、見た目だけに依存しない検証値へ変換する。
-  const visibility = useMessageScrollerVisibility();
-  // 表示中 ID がない初期瞬間にも意味のある固定文言を返し、空の status を作らない。
-  const visibleMessageIds =
-    visibility.visibleMessageIds.length === 0 ? 'なし' : visibility.visibleMessageIds.join(', ');
+function TranscriptMessage({ message }: { message: TranscriptMessage }) {
+  // 公式例と同じく user 発話を終了側へ配置し、同じ判定を turn anchor にも利用する。
+  const isUserMessage = message.role === 'user';
+  // 左右の位置だけに発話者識別を依存させず、article へ明示的な読み上げ名を与える。
+  const senderLabel = isUserMessage ? 'You' : 'Assistant';
+  // 既存 Message と Bubble の公開 API だけで、user は muted、assistant は ghost として描き分ける。
+  const alignment = isUserMessage ? 'end' : 'start';
 
   return (
-    <section aria-label="公開フックの操作と状態" className="grid gap-3 rounded-lg border p-3">
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            // 公開 hook の開始移動を自動挙動で実行し、滑らかな animation に検証結果を依存させない。
-            scrollToStart({ behavior: 'auto' });
-          }}
-        >
-          {hookButtonLabels.start}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            // 固定 ID の Item を開始基準へ移動し、scrollToMessage と current anchor を同時に観測する。
-            scrollToMessage(anchorMessageId, { align: 'start', behavior: 'auto' });
-          }}
-        >
-          {hookButtonLabels.anchor}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            // 公開 hook の終了移動を自動挙動で実行し、末尾判定を status へ反映する。
-            scrollToEnd({ behavior: 'auto' });
-          }}
-        >
-          {hookButtonLabels.end}
-        </Button>
-      </div>
+    <MessageScrollerItem
+      messageId={message.id}
+      scrollAnchor={isUserMessage}
+      aria-label={`Message from ${senderLabel}`}
+      role="article"
+    >
+      <Message align={alignment}>
+        <MessageContent>
+          <Bubble align={alignment} variant={isUserMessage ? 'muted' : 'ghost'}>
+            <BubbleContent className="space-y-3 text-pretty">
+              {message.paragraphs.map((paragraph, index) => (
+                // 発話 ID と段落位置から安定 key を作り、コピー自体を識別子へ流用しない。
+                <p key={`${message.id}-paragraph-${String(index)}`}>{paragraph}</p>
+              ))}
 
-      <output
-        aria-label={statusLabel}
-        className="break-words text-sm leading-6 text-muted-foreground"
-        data-current-anchor-id={visibility.currentAnchorId ?? ''}
-        data-scrollable-end={String(scrollable.end)}
-        data-scrollable-start={String(scrollable.start)}
-        data-visible-message-ids={visibility.visibleMessageIds.join(' ')}
-      >
-        {/* 状態名と値を可視テキストでも示し、data 属性だけに情報を閉じ込めない。 */}
-        {`先頭へ移動可能: ${scrollable.start ? 'はい' : 'いいえ'} / 末尾へ移動可能: ${
-          scrollable.end ? 'はい' : 'いいえ'
-        } / 現在のアンカー: ${visibility.currentAnchorId ?? 'なし'} / 表示中: ${visibleMessageIds}`}
-      </output>
-    </section>
+              {message.recommendations === undefined ? null : (
+                // 公式画面の番号付き推奨事項を ol として公開し、見た目と読み上げ順を一致させる。
+                <ol className="list-decimal space-y-1 ps-5">
+                  {message.recommendations.map((recommendation, index) => (
+                    <li key={`${message.id}-recommendation-${String(index)}`}>{recommendation}</li>
+                  ))}
+                </ol>
+              )}
+
+              {message.conclusion === undefined ? null : <p>{message.conclusion}</p>}
+            </BubbleContent>
+          </Bubble>
+        </MessageContent>
+      </Message>
+    </MessageScrollerItem>
   );
 }
 
 /**
- * MessageScroller の Provider、Root、Viewport、Content、Item、Button を正しい親子関係で組み立てる。
+ * 公式の保存済み会話を、高さが制約された実用的なチャット面として組み立てる。
  *
- * @returns 固定メッセージ、公開 hook の probe、双方向の scroll button を持つ catalog 表示。
- * @remarks 高さと項目数を固定し、テーマや表示幅にかかわらず縦 overflow が成立する条件を保つ。
+ * @param defaultScrollPosition 保存済み会話を初めて描画するときの公式 opening position。
+ * @returns light・dark と狭幅で同じ情報構造を保つ MessageScroller の実例。
+ * @remarks Story 内の固定会話だけを描画し、API 通信、永続化、製品固有状態を追加しない。
  */
-function MessageScrollerCatalog() {
+function SavedConversation({
+  defaultScrollPosition,
+}: {
+  defaultScrollPosition: TranscriptOpeningPosition;
+}) {
   return (
-    <MessageScrollerProvider
-      autoScroll={false}
-      defaultScrollPosition="end"
-      scrollEdgeThreshold={8}
-      scrollMargin={12}
-    >
-      <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
-        {/* Provider の context を公開 hook から観測し、Root 外でも同じ scroll state を参照できることを示す。 */}
-        <MessageScrollerStatusProbe />
+    <MessageScrollerProvider defaultScrollPosition={defaultScrollPosition}>
+      <Card className="mx-auto h-[30rem] w-full max-w-sm min-w-0 gap-0">
+        <CardHeader className="gap-1 border-b">
+          <CardTitle>
+            <h2>Opening Position</h2>
+          </CardTitle>
+          <CardDescription>
+            <p>Choose where a saved transcript opens.</p>
+          </CardDescription>
+        </CardHeader>
 
-        <MessageScroller
-          aria-label="MessageScroller の操作例"
-          className="h-72 rounded-xl border bg-background"
-          role="region"
-        >
-          {/* 固定高の Viewport を focusable な履歴領域として公開し、実際の overflow を発生させる。 */}
-          <MessageScrollerViewport aria-label={viewportLabel} tabIndex={0}>
-            <MessageScrollerContent className="p-4">
-              {fixedMessages.map(({ body, id, title }) => {
-                // 一つの固定 ID だけを anchor にし、通常 Item と anchor Item の順序を変えない。
-                const isAnchor = id === anchorMessageId;
-
-                return (
-                  <MessageScrollerItem
-                    key={id}
-                    aria-label={`${isAnchor ? '基準メッセージ' : '固定メッセージ'}: ${title}`}
-                    className="min-h-24"
-                    messageId={id}
-                    role="article"
-                    scrollAnchor={isAnchor}
-                  >
-                    {/* 既存 token の背景と文字階層だけで各 Item を区切り、追加の装飾体系を導入しない。 */}
-                    <div className="rounded-lg bg-muted/50 p-4">
-                      <p className="font-medium text-foreground">{title}</p>
-                      <p className="mt-1 break-words text-sm leading-6 text-muted-foreground">
-                        {body}
-                      </p>
-                    </div>
-                  </MessageScrollerItem>
-                );
-              })}
-            </MessageScrollerContent>
-          </MessageScrollerViewport>
-
-          {/* 開始方向の可否は primitive の active state に委ね、固定ラベルだけを日本語化する。 */}
-          <MessageScrollerButton
-            aria-label={scrollerButtonLabels.start}
-            behavior="auto"
-            direction="start"
-          />
-          {/* 終了方向にも同じ Button API を使い、方向以外の視覚・操作契約を一致させる。 */}
-          <MessageScrollerButton
-            aria-label={scrollerButtonLabels.end}
-            behavior="auto"
-            direction="end"
-          />
-        </MessageScroller>
-      </div>
+        <CardContent className="min-h-0 flex-1 overflow-hidden p-0">
+          <MessageScroller>
+            <MessageScrollerViewport aria-label={VIEWPORT_LABEL}>
+              <MessageScrollerContent aria-label={TRANSCRIPT_LABEL} className="p-(--card-spacing)">
+                {OPENING_POSITION_MESSAGES.map((message) => (
+                  // 発話 ID を Item の messageId と React key に共用し、復元対象と描画単位を一致させる。
+                  <TranscriptMessage key={message.id} message={message} />
+                ))}
+              </MessageScrollerContent>
+            </MessageScrollerViewport>
+            <MessageScrollerButton aria-label={LATEST_REPLY_LABEL} />
+          </MessageScroller>
+        </CardContent>
+      </Card>
     </MessageScrollerProvider>
   );
 }
 
-/**
- * MessageScroller と全サブコンポーネントを CSF 3 の Docs・a11y・browser tests へ直接登録する。
- * 公開 hook は `MessageScrollerStatusProbe` から利用し、既存 API と token 以外を追加しない。
- */
+/** 公式の実利用状態を Docs、a11y、browser tests へ登録し、props 比較用 Controls は表示しない。 */
 const meta = {
   title: 'Components/MessageScroller',
   component: MessageScroller,
@@ -252,132 +200,64 @@ const meta = {
     docs: {
       description: {
         component:
-          '固定メッセージを使い、Provider、Root、Viewport、Content、Item、Button と、公開された操作・状態 hook の連携を確認します。',
+          '公式 shadcn の保存済み会話例を使い、最後の意味ある turn からの再開と、過去を読んでいる利用者が最新発話へ戻る状態を示します。',
       },
     },
   },
-  render: MessageScrollerCatalog,
 } satisfies Meta<typeof MessageScroller>;
 
-/** Storybook が MessageScroller catalog の型、Docs、a11y、interaction test を構築する既定 export。 */
+/** Storybook が MessageScroller の Docs、accessibility、browser tests を構築する既定 export。 */
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/**
- * overflow した初期末尾から双方向 Button を操作し、公開 hook で先頭・アンカー・末尾へ移動する。
- */
-export const ScrollingAndAnchor: Story = {
+/** 保存済み会話を、公式が推奨する最後の user turn を基準に再開する実用 Story。 */
+export const SavedTranscript: Story = {
+  render: () => <SavedConversation defaultScrollPosition="last-anchor" />,
   play: async ({ canvasElement, step }) => {
-    // Canvas 内だけを検索し、Storybook UI に存在する同種の button や status を誤取得しない。
+    // Canvas 内だけを検索し、Storybook 自体の region や log を誤って検証しない。
     const canvas = within(canvasElement);
-    const viewport = canvas.getByRole('region', { name: viewportLabel });
-    const status = canvas.getByRole('status', { name: statusLabel });
-    const startButton = canvas.getByRole('button', { name: scrollerButtonLabels.start });
-    const endButton = canvas.getByRole('button', { name: scrollerButtonLabels.end });
-    const hookStartButton = canvas.getByRole('button', { name: hookButtonLabels.start });
-    const hookAnchorButton = canvas.getByRole('button', { name: hookButtonLabels.anchor });
-    const hookEndButton = canvas.getByRole('button', { name: hookButtonLabels.end });
-    const anchorItem = canvas.getByRole('article', {
-      name: '基準メッセージ: メッセージ 4',
-    });
+    const viewport = canvas.getByRole('region', { name: VIEWPORT_LABEL });
+    const transcript = canvas.getByRole('log', { name: TRANSCRIPT_LABEL });
+    const lastUserMessage = canvas.getByText(LAST_USER_MESSAGE);
 
-    await step('全プリミティブと固定 Item を overflow 領域へ描画する', async () => {
-      // data-slot を通じて Root、Viewport、Content、全 Item、双方向 Button の欠落を検出する。
-      await expect(
-        canvasElement.querySelector('[data-slot="message-scroller"]')
-      ).toBeInTheDocument();
-      await expect(viewport).toHaveAttribute('data-slot', 'message-scroller-viewport');
-      await expect(
-        canvasElement.querySelector('[data-slot="message-scroller-content"]')
-      ).toBeInTheDocument();
-      await expect(
-        canvasElement.querySelectorAll('[data-slot="message-scroller-item"]')
-      ).toHaveLength(fixedMessages.length);
-      await expect(
-        canvasElement.querySelectorAll('[data-slot="message-scroller-button"]')
-      ).toHaveLength(2);
-      await expect(anchorItem).toHaveAttribute('data-scroll-anchor', 'true');
-
-      // 固定高より内容が長いことを実寸で確認し、見かけだけの scroll catalog になることを防ぐ。
-      await expect(viewport.scrollHeight).toBeGreaterThan(viewport.clientHeight);
-    });
-
-    await step('初期末尾では開始 Button だけを表示する', async () => {
-      // Provider の defaultScrollPosition が反映されるまで待ち、末尾距離と hook 状態を同時に確認する。
+    await step('最後の意味ある turn を含む保存済み会話を再開する', async () => {
+      // 初期位置の計算完了を待ち、固定高の中で実際に overflow する会話であることを保証する。
       await waitFor(async () => {
-        const distanceFromEnd = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
-
-        await expect(distanceFromEnd).toBeLessThanOrEqual(8);
-        await expect(status).toHaveAttribute('data-scrollable-start', 'true');
-        await expect(status).toHaveAttribute('data-scrollable-end', 'false');
-        await expect(startButton).toHaveAttribute('data-active', 'true');
-        await expect(endButton).toHaveAttribute('data-active', 'false');
+        await expect(viewport.scrollHeight).toBeGreaterThan(viewport.clientHeight);
+        await expect(viewport.scrollTop).toBeGreaterThan(0);
       });
-
-      // 既存の opacity transition が完了するまで待ち、操作可能な方向だけが実際に見えることを保証する。
-      await waitFor(async () => {
-        await expect(startButton).toBeVisible();
-        await expect(endButton).not.toBeVisible();
-      });
+      // 可視位置だけでなく、log と user turn の anchor 属性から会話構造も確認する。
+      await expect(transcript).toBeVisible();
+      await expect(lastUserMessage).toBeVisible();
+      await expect(lastUserMessage.closest('[data-slot="message-scroller-item"]')).toHaveAttribute(
+        'data-scroll-anchor',
+        'true'
+      );
     });
+  },
+};
 
-    await step('開始 Button のクリックで先頭へ移動し、終了 Button を表示する', async () => {
-      // primitive の Button を実際にクリックし、direction=start の既定処理を通して Viewport を移動する。
-      await userEvent.click(startButton);
+/** 利用者が保存済み会話の先頭から文脈を読み直し、最新発話へ戻れる状態を示す Story。 */
+export const ResumingFromTheBeginning: Story = {
+  render: () => <SavedConversation defaultScrollPosition="start" />,
+  play: async ({ canvasElement, step }) => {
+    // 先頭本文と末尾移動ボタンをアクセシブル名で取得し、表示位置だけに検証を依存させない。
+    const canvas = within(canvasElement);
+    const viewport = canvas.getByRole('region', { name: VIEWPORT_LABEL });
+    const firstMessage = canvas.getByText(FIRST_MESSAGE);
+    const latestReplyButton = canvas.getByRole('button', { name: LATEST_REPLY_LABEL });
 
-      // scroll event と context 更新を待ち、位置、hook 状態、双方向 Button の active state を確認する。
+    await step('先頭を読みながら最新発話へ戻れる状態を示す', async () => {
+      // Provider の初期位置と Button の active 遷移が反映されるまで待ってから最終状態を評価する。
       await waitFor(async () => {
         await expect(viewport.scrollTop).toBeLessThanOrEqual(8);
-        await expect(status).toHaveAttribute('data-scrollable-start', 'false');
-        await expect(status).toHaveAttribute('data-scrollable-end', 'true');
-        await expect(startButton).toHaveAttribute('data-active', 'false');
-        await expect(endButton).toHaveAttribute('data-active', 'true');
+        await expect(latestReplyButton).toHaveAttribute('data-active', 'true');
+        await expect(latestReplyButton).toBeVisible();
       });
-
-      // active 切り替え後の既存 transition を待ち、先頭位置での最終的な可視性を評価する。
-      await waitFor(async () => {
-        await expect(startButton).not.toBeVisible();
-        await expect(endButton).toBeVisible();
-      });
-    });
-
-    await step('終了 Button のクリックで末尾へ戻る', async () => {
-      // 表示された direction=end の Button をクリックし、開始方向と同じ公開操作契約を確認する。
-      await userEvent.click(endButton);
-
-      await waitFor(async () => {
-        const distanceFromEnd = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
-
-        await expect(distanceFromEnd).toBeLessThanOrEqual(8);
-        await expect(status).toHaveAttribute('data-scrollable-start', 'true');
-        await expect(status).toHaveAttribute('data-scrollable-end', 'false');
-      });
-    });
-
-    await step('公開 hook で先頭、アンカー、末尾へ順に移動する', async () => {
-      // scrollToStart を接続した probe の Button から先頭へ移動し、戻り方向の状態変化を観測する。
-      await userEvent.click(hookStartButton);
-      await waitFor(async () => {
-        await expect(viewport.scrollTop).toBeLessThanOrEqual(8);
-        await expect(status).toHaveAttribute('data-scrollable-start', 'false');
-      });
-
-      // scrollToMessage で固定 anchor を開始基準へ移し、visibility hook が同じ ID を公開するまで待つ。
-      await userEvent.click(hookAnchorButton);
-      await waitFor(async () => {
-        await expect(status).toHaveAttribute('data-current-anchor-id', anchorMessageId);
-        await expect(status.dataset.visibleMessageIds?.split(' ')).toContain(anchorMessageId);
-      });
-
-      // scrollToEnd で末尾へ戻し、三つの操作関数が同一 Viewport を制御することを完結させる。
-      await userEvent.click(hookEndButton);
-      await waitFor(async () => {
-        const distanceFromEnd = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
-
-        await expect(distanceFromEnd).toBeLessThanOrEqual(8);
-        await expect(status).toHaveAttribute('data-scrollable-end', 'false');
-      });
+      // 先頭の公式コピーが省略されず、キーボード到達可能な Viewport 内に残ることを確認する。
+      await expect(firstMessage).toBeVisible();
+      await expect(viewport).toHaveAttribute('tabindex', '0');
     });
   },
 };

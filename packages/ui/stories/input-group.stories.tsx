@@ -1,4 +1,10 @@
-import { CheckIcon, SearchIcon, XIcon } from 'lucide-react';
+import {
+  CopyIcon,
+  CornerDownLeftIcon,
+  FileCode2Icon,
+  RefreshCwIcon,
+  SearchIcon,
+} from 'lucide-react';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
 import {
@@ -26,66 +32,96 @@ interface LabeledInputGroupProps {
   error?: {
     /** `aria-describedby` と一致する Story 内で一意な固定 ID。 */
     id: string;
-    /** 入力内容の確認を促す、製品文脈に依存しない説明。 */
+    /** 入力内容の修正方法を利用者へ伝える短い説明。 */
     message: string;
   };
   /** 可視ラベル兼、入力コントロールと InputGroup のアクセシブルネーム。 */
   label: string;
 }
 
-/** interaction Story のラベル、入力値、操作名を再現可能に保つ固定データ。 */
-const interactionCopy = {
-  actionLabel: '入力を確定',
-  clearLabel: '入力内容を消去',
-  controlId: 'input-group-interaction',
-  label: '検索条件',
-  placeholder: 'キーワードを入力',
-  startText: '検索',
-  typedValue: '固定の入力内容',
+/** 検索構成のラベル、入力値、操作名を再現可能に保つ固定データ。 */
+const searchCopy = {
+  actionLabel: 'Search',
+  controlId: 'input-group-search',
+  label: 'Search',
+  placeholder: 'Type to search...',
+  typedValue: 'shadcn/ui',
 } as const;
 
-/** Textarea Story のラベル、初期値、補助情報を固定する表示データ。 */
+/** 通貨構成で金額入力と単位 addon を関連付ける固定データ。 */
+const currencyCopy = {
+  controlId: 'input-group-currency',
+  currency: 'USD',
+  label: 'Amount',
+  placeholder: '0.00',
+  symbol: '$',
+} as const;
+
+/** URL 構成でプロトコル、入力本体、末尾を分担する固定データ。 */
+const urlCopy = {
+  controlId: 'input-group-url',
+  label: 'Website',
+  placeholder: 'example.com',
+  prefix: 'https://',
+  suffix: '.com',
+} as const;
+
+/** icon-only action の対象 URL とアクセシブルネームを固定する表示データ。 */
+const actionCopy = {
+  actionLabel: 'Copy URL',
+  controlId: 'input-group-action',
+  label: 'Profile URL',
+  value: 'https://x.com/shadcn',
+} as const;
+
+/** Textarea Story のファイル名、位置表示、操作名を固定する表示データ。 */
 const textareaCopy = {
-  actionLabel: '内容を確認',
   controlId: 'input-group-textarea',
-  helperText: '24 / 200文字',
-  label: '複数行の入力',
-  value: '一行目の固定内容です。\n二行目も同じ入力グループ内に表示します。',
+  copyLabel: 'Copy code',
+  fileName: 'script.js',
+  label: 'Code',
+  position: 'Line 1, Column 1',
+  refreshLabel: 'Reset code',
+  runLabel: 'Run',
+  value: "console.log('Hello, world!');",
 } as const;
 
-/** disabled Story で入力欄とボタンの操作不可状態を比較する固定データ。 */
+/** disabled Story で検索欄と操作ボタンの操作不可状態を比較する固定データ。 */
 const disabledCopy = {
-  actionLabel: '無効な操作',
+  actionLabel: 'Search',
   controlId: 'input-group-disabled',
-  label: '無効な入力',
-  prefix: '固定',
-  value: '編集できない内容',
+  label: 'Disabled search',
+  value: 'shadcn/ui',
 } as const;
 
-/** invalid Story の入力値とアクセシブルなエラー関係を固定する表示データ。 */
+/** invalid Story の URL 値とアクセシブルなエラー関係を固定する表示データ。 */
 const invalidCopy = {
   controlId: 'input-group-invalid',
   errorId: 'input-group-invalid-error',
-  errorMessage: '入力内容を確認してください。',
-  label: '確認が必要な入力',
-  prefix: 'ID',
-  value: '確認対象',
+  errorMessage: 'Enter a valid URL.',
+  label: 'Website',
+  prefix: 'https://',
+  suffix: '.com',
+  value: 'not a valid url',
 } as const;
 
-/** 一行入力の内部スクロールと親要素の横 overflow を確認する固定長文。 */
+/** 一行入力の内部スクロールと親要素の横 overflow を確認する固定長 URL。 */
 const longSingleLineValue =
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  'organizations/shadcn-ui/repositories/input-group-component-documentation-and-examples';
 
 /** Textarea の改行・連続文字列・折り返しを同時に確認する固定長文。 */
 const longMultilineValue =
-  'これは狭い表示領域で長文の折り返しを確認する固定テキストです。\nABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  'Document the behavior of the input group at narrow widths.\nABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
 /** 長文 Story の addon が狭幅でも情報を失わず折り返すことを確認する固定補助文。 */
 const longHelperText =
-  '長い補助情報も既存の余白と文字色を保ったまま、入力グループの幅に合わせて折り返します。';
+  '120 characters left. Long helper text wraps without widening the input group.';
 
-/** InputGroupButton のクリック通知を Story 外の作用なしで観測する固定 spy。 */
-const actionClick = fn();
+/** 検索ボタンのクリック通知を Story 外の作用なしで観測する固定 spy。 */
+const searchClick = fn();
+
+/** URL コピーボタンのクリック通知を clipboard へ触れずに観測する固定 spy。 */
+const copyClick = fn();
 
 /**
  * Label、InputGroup、任意のエラーを既存 token だけで一貫して配置する。
@@ -105,7 +141,7 @@ function LabeledInputGroup({
 
   return (
     <div
-      className="group grid w-full min-w-0 max-w-xl gap-2"
+      className="group grid w-full min-w-0 max-w-sm gap-2"
       data-disabled={disabled ? 'true' : undefined}
     >
       <Label id={labelId} htmlFor={controlId}>
@@ -127,8 +163,8 @@ function LabeledInputGroup({
 }
 
 /**
- * InputGroup と全公開サブコンポーネントを CSF3 の Docs・browser tests へ直接登録する。
- * 固定データ、既存 API、既存 token だけを使い、製品固有の文脈や状態管理を追加しない。
+ * InputGroup と全公開サブコンポーネントを CSF3 の Docs と interaction Story へ登録する。
+ * 公式 shadcn/ui の馴染みある構成、既存 API、既存 token だけを使い、製品固有の概念を追加しない。
  */
 const meta = {
   title: 'Forms/InputGroup',
@@ -147,129 +183,227 @@ const meta = {
     docs: {
       description: {
         component:
-          'Input、Textarea、inline start/end addon、補助テキスト、文字・アイコン操作、disabled、invalid、長文の応答表示を既存 API で確認します。',
+          'Search、currency、URL、inline action、Textarea、disabled、invalid、長文の応答表示を、InputGroup の公開 API で確認します。',
       },
     },
     layout: 'padded',
   },
 } satisfies Meta<typeof InputGroup>;
 
-/** Storybook が InputGroup catalog の Docs、描画、browser tests を構築するための既定 export。 */
+/** Storybook が InputGroup catalog の Docs、描画、interaction tests を構築するための既定 export。 */
 export default meta;
 
 /** metadata から InputGroup Story の CSF3 型を導出する。 */
 type Story = StoryObj<typeof meta>;
 
 /**
- * inline start/end addon、InputGroupText、文字付き・icon-only button を一つの入力欄で示す。
- * play では可視ラベル、実入力、二種類のボタン名、クリック通知を利用者視点で検証する。
+ * 公式例に沿った検索、通貨、URL、文字付き操作、icon-only 操作を一つの Story で示す。
+ * play では可視ラベル、入力、二種類の操作名、クリック通知を利用者視点で検証する。
  */
 export const InlineAddons: Story = {
   render: () => (
-    <LabeledInputGroup controlId={interactionCopy.controlId} label={interactionCopy.label}>
-      <InputGroupAddon align="inline-start">
-        {/* icon は装飾として隠し、隣接する InputGroupText だけを addon の読み上げ対象にする。 */}
-        <SearchIcon aria-hidden="true" />
-        <InputGroupText>{interactionCopy.startText}</InputGroupText>
-      </InputGroupAddon>
+    <div className="grid w-full max-w-sm gap-6">
+      <LabeledInputGroup controlId={searchCopy.controlId} label={searchCopy.label}>
+        <InputGroupInput
+          id={searchCopy.controlId}
+          placeholder={searchCopy.placeholder}
+          type="search"
+        />
 
-      <InputGroupInput
-        id={interactionCopy.controlId}
-        placeholder={interactionCopy.placeholder}
-        type="text"
-      />
+        {/* addon は control の後へ置き、align だけで検索 icon を入力先頭へ表示する。 */}
+        <InputGroupAddon align="inline-start">
+          <SearchIcon aria-hidden="true" />
+        </InputGroupAddon>
 
-      <InputGroupAddon align="inline-end">
-        {/* 文字付きボタンは可視文言をアクセシブルネームとして使い、クリックだけを spy へ通知する。 */}
-        <InputGroupButton onClick={actionClick}>
-          <CheckIcon aria-hidden="true" />
-          {interactionCopy.actionLabel}
-        </InputGroupButton>
+        <InputGroupAddon align="inline-end">
+          {/* 文字付き操作は公式例と同じ secondary variant を使い、可視文言を名前として公開する。 */}
+          <InputGroupButton variant="secondary" onClick={searchClick}>
+            {searchCopy.actionLabel}
+          </InputGroupButton>
+        </InputGroupAddon>
+      </LabeledInputGroup>
 
-        {/* icon-only button は可視文字を持たないため、操作目的を aria-label で明示する。 */}
-        <InputGroupButton aria-label={interactionCopy.clearLabel} size="icon-xs">
-          <XIcon aria-hidden="true" />
-        </InputGroupButton>
-      </InputGroupAddon>
-    </LabeledInputGroup>
+      <LabeledInputGroup controlId={currencyCopy.controlId} label={currencyCopy.label}>
+        <InputGroupInput
+          id={currencyCopy.controlId}
+          inputMode="decimal"
+          placeholder={currencyCopy.placeholder}
+          type="text"
+        />
+
+        {/* 通貨記号と単位は入力値へ混ぜず、読みやすい非操作 addon として両端へ配置する。 */}
+        <InputGroupAddon align="inline-start">
+          <InputGroupText>{currencyCopy.symbol}</InputGroupText>
+        </InputGroupAddon>
+        <InputGroupAddon align="inline-end">
+          <InputGroupText>{currencyCopy.currency}</InputGroupText>
+        </InputGroupAddon>
+      </LabeledInputGroup>
+
+      <LabeledInputGroup controlId={urlCopy.controlId} label={urlCopy.label}>
+        <InputGroupInput
+          id={urlCopy.controlId}
+          className="pl-0.5!"
+          placeholder={urlCopy.placeholder}
+          type="text"
+        />
+
+        {/* protocol と suffix は公式 Text 例の情報分担を保ち、入力本体だけを編集対象にする。 */}
+        <InputGroupAddon align="inline-start">
+          <InputGroupText>{urlCopy.prefix}</InputGroupText>
+        </InputGroupAddon>
+        <InputGroupAddon align="inline-end">
+          <InputGroupText>{urlCopy.suffix}</InputGroupText>
+        </InputGroupAddon>
+      </LabeledInputGroup>
+
+      <LabeledInputGroup controlId={actionCopy.controlId} label={actionCopy.label}>
+        <InputGroupInput
+          id={actionCopy.controlId}
+          defaultValue={actionCopy.value}
+          readOnly
+          type="url"
+        />
+
+        <InputGroupAddon align="inline-end">
+          {/* icon-only 操作は可視文字を持たないため、目的を aria-label と title の双方で明示する。 */}
+          <InputGroupButton
+            aria-label={actionCopy.actionLabel}
+            onClick={copyClick}
+            size="icon-xs"
+            title={actionCopy.actionLabel}
+          >
+            <CopyIcon aria-hidden="true" />
+          </InputGroupButton>
+        </InputGroupAddon>
+      </LabeledInputGroup>
+    </div>
   ),
   play: async ({ canvasElement, step }) => {
     // theme 別実行や再実行の履歴を除き、この Story で発生したクリックだけを検証する。
-    actionClick.mockClear();
+    searchClick.mockClear();
+    copyClick.mockClear();
 
     // Story の canvas 内をアクセシブル名で検索し、Storybook 自体の入力やボタンを誤取得しない。
     const canvas = within(canvasElement);
-    const label = canvas.getByText(interactionCopy.label, { selector: 'label' });
-    const input = canvas.getByRole('textbox', { name: interactionCopy.label });
-    const actionButton = canvas.getByRole('button', { name: interactionCopy.actionLabel });
-    const iconButton = canvas.getByRole('button', { name: interactionCopy.clearLabel });
+    const label = canvas.getByText(searchCopy.label, { selector: 'label' });
+    const input = canvas.getByRole('searchbox', { name: searchCopy.label });
+    const searchButton = canvas.getByRole('button', { name: searchCopy.actionLabel });
+    const copyButton = canvas.getByRole('button', { name: actionCopy.actionLabel });
 
     await step('可視ラベルと二種類のボタン名を公開する', async () => {
       // Label の関連付けと計算済みアクセシブルネームを確認し、placeholder だけへの依存を防ぐ。
-      await expect(label).toHaveAttribute('for', interactionCopy.controlId);
-      await expect(input).toHaveAccessibleName(interactionCopy.label);
-      await expect(actionButton).toHaveAccessibleName(interactionCopy.actionLabel);
-      await expect(iconButton).toHaveAccessibleName(interactionCopy.clearLabel);
+      await expect(label).toHaveAttribute('for', searchCopy.controlId);
+      await expect(input).toHaveAccessibleName(searchCopy.label);
+      await expect(searchButton).toHaveAccessibleName(searchCopy.actionLabel);
+      await expect(copyButton).toHaveAccessibleName(actionCopy.actionLabel);
     });
 
-    await step('ラベルから入力欄へ移動し、固定文字列を入力できる', async () => {
+    await step('ラベルから検索欄へ移動し、固定文字列を入力できる', async () => {
       // 利用者と同じラベル操作で focus を移し、キーボード入力が値へ完全に反映されることを保証する。
       await userEvent.click(label);
       await expect(input).toHaveFocus();
-      await userEvent.type(input, interactionCopy.typedValue);
-      await expect(input).toHaveValue(interactionCopy.typedValue);
+      await userEvent.type(input, searchCopy.typedValue);
+      await expect(input).toHaveValue(searchCopy.typedValue);
     });
 
-    await step('文字付きボタンのクリックを一度だけ通知する', async () => {
-      // InputGroupAddon の focus 補助と混線せず、Button の公開 onClick だけが発火することを確認する。
-      await userEvent.click(actionButton);
-      await expect(actionClick).toHaveBeenCalledTimes(1);
+    await step('文字付き操作と icon-only 操作のクリックを個別に通知する', async () => {
+      // 二つの公開 onClick が addon の focus 補助と混線せず、一度ずつ発火することを確認する。
+      await userEvent.click(searchButton);
+      await userEvent.click(copyButton);
+      await expect(searchClick).toHaveBeenCalledTimes(1);
+      await expect(copyClick).toHaveBeenCalledTimes(1);
     });
   },
 };
 
-/** InputGroupTextarea と block-end addon を組み合わせ、複数行入力と補助テキストを示す。 */
+/**
+ * 公式コードエディタ例に沿って block-start と block-end addon を Textarea の上下へ配置する。
+ * ファイル情報、icon-only 操作、位置情報、主要操作を既存 InputGroup API だけで表現する。
+ */
 export const Textarea: Story = {
   render: () => (
-    <LabeledInputGroup controlId={textareaCopy.controlId} label={textareaCopy.label}>
-      <InputGroupTextarea id={textareaCopy.controlId} defaultValue={textareaCopy.value} rows={3} />
+    <div className="w-full max-w-md">
+      <LabeledInputGroup controlId={textareaCopy.controlId} label={textareaCopy.label}>
+        <InputGroupTextarea
+          id={textareaCopy.controlId}
+          className="min-h-[200px] font-mono"
+          defaultValue={textareaCopy.value}
+          spellCheck={false}
+        />
 
-      <InputGroupAddon align="block-end">
-        {/* 文字数情報は非操作の InputGroupText、確認操作は文字付き Button として役割を分離する。 */}
-        <InputGroupText>{textareaCopy.helperText}</InputGroupText>
-        <InputGroupButton>{textareaCopy.actionLabel}</InputGroupButton>
-      </InputGroupAddon>
-    </LabeledInputGroup>
+        <InputGroupAddon align="block-end" className="border-t">
+          <InputGroupText>{textareaCopy.position}</InputGroupText>
+          <InputGroupButton className="ml-auto" size="sm" variant="default">
+            {textareaCopy.runLabel}
+            <CornerDownLeftIcon aria-hidden="true" />
+          </InputGroupButton>
+        </InputGroupAddon>
+
+        <InputGroupAddon align="block-start" className="border-b">
+          <InputGroupText className="font-mono font-medium">
+            <FileCode2Icon aria-hidden="true" />
+            {textareaCopy.fileName}
+          </InputGroupText>
+
+          {/* icon-only 操作は同じ寸法と明示名を使い、視覚と読み上げの操作体系を一致させる。 */}
+          <InputGroupButton
+            aria-label={textareaCopy.refreshLabel}
+            className="ml-auto"
+            size="icon-xs"
+            title={textareaCopy.refreshLabel}
+          >
+            <RefreshCwIcon aria-hidden="true" />
+          </InputGroupButton>
+          <InputGroupButton
+            aria-label={textareaCopy.copyLabel}
+            size="icon-xs"
+            title={textareaCopy.copyLabel}
+          >
+            <CopyIcon aria-hidden="true" />
+          </InputGroupButton>
+        </InputGroupAddon>
+      </LabeledInputGroup>
+    </div>
   ),
 };
 
-/** InputGroupInput と InputGroupButton のネイティブ disabled 状態を同じ group 内で示す。 */
+/**
+ * 公式検索構成を使い、InputGroupInput と InputGroupButton のネイティブ disabled 状態を示す。
+ * 見た目だけでなく、入力欄と操作の双方が支援技術へ操作不可として公開される。
+ */
 export const Disabled: Story = {
   render: () => (
     <LabeledInputGroup controlId={disabledCopy.controlId} disabled label={disabledCopy.label}>
-      <InputGroupAddon align="inline-start">
-        <InputGroupText>{disabledCopy.prefix}</InputGroupText>
-      </InputGroupAddon>
       <InputGroupInput
         id={disabledCopy.controlId}
         defaultValue={disabledCopy.value}
         disabled
-        type="text"
+        type="search"
       />
+
+      <InputGroupAddon align="inline-start">
+        <SearchIcon aria-hidden="true" />
+      </InputGroupAddon>
       <InputGroupAddon align="inline-end">
-        <InputGroupButton disabled>{disabledCopy.actionLabel}</InputGroupButton>
+        <InputGroupButton disabled variant="secondary">
+          {disabledCopy.actionLabel}
+        </InputGroupButton>
       </InputGroupAddon>
     </LabeledInputGroup>
   ),
   play: async ({ canvasElement }) => {
     // 可視ラベルから対象を取得し、見た目だけでなくネイティブの操作不可 semantics を確認する。
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('textbox', { name: disabledCopy.label })).toBeDisabled();
+    await expect(canvas.getByRole('searchbox', { name: disabledCopy.label })).toBeDisabled();
     await expect(canvas.getByRole('button', { name: disabledCopy.actionLabel })).toBeDisabled();
   },
 };
 
-/** aria-invalid の group 表現と、入力欄から参照できる可視エラーメッセージを示す。 */
+/**
+ * 公式 URL text 構成へ aria-invalid と可視エラーを加え、修正対象と説明の関係を示す。
+ * 入力欄は `aria-describedby` で alert を参照し、色だけに依存せず invalid 状態を伝える。
+ */
 export const Invalid: Story = {
   render: () => (
     <LabeledInputGroup
@@ -277,16 +411,21 @@ export const Invalid: Story = {
       error={{ id: invalidCopy.errorId, message: invalidCopy.errorMessage }}
       label={invalidCopy.label}
     >
-      <InputGroupAddon align="inline-start">
-        <InputGroupText>{invalidCopy.prefix}</InputGroupText>
-      </InputGroupAddon>
       <InputGroupInput
         id={invalidCopy.controlId}
         aria-describedby={invalidCopy.errorId}
         aria-invalid="true"
+        className="pl-0.5!"
         defaultValue={invalidCopy.value}
         type="text"
       />
+
+      <InputGroupAddon align="inline-start">
+        <InputGroupText>{invalidCopy.prefix}</InputGroupText>
+      </InputGroupAddon>
+      <InputGroupAddon align="inline-end">
+        <InputGroupText>{invalidCopy.suffix}</InputGroupText>
+      </InputGroupAddon>
     </LabeledInputGroup>
   ),
   play: async ({ canvasElement }) => {
@@ -300,34 +439,36 @@ export const Invalid: Story = {
 };
 
 /**
- * 一行の連続文字列と複数行の長文を可変幅コンテナで示し、狭幅でも親領域へはみ出さないことを確認する。
+ * URL と複数行の長文を可変幅コンテナで示し、狭幅でも親領域へはみ出さないことを確認する。
+ * inline と block addon の既存余白を保ちながら、入力本体と補助文の overflow 契約を検証する。
  */
 export const ResponsiveLongContent: Story = {
   render: () => (
     <div
-      aria-label="長文入力の応答表示"
+      aria-label="Long input responsiveness"
       className="grid w-full min-w-0 max-w-xl gap-6"
       data-testid="input-group-long-content"
       role="group"
     >
-      <LabeledInputGroup controlId="input-group-long-line" label="長い一行入力">
-        <InputGroupAddon align="inline-start" className="min-w-0">
-          {/* 狭幅では固定接頭辞を省略表示し、Input 本体の操作領域を失わないようにする。 */}
-          <InputGroupText className="max-w-20 truncate sm:max-w-40">
-            固定された長い接頭辞
-          </InputGroupText>
-        </InputGroupAddon>
+      <LabeledInputGroup controlId="input-group-long-line" label="Repository URL">
         <InputGroupInput
           id="input-group-long-line"
           defaultValue={longSingleLineValue}
           type="text"
         />
+
+        <InputGroupAddon align="inline-start" className="min-w-0">
+          {/* 狭幅では protocol と host を省略表示し、Input 本体の操作領域を失わないようにする。 */}
+          <InputGroupText className="max-w-20 truncate sm:max-w-40">
+            https://github.com/
+          </InputGroupText>
+        </InputGroupAddon>
         <InputGroupAddon align="inline-end">
-          <InputGroupText>末尾</InputGroupText>
+          <InputGroupText>.git</InputGroupText>
         </InputGroupAddon>
       </LabeledInputGroup>
 
-      <LabeledInputGroup controlId="input-group-long-textarea" label="長い複数行入力">
+      <LabeledInputGroup controlId="input-group-long-textarea" label="Release notes">
         <InputGroupTextarea
           id="input-group-long-textarea"
           className="min-w-0"
@@ -335,6 +476,7 @@ export const ResponsiveLongContent: Story = {
           rows={5}
           wrap="soft"
         />
+
         <InputGroupAddon align="block-end" className="min-w-0">
           {/* addon 自体も入力幅を広げないよう、長い補助文を既存の文字寸法で明示的に折り返す。 */}
           <InputGroupText className="min-w-0 whitespace-normal break-all">
@@ -348,9 +490,9 @@ export const ResponsiveLongContent: Story = {
     // 名前付き group から各 InputGroup を取得し、addon を含む外枠の幅を個別に確認する。
     const canvas = within(canvasElement);
     const container = canvas.getByTestId('input-group-long-content');
-    const inputGroup = canvas.getByRole('group', { name: '長い一行入力' });
-    const textareaGroup = canvas.getByRole('group', { name: '長い複数行入力' });
-    const textarea = canvas.getByRole('textbox', { name: '長い複数行入力' });
+    const inputGroup = canvas.getByRole('group', { name: 'Repository URL' });
+    const textareaGroup = canvas.getByRole('group', { name: 'Release notes' });
+    const textarea = canvas.getByRole('textbox', { name: 'Release notes' });
 
     // 一行 Input の内部スクロールは許容しつつ、外側の group と折り返す Textarea は横 overflow を発生させない。
     await expect(container.scrollWidth).toBeLessThanOrEqual(container.clientWidth);

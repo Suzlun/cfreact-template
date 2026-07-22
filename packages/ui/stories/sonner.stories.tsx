@@ -6,160 +6,97 @@ import { Toaster } from '@cfreact-template/ui/components/sonner';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-/**
- * 自動終了用の JavaScript timer を作らず、操作または Story lifecycle だけで通知を閉じる固定値。
- * Storybook の描画時間やブラウザ実行速度に依存しない状態を保つため、全 Story で共有する。
- */
-const INFINITE_TOAST_DURATION = Infinity;
+/** Sonner の既定 hotkey と組み合わせて live region を識別する公式既定ラベル。 */
+const TOASTER_CONTAINER_ARIA_LABEL = 'Notifications';
 
-/** Toaster の live region を日本語で識別する、全 Story 共通のアクセシブル名。 */
-const TOASTER_CONTAINER_ARIA_LABEL = '通知';
+/** 公式 Promise 例が loading から success へ移るまでの待機時間。 */
+const PROMISE_DELAY_MS = 2000;
 
-/** close icon button の意味を支援技術へ伝える、製品文脈に依存しない固定ラベル。 */
-const CLOSE_BUTTON_ARIA_LABEL = '通知を閉じる';
+/** Default、Success、Action、Promise解決後で公式例が共有する主文。 */
+const EVENT_CREATED_MESSAGE = 'Event has been created';
 
-/** action toast が公開する操作を、可視名とアクセシブル名の双方に使う固定ラベル。 */
-const ACTION_LABEL = '確認する';
+/** Story 間で通知を混在させず、同じ操作の再実行時は既存通知を更新する固定 ID 群。 */
+const TOAST_IDS = {
+  action: 'sonner-action-toast',
+  default: 'sonner-default-toast',
+  error: 'sonner-error-toast',
+  info: 'sonner-info-toast',
+  promise: 'sonner-promise-toast',
+  success: 'sonner-success-toast',
+  warning: 'sonner-warning-toast',
+} as const;
 
-/** success、error、info、loading、および action の固定 Story を識別する内部キー。 */
-type ToastScenarioKind = 'action' | 'error' | 'info' | 'loading' | 'success';
+/** Docs で複数 Story を同時表示しても、通知を対応する Toaster だけへ届ける固定 ID 群。 */
+const TOASTER_IDS = {
+  action: 'sonner-action-toaster',
+  default: 'sonner-default-toaster',
+  error: 'sonner-error-toaster',
+  info: 'sonner-info-toaster',
+  promise: 'sonner-promise-toaster',
+  success: 'sonner-success-toaster',
+  warning: 'sonner-warning-toaster',
+} as const;
 
-/**
- * 一つの Toast Story を再現可能に描画・検証するための固定入力。
- *
- * 表示文、DOM 識別子、期待する Sonner state を一箇所に集約し、Story、publisher、
- * interaction test の三者が同じ契約を参照する。外部状態や時刻は保持しない。
- */
-interface ToastScenario {
-  /** 通知タイトルの固定表示。 */
-  title: string;
-  /** 通知タイトルを補足する固定説明。 */
-  description: string;
-  /** `data-sonner-toast` の `data-type` に期待する値。通常 action toast では属性を持たない。 */
-  expectedDataType: 'error' | 'info' | 'loading' | 'success' | null;
-  /** 個別の close icon button を表示するか。 */
-  closeButton: boolean;
-  /** Docs で複数 Story を同時描画しても配信先が混ざらない、Toaster 固有 ID。 */
+/** 公式 action 例の Undo callback を外部作用なしで観測する Storybook spy。 */
+const undoAction = fn();
+
+/** Story 切替時に未完了の公式 Promise 例を停止する timer 集合。 */
+const pendingPromiseTimers = new Set<ReturnType<typeof setTimeout>>();
+
+/** Storybook と Sonner の双方が受け付ける固定テーマ。 */
+type StoryTheme = 'dark' | 'light';
+
+/** 一つの実用例を既存 Button と Toaster で描画する入力。 */
+interface SonnerExampleProps {
+  /** 公式例が Button に表示する操作名。 */
+  buttonLabel: string;
+  /** Button 操作時に対応する Sonner API を一度呼ぶ callback。 */
+  onShow: () => void;
+  /** Storybook global から検証済みの light または dark。 */
+  theme: StoryTheme;
+  /** この Story の通知だけを受け取る Toaster ID。 */
   toasterId: string;
-  /** 利用者が通知を表示するために操作する Button の固定ラベル。 */
-  triggerLabel: string;
-  /** 再実行時に履歴を増殖させず同じ通知を更新する、Toast 固有 ID。 */
+}
+
+/** 共通 interaction test が一つの Toast に期待する利用者向け状態。 */
+interface ToastExpectation {
+  /** キーボードで操作する Button の可視名。 */
+  buttonLabel: string;
+  /** Sonner が意味状態として公開する data-type。通常通知では属性を持たない。 */
+  dataType: 'error' | 'info' | 'loading' | 'success' | 'warning' | null;
+  /** Toast 内に表示される公式例の主文。 */
+  message: string;
+  /** 対象 Toast を他 Story の通知と区別する test ID。 */
   toastId: string;
 }
 
-/**
- * 製品固有の語彙、日時、乱数を含まない全状態の固定カタログ。
- * 各 Toaster と Toast に別々の ID を割り当て、Docs と並列 browser tests の相互干渉を防ぐ。
- */
-const toastScenarios = {
-  success: {
-    title: '処理が完了しました',
-    description: '固定された成功通知の表示を確認できます。',
-    expectedDataType: 'success',
-    closeButton: false,
-    toasterId: 'sonner-success-toaster',
-    triggerLabel: '成功通知を表示',
-    toastId: 'sonner-success-toast',
-  },
-  error: {
-    title: '処理を完了できませんでした',
-    description: '内容を確認して、もう一度お試しください。',
-    expectedDataType: 'error',
-    closeButton: false,
-    toasterId: 'sonner-error-toaster',
-    triggerLabel: 'エラー通知を表示',
-    toastId: 'sonner-error-toast',
-  },
-  info: {
-    title: '補足情報があります',
-    description:
-      'この固定通知は、説明が複数行になる場合でも、タイトル、本文、閉じる操作の順序を保ち、利用可能な表示幅に合わせて内容を省略せずに折り返します。',
-    expectedDataType: 'info',
-    closeButton: true,
-    toasterId: 'sonner-info-toaster',
-    triggerLabel: '長い情報通知を表示',
-    toastId: 'sonner-info-toast',
-  },
-  loading: {
-    title: '処理中です',
-    description: '完了するまで固定された loading 状態を表示します。',
-    expectedDataType: 'loading',
-    closeButton: false,
-    toasterId: 'sonner-loading-toaster',
-    triggerLabel: '読み込み通知を表示',
-    toastId: 'sonner-loading-toast',
-  },
-  action: {
-    title: '確認できる操作があります',
-    description: '必要に応じて、通知に関連付けられた固定操作を実行できます。',
-    expectedDataType: null,
-    closeButton: false,
-    toasterId: 'sonner-action-toaster',
-    triggerLabel: '操作付き通知を表示',
-    toastId: 'sonner-action-toast',
-  },
-} as const satisfies Record<ToastScenarioKind, ToastScenario>;
-
-/**
- * 固定 union の Scenario キーを、動的 object access を使わず対応する固定入力へ変換する。
- *
- * @param scenarioKind success、error、info、loading、action のいずれかの固定キー。
- * @returns Story、publisher、interaction test が共有する読み取り専用 Scenario。
- * @throws 固定 union 以外は TypeScript が拒否するため、実行時例外は発生しない。
- */
-function getToastScenario(scenarioKind: ToastScenarioKind): ToastScenario {
-  // action は通常 Toast の action option と固定 spy を使う入力へ対応させる。
-  if (scenarioKind === 'action') {
-    return toastScenarios.action;
-  }
-
-  // error は専用 helper と error data type を使う入力へ対応させる。
-  if (scenarioKind === 'error') {
-    return toastScenarios.error;
-  }
-
-  // info は長文と close button を含む入力へ対応させる。
-  if (scenarioKind === 'info') {
-    return toastScenarios.info;
-  }
-
-  // loading は外部 Promise なしで固定表示する入力へ対応させる。
-  if (scenarioKind === 'loading') {
-    return toastScenarios.loading;
-  }
-
-  // 先行分岐後に残る success を既定値ではなく、絞り込まれた固定入力として返す。
-  return toastScenarios.success;
+/** 共通 interaction test が返す、表示済み通知とキーボード操作要素。 */
+interface OpenToastResult {
+  /** 通知を開いた後も focus を保つ Button。 */
+  trigger: HTMLElement;
+  /** 表示、意味状態、overflow を検証済みの Toast list item。 */
+  toastElement: HTMLElement;
+  /** `Alt+T` で focus できる Toast list。 */
+  toaster: HTMLElement;
 }
 
 /**
- * action toast の操作通知を観測する Storybook spy。
- * 実処理、通信、navigation を接続せず、各 Story の lifecycle で呼び出し履歴を消去する。
- */
-const actionClick = fn();
-
-/** Story 内で `Toaster` と表示 Trigger を組み立てるための固定入力。 */
-interface ToastCatalogProps {
-  /** 表示・配信・検証へ同じ固定条件を渡す Scenario キー。 */
-  scenarioKind: ToastScenarioKind;
-  /** Storybook globals と Sonner の公開 `theme` prop を同期する固定テーマ。 */
-  theme: 'dark' | 'light';
-}
-
-/**
- * Storybook globals の theme を、Toaster が公開する light/dark prop へ安全に変換する。
+ * Storybook の theme global を Sonner の公開 `theme` prop へ変換する。
  *
- * @param selectedTheme Storybook theme decorator と browser project が渡す global 値。
- * @returns Sonner の公開 `theme` prop へそのまま渡せる `light` または `dark`。
- * @throws 未定義値や未対応テーマを受け取った場合、Story の描画を明示的に失敗させる。
+ * @param selectedTheme Storybook theme decorator と browser project が渡す値。
+ * @returns Sonner が受け付ける `light` または `dark`。
+ * @throws 対応外の global 値では Story を明示的に失敗させる。
+ *
+ * @example
+ * `getStoryTheme('dark')` は `dark` を返し、Toaster の dark token を有効にする。
  */
-function getStoryTheme(selectedTheme: unknown): 'dark' | 'light' {
-  // Dark project の値は変換せず返し、Sonner の dark foreground/background 設定を有効にする。
+function getStoryTheme(selectedTheme: unknown): StoryTheme {
+  // Dark project の明示値だけを受け入れ、system theme への暗黙変換を避ける。
   if (selectedTheme === 'dark') {
     return selectedTheme;
   }
 
-  // Light project の値も変換せず返し、二つのテスト対象以外を既定値で黙認しない。
+  // Light project の明示値だけを受け入れ、未定義値を light として黙認しない。
   if (selectedTheme === 'light') {
     return selectedTheme;
   }
@@ -168,95 +105,30 @@ function getStoryTheme(selectedTheme: unknown): 'dark' | 'light' {
 }
 
 /**
- * 指定された固定 Scenario を、インストール済み Sonner API から一つだけ配信する。
+ * 公式例と同じ Button 一つ、および通知の描画先となる公開 Toaster を表示する。
  *
- * @param scenarioKind success、error、info、loading、action のいずれかの固定キー。
- * @returns 戻り値はなく、対応する `toasterId` の購読先へ一件の Toast を同期的に公開する。
- * @throws 固定 union 以外は TypeScript が拒否するため、実行時例外は発生しない。
- *
- * @example
- * `publishToast('success')` は成功用 Toaster だけへ固定された成功通知を公開する。
+ * @param props 可視操作名、通知 callback、theme、配信先 ID。
+ * @returns 既存 component と token だけで構成した操作可能な Story。
+ * 副作用は Button 操作後のローカル Toast 配信だけで、通信や永続化を行わない。
  */
-function publishToast(scenarioKind: ToastScenarioKind): void {
-  // 全 API に同じ ID、説明、無期限 duration、テスト識別子を渡し、状態間の条件差を種類だけに限定する。
-  const scenario = getToastScenario(scenarioKind);
-  const toastOptions = {
-    closeButton: scenario.closeButton,
-    description: scenario.description,
-    duration: INFINITE_TOAST_DURATION,
-    id: scenario.toastId,
-    testId: scenario.toastId,
-    toasterId: scenario.toasterId,
-  };
-
-  // 各公開 helper を直接呼び、Toaster に組み込まれた success icon と success state を確認可能にする。
-  if (scenarioKind === 'success') {
-    toast.success(scenario.title, toastOptions);
-    return;
-  }
-
-  // error 専用 helper を通し、既存 error icon と `data-type="error"` の契約を利用する。
-  if (scenarioKind === 'error') {
-    toast.error(scenario.title, toastOptions);
-    return;
-  }
-
-  // info 専用 helper へ長い固定説明と close button 指定を渡し、折り返しと閉鎖操作を同時に扱う。
-  if (scenarioKind === 'info') {
-    toast.info(scenario.title, toastOptions);
-    return;
-  }
-
-  // loading 専用 helper と無期限 duration を組み合わせ、Promise や通信なしで安定した loading state を作る。
-  if (scenarioKind === 'loading') {
-    toast.loading(scenario.title, toastOptions);
-    return;
-  }
-
-  // 通常 toast の公開 action option に副作用のない spy を渡し、利用側 callback の通知だけを観測する。
-  toast(scenario.title, {
-    ...toastOptions,
-    action: {
-      label: ACTION_LABEL,
-      onClick: actionClick,
-    },
-  });
-}
-
-/**
- * 一つの固定 Scenario に対応する Button と公開 `Toaster` export を描画する。
- *
- * @param props 描画、配信先、固定表示を選択する Scenario キー。
- * @returns 既存 Button token と Toaster API だけで構成した、操作可能な Story catalog。
- * 副作用は Button click 後のローカル Toast 配信に限定され、通信や永続化を行わない。
- */
-function ToastCatalog({ scenarioKind, theme }: ToastCatalogProps) {
-  const scenario = getToastScenario(scenarioKind);
-
-  /**
-   * Button click を選択済み Scenario の配信へ変換する。
-   * React の event は外部へ保持せず、固定データだけを publisher へ渡す。
-   */
-  function handleTriggerClick(): void {
-    publishToast(scenarioKind);
-  }
-
+function SonnerExample({ buttonLabel, onShow, theme, toasterId }: SonnerExampleProps) {
   return (
-    <div className="flex min-h-24 items-center justify-center p-4">
-      {/* 既存 Button の focus ring、寸法、foreground/background token をそのまま再利用する。 */}
-      <Button type="button" onClick={handleTriggerClick}>
-        {scenario.triggerLabel}
+    <div className="flex min-h-24 w-full items-center justify-center px-4">
+      {/* 公式 example と同じ outline Button を使い、native keyboard activation を保つ。 */}
+      <Button type="button" variant="outline" onClick={onShow}>
+        {buttonLabel}
       </Button>
 
-      {/* ID で Story ごとの配信を分離し、無期限 duration により自動終了 timer を作らない。 */}
+      {/* 公開 props だけで theme と配信先を固定し、reduced motion 時は loading icon の回転を止める。 */}
       <Toaster
-        id={scenario.toasterId}
+        id={toasterId}
         containerAriaLabel={TOASTER_CONTAINER_ARIA_LABEL}
-        duration={INFINITE_TOAST_DURATION}
         theme={theme}
         toastOptions={{
-          closeButtonAriaLabel: CLOSE_BUTTON_ARIA_LABEL,
-          duration: INFINITE_TOAST_DURATION,
+          classNames: {
+            loader: 'motion-reduce:[&_svg]:animate-none',
+            toast: 'cn-toast',
+          },
         }}
       />
     </div>
@@ -264,159 +136,175 @@ function ToastCatalog({ scenarioKind, theme }: ToastCatalogProps) {
 }
 
 /**
- * Sonner が保持する全 active Toast を ID ごとに閉じ、削除 animation と timer の完了まで待つ。
+ * 公式 Promise 例と同じ二秒後に Event を返すローカル処理を作る。
  *
- * @param ownerDocument Story canvas と Portal を所有する Document。Toast DOM の完全な除去確認に使う。
- * @returns active state と `[data-sonner-toast]` がともに空になった時点で解決する Promise。
- * @throws Sonner が通知を除去できない場合、`waitFor` の timeout により browser test を失敗させる。
+ * @returns `{ name: 'Event' }` で解決する Promise。
+ * @throws reject 経路を持たない固定例のため例外は発生しない。
+ * Story lifecycle は登録 timer を停止し、切替後の Toast 更新を防ぐ。
  *
  * @example
- * Story の `beforeEach` が返す cleanup から呼び、次の Story へ通知を持ち越さない。
+ * `createEvent()` を `toast.promise` へ渡すと loading から success へ遷移する。
  */
-async function dismissAllToasts(ownerDocument: Document): Promise<void> {
-  // 引数なし dismiss の履歴依存を避け、現在 active な ID だけを明示的に閉じて global state も即座に無効化する。
-  for (const activeToast of toast.getToasts()) {
-    toast.dismiss(activeToast.id);
-  }
+function createEvent(): Promise<{ name: string }> {
+  return new Promise((resolve) => {
+    // 公式 registry example と同じ二秒待機し、loading 状態を目視できる時間だけ維持する。
+    const timer = setTimeout(() => {
+      // 解決済み timer を追跡対象から外し、cleanup が完了済み処理へ触れないようにする。
+      pendingPromiseTimers.delete(timer);
+      resolve({ name: 'Event' });
+    }, PROMISE_DELAY_MS);
 
-  // Sonner 内部の削除 animation 用 timer が完了し、DOM と active state の双方が空になるまで lifecycle を進めない。
-  await waitFor(async () => {
-    await expect(toast.getToasts()).toHaveLength(0);
-    await expect(ownerDocument.querySelectorAll('[data-sonner-toast]')).toHaveLength(0);
+    // Story 切替時に未解決 Promise の表示更新を停止できるよう、timer を lifecycle へ登録する。
+    pendingPromiseTimers.add(timer);
   });
 }
 
 /**
- * Storybook の選択テーマと既存 `.dark` class、および Toaster の CSS variable 参照を検証する。
+ * Story lifecycle に残る公式 Promise 例の timer をすべて停止する。
  *
- * @param ownerDocument theme decorator と Toast を所有する Document。
- * @param selectedTheme Storybook globals が渡す `light` または `dark`。
- * @param toaster 実際に Toast を描画した Sonner の list 要素。
- * @returns theme class と既存 token 参照が一致した時点で解決する Promise。
- * @throws 未定義テーマ、class の不一致、token 契約の欠落時に interaction test を失敗させる。
+ * @returns 戻り値はなく、追跡中 timer と集合を同期的に空にする。
+ * 外部状態や他 component の timer には触れない。
  */
-async function expectThemeAndTokens(
-  ownerDocument: Document,
-  selectedTheme: unknown,
-  toaster: HTMLElement
-): Promise<void> {
-  // 想定外の global 値を light として黙認せず、二つの検証対象テーマ以外は明示的に失敗させる。
-  if (selectedTheme !== 'light' && selectedTheme !== 'dark') {
-    throw new TypeError('Storybook theme は light または dark である必要があります。');
+function clearPendingPromiseTimers(): void {
+  // 追跡済み timer だけを停止し、別 Story や Storybook 自体の scheduler へ干渉しない。
+  for (const timer of pendingPromiseTimers) {
+    clearTimeout(timer);
   }
 
-  // addon の effect 完了を条件待機し、固定時間を置かずに `<html>` の theme class を検証する。
+  // 停止済み handle を残さず、次の Promise Story を独立した状態で開始する。
+  pendingPromiseTimers.clear();
+}
+
+/**
+ * この Story ファイルが作成した通知だけを閉じ、削除 animation の完了を待つ。
+ *
+ * @param ownerDocument Story canvas と Toast DOM を所有する Document。
+ * @returns この Story が公開した test ID の Toast が DOM から除去された時点で解決する Promise。
+ * @throws Sonner が通知を除去できない場合は `waitFor` の timeout で失敗する。
+ */
+async function dismissStoryToasts(ownerDocument: Document): Promise<void> {
+  const documentBody = within(ownerDocument.body);
+
+  // 実在する Story 所有 Toast だけを閉じ、存在しない将来 ID へ dismiss event を予約しない。
+  for (const toastId of Object.values(TOAST_IDS)) {
+    if (documentBody.queryByTestId(toastId) !== null) {
+      toast.dismiss(toastId);
+    }
+  }
+
+  // 公開 test ID がすべて消えるまで待ち、次の Story へ操作可能な通知を持ち越さない。
   await waitFor(async () => {
-    if (selectedTheme === 'dark') {
+    for (const toastId of Object.values(TOAST_IDS)) {
+      await expect(documentBody.queryByTestId(toastId)).not.toBeInTheDocument();
+    }
+  });
+}
+
+/**
+ * Button を keyboard で起動し、Toast の focus、live region、theme、状態、応答幅を検証する。
+ *
+ * @param canvasElement Story の Button と ownerDocument を特定する描画範囲。
+ * @param selectedTheme Storybook が light/dark browser project へ渡す global 値。
+ * @param expected 公式例の可視名、意味状態、固定 test ID。
+ * @returns 表示済み Toast、trigger、Toaster list。
+ * @throws keyboard 操作、ARIA、theme、state、overflow の契約が崩れた場合に失敗する。
+ */
+async function openToastWithKeyboard(
+  canvasElement: HTMLElement,
+  selectedTheme: unknown,
+  expected: ToastExpectation
+): Promise<OpenToastResult> {
+  const ownerDocument = canvasElement.ownerDocument;
+  const canvas = within(canvasElement);
+  const documentBody = within(ownerDocument.body);
+  const trigger = canvas.getByRole('button', { name: expected.buttonLabel });
+
+  // Button へ keyboard focus を置き、pointer 専用ではない native activation 経路を検証する。
+  trigger.focus();
+  await expect(trigger).toHaveFocus();
+  await userEvent.keyboard('{Enter}');
+
+  // 非 modal Toast が利用者の現在位置を奪わず、trigger focus を維持することを保証する。
+  await expect(trigger).toHaveFocus();
+
+  // 非同期 publish 後の現在の要素を test ID から取り直し、利用者が読む本文の可視化を待つ。
+  const toastElement = await waitFor(async () => {
+    const currentToastElement = documentBody.getByTestId(expected.toastId);
+    await expect(currentToastElement).toBeVisible();
+    await expect(within(currentToastElement).getByText(expected.message)).toBeVisible();
+    return currentToastElement;
+  });
+
+  // 公式既定 hotkey を含む名前付き region が、穏やかな追加通知として公開されることを確認する。
+  const liveRegion = documentBody.getByRole('region', {
+    name: /^notifications alt\+t$/i,
+  });
+  await expect(liveRegion).toHaveAttribute('aria-live', 'polite');
+  await expect(liveRegion).toHaveAttribute('aria-relevant', 'additions text');
+  await expect(liveRegion).toHaveAttribute('aria-atomic', 'false');
+
+  // 通知を list/listitem として読み上げ、主文と Sonner state を色以外でも区別できるようにする。
+  const toaster = within(liveRegion).getByRole('list');
+  await expect(toastElement).toHaveRole('listitem');
+
+  // 通常通知は型属性を持たず、semantic helper と Promise loading だけが対応 state を公開する。
+  if (expected.dataType === null) {
+    await expect(toastElement).not.toHaveAttribute('data-type');
+  } else {
+    await expect(toastElement).toHaveAttribute('data-type', expected.dataType);
+  }
+
+  // Storybook の class theme と Toaster の描画 theme が light/dark の両 project で一致するまで待つ。
+  const theme = getStoryTheme(selectedTheme);
+  await waitFor(async () => {
+    if (theme === 'dark') {
       await expect(ownerDocument.documentElement).toHaveClass('dark');
     } else {
       await expect(ownerDocument.documentElement).not.toHaveClass('dark');
     }
   });
 
-  // Toaster component が hardcoded color へ退行せず、globals.css の既存 semantic token を参照し続けることを保証する。
-  await expect(toaster).toHaveAttribute('data-sonner-theme', selectedTheme);
+  // 既存 shadcn/ui component が globals.css の semantic token を参照し、独自色へ退行しないことを保証する。
   await expect(toaster.style.getPropertyValue('--normal-bg')).toBe('var(--popover)');
   await expect(toaster.style.getPropertyValue('--normal-text')).toBe('var(--popover-foreground)');
   await expect(toaster.style.getPropertyValue('--normal-border')).toBe('var(--border)');
   await expect(toaster.style.getPropertyValue('--border-radius')).toBe('var(--radius)');
-}
 
-/**
- * Trigger を利用者と同じ pointer 経路で操作し、Toast の表示、focus、ARIA、theme、state を検証する。
- *
- * @param canvasElement Story の Trigger と ownerDocument を特定する描画範囲。
- * @param selectedTheme Storybook が light/dark 両 project へ設定する theme global。
- * @param scenarioKind 表示と期待値に同じ固定 Scenario を使う内部キー。
- * @returns 可視性と意味構造を確認済みの Toast list item。
- * @throws Toast、live region、list、state、theme、token のいずれかが契約を満たさない場合に失敗する。
- */
-async function openAndExpectToast(
-  canvasElement: HTMLElement,
-  selectedTheme: unknown,
-  scenarioKind: ToastScenarioKind
-): Promise<HTMLElement> {
-  const scenario = getToastScenario(scenarioKind);
-  const canvas = within(canvasElement);
-  const documentBody = within(canvasElement.ownerDocument.body);
-  const trigger = canvas.getByRole('button', { name: scenario.triggerLabel });
+  // Desktop と既存 390px project の双方で、通知と list が viewport からはみ出さないことを確認する。
+  const toasterBounds = toaster.getBoundingClientRect();
+  await expect(toastElement.scrollWidth).toBeLessThanOrEqual(toastElement.clientWidth);
+  await expect(toasterBounds.left).toBeGreaterThanOrEqual(0);
+  await expect(toasterBounds.right).toBeLessThanOrEqual(ownerDocument.documentElement.clientWidth);
 
-  // 表示前は対象 Toast が存在しないことを確認し、前 Story の状態漏れを早期に検出する。
-  await expect(documentBody.queryByTestId(scenario.toastId)).not.toBeInTheDocument();
-  await expect(trigger).toBeEnabled();
-
-  // 実利用と同じ click を送り、非 modal 通知が Trigger から focus を奪わないことを保証する。
-  await userEvent.click(trigger);
-  await expect(trigger).toHaveFocus();
-
-  // Sonner の非同期 publish と mount effect を固定時間なしで待ち、実際に操作できる表示状態を取得する。
-  const toastElement = await documentBody.findByTestId(scenario.toastId);
+  // Sonner 公式既定 `Alt+T` で通知一覧へ移動できることを実操作で確認する。
+  await userEvent.keyboard('{Alt>}t{/Alt}');
   await waitFor(async () => {
-    await expect(toastElement).toBeVisible();
-    await expect(toastElement).toHaveAttribute('data-mounted', 'true');
+    await expect(toaster).toHaveFocus();
   });
 
-  // Toaster の section を名前付き live region として取得し、追加通知を穏やかに読み上げる既存 semantics を確認する。
-  const liveRegion = documentBody.getByRole('region', {
-    name: /^通知 alt\+t$/i,
-  });
-  await expect(liveRegion).toHaveAttribute('aria-live', 'polite');
-  await expect(liveRegion).toHaveAttribute('aria-relevant', 'additions text');
-  await expect(liveRegion).toHaveAttribute('aria-atomic', 'false');
-
-  // list/listitem の標準 semantics と、タイトル・説明の DOM 順を可視内容から確認する。
-  const toaster = within(liveRegion).getByRole('list');
-  await expect(toastElement).toHaveRole('listitem');
-  await expect(within(toastElement).getByText(scenario.title)).toBeVisible();
-  await expect(within(toastElement).getByText(scenario.description)).toBeVisible();
-
-  // 通常 action toast は type 属性を持たず、専用 helper の四状態だけが対応する data type を公開する。
-  if (scenario.expectedDataType === null) {
-    await expect(toastElement).not.toHaveAttribute('data-type');
-  } else {
-    await expect(toastElement).toHaveAttribute('data-type', scenario.expectedDataType);
-  }
-
-  // 同じ assertion を light/dark の両 browser project で実行し、theme class と semantic token の接続を保証する。
-  await expectThemeAndTokens(canvasElement.ownerDocument, selectedTheme, toaster);
-
-  return toastElement;
+  return { toaster, toastElement, trigger };
 }
 
 /**
- * close/action 操作後に対象 Toast が DOM と Sonner active state の双方から消えたことを確認する。
+ * 公開 Toaster と公式 shadcn/ui Sonner examples を Docs・a11y・interaction tests へ登録する。
  *
- * @param ownerDocument Toast Portal を所有する Document。
- * @param toastId 対象 Story が固定した Toast ID。
- * @returns 削除 animation と内部 timer が完了した時点で解決する Promise。
- * @throws DOM または active state に通知が残る場合、`waitFor` の timeout で失敗する。
- */
-async function expectToastRemoved(ownerDocument: Document, toastId: string): Promise<void> {
-  // 見た目上の removed state だけで終えず、DOM 除去と active state 解放を同じ条件で待機する。
-  await waitFor(async () => {
-    await expect(within(ownerDocument.body).queryByTestId(toastId)).not.toBeInTheDocument();
-    await expect(toast.getToasts().some((activeToast) => activeToast.id === toastId)).toBe(false);
-  });
-}
-
-/**
- * 公開 `Toaster` export を CSF 3 の Docs、accessibility、light/dark browser tests へ登録する。
- *
- * 各 Story は direct package subpath から同じ component を利用し、Sonner の既存 API と
- * globals.css の token 以外を追加しない。Story 切替時は Toast と spy を決定的に消去する。
+ * 各 Story は props 一覧ではなく、利用者が実際に起動できる一つの Toast 状態を示す。
+ * Story 切替時には、このファイルが作成した通知、timer、spy 履歴だけを決定的に消去する。
  */
 const meta = {
   title: 'Components/Sonner',
   component: Toaster,
   beforeEach: async ({ canvasElement }) => {
-    // Story 描画前に前回の active state と削除中 DOM を空にし、実行順による差を排除する。
-    await dismissAllToasts(canvasElement.ownerDocument);
-    actionClick.mockClear();
+    // 前回の Promise 解決と Undo 履歴を停止・消去してから、残存 Toast の削除を待つ。
+    clearPendingPromiseTimers();
+    undoAction.mockClear();
+    await dismissStoryToasts(canvasElement.ownerDocument);
 
-    // Story 切替前に削除 animation の完了まで待ち、timer、Toast、spy 履歴を次の test へ残さない。
+    // Story の unmount 時も同じ対象だけを解放し、次の theme・viewport project へ状態を渡さない。
     return async () => {
-      await dismissAllToasts(canvasElement.ownerDocument);
-      actionClick.mockClear();
+      clearPendingPromiseTimers();
+      undoAction.mockClear();
+      await dismissStoryToasts(canvasElement.ownerDocument);
     };
   },
   parameters: {
@@ -426,158 +314,258 @@ const meta = {
     docs: {
       description: {
         component:
-          '公開 Toaster とインストール済み Sonner API を使い、success、error、info、loading、action、長文、close/action 操作を、固定データと決定的 cleanup で確認します。',
+          'shadcn/ui 公式 Sonner examples に沿い、default、success、info、warning、error、action、promise を既存 Toaster と toast API で確認します。',
       },
     },
     layout: 'centered',
   },
 } satisfies Meta<typeof Toaster>;
 
-/** Storybook が Sonner catalog の型、Docs、accessibility、interaction tests を構築する既定 export。 */
+/** Storybook が Sonner の Docs と interaction tests を構築するための既定 export。 */
 export default meta;
 
+/** metadata から各 Sonner Story の CSF3 型を導出する。 */
 type Story = StoryObj<typeof meta>;
 
-/**
- * success helper と公開 Toaster の組み合わせを表示し、click、focus、ARIA、theme、token を確認する。
- *
- * Story は固定成功通知だけを配信し、通信や自動終了 timer を作らない。
- * interaction test は light/dark の両 project で同じ意味構造と状態を保証する。
- */
+/** 公式 Types 例の通常 Toast を、outline Button から keyboard で表示する。 */
+export const Default: Story = {
+  render: (_args, { globals }) => (
+    <SonnerExample
+      buttonLabel="Default"
+      onShow={() =>
+        toast(EVENT_CREATED_MESSAGE, {
+          id: TOAST_IDS.default,
+          testId: TOAST_IDS.default,
+          toasterId: TOASTER_IDS.default,
+        })
+      }
+      theme={getStoryTheme(globals.theme)}
+      toasterId={TOASTER_IDS.default}
+    />
+  ),
+  play: async ({ canvasElement, globals }) => {
+    // 通常 Toast の可視文、focus、live region、theme、応答幅を利用者操作から検証する。
+    await openToastWithKeyboard(canvasElement, globals.theme, {
+      buttonLabel: 'Default',
+      dataType: null,
+      message: EVENT_CREATED_MESSAGE,
+      toastId: TOAST_IDS.default,
+    });
+  },
+};
+
+/** 公式 Types 例の success helper と、既存 Toaster の success icon/state を示す。 */
 export const Success: Story = {
   render: (_args, { globals }) => (
-    <ToastCatalog scenarioKind="success" theme={getStoryTheme(globals.theme)} />
+    <SonnerExample
+      buttonLabel="Success"
+      onShow={() =>
+        toast.success(EVENT_CREATED_MESSAGE, {
+          id: TOAST_IDS.success,
+          testId: TOAST_IDS.success,
+          toasterId: TOASTER_IDS.success,
+        })
+      }
+      theme={getStoryTheme(globals.theme)}
+      toasterId={TOASTER_IDS.success}
+    />
   ),
-  play: async ({ canvasElement, globals, step }) => {
-    await step('成功通知を click で表示し、focus と live region を保つ', async () => {
-      // 共通 helper で Trigger、success state、ARIA、light/dark token 接続を一括して検証する。
-      await openAndExpectToast(canvasElement, globals.theme, 'success');
+  play: async ({ canvasElement, globals }) => {
+    // Success の可視文と semantic state を、通常 Toast と同じ accessibility 契約で検証する。
+    await openToastWithKeyboard(canvasElement, globals.theme, {
+      buttonLabel: 'Success',
+      dataType: 'success',
+      message: EVENT_CREATED_MESSAGE,
+      toastId: TOAST_IDS.success,
     });
   },
 };
 
-/**
- * error helper の icon と state を表示し、固定エラー文がアクセシブルな live region に入ることを確認する。
- *
- * 入力は製品非依存の固定文だけで、外部 error、Promise、network を生成しない。
- * interaction test は Trigger focus と light/dark の token 接続も検証する。
- */
+/** 公式 Types 例の info helper を、予定前の補足通知として表示する。 */
+export const Info: Story = {
+  render: (_args, { globals }) => (
+    <SonnerExample
+      buttonLabel="Info"
+      onShow={() =>
+        toast.info('Be at the area 10 minutes before the event time', {
+          id: TOAST_IDS.info,
+          testId: TOAST_IDS.info,
+          toasterId: TOASTER_IDS.info,
+        })
+      }
+      theme={getStoryTheme(globals.theme)}
+      toasterId={TOASTER_IDS.info}
+    />
+  ),
+  play: async ({ canvasElement, globals }) => {
+    // Info の長い一文が 390px でも欠けず、色以外の state を持つことを検証する。
+    await openToastWithKeyboard(canvasElement, globals.theme, {
+      buttonLabel: 'Info',
+      dataType: 'info',
+      message: 'Be at the area 10 minutes before the event time',
+      toastId: TOAST_IDS.info,
+    });
+  },
+};
+
+/** 公式 Types 例の warning helper を、開始時刻の制約通知として表示する。 */
+export const Warning: Story = {
+  render: (_args, { globals }) => (
+    <SonnerExample
+      buttonLabel="Warning"
+      onShow={() =>
+        toast.warning('Event start time cannot be earlier than 8am', {
+          id: TOAST_IDS.warning,
+          testId: TOAST_IDS.warning,
+          toasterId: TOASTER_IDS.warning,
+        })
+      }
+      theme={getStoryTheme(globals.theme)}
+      toasterId={TOASTER_IDS.warning}
+    />
+  ),
+  play: async ({ canvasElement, globals }) => {
+    // Warning の可視文、icon state、live region、狭幅での折り返しを検証する。
+    await openToastWithKeyboard(canvasElement, globals.theme, {
+      buttonLabel: 'Warning',
+      dataType: 'warning',
+      message: 'Event start time cannot be earlier than 8am',
+      toastId: TOAST_IDS.warning,
+    });
+  },
+};
+
+/** 公式 Types 例の error helper を、作成失敗の回復可能な通知として表示する。 */
 export const Error: Story = {
   render: (_args, { globals }) => (
-    <ToastCatalog scenarioKind="error" theme={getStoryTheme(globals.theme)} />
-  ),
-  play: async ({ canvasElement, globals, step }) => {
-    await step('エラー通知を click で表示し、状態と意味構造を確認する', async () => {
-      // error 専用 Scenario を開き、公開 helper が既存 icon と data type へ接続されることを保証する。
-      await openAndExpectToast(canvasElement, globals.theme, 'error');
-    });
-  },
-};
-
-/**
- * 複数行の info 通知と close icon button を表示し、折り返し、focus、クリック閉鎖を確認する。
- *
- * 長文は固定値でネットワークへ接続せず、close 後は削除 animation と内部 timer の完了まで待つ。
- * light/dark の双方でアクセシブル名と semantic token を同じ interaction test が検証する。
- */
-export const LongInfoWithClose: Story = {
-  render: (_args, { globals }) => (
-    <ToastCatalog scenarioKind="info" theme={getStoryTheme(globals.theme)} />
-  ),
-  play: async ({ canvasElement, globals, step }) => {
-    const scenario = toastScenarios.info;
-
-    await step('長い説明を省略せず、Toast の利用可能幅へ折り返す', async () => {
-      const toastElement = await openAndExpectToast(canvasElement, globals.theme, 'info');
-      const description = toastElement.querySelector<HTMLElement>('[data-description]');
-
-      // 固定長文の専用 description が存在しない退行を、汎用 text node への fallback で隠さない。
-      if (description === null) {
-        throw new TypeError('Info toast の description が描画されていません。');
+    <SonnerExample
+      buttonLabel="Error"
+      onShow={() =>
+        toast.error('Event has not been created', {
+          id: TOAST_IDS.error,
+          testId: TOAST_IDS.error,
+          toasterId: TOASTER_IDS.error,
+        })
       }
-
-      // Toast と description の実寸を比較し、狭い viewport でも text overflow が発生しないことを保証する。
-      await expect(description).toBeVisible();
-      await expect(description.scrollWidth).toBeLessThanOrEqual(description.clientWidth);
-      await expect(toastElement.scrollWidth).toBeLessThanOrEqual(toastElement.clientWidth);
-    });
-
-    await step('名前付き close button を focus して click し、通知を完全に除去する', async () => {
-      const documentBody = within(canvasElement.ownerDocument.body);
-      const closeButton = documentBody.getByRole('button', {
-        name: CLOSE_BUTTON_ARIA_LABEL,
-      });
-
-      // 支援技術と keyboard 利用者が同じ操作を特定できることを、明示 focus と可視性で確認する。
-      closeButton.focus();
-      await expect(closeButton).toHaveFocus();
-      await expect(closeButton).toBeVisible();
-
-      // 実利用と同じ pointer click 後、Sonner の削除 timer まで待って状態漏れを防ぐ。
-      await userEvent.click(closeButton);
-      await expectToastRemoved(canvasElement.ownerDocument, scenario.toastId);
-    });
-  },
-};
-
-/**
- * Promise や通信を使わず、公開 loading helper と Toaster の loading icon を安定表示する。
- *
- * 無期限 duration により自動終了 timer を作らず、Story lifecycle cleanup だけで状態を解放する。
- * interaction test は click 後の focus、ARIA、loading state、light/dark token を確認する。
- */
-export const Loading: Story = {
-  render: (_args, { globals }) => (
-    <ToastCatalog scenarioKind="loading" theme={getStoryTheme(globals.theme)} />
+      theme={getStoryTheme(globals.theme)}
+      toasterId={TOASTER_IDS.error}
+    />
   ),
-  play: async ({ canvasElement, globals, step }) => {
-    await step('固定 loading 通知を表示し、非同期処理なしで状態を確認する', async () => {
-      const toastElement = await openAndExpectToast(canvasElement, globals.theme, 'loading');
-
-      // Toaster component が差し替える loading icon を data-icon 内へ描画し、操作 button を混入させない。
-      await expect(toastElement.querySelector('[data-icon] svg')).toBeInTheDocument();
-      await expect(within(toastElement).queryByRole('button')).not.toBeInTheDocument();
+  play: async ({ canvasElement, globals }) => {
+    // Error の失敗文と semantic state を、色へ依存しない listitem として検証する。
+    await openToastWithKeyboard(canvasElement, globals.theme, {
+      buttonLabel: 'Error',
+      dataType: 'error',
+      message: 'Event has not been created',
+      toastId: TOAST_IDS.error,
     });
   },
 };
 
-/**
- * 通常 Toast の公開 action option を表示し、操作の名前、focus、click callback、閉鎖を確認する。
- *
- * callback は Storybook spy だけを呼び、network、navigation、永続化を行わない。
- * action 後は削除 animation と内部 timer の完了まで待ち、light/dark test 間の漏れを防ぐ。
- */
+/** 公式 Demo 例の description と Undo action を持つ、操作可能な通常 Toast を示す。 */
 export const WithAction: Story = {
   render: (_args, { globals }) => (
-    <ToastCatalog scenarioKind="action" theme={getStoryTheme(globals.theme)} />
+    <SonnerExample
+      buttonLabel="Show Toast"
+      onShow={() =>
+        toast(EVENT_CREATED_MESSAGE, {
+          action: {
+            label: 'Undo',
+            onClick: undoAction,
+          },
+          description: 'Sunday, December 03, 2023 at 9:00 AM',
+          id: TOAST_IDS.action,
+          testId: TOAST_IDS.action,
+          toasterId: TOASTER_IDS.action,
+        })
+      }
+      theme={getStoryTheme(globals.theme)}
+      toasterId={TOASTER_IDS.action}
+    />
   ),
-  play: async ({ canvasElement, globals, step }) => {
-    const scenario = toastScenarios.action;
+  play: async ({ canvasElement, globals }) => {
+    await openToastWithKeyboard(canvasElement, globals.theme, {
+      buttonLabel: 'Show Toast',
+      dataType: null,
+      message: EVENT_CREATED_MESSAGE,
+      toastId: TOAST_IDS.action,
+    });
+    const documentBody = within(canvasElement.ownerDocument.body);
 
-    await step('操作付き通知を表示し、名前付き action button を公開する', async () => {
-      const toastElement = await openAndExpectToast(canvasElement, globals.theme, 'action');
-      const actionButton = within(toastElement).getByRole('button', { name: ACTION_LABEL });
+    // 現在の Action Toast を取得し、利用者が読む公式 description の可視化を待つ。
+    const toastElement = await waitFor(async () => {
+      const currentToastElement = documentBody.getByTestId(TOAST_IDS.action);
+      await expect(
+        within(currentToastElement).getByText('Sunday, December 03, 2023 at 9:00 AM')
+      ).toBeVisible();
+      return currentToastElement;
+    });
+    const actionButton = within(toastElement).getByRole('button', { name: 'Undo' });
 
-      // action は可視ラベルをそのままアクセシブル名として使い、通知内の唯一の操作になることを保証する。
-      await expect(actionButton).toBeVisible();
-      await expect(within(toastElement).getAllByRole('button')).toHaveLength(1);
+    // 公式 description を省略せず表示し、action の可視ラベルをそのままアクセシブル名にする。
+    await expect(actionButton).toHaveAccessibleName('Undo');
+
+    // `Alt+T` で focus 済みの list から Toast、Undo の順に Tab 移動できることを確認する。
+    await userEvent.tab();
+    await waitFor(async () => {
+      await expect(documentBody.getByTestId(TOAST_IDS.action)).toHaveFocus();
+    });
+    await userEvent.tab();
+    await waitFor(async () => {
+      await expect(
+        within(documentBody.getByTestId(TOAST_IDS.action)).getByRole('button', { name: 'Undo' })
+      ).toHaveFocus();
     });
 
-    await step(
-      'action button を focus して click し、callback と完全な閉鎖を確認する',
+    // Enter による Undo 実行を一度だけ通知し、action 後に Toast が完全に閉じることを確認する。
+    await userEvent.keyboard('{Enter}');
+    await expect(undoAction).toHaveBeenCalledTimes(1);
+    await waitFor(async () => {
+      await expect(
+        within(canvasElement.ownerDocument.body).queryByTestId(TOAST_IDS.action)
+      ).not.toBeInTheDocument();
+    });
+  },
+};
+
+/** 公式 Types 例の `toast.promise` を使い、loading から success への実用遷移を示す。 */
+export const PromiseToast: Story = {
+  name: 'Promise',
+  render: (_args, { globals }) => (
+    <SonnerExample
+      buttonLabel="Promise"
+      onShow={() => {
+        // 公式 registry と同じ loading/success/error contract を、ローカル Promise へ接続する。
+        toast.promise<{ name: string }>(() => createEvent(), {
+          error: 'Error',
+          id: TOAST_IDS.promise,
+          loading: 'Loading...',
+          success: (data) => `${data.name} has been created`,
+          testId: TOAST_IDS.promise,
+          toasterId: TOASTER_IDS.promise,
+        });
+      }}
+      theme={getStoryTheme(globals.theme)}
+      toasterId={TOASTER_IDS.promise}
+    />
+  ),
+  play: async ({ canvasElement, globals }) => {
+    await openToastWithKeyboard(canvasElement, globals.theme, {
+      buttonLabel: 'Promise',
+      dataType: 'loading',
+      message: 'Loading...',
+      toastId: TOAST_IDS.promise,
+    });
+    const documentBody = within(canvasElement.ownerDocument.body);
+
+    // 公式の二秒待機後、同じ test ID の現在の Toast が success state と解決データの文へ更新されることを確認する。
+    await waitFor(
       async () => {
-        const documentBody = within(canvasElement.ownerDocument.body);
-        const actionButton = documentBody.getByRole('button', { name: ACTION_LABEL });
-
-        // keyboard で到達可能な実要素であることを明示 focus から確認してから、pointer click 経路を実行する。
-        actionButton.focus();
-        await expect(actionButton).toHaveFocus();
-        await userEvent.click(actionButton);
-
-        // click は外部副作用ではなく spy へ一度だけ通知され、Toast は内部 timer 完了後に残らない。
-        await expect(actionClick).toHaveBeenCalledTimes(1);
-        await expectToastRemoved(canvasElement.ownerDocument, scenario.toastId);
-      }
+        const resolvedToastElement = documentBody.getByTestId(TOAST_IDS.promise);
+        await expect(resolvedToastElement).toHaveAttribute('data-type', 'success');
+        await expect(within(resolvedToastElement).getByText(EVENT_CREATED_MESSAGE)).toBeVisible();
+      },
+      { timeout: PROMISE_DELAY_MS + 2000 }
     );
   },
 };

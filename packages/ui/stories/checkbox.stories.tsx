@@ -1,232 +1,262 @@
 import { expect, userEvent, within } from 'storybook/test';
 
 import { Checkbox } from '@cfreact-template/ui/components/checkbox';
-import { Label } from '@cfreact-template/ui/components/label';
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from '@cfreact-template/ui/components/field';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ComponentProps } from 'react';
 
-/** 各 Story のアクセシブルネームと関連付けを安定させる、製品文脈に依存しない固定データ。 */
-const checkboxCases = {
+/** 公式例の情報構造と現実的な文言を、Story と interaction test で共有する固定データ。 */
+const checkboxExamples = {
   unchecked: {
-    id: 'checkbox-unchecked',
-    label: '未選択の項目',
+    formName: 'Terms preferences',
+    id: 'terms-checkbox-basic',
+    label: 'Accept terms and conditions',
+    name: 'termsAccepted',
   },
   checked: {
-    id: 'checkbox-checked',
-    label: '選択済みの項目',
+    description: 'By clicking this checkbox, you agree to the terms and conditions.',
+    id: 'terms-checkbox-description',
+    label: 'Accept terms and conditions',
+    name: 'termsAcceptedWithDescription',
   },
   indeterminate: {
-    id: 'checkbox-indeterminate',
-    label: '一部選択の項目',
+    description: 'Some desktop items are selected.',
+    id: 'desktop-items-checkbox-indeterminate',
+    label: 'Show all desktop items',
+    name: 'allDesktopItems',
   },
   disabled: {
-    id: 'checkbox-disabled',
-    label: '選択できない項目',
+    id: 'notifications-checkbox-disabled',
+    label: 'Enable notifications',
+    name: 'notificationsEnabled',
   },
-  invalid: {
-    id: 'checkbox-invalid',
-    label: '確認が必要な項目',
+  group: {
+    description: 'Select the items you want to show on the desktop.',
+    formName: 'Desktop display preferences',
+    legend: 'Show these items on the desktop:',
+    options: [
+      {
+        defaultChecked: true,
+        id: 'desktop-hard-disks-checkbox',
+        label: 'Hard disks',
+        name: 'hardDisks',
+      },
+      {
+        defaultChecked: true,
+        id: 'desktop-external-disks-checkbox',
+        label: 'External disks',
+        name: 'externalDisks',
+      },
+      {
+        defaultChecked: false,
+        id: 'desktop-optical-media-checkbox',
+        label: 'CDs, DVDs, and iPods',
+        name: 'opticalMedia',
+      },
+      {
+        defaultChecked: false,
+        id: 'desktop-connected-servers-checkbox',
+        label: 'Connected servers',
+        name: 'connectedServers',
+      },
+    ],
   },
 } as const;
 
-/** invalid 状態の理由を Checkbox の説明として関連付ける固定文言。 */
-const invalidDescription = 'この項目の選択状態を確認してください。';
-
-/** interaction tests が選択状態を検証するために参照する固定 ARIA 属性名。 */
+/** Checkbox の選択状態を支援技術向けの値として検証するための固定属性名。 */
 const checkedAttribute = 'aria-checked';
-
-/** Checkbox の公開 props に、Story 専用の可視ラベルと任意の説明だけを追加する。 */
-type CheckboxStoryArgs = Omit<ComponentProps<typeof Checkbox>, 'id'> & {
-  /** Label の `htmlFor` と Checkbox の `id` を一致させる、Story 内で一意な固定 ID。 */
-  id: string;
-  /** Checkbox の目的を可視表示し、そのアクセシブルネームにも使用する固定ラベル。 */
-  label: string;
-  /** invalid 状態など、選択欄へ追加で関連付ける任意の説明。 */
-  description?: string;
-};
-
-/**
- * Checkbox と Label を既存契約で関連付け、任意の説明を同じフォーム項目として表示する。
- *
- * @param props Checkbox の公開属性、固定 ID、可視ラベル、および任意の説明。
- * @returns ラベル付けと状態説明を支援技術からも解決できる Story 用フォーム項目。
- */
-function LabeledCheckbox({
-  id,
-  label,
-  description,
-  disabled,
-  ...checkboxProps
-}: CheckboxStoryArgs) {
-  // 説明がある Story だけで安定した ID を生成し、不要な ARIA 参照を出力しない。
-  const descriptionId = description === undefined ? undefined : `${id}-description`;
-
-  return (
-    <div
-      className="group grid max-w-80 gap-2"
-      data-disabled={disabled === true ? 'true' : undefined}
-    >
-      <div className="flex items-center gap-2">
-        {/* Checkbox の hidden input と可視 Label を固定 ID で関連付け、クリック領域と名前を共有する。 */}
-        <Checkbox id={id} aria-describedby={descriptionId} disabled={disabled} {...checkboxProps} />
-        <Label htmlFor={id}>{label}</Label>
-      </div>
-
-      {description === undefined ? null : (
-        // 既存の destructive token で invalid の補足を示し、Checkbox から ARIA 参照できる位置へ置く。
-        <p id={descriptionId} className="text-sm text-destructive">
-          {description}
-        </p>
-      )}
-    </div>
-  );
-}
 
 /**
  * Story canvas 内から可視ラベルで Checkbox を取得し、アクセシブルネームを検証する。
  *
- * @param canvasElement Story が描画された範囲。Storybook UI を検索対象から除外するために使用する。
- * @param label 対象 Checkbox と関連付けた固定ラベル。
- * @returns クリックとキーボード操作の assertion に使用する Checkbox 要素。
+ * @param canvasElement Story が描画された範囲。Storybook 自体の UI を検索対象から除外する。
+ * @param label FieldLabel が Checkbox へ与える可視ラベル兼アクセシブルネーム。
+ * @returns 後続の状態検証と利用者操作に使用する Checkbox 要素。
  */
 async function getAccessibleCheckbox(
   canvasElement: HTMLElement,
   label: string
 ): Promise<HTMLElement> {
-  // role と可視ラベルの組み合わせで取得し、実装用 data 属性に依存しない利用者視点の検索にする。
+  // role とアクセシブルネームで取得し、実装固有の data 属性へ依存しない検証にする。
   const checkbox = within(canvasElement).getByRole('checkbox', { name: label });
-
-  // 可視 Label が Checkbox のアクセシブルネームとして解決されることを明示的に保証する。
   await expect(checkbox).toHaveAccessibleName(label);
 
   return checkbox;
 }
 
 /**
- * 操作可能な Checkbox がクリックと Space キーの双方で状態を反転できることを検証する。
+ * 公式 Checkbox 例を Controls の API 一覧ではなく、利用文脈ごとの Story として登録する。
  *
- * @param checkbox 操作対象の Checkbox 要素。
- * @param initiallyChecked Story 描画直後に期待する選択状態。
- * @returns クリックとキーボード操作後の状態確認が完了した時点で解決する Promise。
- */
-async function assertClickAndKeyboardToggle(
-  checkbox: HTMLElement,
-  initiallyChecked: boolean
-): Promise<void> {
-  // boolean を ARIA の文字列表現へ変換し、初期状態と二度の反転結果を同じ基準で比較する。
-  const initialState = initiallyChecked ? 'true' : 'false';
-  const toggledState = initiallyChecked ? 'false' : 'true';
-
-  await expect(checkbox).toHaveAttribute(checkedAttribute, initialState);
-
-  // ポインター操作で状態が一度反転し、操作対象へ focus が移ることを確認する。
-  await userEvent.click(checkbox);
-  await expect(checkbox).toHaveAttribute(checkedAttribute, toggledState);
-  await expect(checkbox).toHaveFocus();
-
-  // focus 中の Checkbox を標準の Space キーで再操作し、元の状態へ戻ることを確認する。
-  await userEvent.keyboard(' ');
-  await expect(checkbox).toHaveAttribute(checkedAttribute, initialState);
-}
-
-/**
- * Checkbox の主要状態を CSF3 の Docs・Controls・browser tests へ登録する metadata。
- *
- * 固定データ、直接 import した Checkbox と Label、および既存 token だけで構成する。
+ * Field 系コンポーネントの標準レイアウトを使用し、各 Story がラベル、説明、状態、フォーム値を直接示す。
  */
 const meta = {
   title: 'Forms/Checkbox',
   component: Checkbox,
   parameters: {
+    controls: {
+      disable: true,
+    },
     layout: 'centered',
   },
-  args: {
-    defaultChecked: false,
-    disabled: false,
-    id: checkboxCases.unchecked.id,
-    indeterminate: false,
-    label: checkboxCases.unchecked.label,
-  },
-  argTypes: {
-    description: {
-      control: false,
-      description: 'Checkbox へ関連付ける状態説明。必要な Story で固定する。',
-    },
-    id: {
-      control: false,
-      description: 'Checkbox と Label を関連付ける Story 内の固定 ID。',
-    },
-    label: {
-      control: false,
-      description: 'Checkbox の可視ラベル兼アクセシブルネーム。',
-    },
-  },
-  render: (args) => <LabeledCheckbox {...args} />,
-} satisfies Meta<CheckboxStoryArgs>;
+} satisfies Meta<typeof Checkbox>;
 
-/** Storybook が Checkbox catalog の Docs・Controls・interaction tests を構築するための既定 export。 */
+/** Storybook が Checkbox の例と interaction tests を収集するための既定 export。 */
 export default meta;
 
+/** metadata から Checkbox Story の CSF3 型を導出する。 */
 type Story = StoryObj<typeof meta>;
 
-/** 未選択状態を表示し、クリックと Space キーで選択状態を往復できることを検証する。 */
+/** 公式 Basic 構成で未選択状態を示し、ラベル、ポインター、Space、フォーム値を検証する。 */
 export const Unchecked: Story = {
+  render: () => (
+    <form aria-label={checkboxExamples.unchecked.formName} className="w-56">
+      <FieldGroup>
+        <Field orientation="horizontal">
+          <Checkbox id={checkboxExamples.unchecked.id} name={checkboxExamples.unchecked.name} />
+          <FieldLabel htmlFor={checkboxExamples.unchecked.id}>
+            {checkboxExamples.unchecked.label}
+          </FieldLabel>
+        </Field>
+      </FieldGroup>
+    </form>
+  ),
   play: async ({ canvasElement, step }) => {
-    const checkbox = await getAccessibleCheckbox(canvasElement, checkboxCases.unchecked.label);
+    const canvas = within(canvasElement);
+    const checkbox = await getAccessibleCheckbox(canvasElement, checkboxExamples.unchecked.label);
+    const label = canvas.getByText(checkboxExamples.unchecked.label, { selector: 'label' });
+    const form = canvas.getByRole('form', { name: checkboxExamples.unchecked.formName });
 
-    await step('未選択状態をクリックとキーボードで切り替える', async () => {
-      // false から始まり、クリックで true、Space キーで false へ戻る標準操作を確認する。
-      await assertClickAndKeyboardToggle(checkbox, false);
+    await step('未選択状態とネイティブフォーム値を確認する', async () => {
+      // 未選択の ARIA 状態と同じ boolean 値が、name を介して form から取得できることを保証する。
+      await expect(checkbox).toHaveAttribute(checkedAttribute, 'false');
+      await expect(form).toHaveFormValues({ [checkboxExamples.unchecked.name]: false });
+    });
+
+    await step('ラベルと Checkbox のクリックで状態を切り替える', async () => {
+      // FieldLabel のクリックで選択と focus が Checkbox へ移り、可視ラベル全体が操作対象になることを確認する。
+      await userEvent.click(label);
+      await expect(checkbox).toHaveAttribute(checkedAttribute, 'true');
+      await expect(checkbox).toHaveFocus();
+
+      // Checkbox 自体へのポインター操作でも同じ状態契約で未選択へ戻ることを確認する。
+      await userEvent.click(checkbox);
+      await expect(checkbox).toHaveAttribute(checkedAttribute, 'false');
+    });
+
+    await step('Space キーで選択し、フォーム値へ反映する', async () => {
+      // focus 中の標準 Space 操作で選択し、フォームが更新後の boolean 値を公開することを確認する。
+      await userEvent.keyboard(' ');
+      await expect(checkbox).toHaveAttribute(checkedAttribute, 'true');
+      await expect(form).toHaveFormValues({ [checkboxExamples.unchecked.name]: true });
     });
   },
 };
 
-/** 選択済み状態を表示し、クリックと Space キーで選択状態を往復できることを検証する。 */
+/** 公式 Description 構成で選択済み状態と、Checkbox に関連付く補足説明を示す。 */
 export const Checked: Story = {
-  args: {
-    defaultChecked: true,
-    id: checkboxCases.checked.id,
-    label: checkboxCases.checked.label,
-  },
-  play: async ({ canvasElement, step }) => {
-    const checkbox = await getAccessibleCheckbox(canvasElement, checkboxCases.checked.label);
+  render: () => {
+    // 固定 ID により FieldDescription を Checkbox から明示参照し、可視配置と支援技術の説明を一致させる。
+    const descriptionId = `${checkboxExamples.checked.id}-description`;
 
-    await step('選択済み状態をクリックとキーボードで切り替える', async () => {
-      // true から始まり、クリックで false、Space キーで true へ戻る標準操作を確認する。
-      await assertClickAndKeyboardToggle(checkbox, true);
-    });
-  },
-};
-
-/** 一部選択を表す indeterminate 状態と、支援技術へ伝わる mixed semantics を検証する。 */
-export const Indeterminate: Story = {
-  args: {
-    id: checkboxCases.indeterminate.id,
-    indeterminate: true,
-    label: checkboxCases.indeterminate.label,
+    return (
+      <FieldGroup className="w-72">
+        <Field orientation="horizontal">
+          <Checkbox
+            id={checkboxExamples.checked.id}
+            aria-describedby={descriptionId}
+            defaultChecked
+            name={checkboxExamples.checked.name}
+          />
+          <FieldContent>
+            <FieldLabel htmlFor={checkboxExamples.checked.id}>
+              {checkboxExamples.checked.label}
+            </FieldLabel>
+            <FieldDescription id={descriptionId}>
+              {checkboxExamples.checked.description}
+            </FieldDescription>
+          </FieldContent>
+        </Field>
+      </FieldGroup>
+    );
   },
   play: async ({ canvasElement }) => {
-    const checkbox = await getAccessibleCheckbox(canvasElement, checkboxCases.indeterminate.label);
+    const checkbox = await getAccessibleCheckbox(canvasElement, checkboxExamples.checked.label);
 
-    // 視覚用 data 属性だけでなく、支援技術が一部選択として解釈する ARIA 値を保証する。
-    await expect(checkbox).toHaveAttribute('data-indeterminate');
-    await expect(checkbox).toHaveAttribute(checkedAttribute, 'mixed');
+    // 選択済み状態と説明文が視覚表現だけでなくアクセシビリティツリーでも解決されることを保証する。
+    await expect(checkbox).toHaveAttribute(checkedAttribute, 'true');
+    await expect(checkbox).toHaveAccessibleDescription(checkboxExamples.checked.description);
   },
 };
 
-/** 無効状態を表示し、クリックとキーボードのどちらでも状態が変化しないことを検証する。 */
-export const Disabled: Story = {
-  args: {
-    disabled: true,
-    id: checkboxCases.disabled.id,
-    label: checkboxCases.disabled.label,
-  },
-  play: async ({ canvasElement, step }) => {
-    const checkbox = await getAccessibleCheckbox(canvasElement, checkboxCases.disabled.label);
+/** 一部選択を表す indeterminate 状態を、説明付きの公式 Field 構成で示す。 */
+export const Indeterminate: Story = {
+  render: () => {
+    // mixed 状態の意味を説明する文を Checkbox へ関連付け、視覚アイコンだけに情報を依存させない。
+    const descriptionId = `${checkboxExamples.indeterminate.id}-description`;
 
-    await step('無効状態はクリック操作を受け付けない', async () => {
-      // disabled semantics と初期状態を確認してからクリックし、選択状態が変化しないことを保証する。
+    return (
+      <FieldGroup className="w-72">
+        <Field orientation="horizontal">
+          <Checkbox
+            id={checkboxExamples.indeterminate.id}
+            aria-describedby={descriptionId}
+            indeterminate
+            name={checkboxExamples.indeterminate.name}
+          />
+          <FieldContent>
+            <FieldLabel htmlFor={checkboxExamples.indeterminate.id}>
+              {checkboxExamples.indeterminate.label}
+            </FieldLabel>
+            <FieldDescription id={descriptionId}>
+              {checkboxExamples.indeterminate.description}
+            </FieldDescription>
+          </FieldContent>
+        </Field>
+      </FieldGroup>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const checkbox = await getAccessibleCheckbox(
+      canvasElement,
+      checkboxExamples.indeterminate.label
+    );
+
+    // Base UI の状態属性と ARIA mixed 値の両方を検証し、視覚と支援技術の状態を一致させる。
+    await expect(checkbox).toHaveAttribute('data-indeterminate');
+    await expect(checkbox).toHaveAttribute(checkedAttribute, 'mixed');
+    await expect(checkbox).toHaveAccessibleDescription(checkboxExamples.indeterminate.description);
+  },
+};
+
+/** 公式 Disabled 構成で Field と Checkbox の無効状態を揃え、操作不能を検証する。 */
+export const Disabled: Story = {
+  render: () => (
+    <FieldGroup className="w-56">
+      <Field orientation="horizontal" data-disabled>
+        <Checkbox
+          id={checkboxExamples.disabled.id}
+          disabled
+          name={checkboxExamples.disabled.name}
+        />
+        <FieldLabel htmlFor={checkboxExamples.disabled.id}>
+          {checkboxExamples.disabled.label}
+        </FieldLabel>
+      </Field>
+    </FieldGroup>
+  ),
+  play: async ({ canvasElement, step }) => {
+    const checkbox = await getAccessibleCheckbox(canvasElement, checkboxExamples.disabled.label);
+
+    await step('無効状態はクリックで変化しない', async () => {
+      // disabled semantics と未選択状態を確認してから操作し、状態が変化しないことを保証する。
       await expect(checkbox).toHaveAttribute('aria-disabled', 'true');
       await expect(checkbox).toHaveAttribute(checkedAttribute, 'false');
       await userEvent.click(checkbox);
@@ -234,7 +264,7 @@ export const Disabled: Story = {
     });
 
     await step('無効状態はキーボード操作の対象にならない', async () => {
-      // Tab 移動で無効な Checkbox が focus されず、Space キーを送っても状態が変化しないことを確認する。
+      // Tab 移動で無効な Checkbox が focus されず、Space を送っても状態が変わらないことを確認する。
       await userEvent.tab();
       await expect(checkbox).not.toHaveFocus();
       await userEvent.keyboard(' ');
@@ -243,26 +273,64 @@ export const Disabled: Story = {
   },
 };
 
-/** invalid 状態と説明の関連付けを表示し、操作可能性を維持したまま状態を往復できることを検証する。 */
-export const Invalid: Story = {
-  args: {
-    'aria-invalid': true,
-    description: invalidDescription,
-    id: checkboxCases.invalid.id,
-    label: checkboxCases.invalid.label,
+/** 公式 Group 構成で複数項目を fieldset と legend にまとめ、一覧とフォーム値を示す。 */
+export const Group: Story = {
+  render: () => {
+    // legend に続く補足説明を fieldset へ関連付け、グループ全体の目的と操作対象を支援技術へ伝える。
+    const descriptionId = 'desktop-display-preferences-description';
+
+    return (
+      <form aria-label={checkboxExamples.group.formName} className="w-72">
+        <FieldSet aria-describedby={descriptionId}>
+          <FieldLegend variant="label">{checkboxExamples.group.legend}</FieldLegend>
+          <FieldDescription id={descriptionId}>
+            {checkboxExamples.group.description}
+          </FieldDescription>
+          <FieldGroup className="gap-3">
+            {checkboxExamples.group.options.map((option) => (
+              <Field key={option.id} orientation="horizontal">
+                <Checkbox
+                  id={option.id}
+                  defaultChecked={option.defaultChecked}
+                  name={option.name}
+                />
+                <FieldLabel htmlFor={option.id} className="font-normal">
+                  {option.label}
+                </FieldLabel>
+              </Field>
+            ))}
+          </FieldGroup>
+        </FieldSet>
+      </form>
+    );
   },
-  play: async ({ canvasElement, step }) => {
-    const checkbox = await getAccessibleCheckbox(canvasElement, checkboxCases.invalid.label);
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const form = canvas.getByRole('form', { name: checkboxExamples.group.formName });
+    const fieldset = canvas.getByRole('group', { name: checkboxExamples.group.legend });
 
-    await step('invalid semantics と説明を関連付ける', async () => {
-      // エラー状態と具体的な説明が支援技術から同時に解決できることを確認する。
-      await expect(checkbox).toHaveAttribute('aria-invalid', 'true');
-      await expect(checkbox).toHaveAccessibleDescription(invalidDescription);
-    });
+    // legend と説明から group semantics が解決され、公式例の四項目をすべて包含することを確認する。
+    await expect(fieldset).toHaveAccessibleName(checkboxExamples.group.legend);
+    await expect(fieldset).toHaveAccessibleDescription(checkboxExamples.group.description);
+    await expect(within(fieldset).getAllByRole('checkbox')).toHaveLength(
+      checkboxExamples.group.options.length
+    );
 
-    await step('invalid 状態でもクリックとキーボードで切り替える', async () => {
-      // invalid は操作禁止を意味しないため、通常状態と同じ二種類の操作で往復できることを保証する。
-      await assertClickAndKeyboardToggle(checkbox, false);
+    // 各可視ラベルと初期選択状態を確認し、一覧の文言や状態が欠落しても検出できるようにする。
+    for (const option of checkboxExamples.group.options) {
+      const checkbox = await getAccessibleCheckbox(canvasElement, option.label);
+      await expect(checkbox).toHaveAttribute(
+        checkedAttribute,
+        option.defaultChecked ? 'true' : 'false'
+      );
+    }
+
+    // name ごとの初期状態がネイティブフォーム値へ反映され、表示と送信契約が一致することを保証する。
+    await expect(form).toHaveFormValues({
+      connectedServers: false,
+      externalDisks: true,
+      hardDisks: true,
+      opticalMedia: false,
     });
   },
 };

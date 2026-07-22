@@ -1,7 +1,14 @@
-import { ArrowRightIcon, ImageIcon, InboxIcon } from 'lucide-react';
+import {
+  BadgeCheckIcon,
+  ChevronRightIcon,
+  ExternalLinkIcon,
+  PlusIcon,
+  ShieldAlertIcon,
+} from 'lucide-react';
 import { Fragment } from 'react';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@cfreact-template/ui/components/avatar';
 import { Button } from '@cfreact-template/ui/components/button';
 import {
   Item,
@@ -19,150 +26,144 @@ import {
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ComponentProps, MouseEvent } from 'react';
 
-/** `Item` が公開する全 variant を固定比較 Story の単一データ源として保持する。 */
-const variantOptions = ['default', 'outline', 'muted'] as const;
+/** shadcn/ui 公式 Item Docs と、このリポジトリの `base-nova` registry source URL。 */
+const OFFICIAL_ITEM_URLS = {
+  docs: 'https://ui.shadcn.com/docs/components/base/item',
+  source: 'https://ui.shadcn.com/r/styles/base-nova/item.json',
+} as const;
 
-/** `Item` が公開する全 size を固定比較 Story の単一データ源として保持する。 */
-const sizeOptions = ['default', 'sm', 'xs'] as const;
-
-/** `ItemMedia` の全 variant と、media を省略できる構成を画像通信なしで比較する。 */
-const mediaCases = [
-  { id: 'default', label: 'default media', media: 'default' },
-  { id: 'icon', label: 'icon media', media: 'icon' },
-  { id: 'image', label: 'image media（画像資産なし）', media: 'image' },
-  { id: 'none', label: 'media なし', media: 'none' },
+/** 公式 Avatar・Group 例の人物情報と画像 URL を、人物系 Story の単一データ源として保持する。 */
+const people = [
+  {
+    username: 'shadcn',
+    avatar: 'https://github.com/shadcn.png',
+    email: 'shadcn@vercel.com',
+    initials: 'CN',
+  },
+  {
+    username: 'maxleiter',
+    avatar: 'https://github.com/maxleiter.png',
+    email: 'maxleiter@vercel.com',
+    initials: 'LR',
+  },
+  {
+    username: 'evilrabbit',
+    avatar: 'https://github.com/evilrabbit.png',
+    email: 'evilrabbit@vercel.com',
+    initials: 'ER',
+  },
 ] as const;
 
-/** `Item` の既定水平配置と、公開 className で構成する垂直配置を同じ内容で比較する。 */
-const orientationCases = [
-  { id: 'horizontal', label: 'horizontal（既定）', className: undefined },
-  { id: 'vertical', label: 'vertical（className 構成）', className: 'flex-col items-stretch' },
+/** 公式 Image 例の楽曲情報を、画像付きリンク一覧へ同じ順序で適用する。 */
+const music = [
+  {
+    title: 'Midnight City Lights',
+    artist: 'Neon Dreams',
+    album: 'Electric Nights',
+    duration: '3:45',
+  },
+  {
+    title: 'Coffee Shop Conversations',
+    artist: 'The Morning Brew',
+    album: 'Urban Stories',
+    duration: '4:05',
+  },
+  {
+    title: 'Digital Rain',
+    artist: 'Cyber Symphony',
+    album: 'Binary Beats',
+    duration: '3:30',
+  },
 ] as const;
 
-/** `ItemGroup` と `ItemSeparator` の親子関係を固定順序で示す汎用項目。 */
-const groupItems = [
-  { id: 'first', title: '最初の項目', description: '一覧の先頭に置く固定内容です。' },
-  { id: 'second', title: '次の項目', description: '区切りの後に置く固定内容です。' },
-  { id: 'third', title: '最後の項目', description: '一覧の末尾に置く固定内容です。' },
-] as const;
+/** 公式 Header 例の先頭モデル、画像 URL、クレジットを Header・Footer 構成へ適用する。 */
+const featuredModel = {
+  name: 'v0-1.5-sm',
+  description: 'Everyday tasks and UI generation.',
+  image:
+    'https://images.unsplash.com/photo-1650804068570-7fb2e3dbf888?q=80&w=640&auto=format&fit=crop',
+  credit: 'Valeria Reverdo on Unsplash',
+} as const;
 
-type ItemMediaVariant = NonNullable<ComponentProps<typeof ItemMedia>['variant']>;
-type MediaKind = ItemMediaVariant | 'none';
+/** Basic Item の有効な Action 通知を、副作用なしで検証する Storybook spy。 */
+const basicActionClick = fn();
 
-/** 固定 Item 構成へ渡す公開 root props、表示内容、media、操作契約。 */
-interface ItemPreviewProps {
-  /** 見出しとの関連付けに使う Story 内で一意な固定識別子。 */
-  id: string;
-  /** `Item` root へそのまま渡す既存の公開 props。 */
-  rootProps?: Omit<ComponentProps<typeof Item>, 'children' | 'render'>;
-  /** `ItemTitle` に表示する固定見出し。 */
-  title: string;
-  /** `ItemDescription` に表示する固定説明。 */
-  description: string;
-  /** `ItemMedia` の既存 variant、または media を描画しない指定。 */
-  media?: MediaKind;
-  /** `ItemActions` 内へ表示する既存 Button の可視ラベル。 */
-  actionLabel?: string;
-  /** 操作通知を外部作用なしで観測する Story 専用ハンドラー。 */
-  onAction?: ComponentProps<typeof Button>['onClick'];
-}
+/** Icon Item の Review 通知を、副作用なしで検証する Storybook spy。 */
+const reviewActionClick = fn();
 
-/** 全サブコンポーネント例の操作通知を外部作用なしで観測する spy。 */
-const allSubcomponentsActionClick = fn();
-
-/** anchor へ置き換えた `Item` のクリック通知を外部作用なしで観測する spy。 */
-const interactiveItemClick = fn((event: MouseEvent<HTMLAnchorElement>) => {
-  // fragment navigation による browser test document の再読込を防ぎ、クリック通知だけを観測する。
+/** 公式 Docs link の遷移先を保ちつつ、interaction test 中の画面遷移だけを抑止する。 */
+const documentationLinkClick = fn((event: MouseEvent<HTMLAnchorElement>) => {
   event.preventDefault();
 });
 
-/** disabled button へ置き換えた `Item` が通知しないことを観測する spy。 */
-const disabledItemClick = fn();
+/** 人物 Avatar を、公式画像・fallback・通信状態に依存しないアクセシブルネームで描画する入力。 */
+interface PersonAvatarProps {
+  /** 390px では補助 Avatar を隠す場合など、公式構成に必要な既存 utility class。 */
+  className?: string;
+  /** 画像失敗時に表示する文字。省略時は公式 Avatar 例のイニシャルを使う。 */
+  fallback?: string;
+  /** 公式例に含まれる人物情報。 */
+  person: (typeof people)[number];
+  /** `Avatar` が公開する既存 size。省略時は `default` を使う。 */
+  size?: ComponentProps<typeof Avatar>['size'];
+}
 
 /**
- * 指定された media 構成を、外部画像通信や独自色なしで `ItemMedia` へ描画する。
+ * 公式人物画像を、画像取得の成否にかかわらず同じ名前を持つ Avatar として描画する。
  *
- * @param media `ItemMedia` の既存 variant、または media を省略する `none`。
- * @returns 指定 variant の media、または media-free 構成用の `null`。
+ * @param props 公式人物情報、fallback、既存 size、レスポンシブ表示 class。
+ * @returns 公式 URL の画像と、通信失敗時の fallback を含む名前付き Avatar。
+ * @remarks 画像と fallback の読み上げを親へ集約し、Light・Dark・通信状態で意味が変わらないようにする。
+ * @throws 例外は送出しない。画像取得に失敗した場合は Base UI が fallback へ切り替える。
+ * @example
+ * ```tsx
+ * <PersonAvatar person={people[2]} size="lg" />
+ * ```
  */
-function MediaPreview({ media }: { media: MediaKind }) {
-  if (media === 'none') {
-    // media を持たないこと自体を利用可能な構成として示し、空の装飾要素を残さない。
-    return null;
-  }
+function PersonAvatar({ className, fallback, person, size = 'default' }: PersonAvatarProps) {
+  // 画像と fallback の双方を代表する名前を常在する Avatar ルートへ設定する。
+  const accessibleName = `@${person.username}`;
 
-  if (media === 'default') {
-    return (
-      <ItemMedia variant="default" aria-hidden="true">
-        {/* 汎用 media は既存 muted token だけで表現し、製品固有の avatar や画像を作らない。 */}
-        <span className="flex size-10 items-center justify-center rounded-full bg-muted text-xs font-medium text-foreground">
-          UI
-        </span>
-      </ItemMedia>
-    );
-  }
-
-  if (media === 'image') {
-    return (
-      <ItemMedia variant="image" aria-hidden="true" className="bg-muted text-muted-foreground">
-        {/* image variant の寸法と切り抜きだけを検証し、画像資産や data URL への依存を避ける。 */}
-        <ImageIcon className="size-4" />
-      </ItemMedia>
-    );
-  }
-
-  // icon variant は component 自身の既定 icon 寸法へ委ね、追加の視覚 token を適用しない。
   return (
-    <ItemMedia variant="icon" aria-hidden="true">
-      <InboxIcon />
-    </ItemMedia>
+    <Avatar role="img" aria-label={accessibleName} size={size} className={className}>
+      {/* 画像 URL と grayscale は公式例を保ち、人物名は通信状態に依存しない親へ集約する。 */}
+      <AvatarImage src={person.avatar} alt={accessibleName} className="grayscale" />
+      <AvatarFallback aria-hidden="true" className="text-foreground">
+        {fallback ?? person.initials}
+      </AvatarFallback>
+    </Avatar>
   );
 }
 
 /**
- * Media、Content、Title、Description と任意の Actions を一貫した固定構造で組み立てる。
+ * 公式 Avatar 例と同じ三人を重ね、390px では主対象だけを残して内容幅を確保する。
  *
- * @param props root props、固定コピー、media 構成、任意の操作契約。
- * @returns 既存 Item API と token だけで構成した Story 専用の項目。
+ * @returns 公式 URL の三つの Avatar を含む、名前付きの人物グループ。
+ * @remarks `sm` 未満で補助二人を隠す動作も公式 source と同じで、狭幅時のテキストと操作を圧迫しない。
+ * @throws 例外は送出しない。各画像の失敗時はそれぞれの fallback を表示する。
+ * @example
+ * ```tsx
+ * <TeamAvatarStack />
+ * ```
  */
-function ItemPreview({
-  id,
-  rootProps,
-  title,
-  description,
-  media = 'icon',
-  actionLabel,
-  onAction,
-}: ItemPreviewProps) {
-  // 固定 ID から見出し ID を生成し、div ベースの Item に一貫したアクセシブル名を与える。
-  const titleId = `${id}-title`;
-
+function TeamAvatarStack() {
   return (
-    <Item {...rootProps} aria-labelledby={titleId} role={rootProps?.role ?? 'group'}>
-      <MediaPreview media={media} />
-      <ItemContent>
-        {/* div ベースの公開 API に heading semantics を補い、情報階層を支援技術へ伝える。 */}
-        <ItemTitle id={titleId} role="heading" aria-level={3}>
-          {title}
-        </ItemTitle>
-        <ItemDescription>{description}</ItemDescription>
-      </ItemContent>
-
-      {actionLabel === undefined ? null : (
-        <ItemActions>
-          {/* 可視ラベルを持つ既存 Button を使い、操作名とクリック対象を一致させる。 */}
-          <Button type="button" size="sm" variant="outline" onClick={onAction}>
-            {actionLabel}
-          </Button>
-        </ItemActions>
-      )}
-    </Item>
+    <div
+      role="group"
+      aria-label="Team members"
+      className="flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-background"
+    >
+      {/* 公式 source と同じレスポンシブ非表示で、390px の主要情報量を保つ。 */}
+      <PersonAvatar person={people[0]} className="hidden sm:flex" />
+      <PersonAvatar person={people[1]} className="hidden sm:flex" />
+      <PersonAvatar person={people[2]} />
+    </div>
   );
 }
 
 /**
- * `Item` と全公開サブコンポーネントを CSF3 の Docs・a11y・browser tests へ直接登録する。
- * 固定データと既存 token だけを使い、製品文脈や未定義の component props を追加しない。
+ * `Item` と全公開サブコンポーネントを、公式 Docs の実用例とアクセシブルな状態へ登録する。
+ * variant・size の比較表は作らず、各 API を Basic、Link、Action、Avatar、Image、Group、Header の用途で示す。
  */
 const meta = {
   title: 'Components/Item',
@@ -185,182 +186,312 @@ const meta = {
     docs: {
       description: {
         component:
-          'media、content、title、description、actions、header、footer を組み合わせ、group と separator で関連項目をまとめる Item。全 variant・size・media variant、既定水平配置と className による垂直構成、render による操作可能・無効状態を固定例で確認します。',
+          'media、title、description、actions を持つ項目を構成し、group、separator、header、footer、render による link semantics を組み合わせる Item。shadcn/ui の base-nova 公式 Docs・Examples・registry source のコピーと画像 URL を、実用状態とアクセシビリティ契約で提示します。',
       },
     },
     layout: 'padded',
   },
 } satisfies Meta<typeof Item>;
 
-/** Storybook が Item catalog の Docs・accessibility・interaction tests を構築する既定 export。 */
+/** Storybook が Item の Docs、アクセシビリティ、interaction tests を構築する既定 export。 */
 export default meta;
 
 /** metadata から全 Item Story の CSF3 型を導出する。 */
 type Story = StoryObj<typeof meta>;
 
 /**
- * Header、Media、Content、Title、Description、Actions、Footer を一つの Item で網羅する。
- * play では見出しによる命名と可視操作の通知を利用者視点で検証する。
+ * 公式 Basic Item の情報構造と可視 Action を、そのまま一つの実用項目として提示する。
+ * play では native button が Tab でフォーカスでき、Enter で一度だけ通知することを検証する。
  */
-export const AllSubcomponents: Story = {
+export const BasicItem: Story = {
   render: () => (
-    <Item
-      role="group"
-      aria-labelledby="item-all-subcomponents-title"
-      className="max-w-2xl"
-      variant="outline"
-    >
-      <ItemHeader>
-        {/* Header は項目全体の補助情報だけを保持し、主見出しより視覚的に弱い token を使う。 */}
-        <span className="text-xs text-muted-foreground">ヘッダー</span>
-        <span className="text-xs text-muted-foreground">固定状態</span>
-      </ItemHeader>
-
-      <ItemMedia variant="icon" aria-hidden="true">
-        <InboxIcon />
-      </ItemMedia>
-      <ItemContent>
-        <ItemTitle id="item-all-subcomponents-title" role="heading" aria-level={2}>
-          全領域を含む項目
-        </ItemTitle>
-        <ItemDescription>公開された情報領域と操作領域を同じ項目内で確認します。</ItemDescription>
+    <Item variant="outline" className="max-w-md">
+      <ItemContent className="min-w-0">
+        <ItemTitle>Basic Item</ItemTitle>
+        <ItemDescription>A simple item with title and description.</ItemDescription>
       </ItemContent>
       <ItemActions>
-        <Button type="button" size="sm" variant="outline" onClick={allSubcomponentsActionClick}>
-          操作する
+        <Button type="button" size="sm" variant="outline" onClick={basicActionClick}>
+          Action
         </Button>
       </ItemActions>
-
-      <ItemFooter>
-        {/* Footer も既存 muted foreground を使用し、主内容や操作より強く見せない。 */}
-        <span className="text-xs text-muted-foreground">フッター</span>
-        <span className="text-xs text-muted-foreground">補足情報</span>
-      </ItemFooter>
     </Item>
   ),
   play: async ({ canvasElement, step }) => {
-    // theme 別実行や再実行の履歴を除き、この Story の操作通知だけを検証する。
-    allSubcomponentsActionClick.mockClear();
+    // theme 別実行や再実行の履歴を除き、この Story で発生した通知だけを検証する。
+    basicActionClick.mockClear();
 
-    // Story canvas 内に検索を限定し、Storybook 自体の操作要素を誤取得しない。
+    // Story canvas 内へ検索を限定し、Storybook 管理 UI の操作要素を取得しない。
     const canvas = within(canvasElement);
-    const item = canvas.getByRole('group', { name: '全領域を含む項目' });
-    const action = canvas.getByRole('button', { name: '操作する' });
+    const action = canvas.getByRole('button', { name: 'Action' });
 
-    await step('見出しを Item のアクセシブル名として公開する', async () => {
-      await expect(item).toHaveAccessibleName('全領域を含む項目');
-      await expect(canvas.getByText('補足情報')).toBeVisible();
+    await step('Action を有効な native button として公開する', async () => {
+      await expect(action).toBeEnabled();
+      await expect(action).toBeVisible();
     });
 
-    await step('可視操作を利用側のハンドラーへ一度だけ通知する', async () => {
-      await userEvent.click(action);
-      await expect(allSubcomponentsActionClick).toHaveBeenCalledTimes(1);
+    await step('Tab と Enter で Action を一度だけ実行する', async () => {
+      await userEvent.tab();
+      await expect(action).toHaveFocus();
+      await userEvent.keyboard('{Enter}');
+      await expect(basicActionClick).toHaveBeenCalledTimes(1);
     });
   },
 };
 
-/** default、outline、muted の全 variant を同じ media・copy・size 条件で比較する。 */
-export const Variants: Story = {
+/**
+ * 公式 Link 例を、実在する Item Docs と `base-nova` registry source へのリンクとして提示する。
+ * play では link の遷移契約、外部リンクの安全属性、Tab 順序、Enter 操作を検証する。
+ */
+export const Links: Story = {
   render: () => (
-    <ul className="flex w-full max-w-2xl flex-col gap-4" aria-label="Item の全 variant">
-      {variantOptions.map((variant) => (
-        <li key={variant} className="flex flex-col gap-2">
-          {/* variant 名は比較 caption として Item の外へ置き、項目自体の情報構造を変えない。 */}
-          <span className="text-xs text-muted-foreground">{variant}</span>
-          <ItemPreview
-            id={`item-variant-${variant}`}
-            rootProps={{ variant }}
-            title={`${variant} variant`}
-            description="外観以外の条件を固定した比較項目です。"
-          />
-        </li>
-      ))}
-    </ul>
+    <div className="flex w-full max-w-md flex-col gap-4">
+      <Item render={<a href={OFFICIAL_ITEM_URLS.docs} onClick={documentationLinkClick} />}>
+        <ItemContent className="min-w-0">
+          <ItemTitle>Visit our documentation</ItemTitle>
+          <ItemDescription>Learn how to get started with our components.</ItemDescription>
+        </ItemContent>
+        <ItemActions aria-hidden="true">
+          <ChevronRightIcon />
+        </ItemActions>
+      </Item>
+
+      <Item
+        variant="outline"
+        render={<a href={OFFICIAL_ITEM_URLS.source} target="_blank" rel="noopener noreferrer" />}
+      >
+        <ItemContent className="min-w-0">
+          <ItemTitle>External resource</ItemTitle>
+          <ItemDescription>Opens in a new tab with security attributes.</ItemDescription>
+        </ItemContent>
+        <ItemActions aria-hidden="true">
+          <ExternalLinkIcon />
+        </ItemActions>
+      </Item>
+    </div>
   ),
+  play: async ({ canvasElement, step }) => {
+    // theme 別実行や再実行の履歴を除き、この Story で発生した link 通知だけを検証する。
+    documentationLinkClick.mockClear();
+
+    // 可視コピーから link を取得し、追加 aria-label で公式の読み上げ内容を置き換えない。
+    const canvas = within(canvasElement);
+    const documentationLink = canvas.getByRole('link', { name: /Visit our documentation/ });
+    const sourceLink = canvas.getByRole('link', { name: /External resource/ });
+
+    await step('実在する公式 URL と安全な外部リンク属性を公開する', async () => {
+      await expect(documentationLink).toHaveAttribute('href', OFFICIAL_ITEM_URLS.docs);
+      await expect(sourceLink).toHaveAttribute('href', OFFICIAL_ITEM_URLS.source);
+      await expect(sourceLink).toHaveAttribute('target', '_blank');
+      await expect(sourceLink).toHaveAttribute('rel', 'noopener noreferrer');
+    });
+
+    await step('Tab 順序と Enter 操作を native link semantics で維持する', async () => {
+      await userEvent.tab();
+      await expect(documentationLink).toHaveFocus();
+      await userEvent.keyboard('{Enter}');
+      await expect(documentationLinkClick).toHaveBeenCalledTimes(1);
+
+      // 次の Tab で外部 source link へ移動し、Item 自体の focus-visible 契約を利用できることを保証する。
+      await userEvent.tab();
+      await expect(sourceLink).toHaveFocus();
+    });
+  },
 };
 
-/** default、sm、xs の全 size を同じ outline variant と固定内容で比較する。 */
-export const Sizes: Story = {
+/**
+ * 公式 Icon 例の有効な Review と、完了済み項目の無効な Action を一つの状態一覧で示す。
+ * play では Space による有効 Action の実行と、native disabled Action のフォーカス除外を検証する。
+ */
+export const ActionStates: Story = {
   render: () => (
-    <ul className="flex w-full max-w-2xl flex-col gap-4" aria-label="Item の全 size">
-      {sizeOptions.map((size) => (
-        <li key={size} className="flex flex-col gap-2">
-          {/* size 名を外側の caption に保ち、Title と Description は同じ情報量で比較する。 */}
-          <span className="text-xs text-muted-foreground">{size}</span>
-          <ItemPreview
-            id={`item-size-${size}`}
-            rootProps={{ size, variant: 'outline' }}
-            title={`${size} size`}
-            description="余白、間隔、media 寸法を固定内容で比較します。"
-          />
-        </li>
-      ))}
-    </ul>
+    <ItemGroup className="max-w-lg" aria-label="Action states">
+      <Item role="listitem" variant="outline">
+        <ItemMedia variant="icon" aria-hidden="true">
+          <ShieldAlertIcon />
+        </ItemMedia>
+        <ItemContent className="min-w-0">
+          <ItemTitle>Security Alert</ItemTitle>
+          <ItemDescription>New login detected from unknown device.</ItemDescription>
+        </ItemContent>
+        <ItemActions>
+          <Button type="button" size="sm" variant="outline" onClick={reviewActionClick}>
+            Review
+          </Button>
+        </ItemActions>
+      </Item>
+
+      <Item role="listitem" variant="muted">
+        <ItemMedia variant="icon" aria-hidden="true">
+          <BadgeCheckIcon />
+        </ItemMedia>
+        <ItemContent className="min-w-0">
+          <ItemTitle>Your profile has been verified.</ItemTitle>
+          <ItemDescription id="verification-complete-description">
+            No further action is required.
+          </ItemDescription>
+        </ItemContent>
+        <ItemActions>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled
+            aria-describedby="verification-complete-description"
+          >
+            Verified
+          </Button>
+        </ItemActions>
+      </Item>
+    </ItemGroup>
+  ),
+  play: async ({ canvasElement, step }) => {
+    // theme 別実行や再実行の履歴を除き、この Story で発生した Review 通知だけを検証する。
+    reviewActionClick.mockClear();
+
+    // Action は可視名と native state で取得し、見た目だけへ状態判定を依存させない。
+    const canvas = within(canvasElement);
+    const reviewAction = canvas.getByRole('button', { name: 'Review' });
+    const verifiedAction = canvas.getByRole('button', { name: 'Verified' });
+
+    await step('有効・無効の Action を native state として公開する', async () => {
+      await expect(reviewAction).toBeEnabled();
+      await expect(verifiedAction).toBeDisabled();
+    });
+
+    await step(
+      'Space は有効 Action だけを実行し、disabled Action は Tab 順序から外す',
+      async () => {
+        await userEvent.tab();
+        await expect(reviewAction).toHaveFocus();
+        await userEvent.keyboard(' ');
+        await expect(reviewActionClick).toHaveBeenCalledTimes(1);
+
+        // native disabled button を Tab が飛ばし、操作不能状態へキーボードフォーカスを残さないことを保証する。
+        await userEvent.tab();
+        await expect(verifiedAction).not.toHaveFocus();
+      }
+    );
+  },
+};
+
+/** 公式 Avatar 例の単一人物と人物グループを、可視名を持つ Invite Action とともに提示する。 */
+export const AvatarActions: Story = {
+  render: () => (
+    <ItemGroup className="max-w-lg" aria-label="Avatar actions">
+      <Item role="listitem" variant="outline">
+        <ItemMedia>
+          <PersonAvatar person={people[2]} size="lg" />
+        </ItemMedia>
+        <ItemContent className="min-w-0">
+          <ItemTitle>Evil Rabbit</ItemTitle>
+          <ItemDescription>Last seen 5 months ago</ItemDescription>
+        </ItemContent>
+        <ItemActions>
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="outline"
+            className="rounded-full"
+            aria-label="Invite Evil Rabbit"
+          >
+            <PlusIcon />
+          </Button>
+        </ItemActions>
+      </Item>
+
+      <Item role="listitem" variant="outline">
+        <ItemMedia>
+          <TeamAvatarStack />
+        </ItemMedia>
+        <ItemContent className="min-w-0">
+          <ItemTitle>No Team Members</ItemTitle>
+          <ItemDescription>Invite your team to collaborate on this project.</ItemDescription>
+        </ItemContent>
+        <ItemActions>
+          <Button type="button" size="sm" variant="outline">
+            Invite
+          </Button>
+        </ItemActions>
+      </Item>
+    </ItemGroup>
   ),
 };
 
 /**
- * Item の既定水平配置と、公開 className だけで組み立てる垂直配置を同じ内容で比較する。
- * 専用 orientation prop が存在するように見せず、caption で構成方法を明示する。
+ * 公式 Image 例の三曲を、同じ画像 URL とコピーを持つ実在 Docs section へのリンク一覧として提示する。
+ * listitem と link を別要素へ分け、一覧構造とキーボード操作の両方を支援技術へ保持する。
  */
-export const Orientations: Story = {
+export const ImageLinks: Story = {
   render: () => (
-    <ul className="flex w-full max-w-2xl flex-col gap-6" aria-label="Item の配置方向">
-      {orientationCases.map((orientation) => (
-        <li key={orientation.id} className="flex flex-col gap-2">
-          <span className="text-xs text-muted-foreground">{orientation.label}</span>
-          <ItemPreview
-            id={`item-orientation-${orientation.id}`}
-            rootProps={{ className: orientation.className, variant: 'outline' }}
-            title="配置方向を比較する項目"
-            description="同じ情報と操作を水平または垂直に配置します。"
-            actionLabel="操作"
-          />
-        </li>
+    <ItemGroup className="max-w-md" aria-label="Music">
+      {music.map((song) => (
+        <div key={song.title} role="listitem">
+          <Item
+            variant="outline"
+            render={
+              <a
+                href={`${OFFICIAL_ITEM_URLS.docs}#image`}
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+            }
+          >
+            <ItemMedia variant="image">
+              <img
+                src={`https://avatar.vercel.sh/${song.title}`}
+                alt={song.title}
+                width={32}
+                height={32}
+                loading="lazy"
+                className="grayscale"
+              />
+            </ItemMedia>
+            <ItemContent className="min-w-0">
+              <ItemTitle>
+                {song.title} - <span className="text-muted-foreground">{song.album}</span>
+              </ItemTitle>
+              <ItemDescription>{song.artist}</ItemDescription>
+            </ItemContent>
+            <ItemContent className="flex-none text-center">
+              <ItemDescription>{song.duration}</ItemDescription>
+            </ItemContent>
+          </Item>
+        </div>
       ))}
-    </ul>
+    </ItemGroup>
   ),
 };
 
-/** `ItemMedia` の default・icon・image と、media-free 構成を外部画像なしで比較する。 */
-export const MediaRepresentations: Story = {
-  render: () => (
-    <ul className="flex w-full max-w-2xl flex-col gap-4" aria-label="Item の media 構成">
-      {mediaCases.map(({ id, label, media }) => (
-        <li key={id} className="flex flex-col gap-2">
-          <span className="text-xs text-muted-foreground">{label}</span>
-          <ItemPreview
-            id={`item-media-${id}`}
-            rootProps={{ variant: 'outline' }}
-            title={`${label} の項目`}
-            description="画像通信や製品固有の素材を使わない固定表現です。"
-            media={media}
-          />
-        </li>
-      ))}
-    </ul>
-  ),
-};
-
-/**
- * `ItemGroup` 内に固定項目を置き、項目間の `ItemSeparator` を装飾的な区切りとして示す。
- */
+/** 公式 Group 例の人物を、ItemGroup と装飾的な ItemSeparator で一つの招待一覧へまとめる。 */
 export const GroupAndSeparator: Story = {
   render: () => (
-    <ItemGroup className="max-w-2xl" aria-label="関連項目一覧">
-      {groupItems.map(({ id, title, description }, index) => (
-        <Fragment key={id}>
-          {/* ItemGroup の list semantics に合わせ、各 Item を明示的な listitem として公開する。 */}
-          <ItemPreview
-            id={`item-group-${id}`}
-            rootProps={{ role: 'listitem', size: 'sm', variant: 'outline' }}
-            title={title}
-            description={description}
-            media="none"
-          />
+    <ItemGroup className="max-w-md" aria-label="Team members">
+      {people.map((person, index) => (
+        <Fragment key={person.username}>
+          <Item role="listitem">
+            <ItemMedia>
+              <PersonAvatar person={person} fallback={person.username.charAt(0)} />
+            </ItemMedia>
+            <ItemContent className="min-w-0">
+              <ItemTitle>{person.username}</ItemTitle>
+              <ItemDescription>{person.email}</ItemDescription>
+            </ItemContent>
+            <ItemActions>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                aria-label={`Invite ${person.username}`}
+              >
+                <PlusIcon />
+              </Button>
+            </ItemActions>
+          </Item>
 
-          {index === groupItems.length - 1 ? null : (
-            // 既存 separator の role と orientation 属性を矛盾させず、反復する区切りだけを読み上げ対象から外す。
+          {index === people.length - 1 ? null : (
+            // 反復する視覚的区切りは読み上げず、listitem の連続した意味を保つ。
             <ItemSeparator aria-hidden="true" />
           )}
         </Fragment>
@@ -369,96 +500,34 @@ export const GroupAndSeparator: Story = {
   ),
 };
 
-/** `ItemSeparator` が受け付ける水平・垂直 orientation を既存の親配置だけで比較する。 */
-export const SeparatorOrientations: Story = {
+/** 公式 Header 例の先頭モデルを、同じ画像 URL とクレジットを持つ単一の Header・Footer 項目で示す。 */
+export const HeaderAndFooter: Story = {
   render: () => (
-    <div className="flex w-full max-w-2xl flex-col gap-6">
-      <section aria-labelledby="item-separator-horizontal-label" className="flex flex-col gap-2">
-        <span id="item-separator-horizontal-label" className="text-xs text-muted-foreground">
-          horizontal
-        </span>
-        <ItemSeparator aria-label="水平の区切り" orientation="horizontal" />
-      </section>
-
-      <section
-        aria-labelledby="item-separator-vertical-label"
-        className="flex h-12 items-stretch gap-4"
-      >
-        <span id="item-separator-vertical-label" className="text-xs text-muted-foreground">
-          vertical
-        </span>
-        {/* 垂直方向では親の固定高へ self-stretch させ、既定の縦 margin だけを既存 spacing で除く。 */}
-        <ItemSeparator aria-label="垂直の区切り" orientation="vertical" className="my-0" />
-        <span className="text-sm">区切り後の固定内容</span>
-      </section>
-    </div>
+    <Item
+      role="article"
+      aria-labelledby="featured-model-title"
+      variant="outline"
+      className="max-w-sm items-stretch"
+    >
+      <ItemHeader>
+        <img
+          src={featuredModel.image}
+          alt={featuredModel.name}
+          width={640}
+          height={640}
+          loading="lazy"
+          className="aspect-square w-full rounded-sm object-cover"
+        />
+      </ItemHeader>
+      <ItemContent className="min-w-0">
+        <ItemTitle id="featured-model-title" role="heading" aria-level={2}>
+          {featuredModel.name}
+        </ItemTitle>
+        <ItemDescription>{featuredModel.description}</ItemDescription>
+      </ItemContent>
+      <ItemFooter className="text-xs text-muted-foreground">
+        <span>{featuredModel.credit}</span>
+      </ItemFooter>
+    </Item>
   ),
-};
-
-/**
- * `render` で anchor と disabled button を構成し、操作可能・無効の native semantics を比較する。
- * play ではローカルリンクの通知と disabled button の通知抑止を個別に保証する。
- */
-export const InteractiveRenderStates: Story = {
-  render: () => (
-    <div id="item-render-target" className="flex w-full max-w-2xl flex-col gap-4">
-      <Item
-        aria-label="操作可能な項目"
-        variant="outline"
-        render={<a href="#item-render-target" onClick={interactiveItemClick} />}
-      >
-        <ItemMedia variant="icon" aria-hidden="true">
-          <InboxIcon />
-        </ItemMedia>
-        <ItemContent>
-          <ItemTitle>操作可能な項目</ItemTitle>
-          <ItemDescription>render によりローカルリンクとして公開します。</ItemDescription>
-        </ItemContent>
-        <ItemActions aria-hidden="true">
-          <ArrowRightIcon className="size-4" />
-        </ItemActions>
-      </Item>
-
-      <Item
-        aria-label="無効な項目"
-        variant="muted"
-        render={<button type="button" disabled onClick={disabledItemClick} />}
-      >
-        <ItemMedia variant="icon" aria-hidden="true">
-          <InboxIcon />
-        </ItemMedia>
-        <ItemContent>
-          <ItemTitle>無効な項目</ItemTitle>
-          <ItemDescription>native button の disabled semantics を保持します。</ItemDescription>
-        </ItemContent>
-        <ItemActions aria-hidden="true">
-          <ArrowRightIcon className="size-4" />
-        </ItemActions>
-      </Item>
-    </div>
-  ),
-  play: async ({ canvasElement, step }) => {
-    // theme 別実行や再実行の履歴を消去し、この Story で発生した通知だけを対象にする。
-    interactiveItemClick.mockClear();
-    disabledItemClick.mockClear();
-
-    // role とアクセシブル名で render 後の native element を取得し、DOM 要素の置換契約を検証する。
-    const canvas = within(canvasElement);
-    const interactiveItem = canvas.getByRole('link', { name: '操作可能な項目' });
-    const disabledItem = canvas.getByRole('button', { name: '無効な項目' });
-
-    await step('render 後も link と disabled button の意味を保持する', async () => {
-      await expect(interactiveItem).toHaveAttribute('href', '#item-render-target');
-      await expect(disabledItem).toBeDisabled();
-    });
-
-    await step('操作可能な項目だけがクリックを通知する', async () => {
-      await userEvent.click(interactiveItem);
-      await expect(interactiveItemClick).toHaveBeenCalledTimes(1);
-
-      // userEvent で実利用と同じ操作を送り、disabled button がイベントを発火しないことを保証する。
-      await userEvent.click(disabledItem);
-      await expect(disabledItemClick).not.toHaveBeenCalled();
-    });
-  },
 };

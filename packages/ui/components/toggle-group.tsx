@@ -33,6 +33,7 @@ function ToggleGroup({
     spacing?: number;
     orientation?: 'horizontal' | 'vertical';
   }) {
+  // 見た目用の属性だけでなく Base UI の CompositeRoot へ向きを渡し、方向キーの操作軸を一致させる。
   return (
     <ToggleGroupPrimitive
       data-slot="toggle-group"
@@ -40,6 +41,7 @@ function ToggleGroup({
       data-size={size}
       data-spacing={spacing}
       data-orientation={orientation}
+      orientation={orientation}
       style={{ '--gap': spacing } as React.CSSProperties}
       className={cn(
         'group/toggle-group flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-lg data-[size=sm]:rounded-[min(var(--radius-md),10px)] data-vertical:flex-col data-vertical:items-stretch',

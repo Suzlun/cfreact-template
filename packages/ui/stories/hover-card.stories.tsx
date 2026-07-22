@@ -1,5 +1,7 @@
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@cfreact-template/ui/components/avatar';
+import { buttonVariants } from '@cfreact-template/ui/components/button';
 import {
   HoverCard,
   HoverCardContent,
@@ -10,162 +12,87 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ComponentProps } from 'react';
 
 /**
- * HoverCard の表示と interaction test で共有する、製品文脈に依存しない固定コピー。
+ * 公式 shadcn/ui の Hover Card 例から取得した、Next.js プロフィールの固定表示と開閉条件。
  *
- * Trigger のリンク先には Popup と同じ情報を非表示の本文として用意し、HoverCard を利用できない
- * 環境でも情報を失わない構成にする。固定値の参照以外に副作用はない。
+ * Story の描画と interaction test が同じ値を参照することで、外部状態や時刻に左右されない
+ * 決定的な確認を行う。アバター URL を除き、読み取り時の通信や副作用はない。
  */
-const hoverCardCopy = {
-  default: {
-    destinationId: 'hover-card-default-destination',
-    trigger: '項目の概要',
-    title: '項目の概要',
-    paragraphs: ['この項目に関する補足情報を、短い説明として確認できます。'],
-  },
-  positioned: {
-    destinationId: 'hover-card-positioned-destination',
-    trigger: '上側・開始揃えの例',
-    title: '位置指定の例',
-    paragraphs: ['公開されている side と align により、Trigger を基準に表示位置を指定します。'],
-  },
-  long: {
-    destinationId: 'hover-card-long-destination',
-    trigger: '長い補足情報',
-    title: '複数行の補足情報',
-    paragraphs: [
-      'HoverCard には、複数行にわたる説明を表示できます。画面幅が狭い場合は、利用可能な幅に合わせて文章が自然に折り返されます。',
-      '長い語句や連続した内容が含まれる場合も、横方向へはみ出さず、既存の文字色と行間を使って読みやすさを保ちます。',
-      '十分な画面幅がある場合は最大幅を制限し、一行が長くなりすぎない状態で内容を確認できます。',
-    ],
-  },
+const nextJsProfile = {
+  avatarFallback: 'VC',
+  avatarUrl: 'https://github.com/vercel.png',
+  biography: 'The React Framework – created and maintained by @vercel.',
+  closeDelay: 100,
+  handle: '@nextjs',
+  joined: 'Joined December 2021',
+  openDelay: 10,
+  profileUrl: 'https://nextjs.org',
+  triggerId: 'hover-card-nextjs-profile-trigger',
 } as const;
 
-/** HoverCard Root の公開 props から、Story が内部で構成する children を除いた型。 */
+/** HoverCard TriggerがPopupの開状態を公開する既存data属性名。 */
+const popupOpenAttribute = 'data-popup-open';
+
+/** HoverCard Root の公開 props から、プロフィール表示が内部で構成する children を除いた型。 */
 type HoverCardRootProps = Omit<ComponentProps<typeof HoverCard>, 'children'>;
 
-/** Story 共通の HoverCard 構成へ渡す、既存 Root・Trigger・Content の表示条件。 */
-interface HoverCardCatalogProps {
-  /** Content を Trigger の辺に対してどの位置へ揃えるか。 */
-  align?: ComponentProps<typeof HoverCardContent>['align'];
-  /** Content の既定幅を Story の長文表示に合わせて上書きする既存 utility。 */
-  contentClassName?: string;
-  /** Trigger のリンク先となり、Popup と同じ情報を保持する本文要素の一意な ID。 */
-  destinationId: string;
-  /** Content 内へ順番どおり表示する、Story ごとの固定段落。 */
-  paragraphs: readonly string[];
-  /** Storybook と各 Story から受け取る HoverCard Root の公開 props。 */
+/** 公式プロフィール表示へ渡す HoverCard Root の公開状態。 */
+interface NextJsProfileHoverCardProps {
+  /** Storybook から受け取る HoverCard Root の公開 props。 */
   rootProps: HoverCardRootProps;
-  /** Content を Trigger のどの辺へ表示するか。 */
-  side?: ComponentProps<typeof HoverCardContent>['side'];
-  /** Content の見出し、およびリンク先本文の先頭に表示する固定文字列。 */
-  title: string;
-  /** HoverCardTrigger の可視ラベルとアクセシブルネームに使う固定文字列。 */
-  triggerLabel: string;
-}
-
-/** Story のリンク先本文と HoverCardContent で同じ固定情報を描画するための表示条件。 */
-interface HoverCardBodyProps {
-  /** 本文全体へ適用する、既存 token と utility だけで構成した className。 */
-  className?: string;
-  /** Trigger の fragment link と対応させる場合に本文へ付与する一意な ID。 */
-  id?: string;
-  /** 見出しに続いて順番どおり表示する固定段落。 */
-  paragraphs: readonly string[];
-  /** 各補足段落へ共通適用する既存文字組み utility。 */
-  paragraphClassName?: string;
-  /** 本文の先頭へ表示する固定見出し。 */
-  title: string;
-  /** 見出しへ共通適用する既存 typography utility。 */
-  titleClassName?: string;
 }
 
 /**
- * リンク先本文と Popup の双方へ、同じ見出しと段落を同じ順序で描画する。
+ * 公式 shadcn/ui の `@nextjs` 例を、既存の Base UI HoverCard と design token で描画する。
  *
- * @param props 本文の ID、固定表示、既存 utility だけで構成した表示 class。
- * @returns HoverCard の利用可否にかかわらず内容が一致する見出しと段落。
+ * @param props Story ごとに指定する Root の公開状態。
+ * @returns 実在するリンクを Trigger とし、アバター、説明、参加時期を提示する HoverCard。
  */
-function HoverCardBody({
-  className,
-  id,
-  paragraphs,
-  paragraphClassName,
-  title,
-  titleClassName,
-}: HoverCardBodyProps) {
-  return (
-    <div id={id} className={className}>
-      <p className={titleClassName}>{title}</p>
-      {/* 固定文字列自体を key にし、内容が同じ限り段落の描画識別子も安定させる。 */}
-      {paragraphs.map((paragraph) => (
-        <p key={paragraph} className={paragraphClassName}>
-          {paragraph}
-        </p>
-      ))}
-    </div>
-  );
-}
-
-/**
- * HoverCard の全公開サブコンポーネントを、リンクと対応本文を持つ構成で組み立てる。
- *
- * @param props Root の公開 props、Content の位置・幅、Trigger と対応本文の固定表示。
- * @returns focus と pointer の双方で開閉でき、リンク先でも同じ情報を参照できる HoverCard。
- */
-function HoverCardCatalog({
-  align,
-  contentClassName,
-  destinationId,
-  paragraphs,
-  rootProps,
-  side,
-  title,
-  triggerLabel,
-}: HoverCardCatalogProps) {
+function NextJsProfileHoverCard({ rootProps }: NextJsProfileHoverCardProps) {
   return (
     <HoverCard {...rootProps}>
-      <p className="max-w-prose text-sm leading-6">
-        詳細は{' '}
-        {/* Trigger は PreviewCard の既存 link semantics を保ち、focus ring と token 色だけを補う。 */}
-        <HoverCardTrigger
-          className="rounded-sm font-medium text-foreground underline decoration-foreground/40 underline-offset-4 outline-none hover:decoration-foreground data-popup-open:decoration-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
-          closeDelay={0}
-          delay={0}
-          href={`#${destinationId}`}
-        >
-          {triggerLabel}
-        </HoverCardTrigger>{' '}
-        から確認できます。
-      </p>
+      {/* Base UI が描画する anchor へ公式例の link variant を適用し、入れ子の操作要素を作らない。 */}
+      <HoverCardTrigger
+        className={buttonVariants({ variant: 'link' })}
+        closeDelay={nextJsProfile.closeDelay}
+        delay={nextJsProfile.openDelay}
+        href={nextJsProfile.profileUrl}
+        id={nextJsProfile.triggerId}
+      >
+        {nextJsProfile.handle}
+      </HoverCardTrigger>
 
-      {/* HoverCard が支援技術や touch で提示されない場合も、リンク先に同じ情報を残す。 */}
-      <HoverCardBody className="sr-only" id={destinationId} paragraphs={paragraphs} title={title} />
+      <HoverCardContent className="w-80 max-w-[calc(100vw-2rem)]">
+        {/* registry example の gap と情報順序を保ち、狭幅では本文列だけを安全に縮める。 */}
+        <div className="flex justify-between gap-4">
+          {/* 隣接するプロフィール名が同じ対象を伝えるため、アバターは支援技術へ重複通知しない。 */}
+          <Avatar aria-hidden="true">
+            <AvatarImage alt="" referrerPolicy="no-referrer" src={nextJsProfile.avatarUrl} />
+            <AvatarFallback>{nextJsProfile.avatarFallback}</AvatarFallback>
+          </Avatar>
 
-      <HoverCardContent align={align} className={contentClassName} side={side}>
-        {/* Content は既存の foreground token、spacing、文字組みだけで情報階層を作る。 */}
-        <HoverCardBody
-          className="min-w-0 space-y-1.5 break-words"
-          paragraphs={paragraphs}
-          paragraphClassName="text-pretty text-muted-foreground leading-5"
-          title={title}
-          titleClassName="font-medium text-foreground"
-        />
+          <div className="min-w-0 flex-1 space-y-1">
+            {/* Base UI example と同じ非見出しラベルにし、埋め込み先の heading 階層へ干渉させない。 */}
+            <div className="text-sm font-semibold">{nextJsProfile.handle}</div>
+            <p className="break-words text-pretty text-sm leading-5">{nextJsProfile.biography}</p>
+            <div className="text-xs text-muted-foreground">{nextJsProfile.joined}</div>
+          </div>
+        </div>
       </HoverCardContent>
     </HoverCard>
   );
 }
 
 /**
- * 開いた HoverCardContent と Portal を同じ document から取得し、Portal 描画を検証する。
+ * Portal 内で開いた HoverCardContent を取得し、既存の Portal と focus 契約を確認する。
  *
  * @param canvasElement Story が描画された範囲。ownerDocument と Portal 外判定に使用する。
  * @returns Portal 内で開状態かつ可視になった HoverCardContent。
- * @throws Content または Portal が既存 data-slot を伴って描画されない場合に検証を失敗させる。
+ * @throws Content または Portal が既存 data-slot を伴って描画されない場合に失敗する。
  */
 async function findOpenHoverCard(canvasElement: HTMLElement): Promise<HTMLElement> {
   const ownerDocument = canvasElement.ownerDocument;
 
-  // 開放遅延や開始 animation の固定時間を仮定せず、公開 data-slot と open 状態を条件待機する。
+  // animation の固定時間を仮定せず、公開 data-slot と open 状態が揃うまで待機する。
   const content = await waitFor(() => {
     const popup = ownerDocument.querySelector<HTMLElement>('[data-slot="hover-card-content"]');
 
@@ -176,24 +103,75 @@ async function findOpenHoverCard(canvasElement: HTMLElement): Promise<HTMLElemen
     return popup;
   });
 
-  // Content の祖先から、この component が内部生成する Portal container を特定する。
+  // Content の実際の祖先から、この component が生成した Portal container を特定する。
   const portal = content.closest<HTMLElement>('[data-slot="hover-card-portal"]');
 
   if (portal === null) {
     throw new TypeError('HoverCardContent の Portal が描画されていません。');
   }
 
-  // Positioner の座標確定後に Content が見えるまで待ち、DOM 挿入だけを表示完了と誤認しない。
+  // 配置座標の確定後に Content が見えるまで待ち、DOM 挿入だけを表示完了と誤認しない。
   await waitFor(async () => {
     await expect(content).toBeVisible();
   });
 
-  // Content が canvas 外かつ同じ document の body 内にあり、Portal 契約が保たれることを保証する。
+  // 非対話の preview は focus 順序へ入れず、同じ document の canvas 外 Portal に置く。
   await expect(content).toHaveAttribute('tabindex', '-1');
   await expect(canvasElement.contains(portal)).toBe(false);
   await expect(ownerDocument.body.contains(portal)).toBe(true);
 
   return content;
+}
+
+/**
+ * 公式プロフィールの可視情報、画像 URL、装飾 avatar のアクセシビリティ属性を確認する。
+ *
+ * @param content Portal 内で開いている HoverCardContent。
+ * @returns プロフィール名、説明、metadata、avatar の確認が完了した時点で解決する Promise。
+ * @throws Avatar が描画されない、または公式 URL 以外の画像が描画された場合に失敗する。
+ */
+async function expectProfileContent(content: HTMLElement): Promise<void> {
+  const contentCanvas = within(content);
+
+  // visible hierarchy を公式固定コピーで確認し、class 名だけの検証に依存しない。
+  await expect(contentCanvas.getByText(nextJsProfile.handle)).toBeVisible();
+  await expect(contentCanvas.getByText(nextJsProfile.biography)).toBeVisible();
+  await expect(contentCanvas.getByText(nextJsProfile.joined)).toBeVisible();
+
+  // 通信状態にかかわらず常在する Avatar を取得し、プロフィール名との重複読み上げを防ぐ。
+  const avatar = content.querySelector<HTMLElement>('[data-slot="avatar"]');
+  if (avatar === null) {
+    throw new TypeError('公式プロフィールの Avatar が描画されていません。');
+  }
+  await expect(avatar).toHaveAttribute('aria-hidden', 'true');
+
+  // 画像が取得前または失敗後に除去される場合は fallback に任せ、存在する場合だけ公式 URL を保証する。
+  const avatarImage = avatar.querySelector<HTMLElement>('[data-slot="avatar-image"]');
+  if (avatarImage !== null) {
+    await expect(avatarImage).toHaveAttribute('alt', '');
+    await expect(avatarImage).toHaveAttribute('src', nextJsProfile.avatarUrl);
+  }
+}
+
+/**
+ * 開いたプロフィールが現在の viewport 内で折り返され、横方向へ溢れないことを確認する。
+ *
+ * @param canvasElement Story と Content が共有する document を特定する Story canvas。
+ * @param content 可視状態かつ配置済みの HoverCardContent。
+ * @returns viewport 余白、Content 幅、内部 overflow の確認が完了した時点で解決する Promise。
+ */
+async function expectResponsiveContent(
+  canvasElement: HTMLElement,
+  content: HTMLElement
+): Promise<void> {
+  const viewportWidth = canvasElement.ownerDocument.documentElement.clientWidth;
+
+  // 既存 utility と実寸の双方を確認し、390px project でも左右 16px 以上の余白を維持する。
+  await expect(content).toHaveClass('w-80', 'max-w-[calc(100vw-2rem)]');
+  await expect(content.getBoundingClientRect().width).toBeLessThanOrEqual(viewportWidth - 32);
+
+  // 公式コピーと fallback のどちらが描画されても、内部内容が Content 自体を押し広げないことを保証する。
+  await expect(content.scrollWidth).toBeLessThanOrEqual(content.clientWidth);
 }
 
 /**
@@ -205,7 +183,7 @@ async function findOpenHoverCard(canvasElement: HTMLElement): Promise<HTMLElemen
 async function expectHoverCardClosed(canvasElement: HTMLElement): Promise<void> {
   const ownerDocument = canvasElement.ownerDocument;
 
-  // 終了 animation の長さへ依存せず、Content とその Portal container の実際の除去を待つ。
+  // 終了 animation の長さへ依存せず、Content と Portal container の実際の除去を待つ。
   await waitFor(async () => {
     await expect(
       ownerDocument.querySelector('[data-slot="hover-card-content"]')
@@ -217,9 +195,9 @@ async function expectHoverCardClosed(canvasElement: HTMLElement): Promise<void> 
 }
 
 /**
- * HoverCard と全公開サブコンポーネントを CSF 3 の Docs・a11y・browser tests へ登録する。
+ * 公式プロフィール preview と HoverCard の全公開サブコンポーネントを CSF 3 へ登録する。
  *
- * 固定データ、既存 API、既存 token だけで構成し、Story から外部処理やネットワークへ接続しない。
+ * 固定データ、既存 API、既存 token だけで構成し、Story の状態を外部処理へ接続しない。
  */
 const meta = {
   title: 'Components/HoverCard',
@@ -235,153 +213,96 @@ const meta = {
     docs: {
       description: {
         component:
-          'Trigger と Portal 内 Content、公開された side・align、focus・hover による開閉、長文のレスポンシブ表示を固定データで確認します。',
+          '公式 shadcn/ui の @nextjs プロフィール例を使い、実在するリンク Trigger、Portal 内 Content、通常・open・hover・focus・Escape の状態、狭幅での折り返しを確認します。',
       },
     },
     layout: 'centered',
   },
 } satisfies Meta<typeof HoverCard>;
 
-/** Storybook が HoverCard catalog の型、Docs、accessibility、interaction tests を構築するための既定 export。 */
+/** Storybook が HoverCard の型、Docs、accessibility、interaction tests を構築するための既定 export。 */
 export default meta;
 
+/** metadata から HoverCard Story の CSF 3 型を導出する。 */
 type Story = StoryObj<typeof meta>;
 
 /**
- * Trigger と Content の既定構成を示し、keyboard focus と pointer hover の開閉を Portal まで検証する。
+ * 公式 `@nextjs` プロフィールを通常状態から開き、pointer と keyboard の開閉を検証する。
  *
- * Storybook の Components/HoverCard/Default を開くと、固定された短い補足情報を確認できる。
- * interaction test は既存の開閉または Portal 契約が崩れた場合に失敗する。
+ * @remarks interaction 完了後はリンクへ focus を残し、focus-visible 表現を Story 上で確認できる。
  */
-export const Default: Story = {
-  render: (args) => (
-    <HoverCardCatalog
-      destinationId={hoverCardCopy.default.destinationId}
-      paragraphs={hoverCardCopy.default.paragraphs}
-      rootProps={args}
-      title={hoverCardCopy.default.title}
-      triggerLabel={hoverCardCopy.default.trigger}
-    />
-  ),
+export const ProfilePreview: Story = {
+  render: (args) => <NextJsProfileHoverCard rootProps={args} />,
   play: async ({ canvasElement, step }) => {
     // Trigger は canvas、Content と Portal は body に描画されるため、検索範囲を責務ごとに分ける。
     const canvas = within(canvasElement);
-    const trigger = canvas.getByRole('link', { name: hoverCardCopy.default.trigger });
+    const trigger = canvas.getByRole('link', { name: nextJsProfile.handle });
 
-    await step('keyboard focus で Portal 内の Content を開閉する', async () => {
-      // Story 開始時の focus を解放し、Tab による利用者と同じ focus 移動を Trigger へ送る。
+    // HoverCard を利用できない環境でも、Trigger が実在する Next.js の情報先へ遷移できることを保証する。
+    await expect(trigger).toHaveAttribute('href', nextJsProfile.profileUrl);
+    await expect(
+      canvasElement.ownerDocument.querySelector('[data-slot="hover-card-portal"]')
+    ).not.toBeInTheDocument();
+
+    await step('pointer hover で公式プロフィールを開閉する', async () => {
+      // focus に依存しない pointer 経路で開き、Portal 内の完全なプロフィールを確認する。
+      await userEvent.hover(trigger);
+      const content = await findOpenHoverCard(canvasElement);
+      await expectProfileContent(content);
+      await expectResponsiveContent(canvasElement, content);
+      await expect(trigger).toHaveAttribute(popupOpenAttribute);
+
+      // pointer を外し、公式 example と同じ closeDelay 後に Portal ごと閉じるまで待機する。
+      await userEvent.unhover(trigger);
+      await expectHoverCardClosed(canvasElement);
+      await expect(trigger).not.toHaveAttribute(popupOpenAttribute);
+    });
+
+    await step('keyboard focus で開き、Escape で閉じる', async () => {
+      // hover 検証後の focus を解放し、Tab による通常の keyboard 経路でリンクへ到達する。
       const activeElement = canvasElement.ownerDocument.activeElement;
       if (activeElement instanceof HTMLElement) {
         activeElement.blur();
       }
-
-      await expect(
-        canvasElement.ownerDocument.querySelector('[data-slot="hover-card-portal"]')
-      ).not.toBeInTheDocument();
       await userEvent.tab();
       await expect(trigger).toHaveFocus();
 
+      // focus により再度開いた Content を確認し、pointer の結果が残存していないことを保証する。
       const content = await findOpenHoverCard(canvasElement);
-      const contentCanvas = within(content);
-      await expect(trigger).toHaveAttribute('data-popup-open');
-      await expect(contentCanvas.getByText(hoverCardCopy.default.title)).toBeVisible();
-      await expect(contentCanvas.getByText(hoverCardCopy.default.paragraphs[0])).toBeVisible();
+      await expectProfileContent(content);
+      await expectResponsiveContent(canvasElement, content);
+      await expect(trigger).toHaveAttribute(popupOpenAttribute);
 
-      // Shift+Tab で Trigger から focus を外し、focus 経路で開いた Content と Portal を閉じる。
-      await userEvent.tab({ shift: true });
-      await expect(trigger).not.toHaveFocus();
+      // Escape では preview だけを閉じ、利用者の focus とリンク先を Trigger に保つ。
+      await userEvent.keyboard('{Escape}');
       await expectHoverCardClosed(canvasElement);
-      await expect(trigger).not.toHaveAttribute('data-popup-open');
-    });
-
-    await step('pointer hover で Portal 内の Content を開閉する', async () => {
-      // focus が外れた Trigger へ pointer を重ね、hover だけで Content が開く経路を検証する。
-      await userEvent.hover(trigger);
-      const content = await findOpenHoverCard(canvasElement);
-      await expect(within(content).getByText(hoverCardCopy.default.title)).toBeVisible();
-      await expect(trigger).toHaveAttribute('data-popup-open');
-
-      // pointer を Trigger から外し、非制御の HoverCard が Content と Portal を除去するまで待つ。
-      await userEvent.unhover(trigger);
-      await expectHoverCardClosed(canvasElement);
-      await expect(trigger).not.toHaveAttribute('data-popup-open');
+      await expect(trigger).toHaveFocus();
+      await expect(trigger).not.toHaveAttribute(popupOpenAttribute);
     });
   },
 };
 
 /**
- * 公開 side="top" と align="start" の組み合わせを、十分な配置余白を持つ固定例で示す。
+ * 公式プロフィールを開いた状態で固定し、表示内容と 390px を含む responsive 幅を検証する。
  *
- * Storybook の Components/HoverCard/TopStart を開くと、上側・開始揃えの Content を確認できる。
- * interaction test は指定位置が既存 Positioner へ伝わらない場合に失敗する。
+ * @remarks 同じ Story が light・dark・desktop・390px の共通 test project で描画される。
  */
-export const TopStart: Story = {
+export const OpenProfilePreview: Story = {
   args: {
     defaultOpen: true,
+    defaultTriggerId: nextJsProfile.triggerId,
   },
-  parameters: {
-    layout: 'fullscreen',
-  },
-  render: (args) => (
-    <div className="flex min-h-96 w-full items-center justify-center p-8">
-      {/* 中央に Trigger を置き、指定した top/start を collision 回避で反転させない余白を確保する。 */}
-      <HoverCardCatalog
-        align="start"
-        destinationId={hoverCardCopy.positioned.destinationId}
-        paragraphs={hoverCardCopy.positioned.paragraphs}
-        rootProps={args}
-        side="top"
-        title={hoverCardCopy.positioned.title}
-        triggerLabel={hoverCardCopy.positioned.trigger}
-      />
-    </div>
-  ),
+  render: (args) => <NextJsProfileHoverCard rootProps={args} />,
   play: async ({ canvasElement, step }) => {
-    await step('公開 side と align が Portal 内 Content へ反映される', async () => {
-      // 初期開放された Content を Portal から取得し、既存 data 属性で実際の配置結果を確認する。
+    await step('開いた公式プロフィールを viewport 内へ完全に表示する', async () => {
+      // defaultTriggerId で対象リンクを明示し、初期 open 状態を描画順序へ依存させない。
       const content = await findOpenHoverCard(canvasElement);
-      await expect(content).toHaveAttribute('data-side', 'top');
-      await expect(content).toHaveAttribute('data-align', 'start');
-    });
-  },
-};
+      await expectProfileContent(content);
+      await expectResponsiveContent(canvasElement, content);
 
-/**
- * 長い複数段落が狭い画面で折り返され、広い画面でも読みやすい幅に収まる構成を示す。
- *
- * Storybook の Components/HoverCard/LongResponsiveContent を開くと、viewport に追従する長文を確認できる。
- * interaction test は段落欠落、Portal 契約、レスポンシブ幅指定が崩れた場合に失敗する。
- */
-export const LongResponsiveContent: Story = {
-  args: {
-    defaultOpen: true,
-  },
-  parameters: {
-    layout: 'fullscreen',
-  },
-  render: (args) => (
-    <div className="flex min-h-svh w-full items-center justify-center p-4">
-      {/* viewport 端の余白を確保し、Content 自体の max-width と合わせて狭幅時のはみ出しを防ぐ。 */}
-      <HoverCardCatalog
-        contentClassName="w-80 max-w-[calc(100vw-2rem)]"
-        destinationId={hoverCardCopy.long.destinationId}
-        paragraphs={hoverCardCopy.long.paragraphs}
-        rootProps={args}
-        title={hoverCardCopy.long.title}
-        triggerLabel={hoverCardCopy.long.trigger}
-      />
-    </div>
-  ),
-  play: async ({ canvasElement, step }) => {
-    await step('Portal 内の長文を、viewport に収まる幅で全て表示する', async () => {
-      // 初期開放された長文 Content を取得し、全固定段落とレスポンシブ幅 utility を確認する。
-      const content = await findOpenHoverCard(canvasElement);
-      const contentCanvas = within(content);
-      await expect(content).toHaveClass('w-80', 'max-w-[calc(100vw-2rem)]');
-
-      for (const paragraph of hoverCardCopy.long.paragraphs) {
-        await expect(contentCanvas.getByText(paragraph)).toBeVisible();
-      }
+      // 開状態を Story の最終表示として保持し、通常 Story の focus 状態と役割を分離する。
+      const trigger = within(canvasElement).getByRole('link', { name: nextJsProfile.handle });
+      await expect(trigger).toHaveAttribute(popupOpenAttribute);
     });
   },
 };

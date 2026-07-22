@@ -1,311 +1,572 @@
-import { expect, within } from 'storybook/test';
+import { ArrowUpIcon } from 'lucide-react';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
+import { Badge } from '@cfreact-template/ui/components/badge';
 import { Button } from '@cfreact-template/ui/components/button';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@cfreact-template/ui/components/empty';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+  InputGroupTextarea,
+} from '@cfreact-template/ui/components/input-group';
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemFooter,
+  ItemMedia,
+  ItemTitle,
+} from '@cfreact-template/ui/components/item';
+import { Progress } from '@cfreact-template/ui/components/progress';
 import { Spinner } from '@cfreact-template/ui/components/spinner';
+import { cn } from '@cfreact-template/ui/lib/utils';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ComponentProps } from 'react';
 
-/** インラインの status が可視表示と読み上げで共有する、製品文脈を持たない固定文言。 */
-const INLINE_LOADING_LABEL = '読み込み中';
+/** 公式 Button 例の variant、順序、可視 loading 文言を assertion と共有する。 */
+const BUTTON_LOADING_LABELS = ['Loading...', 'Please wait', 'Processing'] as const;
 
-/** loading 中のボタンが可視表示とアクセシブルネームで共有する固定文言。 */
-const BUTTON_LOADING_LABEL = '処理中';
+/** 公式 Badge 例の variant、順序、可視 loading 文言を assertion と共有する。 */
+const BADGE_LOADING_LABELS = ['Syncing', 'Updating', 'Processing'] as const;
 
-/** 寸法比較の一覧を支援技術から識別する固定名。 */
-const SIZE_LIST_LABEL = 'Spinner の寸法';
+/** 各composition内の公式Spinner要素をdata slotから取得する共通selector。 */
+const spinnerSelector = '[data-slot="spinner"]';
 
-/**
- * `className` だけで表す Spinner の固定寸法見本。
- *
- * 独自の size prop は追加せず、既定寸法の継承と既存 Tailwind utility による上書きを同じ一覧で扱う。
- */
-interface SpinnerSizeFixture {
-  /** assertion と React key の双方で見本を安定して識別する固定 ID。 */
-  id: string;
-  /** 寸法の違いを色だけに依存せず説明する可視ラベル。 */
-  label: string;
-  /** 公開 `className` へ渡す寸法と reduced-motion 対応の既存 utility。 */
-  className: string;
-  /** `cn` の競合解決後に DOM へ残ることを期待する寸法 utility。 */
-  expectedSizeClass: string;
-  /** Storybook の既定 root font size から算出される固定表示寸法。 */
-  expectedPixelSize: string;
-}
+/** 公式 Input Group 例の可視コピーと、非表示で補う入力名を一箇所へ集約する。 */
+const inputCopy = {
+  placeholder: 'Send a message...',
+  inputLabel: 'Message to send',
+  inputStatus: 'Sending message',
+  textareaLabel: 'Message to validate',
+  validating: 'Validating...',
+  send: 'Send',
+} as const;
 
-/** 小・既定・大の三条件だけを比較し、製品固有の寸法体系を追加しない固定見本。 */
-const SPINNER_SIZE_FIXTURES = [
-  {
-    id: 'small',
-    label: '小',
-    className: 'size-3 motion-reduce:animate-none',
-    expectedSizeClass: 'size-3',
-    expectedPixelSize: '12px',
-  },
-  {
-    id: 'default',
-    label: '既定',
-    className: 'motion-reduce:animate-none',
-    expectedSizeClass: 'size-4',
-    expectedPixelSize: '16px',
-  },
-  {
-    id: 'large',
-    label: '大',
-    className: 'size-6 motion-reduce:animate-none',
-    expectedSizeClass: 'size-6',
-    expectedPixelSize: '24px',
-  },
-] as const satisfies readonly SpinnerSizeFixture[];
+/** 公式 Item 例の download 状態、進捗、回復操作を一箇所へ集約する。 */
+const itemCopy = {
+  title: 'Downloading...',
+  description: '129 MB / 1000 MB',
+  progressLabel: 'Download progress',
+  cancel: 'Cancel',
+} as const;
+
+/** 公式 Empty 例の処理状態、説明、回復操作を一箇所へ集約する。 */
+const emptyCopy = {
+  title: 'Processing your request',
+  description: 'Please wait while we process your request. Do not refresh the page.',
+  cancel: 'Cancel',
+} as const;
+
+/** Input Group の Send 操作を Story 外の作用なしで観測する固定 spy。 */
+const sendClick = fn();
+
+/** Item の download cancellation を Story 外の作用なしで観測する固定 spy。 */
+const cancelDownloadClick = fn();
+
+/** Empty の request cancellation を Story 外の作用なしで観測する固定 spy。 */
+const cancelRequestClick = fn();
+
+/** Story 内で Spinner が受け取る公式 SVG props。 */
+type SpinnerProps = ComponentProps<typeof Spinner>;
 
 /**
- * Spinner primitive の DOM、回転、reduced-motion、未確定 loading 契約を検証する。
+ * 公式 Spinner の DOM と status semantics を保ち、利用者の reduced-motion 設定だけを全例へ適用する。
  *
- * @param spinner Story 内から取得した Spinner の SVG 要素。
- * @returns DOM と class と ARIA の assertion がすべて完了した時点で解決する Promise。
- * @throws SVG、data slot、回転 class、または未確定 loading 契約が欠けた場合に Story test が失敗する。
+ * @param props 公式 Spinner が公開する SVG props。`className` は reduced-motion utility と統合される。
+ * @returns 通常時は回転し、reduced-motion 時は静止する公式 Spinner。
+ * @throws 例外は送出しない。
  *
  * @example
- * ```ts
- * await assertSpinnerPrimitive(canvasElement.querySelector('[data-slot="spinner"]'));
+ * ```tsx
+ * <StorySpinner aria-busy="true" />
  * ```
  */
-async function assertSpinnerPrimitive(spinner: Element): Promise<void> {
-  // 公開 data slot と Lucide の SVG 出力を確認し、別要素による見かけだけの代替を防ぐ。
+function StorySpinner({ className, ...props }: SpinnerProps) {
+  // 見た目や公開 API は変えず、Story に存在する全回転へ同じ motion fallback を保証する。
+  return <Spinner className={cn('motion-reduce:animate-none', className)} {...props} />;
+}
+
+/**
+ * 可視 loading 文言を持つ composition で、Spinner の重複読み上げだけを抑止する。
+ *
+ * @param props 公式 Spinner が公開する SVG props。可視ラベルとの位置関係を示す data 属性も渡せる。
+ * @returns 見た目と reduced-motion 対応を維持し、accessibility tree から除外した Spinner。
+ * @throws 例外は送出しない。
+ *
+ * @example
+ * ```tsx
+ * <DecorativeSpinner data-icon="inline-start" />
+ * ```
+ */
+function DecorativeSpinner({ className, ...props }: SpinnerProps) {
+  // 親の可視文言または名前付き領域が状態を一度だけ伝えるため、既定 status を presentation へ上書きする。
+  return (
+    <StorySpinner
+      {...props}
+      aria-hidden="true"
+      aria-label={undefined}
+      className={className}
+      role="presentation"
+    />
+  );
+}
+
+/**
+ * 公式 Spinner の source 契約と reduced-motion fallback を検証する。
+ *
+ * @param spinner Story canvas から取得した Spinner の SVG 要素。
+ * @returns DOM、currentColor、回転、reduced-motion の assertion 完了時に解決する Promise。
+ * @throws 公式 source の要素、data slot、色、class が欠けた場合に Story test が失敗する。
+ */
+async function assertSpinnerSource(spinner: Element): Promise<void> {
+  // 公式 registry と同じ SVG/currentColor を確認し、独自画像や別 primitive への置換を防ぐ。
   await expect(spinner.tagName.toLowerCase()).toBe('svg');
   await expect(spinner).toHaveAttribute('data-slot', 'spinner');
   await expect(spinner).toHaveAttribute('stroke', 'currentColor');
-
-  // 通常時の回転と利用者設定による抑止を、既存 utility の組み合わせだけで提供する。
-  await expect(spinner).toHaveClass('animate-spin', 'motion-reduce:animate-none');
-
-  // Spinner は完了量を持たない status であり、progressbar の数値属性を作らないことを保証する。
-  await expect(spinner).not.toHaveAttribute('aria-valuemin');
-  await expect(spinner).not.toHaveAttribute('aria-valuemax');
-  await expect(spinner).not.toHaveAttribute('aria-valuenow');
-  await expect(spinner).not.toHaveAttribute('aria-valuetext');
+  await expect(spinner).toHaveClass('size-4', 'animate-spin', 'motion-reduce:animate-none');
 }
 
 /**
- * 可視文言を持つ composition 内で、Spinner が重複読み上げされない装飾要素であることを検証する。
+ * 独立して状態を伝える Spinner が、名前付きの未確定 status であることを検証する。
  *
- * @param spinner インラインまたはボタン内に配置した Spinner の SVG 要素。
- * @returns primitive と装飾用 ARIA の assertion が完了した時点で解決する Promise。
- * @throws Spinner が accessibility tree へ独立した status や名前を公開した場合に Story test が失敗する。
+ * @param spinner Story canvas から取得した Spinner の SVG 要素。
+ * @param accessibleName 利用状況に対応する期待アクセシブルネーム。
+ * @returns source と status semantics の assertion 完了時に解決する Promise。
+ * @throws role、名前、または未確定進捗の契約が一致しない場合に Story test が失敗する。
+ */
+async function assertStatusSpinner(spinner: Element, accessibleName: string): Promise<void> {
+  // primitive の見た目と motion 契約を先に検証し、その上で一つの名前付き status として扱う。
+  await assertSpinnerSource(spinner);
+  await expect(spinner).toHaveAttribute('role', 'status');
+  await expect(spinner).toHaveAccessibleName(accessibleName);
+  await expect(spinner).not.toHaveAttribute('aria-valuenow');
+}
+
+/**
+ * 可視文言を持つ composition の Spinner が、重複する status を公開しないことを検証する。
+ *
+ * @param spinner Story canvas から取得した Spinner の SVG 要素。
+ * @returns source と presentation semantics の assertion 完了時に解決する Promise。
+ * @throws Spinner が accessibility tree に残る場合に Story test が失敗する。
  */
 async function assertDecorativeSpinner(spinner: Element): Promise<void> {
-  // 共通 primitive 契約を先に確認し、装飾化によって表示や reduced-motion 対応が失われていないことを保証する。
-  await assertSpinnerPrimitive(spinner);
-
-  // 親の可視文言だけを一度読み上げるため、公開 SVG props で既定 status と label を上書きする。
+  // 見た目と motion fallback は保持し、状態通知だけを親の可視文言へ集約する。
+  await assertSpinnerSource(spinner);
   await expect(spinner).toHaveAttribute('aria-hidden', 'true');
   await expect(spinner).toHaveAttribute('role', 'presentation');
   await expect(spinner).not.toHaveAttribute('aria-label');
 }
 
 /**
- * Spinner の全公開 export を、固定 composition と light・dark browser tests へ登録する metadata。
+ * Story の実用 composition が desktop と 390px の双方で横 overflow を作らないことを検証する。
  *
- * 独自 variant や size prop は示さず、native SVG props と `className`、既存 semantic token だけを扱う。
+ * @param surface 各 Story の幅制約を担う最上位要素。
+ * @returns scroll width が表示幅以内であることを確認した時点で解決する Promise。
+ * @throws composition が viewport より横へ溢れた場合に Story test が失敗する。
+ */
+async function assertNoHorizontalOverflow(surface: HTMLElement): Promise<void> {
+  // 実際の layout 寸法を比較し、文字列 class の存在だけで responsive 対応済みと判定しない。
+  await expect(surface.scrollWidth).toBeLessThanOrEqual(surface.clientWidth);
+}
+
+/**
+ * 公式 Spinner Docs の Basic、Button、Badge、Input Group、Item、Empty を実用 loading 状態として登録する。
+ *
+ * props matrix や独自 variant は追加せず、公式の component、variant、コピー、情報構造を保つ。
+ * 既存 semantic token、light/dark projects、390px project、reduced-motion、ARIA の補強だけを適用する。
  */
 const meta = {
   title: 'Components/Spinner',
   component: Spinner,
   parameters: {
-    layout: 'centered',
     controls: {
       disable: true,
     },
     docs: {
       description: {
         component:
-          'Spinner は完了量を持たない loading status です。既定寸法と className による寸法上書き、既定の status semantics、インライン・ボタン・単独表示を確認します。色は currentColor と既存 semantic token を継承し、回転は motion-reduce:animate-none で利用者の reduced-motion 設定に従います。進捗値は公開しません。',
+          'shadcn/ui 公式 Spinner Docs・Examples・new-york-v4 registry source に沿って、Basic、Button、Badge、Input Group、Item、Empty の loading 状態を確認します。可視構造は公式例を保ち、semantic token、390px、重複しない状態通知、reduced-motion fallback を補います。',
       },
     },
+    layout: 'padded',
   },
 } satisfies Meta<typeof Spinner>;
 
-/** Storybook が Spinner catalog の Docs、accessibility、browser tests を構築するための既定 export。 */
+/** Storybook が Spinner catalog の Docs、accessibility、browser tests を構築する既定 export。 */
 export default meta;
 
-/** metadata から各 Spinner Story の CSF3 型を導出する。 */
+/** metadata から全 Spinner Story の CSF3 型を導出する。 */
 type Story = StoryObj<typeof meta>;
 
-/**
- * Spinner 単独の既定 status semantics と、light・dark の background／foreground token 継承を示す。
- *
- * 既定の `Loading` label と `size-4` は変更せず、reduced-motion utility だけを公開 `className` で補う。
- */
-export const Standalone: Story = {
+/** 公式 Usage と同じ単独 Spinner を、既定名を持つ未確定 loading status として示す。 */
+export const Basic: Story = {
   render: () => (
     <div
-      data-testid="spinner-theme-surface"
-      className="rounded-lg border border-border bg-background p-6 text-foreground"
+      className="flex w-full items-center justify-center bg-background p-6 text-foreground"
+      data-testid="basic-loading-surface"
     >
-      {/* 単独表示では Spinner 自身が一つの名前付き status として loading 状態を通知する。 */}
-      <Spinner className="motion-reduce:animate-none" />
+      {/* 単独表示では公式 Spinner 自身が loading 状態を通知し、可視文言を重ねない。 */}
+      <StorySpinner aria-busy="true" />
     </div>
   ),
-  play: async ({ canvasElement, step }) => {
-    // Story canvas 内の semantic surface を基点にし、Storybook UI の status を assertion 対象から除く。
+  play: async ({ canvasElement }) => {
+    // Storybook 管理 UI を除外し、Basic canvas 内の一つの status だけを取得する。
     const canvas = within(canvasElement);
-    const surface = canvas.getByTestId('spinner-theme-surface');
-    const spinner = within(surface).getByRole('status', { name: 'Loading' });
+    const surface = canvas.getByTestId('basic-loading-surface');
+    const spinner = canvas.getByRole('status', { name: 'Loading' });
 
-    await step('既定の単独 status と未確定 loading 契約を保つ', async () => {
-      await assertSpinnerPrimitive(spinner);
-      await expect(spinner).toHaveAttribute('role', 'status');
-      await expect(spinner).toHaveAttribute('aria-label', 'Loading');
-      await expect(spinner).toHaveClass('size-4');
-      await expect(canvas.queryByRole('progressbar')).not.toBeInTheDocument();
-    });
-
-    await step('light・dark の semantic token と currentColor を継承する', async () => {
-      // hardcoded color を許容せず、surface と Spinner が同じ foreground token を解決することを確認する。
-      await expect(surface).toHaveClass('border-border', 'bg-background', 'text-foreground');
-      const surfaceStyle = window.getComputedStyle(surface);
-      const spinnerStyle = window.getComputedStyle(spinner);
-
-      // 両 theme project で foreground が背景と分離し、Spinner が親の現在色と一致することを保証する。
-      await expect(surfaceStyle.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
-      await expect(spinnerStyle.color).toBe(surfaceStyle.color);
-      await expect(spinnerStyle.color).not.toBe(surfaceStyle.backgroundColor);
-    });
+    // 公式の既定 status、reduced-motion、semantic surface、390px の収まりをまとめて確認する。
+    await assertStatusSpinner(spinner, 'Loading');
+    await expect(spinner).toHaveAttribute('aria-busy', 'true');
+    await expect(surface).toHaveClass('bg-background', 'text-foreground');
+    await assertNoHorizontalOverflow(surface);
   },
 };
 
-/**
- * 既定 `size-4` の継承と、公開 `className` による小・大の寸法上書きを同じ条件で比較する。
- *
- * 各 Spinner は可視ラベルが意味を伝える見本のため装飾扱いにし、複数 status の同時通知を避ける。
- */
-export const Sizes: Story = {
+/** 公式 Button 例と同じ三つの disabled variant を、busy な操作として示す。 */
+export const ButtonLoading: Story = {
+  name: 'Button',
   render: () => (
-    <ul
-      aria-label={SIZE_LIST_LABEL}
-      className="flex flex-wrap items-end justify-center gap-x-8 gap-y-5"
+    <div
+      aria-label="Button loading states"
+      className="mx-auto flex w-full flex-col items-center gap-4 bg-background text-foreground"
+      data-testid="button-loading-surface"
+      role="group"
     >
-      {/* 固定 fixture を同じ構造で描画し、className 以外の比較条件を変えない。 */}
-      {SPINNER_SIZE_FIXTURES.map(({ className, id, label }) => (
-        <li key={id} className="flex min-w-16 flex-col items-center gap-3">
-          {/* 可視ラベルが寸法名を伝えるため、個々の回転 SVG は accessibility tree から除外する。 */}
-          <Spinner
-            aria-hidden="true"
-            aria-label={undefined}
-            className={className}
-            data-spinner-size={id}
-            role="presentation"
-          />
-          <span className="text-xs text-muted-foreground">{label}</span>
-        </li>
-      ))}
-    </ul>
+      <Button aria-busy="true" disabled size="sm">
+        {/* 可視文言が操作名と状態を伝えるため、先頭 Spinner は装飾として扱う。 */}
+        <DecorativeSpinner data-icon="inline-start" />
+        {BUTTON_LOADING_LABELS[0]}
+      </Button>
+      <Button aria-busy="true" disabled size="sm" variant="outline">
+        <DecorativeSpinner data-icon="inline-start" />
+        {BUTTON_LOADING_LABELS[1]}
+      </Button>
+      <Button aria-busy="true" disabled size="sm" variant="secondary">
+        <DecorativeSpinner data-icon="inline-start" />
+        {BUTTON_LOADING_LABELS[2]}
+      </Button>
+    </div>
   ),
   play: async ({ canvasElement }) => {
-    // 名前付き list に検索範囲を限定し、三つの固定寸法だけが表示されることを確認する。
+    // 公式順序の三つの native button を可視名で取得し、variant の DOM 順へ依存しない説明を保つ。
     const canvas = within(canvasElement);
-    const list = canvas.getByRole('list', { name: SIZE_LIST_LABEL });
-    const spinners = list.querySelectorAll('[data-slot="spinner"]');
-    await expect(spinners).toHaveLength(SPINNER_SIZE_FIXTURES.length);
+    const surface = canvas.getByTestId('button-loading-surface');
+    const buttons = canvas.getAllByRole('button');
+    await expect(buttons).toHaveLength(BUTTON_LOADING_LABELS.length);
 
-    for (const fixture of SPINNER_SIZE_FIXTURES) {
-      // 固定 ID で各 SVG を取得し、DOM の描画順に依存せず class と実寸を対応付ける。
-      const spinner = list.querySelector(`[data-spinner-size="${fixture.id}"]`);
-      await expect(spinner).toBeInTheDocument();
+    for (const [index, label] of BUTTON_LOADING_LABELS.entries()) {
+      // 各 Button が操作不能かつ busy であり、子 Spinner を二つ目の status にしないことを確認する。
+      const button = buttons.at(index);
+      if (button === undefined) {
+        throw new Error(`Button loading 例 ${label} が見つかりません。`);
+      }
+      const spinner = button.querySelector(spinnerSelector);
       if (spinner === null) {
-        throw new Error(`Spinner の寸法見本 ${fixture.id} が見つかりません。`);
+        throw new Error(`Button loading 例 ${label} の Spinner が見つかりません。`);
       }
 
-      // 既定値または className 上書きが `cn` で解決され、幅と高さへ同じ寸法を適用することを保証する。
+      await expect(button).toBeDisabled();
+      await expect(button).toHaveAttribute('aria-busy', 'true');
+      await expect(button).toHaveAccessibleName(label);
       await assertDecorativeSpinner(spinner);
-      await expect(spinner).toHaveClass(fixture.expectedSizeClass);
-      const spinnerStyle = window.getComputedStyle(spinner);
-      await expect(spinnerStyle.width).toBe(fixture.expectedPixelSize);
-      await expect(spinnerStyle.height).toBe(fixture.expectedPixelSize);
+      await expect(spinner).toHaveAttribute('data-icon', 'inline-start');
     }
 
-    // 寸法比較は loading 状態を通知しないため、status や数値進捗を accessibility tree へ追加しない。
     await expect(canvas.queryByRole('status')).not.toBeInTheDocument();
-    await expect(canvas.queryByRole('progressbar')).not.toBeInTheDocument();
+    await assertNoHorizontalOverflow(surface);
   },
 };
 
-/**
- * 文中の固定 loading label と小さな Spinner を一つの status にまとめるインライン構成を示す。
- *
- * 親 status が可視文言を通知し、Spinner は装飾扱いになるため同じ状態を二重に読み上げない。
- */
-export const InlineContext: Story = {
+/** 公式 Badge 例と同じ三つの variant を、短い status label を持つ同期状態として示す。 */
+export const BadgeLoading: Story = {
+  name: 'Badge',
   render: () => (
-    <span
-      aria-busy="true"
-      className="inline-flex items-center gap-2 text-sm text-foreground"
-      role="status"
+    <div
+      aria-label="Badge loading states"
+      className="mx-auto flex w-full flex-wrap items-center justify-center gap-4 bg-background text-foreground [--radius:1.2rem]"
+      data-testid="badge-loading-surface"
+      role="group"
     >
-      {/* inline text の行高へ合わせた寸法だけを className で指定し、意味は親 status に集約する。 */}
-      <Spinner
-        aria-hidden="true"
-        aria-label={undefined}
-        className="size-3 motion-reduce:animate-none"
-        role="presentation"
-      />
-      <span>{INLINE_LOADING_LABEL}</span>
-    </span>
+      <Badge aria-busy="true" aria-label={BADGE_LOADING_LABELS[0]} role="status">
+        {/* Badge 自身が可視文言を status として通知し、Spinner は装飾だけを担う。 */}
+        <DecorativeSpinner data-icon="inline-start" />
+        {BADGE_LOADING_LABELS[0]}
+      </Badge>
+      <Badge
+        aria-busy="true"
+        aria-label={BADGE_LOADING_LABELS[1]}
+        role="status"
+        variant="secondary"
+      >
+        <DecorativeSpinner data-icon="inline-start" />
+        {BADGE_LOADING_LABELS[1]}
+      </Badge>
+      <Badge aria-busy="true" aria-label={BADGE_LOADING_LABELS[2]} role="status" variant="outline">
+        <DecorativeSpinner data-icon="inline-start" />
+        {BADGE_LOADING_LABELS[2]}
+      </Badge>
+    </div>
   ),
   play: async ({ canvasElement }) => {
-    // 親 status と可視文言を取得し、Spinner 自身が二つ目の status にならないことを確認する。
+    // Badge root が公開する三つの status を取得し、Spinner の既定 status が混入していないことを確認する。
     const canvas = within(canvasElement);
-    const status = canvas.getByRole('status');
-    const spinner = status.querySelector('[data-slot="spinner"]');
-    await expect(spinner).toBeInTheDocument();
-    if (spinner === null) {
-      throw new Error('インライン構成の Spinner が見つかりません。');
+    const surface = canvas.getByTestId('badge-loading-surface');
+    const statuses = canvas.getAllByRole('status');
+    await expect(statuses).toHaveLength(BADGE_LOADING_LABELS.length);
+
+    for (const [index, label] of BADGE_LOADING_LABELS.entries()) {
+      // 可視文言だけを名前として持つ busy status と、その中の装飾 Spinner を一対で検証する。
+      const status = statuses.at(index);
+      if (status === undefined) {
+        throw new Error(`Badge loading 例 ${label} が見つかりません。`);
+      }
+      const spinner = status.querySelector(spinnerSelector);
+      if (spinner === null) {
+        throw new Error(`Badge loading 例 ${label} の Spinner が見つかりません。`);
+      }
+
+      await expect(status).toHaveAttribute('aria-busy', 'true');
+      await expect(status).toHaveAccessibleName(label);
+      await assertDecorativeSpinner(spinner);
     }
 
-    // busy 状態、可視文言、装飾 Spinner を一つの読み上げ単位として維持する。
-    await expect(status).toHaveAttribute('aria-busy', 'true');
-    await expect(status).toHaveTextContent(INLINE_LOADING_LABEL);
-    await expect(canvas.getAllByRole('status')).toHaveLength(1);
-    await assertDecorativeSpinner(spinner);
-    await expect(spinner).toHaveClass('size-3');
-    await expect(canvas.queryByRole('progressbar')).not.toBeInTheDocument();
+    await assertNoHorizontalOverflow(surface);
   },
 };
 
-/**
- * disabled かつ busy な既存 Button に Spinner と固定ラベルを配置する loading 構成を示す。
- *
- * Button の名前は可視文言から取得し、Spinner を装飾扱いにして操作名と loading 通知の重複を防ぐ。
- */
-export const ButtonContext: Story = {
+/** 公式 Input Group 例と同じ disabled input、validation 文言、Send 操作を示す。 */
+export const InputLoading: Story = {
+  name: 'Input group',
   render: () => (
-    <Button aria-busy="true" disabled>
-      {/* Button の既存 icon 配置へ従い、Spinner の既定寸法と親から継承する currentColor をそのまま使う。 */}
-      <Spinner
-        aria-hidden="true"
-        aria-label={undefined}
-        className="motion-reduce:animate-none"
-        role="presentation"
-      />
-      {BUTTON_LOADING_LABEL}
-    </Button>
+    <div
+      className="mx-auto flex w-full max-w-md flex-col gap-4 bg-background text-foreground"
+      data-testid="input-loading-surface"
+    >
+      <InputGroup aria-busy="true" aria-label="Sending a message">
+        {/* placeholder だけへ依存せず入力名を補い、disabled と busy を同じ control group で伝える。 */}
+        <InputGroupInput
+          aria-label={inputCopy.inputLabel}
+          disabled
+          placeholder={inputCopy.placeholder}
+        />
+        <InputGroupAddon align="inline-end">
+          {/* 可視文言がない一行例では、Spinner 自身が具体的な送信 status を通知する。 */}
+          <StorySpinner aria-label={inputCopy.inputStatus} />
+        </InputGroupAddon>
+      </InputGroup>
+
+      <InputGroup aria-busy="true" aria-label="Validating a message">
+        <InputGroupTextarea
+          aria-describedby="spinner-validation-status"
+          aria-label={inputCopy.textareaLabel}
+          disabled
+          placeholder={inputCopy.placeholder}
+        />
+        <InputGroupAddon align="block-end">
+          {/* 公式の可視 validation 文言を一つの live status とし、子 Spinner の重複通知を抑止する。 */}
+          <span
+            aria-label={inputCopy.validating}
+            className="inline-flex items-center gap-2"
+            id="spinner-validation-status"
+            role="status"
+          >
+            <DecorativeSpinner />
+            {inputCopy.validating}
+          </span>
+          {/* 公式の有効な Send 操作を保ち、390px では 44px の touch target を確保する。 */}
+          <InputGroupButton
+            className="ml-auto min-h-11 min-w-11 sm:min-h-6 sm:min-w-6"
+            onClick={sendClick}
+            variant="default"
+          >
+            <ArrowUpIcon aria-hidden="true" />
+            <span className="sr-only">{inputCopy.send}</span>
+          </InputGroupButton>
+        </InputGroupAddon>
+      </InputGroup>
+    </div>
   ),
   play: async ({ canvasElement }) => {
-    // 可視ラベルをアクセシブルネームに持つ Button を取得し、disabled と busy を同時に検証する。
+    // theme project や再実行の履歴を除き、現在の Send 操作だけを観測する。
+    sendClick.mockClear();
+
+    // 入力名、group 名、status 名から要素を取得し、placeholder や DOM 位置へ依存しない検証にする。
     const canvas = within(canvasElement);
-    const button = canvas.getByRole('button', { name: BUTTON_LOADING_LABEL });
-    const spinner = button.querySelector('[data-slot="spinner"]');
-    await expect(spinner).toBeInTheDocument();
+    const surface = canvas.getByTestId('input-loading-surface');
+    const sendingGroup = canvas.getByRole('group', { name: 'Sending a message' });
+    const validatingGroup = canvas.getByRole('group', { name: 'Validating a message' });
+    const input = canvas.getByRole('textbox', { name: inputCopy.inputLabel });
+    const textarea = canvas.getByRole('textbox', { name: inputCopy.textareaLabel });
+    const sendingStatus = canvas.getByRole('status', { name: inputCopy.inputStatus });
+    const validatingStatus = canvas.getByRole('status', { name: inputCopy.validating });
+    const send = canvas.getByRole('button', { name: inputCopy.send });
+
+    // 二つの入力状態が disabled、busy、名前付き status を一貫して公開することを保証する。
+    await expect(input).toBeDisabled();
+    await expect(textarea).toBeDisabled();
+    await expect(sendingGroup).toHaveAttribute('aria-busy', 'true');
+    await expect(validatingGroup).toHaveAttribute('aria-busy', 'true');
+    await assertStatusSpinner(sendingStatus, inputCopy.inputStatus);
+    await expect(textarea).toHaveAccessibleDescription(inputCopy.validating);
+
+    const validatingSpinner = validatingStatus.querySelector(spinnerSelector);
+    if (validatingSpinner === null) {
+      throw new Error('Input Group validation 例の Spinner が見つかりません。');
+    }
+    await assertDecorativeSpinner(validatingSpinner);
+
+    // 有効な Send 操作が pointer 入力を一度だけ通知し、狭幅でも横 overflow を作らないことを確認する。
+    await userEvent.click(send);
+    await expect(sendClick).toHaveBeenCalledTimes(1);
+    await assertNoHorizontalOverflow(surface);
+  },
+};
+
+/** 公式 Item 例と同じ download 情報、Cancel、determinate progress を一つの busy region で示す。 */
+export const ItemLoading: Story = {
+  name: 'Item',
+  render: () => (
+    <div
+      className="mx-auto flex w-full max-w-md flex-col gap-4 bg-background text-foreground [--radius:1rem]"
+      data-testid="item-loading-surface"
+    >
+      <Item
+        aria-busy="true"
+        aria-describedby="spinner-download-description"
+        aria-labelledby="spinner-download-title"
+        role="region"
+        variant="outline"
+      >
+        <ItemMedia aria-hidden="true" variant="icon">
+          {/* region の見出しと busy state が意味を伝えるため、Spinner は visual indicator に限定する。 */}
+          <DecorativeSpinner />
+        </ItemMedia>
+        <ItemContent className="min-w-0">
+          <ItemTitle aria-level={2} id="spinner-download-title" role="heading">
+            {itemCopy.title}
+          </ItemTitle>
+          <ItemDescription id="spinner-download-description">
+            {itemCopy.description}
+          </ItemDescription>
+        </ItemContent>
+        {/* 公式の回復操作を保ち、390px では折り返して 44px の touch target を維持する。 */}
+        <ItemActions className="basis-full justify-end sm:basis-auto">
+          <Button
+            className="min-h-11 sm:min-h-7"
+            onClick={cancelDownloadClick}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {itemCopy.cancel}
+          </Button>
+        </ItemActions>
+        <ItemFooter>
+          {/* Spinner の未確定 status と、公式の数値 progress を別 semantics として明確に区別する。 */}
+          <Progress aria-label={itemCopy.progressLabel} value={75} />
+        </ItemFooter>
+      </Item>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    // theme project や再実行の履歴を除き、現在の download cancellation だけを観測する。
+    cancelDownloadClick.mockClear();
+
+    // 名前付き region を起点にし、Item 内の busy、説明、進捗、回復操作を利用者視点で検証する。
+    const canvas = within(canvasElement);
+    const surface = canvas.getByTestId('item-loading-surface');
+    const item = canvas.getByRole('region', { name: itemCopy.title });
+    const progress = within(item).getByRole('progressbar', { name: itemCopy.progressLabel });
+    const cancel = within(item).getByRole('button', { name: itemCopy.cancel });
+    const spinner = item.querySelector(spinnerSelector);
     if (spinner === null) {
-      throw new Error('Button 構成の Spinner が見つかりません。');
+      throw new Error('Item loading 例の Spinner が見つかりません。');
     }
 
-    // 操作不可と処理中を Button 自身が伝え、子 Spinner は視覚的な補助だけを担うことを保証する。
-    await expect(button).toBeDisabled();
-    await expect(button).toHaveAttribute('aria-busy', 'true');
-    await expect(button).toHaveAccessibleName(BUTTON_LOADING_LABEL);
+    // 未確定 Spinner は装飾へ集約し、数値進捗だけが determinate progressbar を公開する。
+    await expect(item).toHaveAttribute('aria-busy', 'true');
+    await expect(item).toHaveAccessibleDescription(itemCopy.description);
     await assertDecorativeSpinner(spinner);
-    await expect(spinner).toHaveClass('size-4');
-    await expect(canvas.queryByRole('status')).not.toBeInTheDocument();
-    await expect(canvas.queryByRole('progressbar')).not.toBeInTheDocument();
+    await expect(progress).toHaveAttribute('aria-valuenow', '75');
+
+    // Cancel を一度実行でき、390px でも Item 全体が横へ溢れないことを保証する。
+    await userEvent.click(cancel);
+    await expect(cancelDownloadClick).toHaveBeenCalledTimes(1);
+    await assertNoHorizontalOverflow(surface);
+  },
+};
+
+/** 公式 Empty 例と同じ request processing copy と Cancel を、説明付きの busy region で示す。 */
+export const EmptyLoading: Story = {
+  name: 'Empty',
+  render: () => (
+    <Empty
+      aria-busy="true"
+      aria-describedby="spinner-request-description"
+      aria-labelledby="spinner-request-title"
+      className="mx-auto min-h-80 max-w-2xl bg-background text-foreground"
+      data-testid="empty-loading-surface"
+      role="region"
+    >
+      <EmptyHeader>
+        <EmptyMedia aria-hidden="true" variant="icon">
+          {/* region の見出しと busy state が意味を伝えるため、Spinner は visual indicator に限定する。 */}
+          <DecorativeSpinner />
+        </EmptyMedia>
+        <EmptyTitle aria-level={2} id="spinner-request-title" role="heading">
+          {emptyCopy.title}
+        </EmptyTitle>
+        <EmptyDescription id="spinner-request-description">
+          {emptyCopy.description}
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        {/* 公式の回復操作を保ち、390px では 44px の touch target を確保する。 */}
+        <Button
+          className="min-h-11 sm:min-h-7"
+          onClick={cancelRequestClick}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          {emptyCopy.cancel}
+        </Button>
+      </EmptyContent>
+    </Empty>
+  ),
+  play: async ({ canvasElement }) => {
+    // theme project や再実行の履歴を除き、現在の request cancellation だけを観測する。
+    cancelRequestClick.mockClear();
+
+    // 見出しを名前に持つ region から、説明、busy、Cancel、装飾 Spinner の関係を検証する。
+    const canvas = within(canvasElement);
+    const empty = canvas.getByRole('region', { name: emptyCopy.title });
+    const cancel = within(empty).getByRole('button', { name: emptyCopy.cancel });
+    const spinner = empty.querySelector(spinnerSelector);
+    if (spinner === null) {
+      throw new Error('Empty loading 例の Spinner が見つかりません。');
+    }
+
+    // Empty 全体が一つの処理状態を伝え、子 Spinner が同じ状態を重複通知しないことを保証する。
+    await expect(empty).toHaveAttribute('aria-busy', 'true');
+    await expect(empty).toHaveAccessibleDescription(emptyCopy.description);
+    await assertDecorativeSpinner(spinner);
+
+    // Cancel を一度実行でき、390px でも Empty 自体が横 overflow を作らないことを確認する。
+    await userEvent.click(cancel);
+    await expect(cancelRequestClick).toHaveBeenCalledTimes(1);
+    await assertNoHorizontalOverflow(empty);
   },
 };
