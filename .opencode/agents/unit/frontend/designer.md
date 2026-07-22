@@ -16,7 +16,7 @@ permission:
     '*/packages/ui/tsconfig.json': allow
     '*/packages/ui/vitest.config.ts': allow
     '*/packages/ui/**': allow
-  webfetch: deny
+  webfetch: allow
   task:
     '*': deny
     'researcher': allow
