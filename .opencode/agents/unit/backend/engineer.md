@@ -31,6 +31,9 @@ permission:
     'pnpm gen*': allow
     'pnpm build*': allow
     'pnpm check*': allow
+    'pnpm add*': allow
+    'pnpm --filter * add*': allow
+    'pnpm --dir * add*': allow
     'rm *': deny
 ---
 
@@ -57,6 +60,10 @@ If any are missing, do not start. Reply with Status BLOCKED and list missing inp
 - Do not use the `task` tool except to call `unit/backend/reviewer` or `researcher`
 - Do not stage or commit changes
 - Follow all guardrails enforced by `coding-guardian`
+- When a work order explicitly authorizes a dependency addition and names both the target package and dependency, execute the addition yourself with `pnpm add`; otherwise return `BLOCKED` without changing dependencies
+- Preserve `minimumReleaseAge: 4320`, never add `minimumReleaseAgeExclude`, never enable `dangerouslyAllowAllBuilds`, and change `allowBuilds` only for a package explicitly approved in the work order
+- If another ready task can modify `pnpm-lock.yaml` or `pnpm-workspace.yaml`, return `BLOCKED` with the shared-file conflict so the caller serializes the dependency changes
+- Do not edit any OpenSpec `tasks.md`; `openspec/applier` owns completion bookkeeping after accepting implementation and review evidence
 - Treat this backend as TypeScript code on Hono and Cloudflare Workers, not Go
 - Respect the backend layering used in `eslint.config.js`
 - Keep HTTP concerns in `packages/backend/src/http`, dependency wiring in `packages/backend/src/app`, domain rules in `packages/backend/src/domain`, use cases in `packages/backend/src/usecases`, and persistence in `packages/backend/src/persistence`

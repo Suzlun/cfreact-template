@@ -22,6 +22,8 @@ permission:
     'packages/frontend/src/domain/**': allow
     'packages/ui/**': deny
     'packages/typespec/**': allow
+    'pnpm-lock.yaml': allow
+    'pnpm-workspace.yaml': allow
     '*/packages/frontend/package.json': allow
     '*/packages/frontend/orval.config.ts': allow
     '*/packages/frontend/tsconfig*.json': allow
@@ -34,6 +36,8 @@ permission:
     '*/packages/frontend/src/app/**': allow
     '*/packages/frontend/src/domain/**': allow
     '*/packages/typespec/**': allow
+    '*/pnpm-lock.yaml': allow
+    '*/pnpm-workspace.yaml': allow
     '*/packages/frontend/src/api/generated/**': deny
     '*/packages/ui/**': deny
   webfetch: deny
@@ -62,6 +66,9 @@ permission:
     'pnpm gen*': allow
     'pnpm build*': allow
     'pnpm check*': allow
+    'pnpm add*': allow
+    'pnpm --filter * add*': allow
+    'pnpm --dir * add*': allow
     'rm *': deny
 ---
 
@@ -90,6 +97,10 @@ If any are missing, do not start. Reply with Status BLOCKED and list missing inp
 - Do not use the `task` tool except to call `unit/frontend/designer`, `unit/frontend/reviewer`, or `researcher`
 - Do not stage or commit changes
 - Follow all guardrails enforced by `coding-guardian`
+- When a work order explicitly authorizes a dependency addition and names both the target package and dependency, execute the addition yourself with `pnpm add`; otherwise return `BLOCKED` without changing dependencies
+- Preserve `minimumReleaseAge: 4320`, never add `minimumReleaseAgeExclude`, never enable `dangerouslyAllowAllBuilds`, and change `allowBuilds` only for a package explicitly approved in the work order
+- If another ready task can modify `pnpm-lock.yaml` or `pnpm-workspace.yaml`, return `BLOCKED` with the shared-file conflict so the caller serializes the dependency changes
+- Do not edit any OpenSpec `tasks.md`; `openspec/applier` owns completion bookkeeping after accepting implementation and review evidence
 - Never edit `packages/ui/**`; only `unit/frontend/designer` may modify or manage that layer
 - Never decide UI/UX, layout, UI component placement, component composition, or user-facing copy yourself
 - If a presentation-facing task does not provide an approved `.wireframe.json`, return `BLOCKED`; do not ask `unit/frontend/designer` to invent UI/UX instructions
