@@ -1,0 +1,155 @@
+name: Prepare Release
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - develop
+  push:
+    branches:
+      - release
+    paths:
+      - .release/plan.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prepare-release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: >-
+      ${{
+        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'push' && !contains(github.event.head_commit.message, '[release automation]'))
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Create release automation token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event_name == 'push' && 'release' || 'develop' }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Setup pnpm
+        run: |
+          # repositoryが固定するpnpmを有効化し、生成先ごとのinstall差分を防ぎます。
+          corepack enable
+          corepack prepare pnpm@11.7.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Find open Release PR
+        id: release-pr
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: pnpm release:github get-release-pr
+
+      - name: Configure release commit author
+        run: |
+          # commit認証はGitHub App token、監査可能なauthorはGitHub Actions botへ統一します。
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+      - name: Prepare release branch
+        id: branch
+        env:
+          RELEASE_PR_EXISTS: ${{ steps.release-pr.outputs.exists }}
+        run: |
+          # queue待機中に進んだdevelopも含め、常にremoteの最新状態から処理します。
+          git fetch origin main develop
+          if git ls-remote --exit-code --heads origin release >/dev/null 2>&1; then
+            git fetch origin '+refs/heads/release:refs/remotes/origin/release'
+          fi
+          if [ "${RELEASE_PR_EXISTS}" = 'true' ]; then
+            git switch --force-create release origin/release
+            if git merge --no-ff --no-edit origin/develop; then
+              printf '%s\n' 'initialize=false' 'conflict=false' 'recreated=false' >> "${GITHUB_OUTPUT}"
+            else
+              git merge --abort
+              printf '%s\n' 'initialize=false' 'conflict=true' 'recreated=false' >> "${GITHUB_OUTPUT}"
+            fi
+          else
+            recreated=false
+            if git show-ref --verify --quiet refs/remotes/origin/release; then
+              # open PRがないbranchはmainへmerge済みの場合だけ再利用し、未merge commitを上書きしません。
+              git merge-base --is-ancestor origin/release origin/main
+              recreated=true
+            fi
+            git switch --force-create release origin/develop
+            printf '%s\n' 'initialize=true' 'conflict=false' "recreated=${recreated}" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Report develop merge conflict
+        if: ${{ steps.branch.outputs.conflict == 'true' }}
+        env:
+          COMMENT_BODY: developの自動取り込みで競合しました。releaseへdevelopを手動でmergeし、競合を解消してください。
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          PULL_REQUEST_NUMBER: ${{ steps.release-pr.outputs.number }}
+        run: pnpm release:github comment-pr
+
+      - name: Stop after develop merge conflict
+        if: ${{ steps.branch.outputs.conflict == 'true' }}
+        run: exit 1
+
+      - name: Render release metadata
+        id: render
+        if: ${{ steps.branch.outputs.conflict == 'false' }}
+        env:
+          INITIALIZE_RELEASE: ${{ steps.branch.outputs.initialize }}
+        run: |
+          # 新規releaseだけ手動bump指定をautoへ戻し、既存releaseでは責任者の指定を保持します。
+          if [ "${INITIALIZE_RELEASE}" = 'true' ]; then
+            node scripts/release/render-release.mjs --base-ref origin/develop --initialize
+          else
+            node scripts/release/render-release.mjs --base-ref origin/develop
+          fi
+
+      - name: Commit and push release branch
+        if: ${{ steps.render.outputs.has_release == 'true' }}
+        env:
+          RECREATED_BRANCH: ${{ steps.branch.outputs.recreated }}
+        run: |
+          # 生成差分がある場合だけcommitし、同じ入力での再実行を冪等にします。
+          if [ -n "$(git status --porcelain)" ]; then
+            version=$(node -p "JSON.parse(require('node:fs').readFileSync('.release/plan.json', 'utf8')).version")
+            git add .changeset .release CHANGELOG.md package.json packages pnpm-lock.yaml
+            git commit -m "chore(release): render v${version} [release automation]"
+          fi
+          if [ "${RECREATED_BRANCH}" = 'true' ]; then
+            git push --force-with-lease origin HEAD:release
+          else
+            git push origin HEAD:release
+          fi
+
+      - name: Create or update Release PR
+        if: ${{ steps.render.outputs.has_release == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: pnpm release:github upsert-release-pr

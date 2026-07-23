@@ -1,14 +1,15 @@
 name: Deploy
 
 on:
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
-    branches:
-      - main
+  push:
+    tags:
+      - 'v*.*.*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Deployする既存のvX.Y.Zタグ
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -19,57 +20,83 @@ concurrency:
 
 jobs:
   deploy:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    name: Deploy To Cloudflare
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    environment: production
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       WRANGLER_ENVIRONMENT: ${{ vars.WRANGLER_ENVIRONMENT || 'production' }}
     steps:
-      - name: Skip deploy without Cloudflare credentials
-        if: ${{ env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == '' }}
+      - name: Detect Cloudflare credentials
+        id: credentials
         run: |
-          # Cloudflareの認証情報が未設定の場合は、秘密情報を要求せず安全にdeployだけを停止します。
-          printf '%s\n' 'Deploy skipped: set CLOUDFLARE_API_TOKEN secret and CLOUDFLARE_ACCOUNT_ID variable or secret to deploy from GitHub Actions.'
+          # リリースとdeployを独立させ、credentials未設定の生成先では安全にdeployだけを省略します。
+          if [ -n "${CLOUDFLARE_API_TOKEN}" ] && [ -n "${CLOUDFLARE_ACCOUNT_ID}" ]; then
+            printf '%s\n' 'configured=true' >> "${GITHUB_OUTPUT}"
+          else
+            printf '%s\n' 'configured=false' >> "${GITHUB_OUTPUT}"
+            printf '%s\n' 'Deploy skipped: configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in the production environment.'
+          fi
 
-      - name: Checkout
-        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
-        uses: actions/checkout@v7
+      - name: Checkout release tag
+        if: ${{ steps.credentials.outputs.configured == 'true' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          # tag pushはそのref、手動実行は入力された既存tagをcheckoutします。
+          ref: ${{ github.event_name == 'push' && github.ref || inputs.tag }}
+          fetch-depth: 0
 
       - name: Setup Node
-        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
-        uses: actions/setup-node@v6
+        if: ${{ steps.credentials.outputs.configured == 'true' }}
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           package-manager-cache: false
 
       - name: Setup pnpm
-        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        if: ${{ steps.credentials.outputs.configured == 'true' }}
         run: |
-          # CIと同じpnpmを使い、installとbuildの再現性を保ちます。
+          # release commitのpackage managerを再現し、tagごとのbuild結果を安定させます。
           corepack enable
           corepack prepare pnpm@11.7.0 --activate
 
       - name: Install dependencies
-        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        if: ${{ steps.credentials.outputs.configured == 'true' }}
         run: pnpm install --frozen-lockfile
 
+      - name: Validate release tag
+        if: ${{ steps.credentials.outputs.configured == 'true' }}
+        env:
+          DEPLOY_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+        run: |
+          # 保護されたmainへ取り込まれ、tag名、全manifest、CHANGELOGが一致するcommitだけをdeployします。
+          git fetch origin main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            printf '%s\n' "${DEPLOY_TAG} does not point to a commit contained in main." >&2
+            exit 1
+          fi
+          expected_tag=$(node -p "'v' + JSON.parse(require('node:fs').readFileSync('.release/plan.json', 'utf8')).version")
+          if [ "${DEPLOY_TAG}" != "${expected_tag}" ]; then
+            printf '%s\n' "Tag mismatch: expected ${expected_tag}, received ${DEPLOY_TAG}." >&2
+            exit 1
+          fi
+          node scripts/release/validate-release.mjs
+
       - name: Build
-        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        if: ${{ steps.credentials.outputs.configured == 'true' }}
         run: pnpm build
 
       - name: Provision Cloudflare resources
         id: provision
-        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        if: ${{ steps.credentials.outputs.configured == 'true' }}
         run: |
-          # GitHub ActionsではDeploy Buttonのprovisioningが走らないため、D1/KV/R2を冪等に用意します。
+          # 生成先repositoryのD1、KV、R2を名前から冪等に準備します。
           pnpm release:provision-cloudflare
 
       - name: Deploy with Wrangler
-        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        if: ${{ steps.credentials.outputs.configured == 'true' }}
         run: |
-          # 実ID入りの一時configを使い、公開repoへaccount固有IDを残さずdeployします。
+          # account固有IDをrepositoryへ保存せず、workflow内で生成した一時configだけをdeployに使用します。
           pnpm exec wrangler deploy --config "${{ steps.provision.outputs.wrangler_config }}" --env "${WRANGLER_ENVIRONMENT}"

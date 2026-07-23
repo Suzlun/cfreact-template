@@ -50,6 +50,9 @@
 - 基本: `develop` から作業ブランチを切る
 - 命名例: `feat/<topic>` / `fix/<topic>` / `docs/<topic>` / `refactor/<topic>`
 - 1PR = 1意図（混ぜすぎない）
+- Pull Requestのbaseは`develop`にする
+- `develop`向けPull Requestには通常Changesetまたはempty Changesetを1つ追加する
+- Release PRの`release -> main`と同期PRの`main -> develop`は自動化に任せる
 
 ## コミット
 
@@ -131,7 +134,7 @@ pnpm check
 必要に応じて関連テストも実行してください。
 
 ```bash
-pnpm test:run        # すべての Vitest project
+pnpm test:run        # すべてのVitest projectとリリース自動化テスト
 pnpm test:frontend   # @cfreact-template/frontend
 pnpm test:backend    # backend-http Vitest project
 pnpm test:ui-package # UI package の Vitest project
@@ -140,10 +143,11 @@ pnpm test:e2e        # migration 済み E2E 専用 D1 を使う Playwright
 
 ## プルリクエストの流れ
 
-1. `main` を最新化し、作業ブランチを作成
+1. `develop` を最新化し、作業ブランチを作成
 2. 変更・テスト・ドキュメントを追加/更新（必要な範囲で）
-3. `pnpm lint` と `pnpm check`、関連テストを通す
-4. PR に以下を記載
+3. `pnpm changeset`で通常Changesetを追加する。versionを上げない変更は`pnpm changeset --empty`を使う
+4. `pnpm lint` と `pnpm check`、関連テストを通す
+5. `develop`向けPRに以下を記載
    - 変更の目的/背景
    - 変更点の要約
    - 動作確認内容（コマンド、確認手順）
@@ -151,11 +155,17 @@ pnpm test:e2e        # migration 済み E2E 専用 D1 を使う Playwright
 
 ## リリース
 
-- `main` の CI が成功すると Deploy Workflow が起動します。GitHub Actions側にCloudflare認証情報が設定されている場合だけ、ビルド、D1/KV/R2の作成または再利用、本番環境へのデプロイを実行します。
+- `develop`のCI成功後、通常ChangesetがあればPrepare Release Workflowが`release`とRelease PRを作成または更新します。
+- Release PRはmerge commitで`main`へ取り込みます。squash mergeとrebase mergeは使用しません。
+- `main`のCI成功後、Release Workflowが`vX.Y.Z`tagとGitHub Releaseを作成します。
+- 新しいrelease tagがpushされると、Cloudflare credentialsが設定済みの場合だけDeploy Workflowが本番環境へdeployします。
+- リリース後は`sync/main-to-develop` PRが作成され、required checks成功後に自動mergeされます。
+- merge済みの`release`と`sync/main-to-develop`はCleanup Release Branches Workflowが自動削除します。
+- 生成先repositoryで必要なGitHub App、ruleset、auto-merge、Production Environment設定は`docs/release-operations.md`を参照してください。
 - Cloudflare Deploy Button では `https://deploy.workers.cloudflare.com/?url=https://github.com/[アカウント名]/[リポジトリ名]/tree/main` を使用します。
 - Deploy Button/Workers Builds は `package.json` の `deploy` script を使い、`pnpm build && wrangler deploy --env production` を実行します。
 - Deploy Button/Workers Builds では、`wrangler.toml` の production placeholder を有効な D1 database ID と KV namespace ID に置き換え、必要な R2 bucket を事前に用意します。
-- GitHub Actionsに `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` がある場合は、Deploy WorkflowがD1/KV/R2を名前で作成または再利用し、実ID入りの一時Wrangler設定で直接deployします。
+- GitHub Actionsの`production` Environmentに`CLOUDFLARE_API_TOKEN`と`CLOUDFLARE_ACCOUNT_ID`がある場合、Deploy WorkflowはD1/KV/R2を名前で作成または再利用し、実ID入りの一時Wrangler設定で直接deployします。未設定の場合もリリース自体は成功します。
 - このrepoはrootから `pnpm build` と `wrangler deploy --env production` を実行する前提です。frontend assetsは `packages/frontend/dist`、backend entryは `packages/backend/src/entry/index.ts` です。
 - Workers Builds の build variable には `PNPM_VERSION=11.7.0` を設定し、pnpmのバージョン差によるinstall差分を避けてください。
 - Cloudflare Email Routing は送信元/送信先の検証が必要なため、Deploy Button後にCloudflare dashboardで設定してください。

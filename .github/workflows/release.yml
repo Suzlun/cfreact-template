@@ -1,0 +1,217 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: release-production
+  cancel-in-progress: false
+
+jobs:
+  detect:
+    name: Detect Release Merge
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      is-release: ${{ steps.detect.outputs.is_release }}
+      release-sha: ${{ steps.sha.outputs.value }}
+    steps:
+      - name: Checkout candidate commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # 手動再実行ではdefault branchがdevelopでも、release候補としてmainの先端を検査します。
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'main' }}
+
+      - name: Resolve release SHA
+        id: sha
+        run: |
+          # checkout済みcommitを唯一のSHAとして、検出、tag作成、同期へ引き渡します。
+          printf '%s\n' "value=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+
+      - name: Detect Release PR merge
+        id: detect
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ steps.sha.outputs.value }}
+        run: node scripts/release/github-automation.mjs detect-release-commit
+
+  release:
+    name: Publish GitHub Release
+    needs: detect
+    if: ${{ needs.detect.outputs.is-release == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.publish.outputs.tag }}
+    steps:
+      - name: Create release automation token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Checkout verified release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.detect.outputs.release-sha }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Setup pnpm
+        run: |
+          # CIと同じpnpmを使用し、release commitのlockfileを再現します。
+          corepack enable
+          corepack prepare pnpm@11.7.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate release metadata and topology
+        run: |
+          # mainがdevelopを祖先に持ち、生成済みversionとCHANGELOGが完全であることを公開前に検証します。
+          git fetch origin develop
+          node scripts/release/validate-release.mjs --develop-ref origin/develop
+
+      - name: Create tag and GitHub Release
+        id: publish
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          RELEASE_SHA: ${{ needs.detect.outputs.release-sha }}
+        run: pnpm release:github publish-release
+
+  sync:
+    name: Sync Main Into Develop
+    needs:
+      - detect
+      - release
+    if: ${{ needs.release.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Create release automation token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+
+      - name: Checkout released main commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.detect.outputs.release-sha }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Setup pnpm
+        run: |
+          # GitHub API helperをrepository scriptとして同じNode環境で実行します。
+          corepack enable
+          corepack prepare pnpm@11.7.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Find open synchronization PR
+        id: sync-pr
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: pnpm release:github get-sync-pr
+
+      - name: Configure synchronization commit author
+        run: |
+          # merge commitのauthorを固定し、自動同期であることを履歴から判別可能にします。
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+      - name: Prepare synchronization branch
+        id: branch
+        env:
+          SYNC_PR_EXISTS: ${{ steps.sync-pr.outputs.exists }}
+        run: |
+          # 既存同期PRがある場合は手動解消commitを保持し、mainだけを追加mergeします。
+          git fetch origin main develop
+          if git merge-base --is-ancestor origin/main origin/develop; then
+            # 再実行時にdevelopが既にrelease commitを含む場合は、差分のないPRを作りません。
+            printf '%s\n' 'already_synced=true' 'conflict=false' 'recreated=false' >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          if git ls-remote --exit-code --heads origin sync/main-to-develop >/dev/null 2>&1; then
+            git fetch origin '+refs/heads/sync/main-to-develop:refs/remotes/origin/sync/main-to-develop'
+          fi
+          if [ "${SYNC_PR_EXISTS}" = 'true' ]; then
+            git switch --force-create sync/main-to-develop origin/sync/main-to-develop
+            if git merge --no-ff --no-edit origin/main; then
+              printf '%s\n' 'already_synced=false' 'conflict=false' 'recreated=false' >> "${GITHUB_OUTPUT}"
+            else
+              git merge --abort
+              printf '%s\n' 'already_synced=false' 'conflict=true' 'recreated=false' >> "${GITHUB_OUTPUT}"
+            fi
+          else
+            recreated=false
+            if git show-ref --verify --quiet refs/remotes/origin/sync/main-to-develop; then
+              # open PRがない同期branchはdevelopへmerge済みの場合だけ再作成します。
+              git merge-base --is-ancestor origin/sync/main-to-develop origin/develop
+              recreated=true
+            fi
+            git switch --force-create sync/main-to-develop origin/main
+            printf '%s\n' 'already_synced=false' 'conflict=false' "recreated=${recreated}" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Report synchronization conflict
+        if: ${{ steps.branch.outputs.conflict == 'true' }}
+        env:
+          COMMENT_BODY: mainの自動同期で競合しました。sync/main-to-developへmainを手動でmergeし、競合を解消してください。
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          PULL_REQUEST_NUMBER: ${{ steps.sync-pr.outputs.number }}
+        run: pnpm release:github comment-pr
+
+      - name: Stop after synchronization conflict
+        if: ${{ steps.branch.outputs.conflict == 'true' }}
+        run: exit 1
+
+      - name: Push synchronization branch
+        if: ${{ steps.branch.outputs.conflict == 'false' && steps.branch.outputs.already_synced == 'false' }}
+        env:
+          RECREATED_BRANCH: ${{ steps.branch.outputs.recreated }}
+        run: |
+          # branch作成またはmain mergeの結果をpushし、競合解消済みcommitは強制更新しません。
+          if [ "${RECREATED_BRANCH}" = 'true' ]; then
+            git push --force-with-lease origin HEAD:sync/main-to-develop
+          else
+            git push origin HEAD:sync/main-to-develop
+          fi
+
+      - name: Create synchronization PR and enable auto-merge
+        if: ${{ steps.branch.outputs.conflict == 'false' && steps.branch.outputs.already_synced == 'false' }}
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: pnpm release:github upsert-sync-pr

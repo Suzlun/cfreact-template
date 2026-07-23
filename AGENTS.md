@@ -62,12 +62,24 @@ Before beginning any work, you MUST summarize your understanding of the Credo be
 
 ## Pull Requests
 
+- Create work branches from `develop` and target ordinary pull requests to `develop`.
+- Every pull request to `develop` must add a normal Changeset or an empty Changeset with `pnpm changeset --empty`.
+- Do not run `changeset version` on development branches; release metadata is owned by the `release` automation.
 - Always use `.github/pull_request_template.md` when creating a pull request, and fill every template item completely with no blank fields.
 - Write the pull request body in Japanese. Code identifiers, commands, logs, file paths, and issue or PR references may remain in their original form.
 - Do not delete sections or checklist items that do not apply. Instead, write `なし（理由: ...）` or a concrete reason explaining why the item does not apply.
 - Check every checklist item after writing the applicable confirmation or non-applicable reason. Do not leave unchecked items in the pull request body.
 - For pull requests with UI / UX changes, attach screenshots in all of these sections: `Desktop Before`, `Desktop After`, `Mobile Before`, and `Mobile After`.
 - The pull request body is validated by `.github/workflows/validate-pr-template.yml`; when using any pull request creation tool, read the template first and prepare a body that passes this validation.
+
+## Release Automation
+
+- All workspace packages share one application version through the Changesets fixed group; npm publishing is not part of this repository's release.
+- `release -> main` and `sync/main-to-develop -> develop` must use merge commits so `main` remains a descendant of released `develop` history.
+- The cleanup workflow deletes only merged `release` and `sync/main-to-develop` branches from the same repository; closed unmerged branches must remain available for inspection.
+- GitHub Release creation is independent from deployment; a new `vX.Y.Z` tag triggers Cloudflare deployment only when production credentials are configured.
+- Raise the minimum release bump by editing only `.release/plan.json` on `release`; do not manually edit generated package versions or changelogs.
+- GitHub repository settings, the release GitHub App, branch rulesets, auto-merge, and the production environment must be configured in each repository created from this template as documented in `docs/release-operations.md`.
 
 ## Supply Chain
 

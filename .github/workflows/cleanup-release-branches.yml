@@ -1,0 +1,53 @@
+name: Cleanup Release Branches
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    types:
+      - closed
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    name: Delete Merged Automation Branch
+    if: >-
+      ${{
+        github.event.pull_request.merged == true &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        (
+          (github.event.pull_request.base.ref == 'main' && github.event.pull_request.head.ref == 'release') ||
+          (github.event.pull_request.base.ref == 'develop' && github.event.pull_request.head.ref == 'sync/main-to-develop')
+        )
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Create release automation token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Checkout merged commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # merge済みbaseのscriptだけを実行し、削除対象head branchのコードを信頼しません。
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Delete merged automation branch
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: node scripts/release/github-automation.mjs delete-merged-branch

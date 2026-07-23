@@ -1818,7 +1818,12 @@ export default tseslint.config(
   },
   // Node ESMの設定・テストは実行時解決に必要な拡張子を明示する
   {
-    files: ['eslint.config.js', 'scripts/eslint/**/*.mjs', 'scripts/ui/**/*.mjs'],
+    files: [
+      'eslint.config.js',
+      'scripts/eslint/**/*.mjs',
+      'scripts/release/**/*.mjs',
+      'scripts/ui/**/*.mjs',
+    ],
     rules: {
       'import/extensions': [
         'error',
