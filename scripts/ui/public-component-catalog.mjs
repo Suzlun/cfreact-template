@@ -101,63 +101,120 @@ function getPublicUiTargets(workspaceRoot) {
 }
 
 /**
- * UIパッケージのtsconfigからTypeScript Programを構築し、barrelとaliasを含むexportを解決する。
+ * catalog検査に必要な単一のTypeScriptファイルだけを構文木へ変換する。
  *
- * @param {string} workspaceRoot workspaceの絶対パス。
- * @returns {{ program: import('typescript').Program; diagnostics: string[] }} Programと設定診断。
+ * TypeScript Programを構築せず、ESLint本体が作る型情報と重複するmodule graphを保持しない。
+ * ファイルが存在しない場合は呼び出し側がcatalog診断へ変換できるよう`undefined`を返す。
+ *
+ * @param {string} filename 読み込むTypeScriptまたはTSXファイルの絶対パス。
+ * @returns {import('typescript').SourceFile | undefined} 読み込んだ構文木。ファイルが存在しない場合は`undefined`。
  */
-function createUiProgram(workspaceRoot) {
-  const configPath = path.join(workspaceRoot, 'packages/ui/tsconfig.json');
-  const configResult = ts.readConfigFile(configPath, ts.sys.readFile);
-  if (configResult.error !== undefined) {
-    return {
-      program: ts.createProgram([], {}),
-      diagnostics: [ts.flattenDiagnosticMessageText(configResult.error.messageText, '\n')],
-    };
+function readTypeScriptSource(filename) {
+  if (!fs.existsSync(filename)) {
+    return undefined;
   }
 
-  // extends、include、pathsをTypeScript本体で解釈し、実際の`pnpm check`と同じ入力を得る。
-  const parsedConfig = ts.parseJsonConfigFileContent(
-    configResult.config,
-    ts.sys,
-    path.dirname(configPath)
+  // TSXだけJSX構文を有効化し、公開宣言とStory importをTypeScript本体の構文規則で解析する。
+  const scriptKind = filename.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  return ts.createSourceFile(
+    filename,
+    fs.readFileSync(filename, 'utf8'),
+    ts.ScriptTarget.Latest,
+    true,
+    scriptKind
   );
-  const diagnostics = parsedConfig.errors.map((diagnostic) =>
-    ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
-  );
-
-  return {
-    program: ts.createProgram(parsedConfig.fileNames, parsedConfig.options),
-    diagnostics,
-  };
 }
 
 /**
- * moduleの公開exportからruntime値を抽出し、type-only exportを除外する。
+ * 宣言に指定したTypeScript modifierが含まれるか判定する。
  *
- * @param {import('typescript').TypeChecker} checker exportを解決するTypeChecker。
- * @param {import('typescript').SourceFile} sourceFile 検査対象module。
- * @returns {string[]} runtimeで利用できるexport名。
+ * @param {import('typescript').Node} node 検査対象の構文ノード。
+ * @param {import('typescript').SyntaxKind} modifierKind 検索するmodifierのSyntaxKind。
+ * @returns {boolean} 指定したmodifierが存在する場合はtrue。
  */
-function getRuntimeExportNames(checker, sourceFile) {
-  const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
-  if (moduleSymbol === undefined) {
-    return [];
+function hasModifier(node, modifierKind) {
+  return (
+    ts.canHaveModifiers(node) &&
+    ts.getModifiers(node)?.some((modifier) => modifier.kind === modifierKind) === true
+  );
+}
+
+/**
+ * 変数宣言のbinding patternを再帰的に展開し、runtimeで作られる識別子を収集する。
+ *
+ * @param {import('typescript').BindingName} bindingName 識別子または分割代入pattern。
+ * @param {Set<string>} names 検出したruntime export名を格納する集合。
+ * @returns {void}
+ */
+function collectBindingNames(bindingName, names) {
+  if (ts.isIdentifier(bindingName)) {
+    names.add(bindingName.text);
+    return;
   }
 
-  const runtimeExports = [];
-  for (const exportedSymbol of checker.getExportsOfModule(moduleSymbol)) {
-    // export listで作られたAliasは元宣言まで解決し、値空間を持つかを正しく判定する。
-    const resolvedSymbol =
-      (exportedSymbol.flags & ts.SymbolFlags.Alias) !== 0
-        ? checker.getAliasedSymbol(exportedSymbol)
-        : exportedSymbol;
-    if ((resolvedSymbol.flags & ts.SymbolFlags.Value) !== 0 && exportedSymbol.name !== 'default') {
-      runtimeExports.push(exportedSymbol.name);
+  // object/arrayの分割宣言でも、実際にbindingされる各識別子を公開値として追跡する。
+  for (const element of bindingName.elements) {
+    if (ts.isBindingElement(element)) {
+      collectBindingNames(element.name, names);
+    }
+  }
+}
+
+/**
+ * moduleの公開構文からruntime値を抽出し、interfaceやtype-only exportを除外する。
+ *
+ * `verbatimModuleSyntax`で明示された値exportだけを読むため、依存moduleと型checkerを生成せずに
+ * 通常宣言、複合コンポーネント、barrel aliasを同じ規則で扱える。
+ *
+ * @param {import('typescript').SourceFile} sourceFile 検査対象moduleの構文木。
+ * @returns {string[]} runtimeで利用できるexport名。
+ */
+function getRuntimeExportNames(sourceFile) {
+  const runtimeExports = new Set();
+
+  for (const statement of sourceFile.statements) {
+    if (ts.isExportDeclaration(statement)) {
+      if (statement.isTypeOnly || statement.exportClause === undefined) {
+        continue;
+      }
+
+      if (ts.isNamedExports(statement.exportClause)) {
+        // `export { Local as Public }`は公開側の名前を使い、type-only指定だけを除外する。
+        for (const exportSpecifier of statement.exportClause.elements) {
+          if (!exportSpecifier.isTypeOnly) {
+            runtimeExports.add(exportSpecifier.name.text);
+          }
+        }
+      } else if (ts.isNamespaceExport(statement.exportClause)) {
+        runtimeExports.add(statement.exportClause.name.text);
+      }
+      continue;
+    }
+
+    const isExported = hasModifier(statement, ts.SyntaxKind.ExportKeyword);
+    const isDefault = hasModifier(statement, ts.SyntaxKind.DefaultKeyword);
+    if (!isExported || isDefault) {
+      continue;
+    }
+
+    if (ts.isVariableStatement(statement)) {
+      for (const declaration of statement.declarationList.declarations) {
+        collectBindingNames(declaration.name, runtimeExports);
+      }
+      continue;
+    }
+
+    if (
+      (ts.isFunctionDeclaration(statement) ||
+        ts.isClassDeclaration(statement) ||
+        ts.isEnumDeclaration(statement)) &&
+      statement.name !== undefined
+    ) {
+      runtimeExports.add(statement.name.text);
     }
   }
 
-  return runtimeExports.sort((left, right) => left.localeCompare(right));
+  return [...runtimeExports].sort((left, right) => left.localeCompare(right));
 }
 
 /**
@@ -226,21 +283,16 @@ function inspectPublicUiCatalog(workspaceRoot = DEFAULT_WORKSPACE_ROOT) {
   const targets = getPublicUiTargets(normalizedWorkspaceRoot);
   const diagnostics = [];
   const componentNames = new Set();
-  const { program, diagnostics: configDiagnostics } = createUiProgram(normalizedWorkspaceRoot);
-  const checker = program.getTypeChecker();
-
-  // tsconfig自体の不整合は後続のcatalog結果を信用できないため、先頭で明示する。
-  diagnostics.push(...configDiagnostics.map((message) => `UI tsconfig: ${message}`));
 
   const indexPath = path.join(uiRoot, 'index.ts');
-  const indexSource = program.getSourceFile(indexPath);
+  const indexSource = readTypeScriptSource(indexPath);
   const barrelModulePaths =
     indexSource === undefined ? new Set() : getBarrelModulePaths(indexSource);
   if (indexSource === undefined) {
-    diagnostics.push('packages/ui/index.tsをTypeScript Programから解決できません。');
+    diagnostics.push('packages/ui/index.tsを読み込めません。');
   } else {
     // barrel固有のalias名も公開コンポーネント名へ含め、SonnerToasterなどの再宣言を防ぐ。
-    for (const exportName of getRuntimeExportNames(checker, indexSource)) {
+    for (const exportName of getRuntimeExportNames(indexSource)) {
       if (COMPONENT_NAME_PATTERN.test(exportName)) {
         componentNames.add(exportName);
       }
@@ -266,8 +318,8 @@ function inspectPublicUiCatalog(workspaceRoot = DEFAULT_WORKSPACE_ROOT) {
   for (const target of targets) {
     const sourcePath = path.resolve(target.sourceFile);
     const storyPath = path.resolve(target.storyFile);
-    const sourceFile = program.getSourceFile(sourcePath);
-    const storyFile = program.getSourceFile(storyPath);
+    const sourceFile = readTypeScriptSource(sourcePath);
+    const storyFile = readTypeScriptSource(storyPath);
     const packageSubpath = target.importPath.slice('@cfreact-template/ui'.length);
     const exportSubpath = packageSubpath === '' ? '.' : `.${packageSubpath}`;
     const resolvedExport = resolvePackageExport(packageExports, exportSubpath, uiRoot);
@@ -285,9 +337,7 @@ function inspectPublicUiCatalog(workspaceRoot = DEFAULT_WORKSPACE_ROOT) {
     }
 
     if (sourceFile === undefined) {
-      diagnostics.push(
-        `${toWorkspacePath(normalizedWorkspaceRoot, sourcePath)}をTypeScript Programから解決できません。`
-      );
+      diagnostics.push(`${toWorkspacePath(normalizedWorkspaceRoot, sourcePath)}を読み込めません。`);
       continue;
     }
     if (storyFile === undefined) {
@@ -295,7 +345,7 @@ function inspectPublicUiCatalog(workspaceRoot = DEFAULT_WORKSPACE_ROOT) {
       continue;
     }
 
-    const runtimeExports = getRuntimeExportNames(checker, sourceFile);
+    const runtimeExports = getRuntimeExportNames(sourceFile);
     const runtimeImports = getStoryRuntimeImports(storyFile, target.importPath);
     const importedPublicValues = runtimeImports.filter((name) => runtimeExports.includes(name));
 

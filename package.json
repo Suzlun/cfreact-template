@@ -45,7 +45,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "lint": "pnpm lint:ui-reuse && pnpm lint:eslint && pnpm lint:openspec && pnpm lint:supply-chain",
-    "lint:eslint": "pnpm test:eslint-rules && eslint .",
+    "lint:eslint": "pnpm test:eslint-rules && eslint packages/ui && eslint packages/frontend && eslint . --ignore-pattern packages/ui --ignore-pattern packages/frontend",
     "lint:ui-reuse": "pnpm test:ui-reuse-rules && node scripts/ui/verify-public-component-catalog.mjs && jscpd --config .jscpd.json --format typescript,tsx --skip-local --exit-code 1 --no-tips packages/ui packages/frontend/src/app",
     "lint:openspec": "pnpm exec openspec validate --all --strict && node scripts/openspec/verify-scenario-coverage.mjs && node scripts/openspec/verify-change-intent.mjs && node scripts/openspec/verify-change-task-scope.mjs && node scripts/openspec/verify-wireframe-previews.mjs",
     "lint:supply-chain": "node scripts/security/verify-pnpm-supply-chain.mjs",

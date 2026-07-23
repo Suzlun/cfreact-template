@@ -42,6 +42,9 @@ jobs:
         run: pnpm format:check
 
       - name: Lint
+        env:
+          # 型付きESLintの各分割プロセスへ余裕を与えつつ、runnerの残りをOSとnative領域へ確保します。
+          NODE_OPTIONS: --max-old-space-size=4096
         run: pnpm lint
 
       - name: Type check

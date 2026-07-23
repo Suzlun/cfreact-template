@@ -11,8 +11,8 @@ test('公開UIとStorybook catalogが一致する', () => {
   assert.equal(catalog.targets.length, 64);
 });
 
-test('barrel aliasと複合コンポーネントを公開UI名として解決する', () => {
-  // Storyのmeta.componentだけでは得られない名前もsource exportとbarrelから取得できることを保証する。
+test('barrel aliasと複合コンポーネントを公開UI名として解決し、型exportを除外する', () => {
+  // sourceとbarrelの値exportだけを取得し、同じPascalCaseでもruntimeに存在しない型を混入させない。
   const componentNames = loadPublicUiComponentNames();
 
   assert.ok(componentNames.includes('Button'));
@@ -20,4 +20,5 @@ test('barrel aliasと複合コンポーネントを公開UI名として解決す
   assert.ok(componentNames.includes('FormField'));
   assert.ok(componentNames.includes('InputOTPSlot'));
   assert.ok(componentNames.includes('SonnerToaster'));
+  assert.ok(!componentNames.includes('SafeHTMLProps'));
 });
