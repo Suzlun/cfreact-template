@@ -63,7 +63,7 @@ Before beginning any work, you MUST summarize your understanding of the Credo be
 ## Pull Requests
 
 - Create work branches from `develop` and target ordinary pull requests to `develop`.
-- Every pull request to `develop` must add a normal Changeset or an empty Changeset with `pnpm changeset --empty`.
+- Pull requests to `develop` that change application release files must add a normal Changeset or an empty Changeset with `pnpm changeset --empty`; template workflow, release tooling, and documentation maintenance must not add pending Changesets.
 - Do not run `changeset version` on development branches; release metadata is owned by the `release` automation.
 - Always use `.github/pull_request_template.md` when creating a pull request, and fill every template item completely with no blank fields.
 - Write the pull request body in Japanese. Code identifiers, commands, logs, file paths, and issue or PR references may remain in their original form.
@@ -77,9 +77,9 @@ Before beginning any work, you MUST summarize your understanding of the Credo be
 - All workspace packages share one application version through the Changesets fixed group; npm publishing is not part of this repository's release.
 - `release -> main` and `sync/main-to-develop -> develop` must use merge commits so `main` remains a descendant of released `develop` history.
 - The cleanup workflow deletes only merged `release` and `sync/main-to-develop` branches from the same repository; closed unmerged branches must remain available for inspection.
-- GitHub Release creation is independent from deployment; a new `vX.Y.Z` tag triggers Cloudflare deployment only when production credentials are configured.
+- GitHub Release creation is independent from deployment; the Release workflow explicitly dispatches Cloudflare deployment for a verified `vX.Y.Z` tag when production credentials are configured.
 - Raise the minimum release bump by editing only `.release/plan.json` on `release`; do not manually edit generated package versions or changelogs.
-- GitHub repository settings, the release GitHub App, branch rulesets, auto-merge, and the production environment must be configured in each repository created from this template as documented in `docs/release-operations.md`.
+- Release automation uses only the repository-scoped `GITHUB_TOKEN`; configure the Actions pull-request permission, branch rulesets, and production environment as documented in `docs/release-operations.md`.
 
 ## Supply Chain
 

@@ -12,8 +12,20 @@ import {
   isTrustedSyncPullRequest,
   parseChangesetSummary,
   parseReleasePlan,
+  requiresApplicationChangeset,
   validateChangesetMarkdown,
 } from './release-model.mjs';
+
+test('Changesetはアプリケーション版へ影響するfile変更だけに要求する', () => {
+  // template workflowや文書の保守を生成先の初回releaseへ混入させず、実行物とmanifestを対象にします。
+  assert.equal(requiresApplicationChangeset('packages/frontend/src/app.tsx'), true);
+  assert.equal(requiresApplicationChangeset('drizzle/migrations/0001.sql'), true);
+  assert.equal(requiresApplicationChangeset('package.json'), true);
+  assert.equal(requiresApplicationChangeset('pnpm-lock.yaml'), true);
+  assert.equal(requiresApplicationChangeset('.github/workflows/release.yml'), false);
+  assert.equal(requiresApplicationChangeset('scripts/release/github-automation.mjs'), false);
+  assert.equal(requiresApplicationChangeset('docs/release-operations.md'), false);
+});
 
 test('develop向けPRでは新規Changesetだけを受け付ける', () => {
   // 既存Changesetの変更やREADME追加では必須検査を回避できないことを確認します。

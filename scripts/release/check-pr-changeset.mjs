@@ -5,18 +5,18 @@ import process from 'node:process';
 import {
   isAddedChangesetFile,
   isTrustedSyncPullRequest,
+  requiresApplicationChangeset,
   validateChangesetMarkdown,
 } from './release-model.mjs';
 
-const eventPath = requireEnvironmentValue('GITHUB_EVENT_PATH');
 const repository = requireEnvironmentValue('GITHUB_REPOSITORY');
 const token = requireEnvironmentValue('GITHUB_TOKEN');
-const event = JSON.parse(readFileSync(eventPath, 'utf8'));
-const pullRequest = event.pull_request;
+const pullRequest = await readPullRequest(repository, token);
 
-// pull_requestイベント以外で誤実行された場合は、曖昧な成功にせず設定不備として停止します。
-if (typeof pullRequest !== 'object' || pullRequest === null) {
-  throw new Error('GITHUB_EVENT_PATH does not contain a pull request event.');
+// 明示dispatchではbranch移動後の古い検査を成功させないよう、対象headを完全SHAで固定します。
+const expectedSha = process.env.EXPECTED_SHA;
+if (expectedSha !== undefined && expectedSha !== '' && pullRequest.head?.sha !== expectedSha) {
+  throw new Error('Pull request head SHA does not match EXPECTED_SHA.');
 }
 
 // mainからdevelopへの信頼済み同期PRはrelease metadataの反映なので、追加Changesetを要求しません。
@@ -27,23 +27,52 @@ if (isTrustedSyncPullRequest(pullRequest, repository)) {
 } else {
   // GitHub APIから全変更ファイルを取得し、forkのコードやscriptを実行せずChangeset追加だけを検査します。
   const files = await listPullRequestFiles(repository, pullRequest.number, token);
-  const addedChangesets = files.filter(isAddedChangesetFile);
-  if (addedChangesets.length === 0) {
-    throw new Error(
-      'Every pull request to develop must add a .changeset/*.md file. Use `pnpm changeset --empty` when no version bump is required.'
-    );
+  const releaseFiles = files.filter((file) => requiresApplicationChangeset(file.filename));
+  if (releaseFiles.length === 0) {
+    process.stdout.write('Pull request does not change application release files.\n');
+  } else {
+    const addedChangesets = files.filter(isAddedChangesetFile);
+    if (addedChangesets.length === 0) {
+      throw new Error(
+        'Application release file changes require a .changeset/*.md file. Use `pnpm changeset --empty` when no version bump is required.'
+      );
+    }
+    for (const changeset of addedChangesets) {
+      // PR headのblobをデータとして読み、Changesets CLI互換のfront matterであることを確認します。
+      const markdown = await readRepositoryFile(
+        repository,
+        changeset.filename,
+        pullRequest.head.sha,
+        token
+      );
+      validateChangesetMarkdown(markdown);
+    }
+    process.stdout.write('Pull request contains a newly added Changeset.\n');
   }
-  for (const changeset of addedChangesets) {
-    // PR headのblobをデータとして読み、Changesets CLI互換のfront matterであることを確認します。
-    const markdown = await readRepositoryFile(
-      repository,
-      changeset.filename,
-      pullRequest.head.sha,
-      token
-    );
-    validateChangesetMarkdown(markdown);
+}
+
+async function readPullRequest(repositoryName, githubToken) {
+  // 通常PR eventではpayloadを使い、GITHUB_TOKEN作成PRではworkflow_dispatch入力からAPIで取得します。
+  const eventPath = process.env.GITHUB_EVENT_PATH;
+  if (eventPath !== undefined && eventPath.trim() !== '') {
+    const event = JSON.parse(readFileSync(eventPath, 'utf8'));
+    if (typeof event.pull_request === 'object' && event.pull_request !== null) {
+      return event.pull_request;
+    }
   }
-  process.stdout.write('Pull request contains a newly added Changeset.\n');
+
+  const pullRequestNumber = Number.parseInt(process.env.PULL_REQUEST_NUMBER ?? '', 10);
+  if (!Number.isSafeInteger(pullRequestNumber) || pullRequestNumber <= 0) {
+    throw new Error('PULL_REQUEST_NUMBER must identify a pull request for workflow_dispatch.');
+  }
+  const pullRequest = await githubRequest(
+    `/repos/${repositoryName}/pulls/${pullRequestNumber}`,
+    githubToken
+  );
+  if (typeof pullRequest !== 'object' || pullRequest === null || Array.isArray(pullRequest)) {
+    throw new TypeError('GitHub pull request response must be an object.');
+  }
+  return pullRequest;
 }
 
 async function listPullRequestFiles(repositoryName, pullRequestNumber, githubToken) {
@@ -104,7 +133,6 @@ async function readRepositoryFile(repositoryName, filePath, reference, githubTok
 function requireEnvironmentValue(name) {
   // workflow契約に必要な値を処理開始前に検証し、部分的な検査結果を返しません。
   let value;
-  if (name === 'GITHUB_EVENT_PATH') value = process.env.GITHUB_EVENT_PATH;
   if (name === 'GITHUB_REPOSITORY') value = process.env.GITHUB_REPOSITORY;
   if (name === 'GITHUB_TOKEN') value = process.env.GITHUB_TOKEN;
   if (value === undefined || value.trim() === '') {

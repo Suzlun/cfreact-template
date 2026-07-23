@@ -1,9 +1,6 @@
 name: Deploy
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
   workflow_dispatch:
     inputs:
       tag:
@@ -44,8 +41,8 @@ jobs:
         if: ${{ steps.credentials.outputs.configured == 'true' }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          # tag pushはそのref、手動実行は入力された既存tagをcheckoutします。
-          ref: ${{ github.event_name == 'push' && github.ref || inputs.tag }}
+          # Release Workflowが明示した既存tagをcheckoutし、GITHUB_TOKENのevent抑止へ依存しません。
+          ref: ${{ inputs.tag }}
           fetch-depth: 0
 
       - name: Setup Node
@@ -69,7 +66,7 @@ jobs:
       - name: Validate release tag
         if: ${{ steps.credentials.outputs.configured == 'true' }}
         env:
-          DEPLOY_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+          DEPLOY_TAG: ${{ inputs.tag }}
         run: |
           # 保護されたmainへ取り込まれ、tag名、全manifest、CHANGELOGが一致するcommitだけをdeployします。
           git fetch origin main

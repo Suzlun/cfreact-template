@@ -1,0 +1,45 @@
+name: Complete Release Synchronization
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+      - Changeset Check
+      - Validate PR Template
+    types:
+      - completed
+    branches:
+      - sync/main-to-develop
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: complete-release-sync-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  complete:
+    name: Merge Verified Synchronization
+    if: >-
+      ${{
+        github.event.workflow_run.event == 'workflow_dispatch' &&
+        github.event.workflow_run.conclusion == 'success'
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trusted synchronization helper
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # default branchの検証済みhelperだけを実行し、同期branch上のcodeを信頼境界にしません。
+          ref: develop
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Merge synchronization after all checks succeed
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SYNC_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: node scripts/release/github-automation.mjs complete-sync-pr

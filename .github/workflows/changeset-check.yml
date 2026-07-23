@@ -9,6 +9,20 @@ on:
       - reopened
       - synchronize
       - ready_for_review
+  workflow_dispatch:
+    inputs:
+      automation_kind:
+        description: 検証する自動化PRの種別
+        required: true
+        type: string
+      expected_sha:
+        description: 検証対象branchの完全SHA
+        required: true
+        type: string
+      pull_request_number:
+        description: 検証対象Pull Request番号
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -17,6 +31,7 @@ permissions:
 jobs:
   require-changeset:
     name: Require Changeset
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.automation_kind == 'sync' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -24,9 +39,11 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           # PRのコードを実行せずbase側の検査scriptだけを使用し、fork PRでも秘密情報を扱いません。
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || 'develop' }}
 
       - name: Require a newly added Changeset
         env:
+          EXPECTED_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.expected_sha || '' }}
           GITHUB_TOKEN: ${{ github.token }}
+          PULL_REQUEST_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pull_request_number || '' }}
         run: node scripts/release/check-pr-changeset.mjs

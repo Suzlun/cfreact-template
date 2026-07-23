@@ -16,7 +16,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  actions: write
+  contents: write
+  issues: write
+  pull-requests: write
 
 concurrency:
   group: prepare-release
@@ -33,22 +36,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Create release automation token
-        id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-          permission-contents: write
-          permission-issues: write
-          permission-pull-requests: write
-
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event_name == 'push' && 'release' || 'develop' }}
           fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ github.token }}
 
       - name: Setup Node
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
@@ -68,12 +61,12 @@ jobs:
       - name: Find open Release PR
         id: release-pr
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: pnpm release:github get-release-pr
 
       - name: Configure release commit author
         run: |
-          # commit認証はGitHub App token、監査可能なauthorはGitHub Actions botへ統一します。
+          # repository固有tokenで認証し、監査可能なauthorはGitHub Actions botへ統一します。
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
@@ -110,7 +103,7 @@ jobs:
         if: ${{ steps.branch.outputs.conflict == 'true' }}
         env:
           COMMENT_BODY: developの自動取り込みで競合しました。releaseへdevelopを手動でmergeし、競合を解消してください。
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ github.token }}
           PULL_REQUEST_NUMBER: ${{ steps.release-pr.outputs.number }}
         run: pnpm release:github comment-pr
 
@@ -149,7 +142,18 @@ jobs:
           fi
 
       - name: Create or update Release PR
+        id: upsert-pr
         if: ${{ steps.render.outputs.has_release == 'true' }}
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: pnpm release:github upsert-release-pr
+
+      - name: Dispatch Release PR checks
+        if: ${{ steps.render.outputs.has_release == 'true' }}
+        env:
+          AUTOMATION_KIND: release
+          GITHUB_TOKEN: ${{ github.token }}
+          PULL_REQUEST_HEAD_BRANCH: ${{ steps.upsert-pr.outputs.head_branch }}
+          PULL_REQUEST_HEAD_SHA: ${{ steps.upsert-pr.outputs.head_sha }}
+          PULL_REQUEST_NUMBER: ${{ steps.upsert-pr.outputs.number }}
+        run: pnpm release:github dispatch-pr-checks

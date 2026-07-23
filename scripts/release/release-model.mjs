@@ -9,6 +9,21 @@ export const RELEASE_PLAN_PATH = '.release/plan.json';
 const CHANGESET_PATH_PATTERN = /^\.changeset\/(?!README\.md$)[^/]+\.md$/;
 const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const BUMP_TYPES = new Set(['auto', 'patch', 'minor', 'major']);
+const ROOT_RELEASE_FILES = new Set([
+  'package.json',
+  'pnpm-lock.yaml',
+  'pnpm-workspace.yaml',
+  'wrangler.toml',
+]);
+
+export function requiresApplicationChangeset(fileName) {
+  // テンプレート保守を生成先のpending releaseへ混入させず、実アプリ構成の変更だけを対象にします。
+  return (
+    ROOT_RELEASE_FILES.has(fileName) ||
+    fileName.startsWith('packages/') ||
+    fileName.startsWith('drizzle/')
+  );
+}
 
 export function isAddedChangesetFile(file) {
   // PR差分では新規Changesetだけを受け付け、既存の未消費Changesetを書き換える迂回を防ぎます。
@@ -194,7 +209,7 @@ export function createPullRequestBody(kind, version) {
 
 ## セキュリティ確認
 
-- [x] 認証・認可の境界を確認した（GitHub Appの限定権限だけを使用）
+- [x] 認証・認可の境界を確認した（repository固有GITHUB_TOKENの限定権限だけを使用）
 - [x] ユーザー入力の検証・無害化を確認した（固定branchとSemVerを検証）
 - [x] 秘密情報・トークン・個人情報をログやレスポンスに含めていない
 - [x] 新規依存関係やビルドスクリプトのリスクを確認した

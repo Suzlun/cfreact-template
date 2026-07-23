@@ -8,6 +8,20 @@ on:
       - reopened
       - synchronize
       - ready_for_review
+  workflow_dispatch:
+    inputs:
+      automation_kind:
+        description: 検証する自動化PRの種別
+        required: true
+        type: string
+      expected_sha:
+        description: 検証対象branchの完全SHA
+        required: true
+        type: string
+      pull_request_number:
+        description: 検証対象Pull Request番号
+        required: true
+        type: string
 
 permissions:
   pull-requests: read
@@ -19,11 +33,33 @@ jobs:
     steps:
       - name: Validate PR body
         env:
+          EXPECTED_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.expected_sha || '' }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
           PR_BODY: ${{ github.event.pull_request.body || '' }}
+          PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pull_request_number || '' }}
         run: |
           node <<'NODE'
-          // PR本文だけを検証し、フォーク由来のコードを実行しないことで安全性を保つ。
-          const body = process.env.PR_BODY ?? '';
+          (async () => {
+          // 通常eventはpayloadを使い、明示dispatchではGitHub APIから同じrepositoryのPR本文だけを取得する。
+          let body = process.env.PR_BODY ?? '';
+          if (body === '' && process.env.PR_NUMBER) {
+            const response = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pulls/${process.env.PR_NUMBER}`, {
+              headers: {
+                Accept: 'application/vnd.github+json',
+                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                'X-GitHub-Api-Version': '2022-11-28',
+              },
+            });
+            if (!response.ok) {
+              throw new Error(`Pull request lookup failed with status ${response.status}.`);
+            }
+            const pullRequest = await response.json();
+            if (pullRequest.head?.sha !== process.env.EXPECTED_SHA) {
+              throw new Error('Pull request head SHA does not match EXPECTED_SHA.');
+            }
+            body = pullRequest.body ?? '';
+          }
           const errors = [];
 
           // 正規表現へ利用者入力を埋め込むため、見出しや項目名を安全にエスケープする。
@@ -140,4 +176,8 @@ jobs:
           }
 
           console.log('PRテンプレート検証に成功しました。');
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
           NODE

@@ -6,6 +6,23 @@ on:
       - main
       - develop
   pull_request:
+  workflow_dispatch:
+    inputs:
+      automation_kind:
+        description: 検証する自動化PRの種別
+        required: true
+        type: choice
+        options:
+          - release
+          - sync
+      expected_sha:
+        description: 検証対象branchの完全SHA
+        required: true
+        type: string
+      pull_request_number:
+        description: 検証対象Pull Request番号
+        required: true
+        type: string
 
 jobs:
   verify:
@@ -16,6 +33,15 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.expected_sha || github.sha }}
+
+      - name: Verify dispatched commit
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          # branch更新後の古いdispatchを成功させず、PRへ表示するcheckを完全SHAへ固定します。
+          test "$(git rev-parse HEAD)" = "${EXPECTED_SHA}"
 
       - name: Setup Node
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
@@ -32,7 +58,11 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate release branch
-        if: ${{ github.event_name == 'pull_request' && github.head_ref == 'release' && github.base_ref == 'main' }}
+        if: >-
+          ${{
+            (github.event_name == 'pull_request' && github.head_ref == 'release' && github.base_ref == 'main') ||
+            (github.event_name == 'workflow_dispatch' && inputs.automation_kind == 'release')
+          }}
         run: |
           # Release PRが最新developを祖先に持ち、単一versionとCHANGELOGが確定していることを検証します。
           git fetch origin develop

@@ -51,25 +51,21 @@ jobs:
     name: Publish GitHub Release
     needs: detect
     if: ${{ needs.detect.outputs.is-release == 'true' }}
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: read
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
       tag: ${{ steps.publish.outputs.tag }}
     steps:
-      - name: Create release automation token
-        id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-          permission-contents: write
-
       - name: Checkout verified release commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ needs.detect.outputs.release-sha }}
           fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ github.token }}
 
       - name: Setup Node
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
@@ -95,9 +91,15 @@ jobs:
       - name: Create tag and GitHub Release
         id: publish
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ github.token }}
           RELEASE_SHA: ${{ needs.detect.outputs.release-sha }}
         run: pnpm release:github publish-release
+
+      - name: Dispatch deployment
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.publish.outputs.tag }}
+        run: pnpm release:github dispatch-deploy
 
   sync:
     name: Sync Main Into Develop
@@ -105,25 +107,20 @@ jobs:
       - detect
       - release
     if: ${{ needs.release.result == 'success' }}
+    permissions:
+      actions: write
+      contents: write
+      issues: write
+      pull-requests: write
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Create release automation token
-        id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-          permission-contents: write
-          permission-issues: write
-          permission-pull-requests: write
-
       - name: Checkout released main commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ needs.detect.outputs.release-sha }}
           fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ github.token }}
 
       - name: Setup Node
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
@@ -143,7 +140,7 @@ jobs:
       - name: Find open synchronization PR
         id: sync-pr
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: pnpm release:github get-sync-pr
 
       - name: Configure synchronization commit author
@@ -190,7 +187,7 @@ jobs:
         if: ${{ steps.branch.outputs.conflict == 'true' }}
         env:
           COMMENT_BODY: mainの自動同期で競合しました。sync/main-to-developへmainを手動でmergeし、競合を解消してください。
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ github.token }}
           PULL_REQUEST_NUMBER: ${{ steps.sync-pr.outputs.number }}
         run: pnpm release:github comment-pr
 
@@ -210,8 +207,19 @@ jobs:
             git push origin HEAD:sync/main-to-develop
           fi
 
-      - name: Create synchronization PR and enable auto-merge
+      - name: Create or update synchronization PR
+        id: upsert-pr
         if: ${{ steps.branch.outputs.conflict == 'false' && steps.branch.outputs.already_synced == 'false' }}
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: pnpm release:github upsert-sync-pr
+
+      - name: Dispatch synchronization PR checks
+        if: ${{ steps.branch.outputs.conflict == 'false' && steps.branch.outputs.already_synced == 'false' }}
+        env:
+          AUTOMATION_KIND: sync
+          GITHUB_TOKEN: ${{ github.token }}
+          PULL_REQUEST_HEAD_BRANCH: ${{ steps.upsert-pr.outputs.head_branch }}
+          PULL_REQUEST_HEAD_SHA: ${{ steps.upsert-pr.outputs.head_sha }}
+          PULL_REQUEST_NUMBER: ${{ steps.upsert-pr.outputs.number }}
+        run: pnpm release:github dispatch-pr-checks

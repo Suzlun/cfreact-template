@@ -396,9 +396,9 @@ pnpm dev:all
 
 `develop`のCIが成功すると`.github/workflows/prepare-release.yml`が`release`とRelease PRを作成または更新します。Release PRがmerge commitで`main`へ取り込まれてCIが成功すると、`.github/workflows/release.yml`が`vX.Y.Z`tag、GitHub Release、`main -> develop`同期PRを処理します。merge済みの`release`と`sync/main-to-develop`は`.github/workflows/cleanup-release-branches.yml`が自動削除し、次回処理時に最新のbase branchから再作成します。
 
-`.github/workflows/deploy.yml`は新しい`vX.Y.Z`tagのpushで独立して起動します。`production` EnvironmentにCloudflare credentialsが設定されている場合だけ、ビルド、D1/KV/R2の作成または再利用、本番環境へのデプロイを実行します。credentialsがなければデプロイだけを省略し、タグとGitHub Releaseには影響しません。
+`.github/workflows/release.yml`は新しい`vX.Y.Z`tagとGitHub Releaseを作成した後、`.github/workflows/deploy.yml`へtagを明示してdispatchします。`production` EnvironmentにCloudflare credentialsが設定されている場合だけ、ビルド、D1/KV/R2の作成または再利用、本番環境へのデプロイを実行します。credentialsがなければデプロイだけを省略し、タグとGitHub Releaseには影響しません。
 
-Changesets、branch運用、GitHub App、ruleset、auto-merge、Production Environmentを含む生成先repositoryの設定は[`docs/release-operations.md`](docs/release-operations.md)を参照してください。GitHub repository settingsと認証情報はテンプレートから生成先へ複製されないため、生成先ごとに設定します。
+Changesets、branch運用、ActionsのPR作成権限、ruleset、Production Environmentを含む生成先repositoryの設定は[`docs/release-operations.md`](docs/release-operations.md)を参照してください。リリース認証はrepository固有の`GITHUB_TOKEN`だけを使い、GitHub App、PAT、Client ID、private keyは不要です。
 
 Cloudflare Deploy Button からデプロイする場合は、次の URL を使用します。
 
@@ -473,7 +473,7 @@ Cloudflare Email Routing は送信元/送信先の検証が必要なため、Dep
 
 ### 環境変数
 
-GitHub Actionsからリリースする場合は、Cloudflare認証情報を`production` Environmentへ設定します。GitHub Appを含む全設定は`docs/release-operations.md`を参照してください。
+GitHub Actionsからリリースする場合は、Cloudflare認証情報を`production` Environmentへ設定します。ActionsのPR作成権限を含む全設定は`docs/release-operations.md`を参照してください。
 
 アプリケーション実行時の送信元/送信先は `wrangler.toml` の `EMAIL_FROM` と `EMAIL_TO` で設定します。D1/KV/R2 は Wrangler binding として提供されるため、`CLOUDFLARE_DATABASE_ID` や `CLOUDFLARE_D1_TOKEN` をアプリケーション secret として設定する構成ではありません。
 

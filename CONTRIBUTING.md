@@ -51,7 +51,8 @@
 - 命名例: `feat/<topic>` / `fix/<topic>` / `docs/<topic>` / `refactor/<topic>`
 - 1PR = 1意図（混ぜすぎない）
 - Pull Requestのbaseは`develop`にする
-- `develop`向けPull Requestには通常Changesetまたはempty Changesetを1つ追加する
+- `packages/**`、`drizzle/**`、root manifest、lockfile、Wrangler設定を変更する`develop`向けPull Requestには通常Changesetまたはempty Changesetを1つ追加する
+- template workflow、release tooling、文書だけの保守では、生成先へpending releaseを持ち込むChangesetを追加しない
 - Release PRの`release -> main`と同期PRの`main -> develop`は自動化に任せる
 
 ## コミット
@@ -145,7 +146,7 @@ pnpm test:e2e        # migration 済み E2E 専用 D1 を使う Playwright
 
 1. `develop` を最新化し、作業ブランチを作成
 2. 変更・テスト・ドキュメントを追加/更新（必要な範囲で）
-3. `pnpm changeset`で通常Changesetを追加する。versionを上げない変更は`pnpm changeset --empty`を使う
+3. アプリケーション版へ影響する変更では`pnpm changeset`で通常Changesetを追加する。versionを上げない変更は`pnpm changeset --empty`を使い、template保守だけの変更にはChangesetを追加しない
 4. `pnpm lint` と `pnpm check`、関連テストを通す
 5. `develop`向けPRに以下を記載
    - 変更の目的/背景
@@ -158,10 +159,10 @@ pnpm test:e2e        # migration 済み E2E 専用 D1 を使う Playwright
 - `develop`のCI成功後、通常ChangesetがあればPrepare Release Workflowが`release`とRelease PRを作成または更新します。
 - Release PRはmerge commitで`main`へ取り込みます。squash mergeとrebase mergeは使用しません。
 - `main`のCI成功後、Release Workflowが`vX.Y.Z`tagとGitHub Releaseを作成します。
-- 新しいrelease tagがpushされると、Cloudflare credentialsが設定済みの場合だけDeploy Workflowが本番環境へdeployします。
-- リリース後は`sync/main-to-develop` PRが作成され、required checks成功後に自動mergeされます。
+- Release Workflowが検証済みtagをDeploy Workflowへ明示dispatchし、Cloudflare credentialsが設定済みの場合だけ本番環境へdeployします。
+- リリース後は`sync/main-to-develop` PRが作成され、明示dispatchされたrequired checks成功後に自動mergeされます。
 - merge済みの`release`と`sync/main-to-develop`はCleanup Release Branches Workflowが自動削除します。
-- 生成先repositoryで必要なGitHub App、ruleset、auto-merge、Production Environment設定は`docs/release-operations.md`を参照してください。
+- 生成先repositoryで必要なActionsのPR作成権限、ruleset、Production Environment設定は`docs/release-operations.md`を参照してください。リリース用GitHub AppやPATは使用しません。
 - Cloudflare Deploy Button では `https://deploy.workers.cloudflare.com/?url=https://github.com/[アカウント名]/[リポジトリ名]/tree/main` を使用します。
 - Deploy Button/Workers Builds は `package.json` の `deploy` script を使い、`pnpm build && wrangler deploy --env production` を実行します。
 - Deploy Button/Workers Builds では、`wrangler.toml` の production placeholder を有効な D1 database ID と KV namespace ID に置き換え、必要な R2 bucket を事前に用意します。

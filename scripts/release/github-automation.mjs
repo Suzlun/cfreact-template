@@ -13,6 +13,7 @@ import {
 } from './release-model.mjs';
 
 const GIT_SHA_PATTERN = /^[\da-f]{40}$/;
+const AUTOMATION_CHECKS = ['verify', 'Validate PR Template', 'Require Changeset'];
 const command = process.argv[2];
 const token = requireEnvironmentValue('GITHUB_TOKEN');
 const repository = requireEnvironmentValue('GITHUB_REPOSITORY');
@@ -35,6 +36,15 @@ switch (command) {
     break;
   case 'upsert-sync-pr':
     await upsertPullRequest('sync');
+    break;
+  case 'dispatch-pr-checks':
+    await dispatchPullRequestChecks();
+    break;
+  case 'dispatch-deploy':
+    await dispatchDeploy();
+    break;
+  case 'complete-sync-pr':
+    await completeSyncPullRequest();
     break;
   case 'comment-pr':
     await commentPullRequest();
@@ -93,7 +103,7 @@ async function upsertPullRequest(kind) {
 
   let pullRequest;
   if (existingPullRequest === undefined) {
-    // GitHub App名義でPRを作り、pull_request workflowとrequired checksを通常通り起動します。
+    // repository固有のGITHUB_TOKENでPRを作り、利用者identityや永続credentialへの依存を排除します。
     pullRequest = await githubRequest(`/repos/${repository}/pulls`, {
       method: 'POST',
       body: JSON.stringify({ base: baseBranch, head: headBranch, title, body }),
@@ -107,23 +117,123 @@ async function upsertPullRequest(kind) {
   }
 
   writeGitHubOutput('number', String(pullRequest.number));
-  if (!isRelease) {
-    // 同期PRはrequired checks成功後にmerge commitで取り込み、release履歴の祖先関係を維持します。
-    await enableAutoMerge(pullRequest);
+  if (typeof pullRequest.head?.sha !== 'string' || !GIT_SHA_PATTERN.test(pullRequest.head.sha)) {
+    throw new Error('Automation pull request head SHA is invalid.');
+  }
+  writeGitHubOutput('head_sha', pullRequest.head.sha);
+  writeGitHubOutput('head_branch', headBranch);
+}
+
+async function dispatchPullRequestChecks() {
+  // GITHUB_TOKENが作成したPRのworkflow承認待ちに依存せず、固定branchのhead SHAを明示検証します。
+  const kind = requireEnvironmentValue('AUTOMATION_KIND');
+  const pullRequestNumber = parsePositiveInteger(
+    requireEnvironmentValue('PULL_REQUEST_NUMBER'),
+    'PULL_REQUEST_NUMBER'
+  );
+  const headSha = requireGitSha('PULL_REQUEST_HEAD_SHA');
+  const headBranch = requireEnvironmentValue('PULL_REQUEST_HEAD_BRANCH');
+  const expectedBranch = kind === 'release' ? RELEASE_BRANCH : kind === 'sync' ? SYNC_BRANCH : '';
+  if (headBranch !== expectedBranch) {
+    throw new Error(`Unexpected automation branch for ${kind}: ${headBranch}`);
+  }
+
+  const inputs = {
+    automation_kind: kind,
+    expected_sha: headSha,
+    pull_request_number: String(pullRequestNumber),
+  };
+  await dispatchWorkflow('ci.yml', headBranch, inputs);
+  await dispatchWorkflow('validate-pr-template.yml', headBranch, inputs);
+  if (kind === 'sync') {
+    await dispatchWorkflow('changeset-check.yml', headBranch, inputs);
   }
 }
 
-async function enableAutoMerge(pullRequest) {
-  // 再実行時に既にauto-mergeが有効ならmutationを重ねず、その状態を正常として扱います。
-  if (pullRequest.auto_merge !== null && pullRequest.auto_merge !== undefined) {
+async function dispatchDeploy() {
+  // GITHUB_TOKENで作成したtagはpush workflowを再発火しないため、Deployを明示dispatchします。
+  const tag = requireEnvironmentValue('RELEASE_TAG');
+  const repositoryMetadata = await githubRequest(`/repos/${repository}`);
+  const defaultBranch = repositoryMetadata.default_branch;
+  if (typeof defaultBranch !== 'string' || defaultBranch.trim() === '') {
+    throw new Error('Repository default branch is unavailable.');
+  }
+  await dispatchWorkflow('deploy.yml', defaultBranch, { tag });
+}
+
+async function dispatchWorkflow(workflowFile, reference, inputs) {
+  // workflow_dispatchはGITHUB_TOKENでも必ず実行されるGitHub標準eventなので、外部tokenを必要としません。
+  await githubRequest(`/repos/${repository}/actions/workflows/${workflowFile}/dispatches`, {
+    method: 'POST',
+    body: JSON.stringify({ ref: reference, inputs }),
+  });
+}
+
+async function completeSyncPullRequest() {
+  // 同期branchの固定checkが全て同じSHAで成功した場合だけ、merge commitとbranch削除を完了します。
+  const expectedHeadSha = requireGitSha('SYNC_HEAD_SHA');
+  const pullRequest = await findOpenPullRequest('develop', SYNC_BRANCH);
+  if (pullRequest === undefined) {
+    process.stdout.write('Synchronization pull request is already closed.\n');
     return;
   }
-  const query = `mutation EnableAutoMerge($pullRequestId: ID!) {
-    enablePullRequestAutoMerge(input: { pullRequestId: $pullRequestId, mergeMethod: MERGE }) {
-      pullRequest { id }
+  if (
+    pullRequest.head?.repo?.full_name !== repository ||
+    pullRequest.head?.sha !== expectedHeadSha
+  ) {
+    throw new Error('Synchronization pull request head does not match the verified SHA.');
+  }
+
+  const successfulChecks = await listSuccessfulGitHubActionsChecks(expectedHeadSha);
+  const missingChecks = AUTOMATION_CHECKS.filter((checkName) => !successfulChecks.has(checkName));
+  if (missingChecks.length > 0) {
+    process.stdout.write(`Synchronization is waiting for checks: ${missingChecks.join(', ')}.\n`);
+    return;
+  }
+
+  const mergeResult = await githubRequest(
+    `/repos/${repository}/pulls/${pullRequest.number}/merge`,
+    {
+      method: 'PUT',
+      body: JSON.stringify({
+        sha: expectedHeadSha,
+        merge_method: 'merge',
+        commit_title: 'chore(release): sync main into develop',
+        commit_message: '検証済みのリリースメタデータをdevelopへ同期します。',
+      }),
     }
-  }`;
-  await githubGraphql(query, { pullRequestId: pullRequest.node_id });
+  );
+  if (mergeResult.merged !== true) {
+    throw new Error(`Synchronization pull request was not merged: ${mergeResult.message ?? ''}`);
+  }
+  deleteBranchWithLease(SYNC_BRANCH, expectedHeadSha);
+}
+
+async function listSuccessfulGitHubActionsChecks(reference) {
+  // 同名の承認待ちrunが存在しても、明示dispatchされた成功checkが1件あれば契約を満たします。
+  const successfulChecks = new Set();
+  for (let page = 1; ; page += 1) {
+    const payload = await githubRequest(
+      `/repos/${repository}/commits/${reference}/check-runs?per_page=100&page=${page}`,
+      { headers: { Accept: 'application/vnd.github+json' } }
+    );
+    if (!Array.isArray(payload.check_runs)) {
+      throw new TypeError('GitHub check runs response must contain an array.');
+    }
+    for (const checkRun of payload.check_runs) {
+      if (
+        checkRun.app?.slug === 'github-actions' &&
+        checkRun.status === 'completed' &&
+        checkRun.conclusion === 'success' &&
+        typeof checkRun.name === 'string'
+      ) {
+        successfulChecks.add(checkRun.name);
+      }
+    }
+    if (payload.check_runs.length < 100) {
+      return successfulChecks;
+    }
+  }
 }
 
 async function commentPullRequest() {
@@ -214,6 +324,10 @@ function deleteMergedBranch() {
     throw new Error('Merged pull request head SHA must be a 40-character hexadecimal value.');
   }
 
+  deleteBranchWithLease(branch, expectedHeadSha);
+}
+
+function deleteBranchWithLease(branch, expectedHeadSha) {
   // merge時のhead SHAをleaseにし、同名branchが再作成済みなら新しいheadを原子的に保護します。
   const deletion = spawnSync(
     'git',
@@ -265,6 +379,9 @@ async function githubRequest(pathname, options = undefined, allowedStatuses = []
   if (allowedStatuses.includes(response.status)) {
     return undefined;
   }
+  if (response.status === 204) {
+    return undefined;
+  }
   const payload = await response.json();
   if (!response.ok) {
     throw new Error(`GitHub API request failed with status ${response.status}: ${payload.message}`);
@@ -272,33 +389,38 @@ async function githubRequest(pathname, options = undefined, allowedStatuses = []
   return payload;
 }
 
-async function githubGraphql(query, variables) {
-  // GraphQLだけが提供するauto-merge設定を同じGitHub App tokenで実行します。
-  const response = await globalThis.fetch('https://api.github.com/graphql', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'User-Agent': 'cfreact-template-release-automation',
-    },
-    body: JSON.stringify({ query, variables }),
-  });
-  const payload = await response.json();
-  if (!response.ok || (Array.isArray(payload.errors) && payload.errors.length > 0)) {
-    throw new Error(`GitHub GraphQL request failed with status ${response.status}.`);
+function parsePositiveInteger(value, name) {
+  // GitHub APIのresource番号を安全な正整数へ限定し、別形式のpath注入を防ぎます。
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0 || String(parsed) !== value) {
+    throw new Error(`${name} must be a positive integer.`);
   }
-  return payload.data;
+  return parsed;
+}
+
+function requireGitSha(name) {
+  // branch更新とworkflow検証は完全SHAへ固定し、移動可能なrefを信頼境界に使用しません。
+  const value = requireEnvironmentValue(name);
+  if (!GIT_SHA_PATTERN.test(value)) {
+    throw new Error(`${name} must be a 40-character hexadecimal Git SHA.`);
+  }
+  return value;
 }
 
 function requireEnvironmentValue(name) {
   // 必須値を利用前に検証し、空tokenや空SHAによる意図しないAPI要求を防ぎます。
   let value;
+  if (name === 'AUTOMATION_KIND') value = process.env.AUTOMATION_KIND;
   if (name === 'COMMENT_BODY') value = process.env.COMMENT_BODY;
   if (name === 'GITHUB_EVENT_PATH') value = process.env.GITHUB_EVENT_PATH;
   if (name === 'GITHUB_REPOSITORY') value = process.env.GITHUB_REPOSITORY;
   if (name === 'GITHUB_TOKEN') value = process.env.GITHUB_TOKEN;
   if (name === 'PULL_REQUEST_NUMBER') value = process.env.PULL_REQUEST_NUMBER;
+  if (name === 'PULL_REQUEST_HEAD_BRANCH') value = process.env.PULL_REQUEST_HEAD_BRANCH;
+  if (name === 'PULL_REQUEST_HEAD_SHA') value = process.env.PULL_REQUEST_HEAD_SHA;
   if (name === 'RELEASE_SHA') value = process.env.RELEASE_SHA;
+  if (name === 'RELEASE_TAG') value = process.env.RELEASE_TAG;
+  if (name === 'SYNC_HEAD_SHA') value = process.env.SYNC_HEAD_SHA;
   if (value === undefined || value.trim() === '') {
     throw new Error(`Missing required environment variable: ${name}`);
   }
