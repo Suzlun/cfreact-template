@@ -12,7 +12,7 @@
 
 ## 前提環境
 
-- Node.js 24.12+ / pnpm 11.7.0+（`corepack enable` 推奨）
+- Node.js 24.12+ / pnpm 11.16.0+（`corepack enable` 推奨）
 - Wrangler 4.57.0+
 - agent-browser CLI（ブラウザ自動操作用。Dev Container では Chrome for Testing または OS Chromium とあわせて自動導入）
 - （任意）Dev Container + Docker（推奨）
@@ -167,7 +167,7 @@ pnpm test:e2e        # migration 済み E2E 専用 D1 を使う Playwright
 - Deploy Button/Workers Builds では、`wrangler.toml` の production placeholder を有効な D1 database ID と KV namespace ID に置き換え、必要な R2 bucket を事前に用意します。
 - GitHub Actionsの`production` Environmentに`CLOUDFLARE_API_TOKEN`と`CLOUDFLARE_ACCOUNT_ID`がある場合、Deploy WorkflowはD1/KV/R2を名前で作成または再利用し、実ID入りの一時Wrangler設定で直接deployします。未設定の場合もリリース自体は成功します。
 - このrepoはrootから `pnpm build` と `wrangler deploy --env production` を実行する前提です。frontend assetsは `packages/frontend/dist`、backend entryは `packages/backend/src/entry/index.ts` です。
-- Workers Builds の build variable には `PNPM_VERSION=11.7.0` を設定し、pnpmのバージョン差によるinstall差分を避けてください。
+- Workers Builds の build variable には `PNPM_VERSION=11.16.0` を設定し、pnpmのバージョン差によるinstall差分を避けてください。
 - Cloudflare Email Routing は送信元/送信先の検証が必要なため、Deploy Button後にCloudflare dashboardで設定してください。
 
 不明点があれば Issue/PR で相談してください。

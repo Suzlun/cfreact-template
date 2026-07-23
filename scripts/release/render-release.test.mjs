@@ -88,7 +88,7 @@ function createFixture(root) {
     version: '1.0.0',
     private: true,
     type: 'module',
-    packageManager: 'pnpm@11.7.0',
+    packageManager: 'pnpm@11.16.0',
   });
   writeJson(root, 'packages/a/package.json', { name: 'pkg-a', version: '1.0.0', private: true });
   writeJson(root, 'packages/b/package.json', { name: 'pkg-b', version: '1.0.0', private: true });

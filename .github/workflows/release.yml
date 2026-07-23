@@ -81,7 +81,7 @@ jobs:
         run: |
           # CIと同じpnpmを使用し、release commitのlockfileを再現します。
           corepack enable
-          corepack prepare pnpm@11.7.0 --activate
+          corepack prepare pnpm@11.16.0 --activate
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -135,7 +135,7 @@ jobs:
         run: |
           # GitHub API helperをrepository scriptとして同じNode環境で実行します。
           corepack enable
-          corepack prepare pnpm@11.7.0 --activate
+          corepack prepare pnpm@11.16.0 --activate
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

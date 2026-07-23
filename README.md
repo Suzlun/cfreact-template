@@ -24,7 +24,7 @@
 
 ### 開発環境
 
-- **pnpm** 11.7.0 - 高速で効率的なパッケージマネージャー
+- **pnpm** 11.16.0 - 高速で効率的なパッケージマネージャー
 - **Node.js** 24.12.0 LTS - 開発ツール用ランタイム
 - **Wrangler** 4.57.0+ - Cloudflare CLI
 - **ESLint** 9.39+ - リンティング（flat config）
@@ -108,7 +108,7 @@ cfreact-template/
 または手動セットアップの場合：
 
 - **Node.js** 24.12.0 以降
-- **pnpm** 11.7.0 以降
+- **pnpm** 11.16.0 以降
 - **Cloudflare アカウント**（デプロイ用）
 
 ## セットアップ
@@ -414,9 +414,9 @@ GitHub Actions側では`production` Environmentの`CLOUDFLARE_API_TOKEN`と`CLOU
 
 Deploy Button の setup 画面または Workers Builds 設定では、pnpm のバージョンを固定するために次の build variable を設定してください。
 
-| 種別     | 名前           | 値       | 用途                                              |
-| -------- | -------------- | -------- | ------------------------------------------------- |
-| Variable | `PNPM_VERSION` | `11.7.0` | Workers Builds の pnpm をリポジトリ設定に合わせる |
+| 種別     | 名前           | 値        | 用途                                              |
+| -------- | -------------- | --------- | ------------------------------------------------- |
+| Variable | `PNPM_VERSION` | `11.16.0` | Workers Builds の pnpm をリポジトリ設定に合わせる |
 
 GitHub Actionsから直接CDする場合は、GitHub repository settings に次も設定してください。
 
