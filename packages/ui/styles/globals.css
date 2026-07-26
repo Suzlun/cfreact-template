@@ -52,38 +52,66 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.5 0.2 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  /* 指定された配色を役割別の基礎トークンとして保持し、各コンポーネントへの色の重複定義を防ぐ。 */
+  --brand-aqua: #5fd9db;
+  --brand-lilac: #a99dff;
+  --brand-coral: #ff9db6;
+  --on-brand: #122527;
+  --surface-aqua: #e9fafa;
+  --surface-lilac: #f1efff;
+  --surface-coral: #fff0f4;
+  --action-aqua: #247f82;
+  --action-lilac: #5b50b8;
+  --action-coral: #b44266;
+  --on-action: #ffffff;
+  --background: #f7fafa;
+  --surface: #ffffff;
+  --text-primary: #122527;
+  --text-secondary: #536b6d;
+  --border-control: #7a8d8f;
+  --border-subtle: #d9e5e5;
+  --focus-ring: #122527;
+  --success-surface: #ddf5e8;
+  --success-text: #1f6245;
+  --warning-surface: #fff0c7;
+  --warning-text: #714d00;
+  --error-surface: #ffe6ea;
+  --error-text: #8e2f42;
+  --info-surface: #e7f0ff;
+  --info-text: #24518e;
+
+  /* 共有UIが参照するセマンティックトークンへ、用途が一致する基礎トークンを一元的に割り当てる。 */
+  --foreground: var(--text-primary);
+  --card: var(--surface);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--action-aqua);
+  --primary-foreground: var(--on-action);
+  --secondary: var(--surface-lilac);
+  --secondary-foreground: var(--action-lilac);
+  --muted: var(--surface-aqua);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--surface-coral);
+  --accent-foreground: var(--action-coral);
+  --destructive: var(--error-text);
+  --border: var(--border-subtle);
+  --input: var(--border-control);
+  --ring: var(--focus-ring);
+  --chart-1: var(--brand-aqua);
+  --chart-2: var(--brand-lilac);
+  --chart-3: var(--brand-coral);
+  --chart-4: var(--action-lilac);
+  --chart-5: var(--action-coral);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: var(--surface-aqua);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--action-aqua);
+  --sidebar-primary-foreground: var(--on-action);
+  --sidebar-accent: var(--surface-lilac);
+  --sidebar-accent-foreground: var(--action-lilac);
+  --sidebar-border: var(--border-subtle);
+  --sidebar-ring: var(--focus-ring);
 }
 
 .dark {
