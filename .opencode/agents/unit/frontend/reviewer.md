@@ -2,8 +2,8 @@
 description: Frontend review subagent for API SDK wrappers, React app, domain hooks, designer-owned UI package work, and approved wireframe fidelity.
 mode: subagent
 hidden: true
-model: openai/gpt-5.6-terra
-reasoningEffort: 'xhigh'
+model: openai/gpt-5.6-luna
+reasoningEffort: 'max'
 temperature: 0.1
 permission:
   edit: deny
