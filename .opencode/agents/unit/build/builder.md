@@ -6,7 +6,19 @@ model: openai/gpt-5.6-luna
 reasoningEffort: 'max'
 permission:
   edit: allow
+  'github_*': deny
+  'github_get_*': allow
+  'github_list_*': allow
+  'github_search_*': allow
+  github_issue_read: allow
+  github_pull_request_read: allow
+  github_run_secret_scanning: allow
+  'agent-browser_*': allow
+  serena_execute_shell_command: deny
+  serena_read_file: allow
+  serena_search_for_pattern: allow
   webfetch: allow
+  read_mcp_resource: allow
   task:
     '*': deny
     'unit/build/reviewer': allow
@@ -15,10 +27,7 @@ permission:
   grep: allow
   list: allow
   lsp: allow
-  skill:
-    '*': deny
-    'coding-guardian': allow
-    'orchestration-playbook': allow
+  skill: allow
   bash:
     '*': allow
     'pnpm*': allow

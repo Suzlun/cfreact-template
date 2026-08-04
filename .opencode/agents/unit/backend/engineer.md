@@ -7,7 +7,19 @@ reasoningEffort: 'max'
 temperature: 0.1
 permission:
   edit: allow
-  webfetch: deny
+  'github_*': deny
+  'github_get_*': allow
+  'github_list_*': allow
+  'github_search_*': allow
+  github_issue_read: allow
+  github_pull_request_read: allow
+  github_run_secret_scanning: allow
+  'agent-browser_*': allow
+  serena_execute_shell_command: deny
+  serena_read_file: allow
+  serena_search_for_pattern: allow
+  webfetch: allow
+  read_mcp_resource: allow
   task:
     '*': deny
     'unit/backend/reviewer': allow
