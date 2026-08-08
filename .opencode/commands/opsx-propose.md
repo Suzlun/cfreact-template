@@ -19,11 +19,11 @@ When ready to implement, run /opsx-apply
 
 **Input**: The argument after `/opsx-propose` is the change name (kebab-case), OR a description of what the user wants to build.
 
-Before artifact work, load `openspec-change-review` via the `skill` tool. Use it only for Proposer self-review and independent `openspec/analyzer` review.
+Before artifact work, load `openspec-review` via the `skill` tool and use it as the sole semantic contract for Proposer self-review. Independent reviewers load the same contract under their own workflows.
 
-**Intent confirmation boundary:** Treat the request as evidence of intent, not as an implementation-ready specification. Reconstruct the intended actor, situation, problem, outcome, constraints, candidate means, repository evidence, assumptions, and falsification evidence. Obtain explicit owner confirmation before creating proposal, wireframe, Specs, design, or tasks.
+**Intent confirmation boundary:** Treat the request as evidence of intent, not as an implementation-ready specification. Reconstruct and classify intent using `openspec-review`, repository evidence, assumptions, and falsification evidence. Obtain explicit owner confirmation before creating proposal, wireframe, Specs, design, or tasks; confirmation does not override the Skill's artifact routing.
 
-**Artifact meaning boundary:** `intent.md` may record candidate means, rejected interpretations, and falsification evidence. `proposal.md` may describe removal, replacement, and breaking impact. Specs describe enduring observable end-state behavior and lasting safety or contract boundaries. `design.md` may describe deletion, replacement, migration, rollback, and file movement. `tasks.md` may use operations such as `Delete` and `Move`. Tests verify new behavior and enduring boundaries, not merely the absence of historical implementation details. Do not reject text because a particular negative word appears; reject it only when an old implementation or rejected candidate is made into a product requirement.
+**Artifact meaning boundary:** Use the artifact boundaries from `openspec-review` without adding a command-local interpretation.
 
 **Change completion boundary:** Keep artifacts, tasks, acceptance criteria, and completion conditions repository-scoped. Do not include release execution, deployment, environment provisioning, credential access or probes, external approval, staging or production validation, operational rehearsal, or production observation.
 
@@ -120,7 +120,7 @@ Before artifact work, load `openspec-change-review` via the `skill` tool. Use it
    pnpm lint:openspec
    ```
 
-   Then read every `contextFiles` path from `pnpm exec openspec instructions apply --change "<name>" --json`, self-review with `openspec-change-review`, and correct every actionable finding. Call `openspec/analyzer` only after deterministic validation passes. Continue correction, validation, and review until Analyzer returns `APPROVED`. Do not send deterministic format defects to Analyzer.
+   Then read every `contextFiles` path from `pnpm exec openspec instructions apply --change "<name>" --json`, self-review with `openspec-review`, and correct every actionable finding. Call `openspec/analyzer` only after deterministic validation passes, passing the resolved `planningHome`, `changeRoot`, artifact paths, and store command context. Continue correction, validation, and review until Analyzer returns `APPROVED`. Do not send deterministic format defects to Analyzer.
 
 6. **Show final status**
    ```bash
@@ -155,5 +155,5 @@ After completing all artifacts, summarize:
 - If ambiguity could change customer-visible behavior, contracts, architecture, security, data, dependencies, UI, or scope, ask the owner instead of resolving it for momentum
 - If a change with that name already exists, ask if user wants to continue it or create a new one
 - Verify each artifact file exists after writing before proceeding to next
-- Do not add semantic finding categories or local readiness gates beyond `openspec-change-review`
+- Do not add semantic finding categories or local readiness gates beyond `openspec-review`
 - Do not declare the Change review complete until Analyzer returns `APPROVED`

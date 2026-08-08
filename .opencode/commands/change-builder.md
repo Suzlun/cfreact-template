@@ -48,11 +48,11 @@ Process
   - API/contract surface (if any)
   - Data model / domain boundaries
   - Open questions / decisions
-- Treat solution-shaped terms as evidence to classify, not automatically as requirements
+- Apply the purpose/means classification and artifact routing from the project OpenSpec rules
 - Inspect repository evidence and separate observed facts, inferences, assumptions, and unresolved decisions
 - For each proposed Change, prepare an Intent Card containing:
   - Actor / situation / problem / desired outcome / priority
-  - Required outcomes / non-negotiable constraints / candidate means
+  - Desired outcomes / outcome constraints / required means / candidate means
   - Repository evidence with `path:line`
   - Falsification check and conclusion
   - Invariants / boundaries / observable success
@@ -65,6 +65,7 @@ Process
   - Purpose (1-2 lines)
   - Key requirements (titles only)
   - Dependencies (if any)
+- Derive capabilities and key requirements through the project OpenSpec rules; do not create a local artifact-routing interpretation
 
 4. Propose Changes splitting
 
