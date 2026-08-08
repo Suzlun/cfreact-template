@@ -5,7 +5,7 @@ agent: openspec/applier
 
 Implement tasks from an OpenSpec change.
 
-Load `openspec-apply-change` and follow it as the execution contract. Do not load a semantic review workflow or perform a second semantic review.
+Load `openspec-apply-change` and follow it as the execution contract. Do not load or perform a semantic review workflow.
 
 **Store selection:** If the user names a store (a store is a standalone OpenSpec repo registered on this machine) or the work lives in one, run `openspec store list --json` to discover registered store ids, then pass `--store <id>` on the commands that read or write specs and changes (`new change`, `status`, `instructions`, `list`, `show`, `validate`, `archive`, `doctor`, `context`, `view`). Other commands do not take the flag. Hints printed by commands already carry the flag; keep it on follow-ups. Without a store, commands act on the nearest local `openspec/` root.
 
@@ -79,11 +79,7 @@ Load `openspec-apply-change` and follow it as the execution contract. Do not loa
    Do not copy `context` or `operationGuidance` verbatim into implementation
    files or planning artifacts unless the user separately asks for that content.
 
-5. **Verify approval handoff**
-
-   Require a current `APPROVED` result from `openspec/proposer` or `openspec/analyzer` for this Change and current artifact contents. If approval evidence is absent, stale, or for another Change, return `ANALYZER_REVIEW_REQUIRED` through the caller. Do not review the Change yourself.
-
-6. **Show current progress**
+5. **Show current progress**
 
    Display:
    - Schema being used
@@ -91,7 +87,7 @@ Load `openspec-apply-change` and follow it as the execution contract. Do not loa
    - Remaining tasks overview
    - Dynamic instruction from CLI
 
-7. **Delegate tasks (loop until done or blocked)**
+6. **Delegate tasks (loop until done or blocked)**
 
    At each iteration:
    - Determine task ownership and split work only when needed for safe execution
@@ -109,9 +105,9 @@ Load `openspec-apply-change` and follow it as the execution contract. Do not loa
    - Error or blocker encountered → report evidence
    - User interrupts
 
-   Continue independent approved tasks that cannot be affected by a stopped task or unresolved decision. Do not report the Change complete while blocked work remains.
+   Continue independent tasks that cannot be affected by a stopped task or unresolved decision. Do not report the Change complete while blocked work remains.
 
-8. **Run final review and show status**
+7. **Run final review and show status**
 
    When the CLI reports `all_done`, request final review from `unit/build/reviewer`. Route correctable implementation findings back to the responsible implementer and repeat affected unit review. Report archive-ready only after final approval.
 
@@ -176,7 +172,6 @@ What would you like to do?
 
 - Keep going through tasks until done or blocked
 - Always read context files before starting (from the apply instructions output)
-- Require current approval evidence; otherwise request Analyzer review without self-review
 - Do not load a semantic review workflow
 - Compute task ownership, splitting, dependencies, conflicts, and parallel groups at execution time
 - Continue unaffected independent tasks when one task is stopped
