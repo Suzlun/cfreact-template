@@ -33,8 +33,6 @@ permission:
   read_mcp_resource: allow
   task:
     '*': deny
-    'unit/backend/reviewer': allow
-    'unit/frontend/reviewer': allow
     'researcher': allow
   read:
     '*': allow
@@ -170,6 +168,7 @@ From the caller agent, you must receive at least:
 1. Intent (why)
 2. What changed (what and how)
 3. How to review (where to look)
+4. Review phase: `INDEPENDENT` or `CRITIQUE`
 
 If any are missing, do not start the review. Reply with Status BLOCKED using the format in `.opencode/skills/orchestration-playbook/SKILL.md` and list missing inputs.
 
@@ -181,13 +180,18 @@ If any are missing, do not start the review. Reply with Status BLOCKED using the
 
 ## Rules
 
-- Use `unit/backend/reviewer` and `unit/frontend/reviewer` when domain review evidence is missing, stale, invalidated by integration, or requires specialist inspection. Request independent frontend and backend reviews in parallel when both apply.
 - Use `researcher` only when a verdict depends on current external evidence that repository sources cannot establish.
-- Do not call any agent outside `unit/backend/reviewer`, `unit/frontend/reviewer`, and `researcher`, and do not self-call. Accept valid current specialist approval evidence instead of repeating review for ceremony.
+- Do not call another reviewer. `unit/review/facilitator` owns reviewer selection, parallel review, and cross-critique.
+- Do not call any agent except `researcher`, and do not self-call.
 - Do not overclaim. If references are insufficient, say what is missing and what to inspect next
 - Call out deviations from existing conventions and structure (directories, naming, boundaries, generated artifacts) with evidence references
 - Assign severity (blocker/major/minor/nit) and propose concrete fixes when possible
 - Always include an overall verdict (Approve / Request changes / Needs clarification)
+
+## Review phases
+
+- `INDEPENDENT`: inspect the supplied implementation and return your own findings without reading another review.
+- `CRITIQUE`: inspect every caller-supplied candidate finding against the original implementation and evidence. Classify each as `VALID`, `INVALID`, `DUPLICATE`, `OUT_OF_SCOPE`, or `UNPROVEN`; do not broaden the review or introduce preference-only findings.
 
 ## Reporting
 

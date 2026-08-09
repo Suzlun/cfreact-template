@@ -57,7 +57,7 @@ When UI is in scope, treat `.wireframe.json` as the visible-surface source and t
 
    **Handle states:**
    - If `state: "blocked"` (missing artifacts): return `BLOCKED` with the missing-artifact evidence and stop without delegating artifact creation or repair
-   - If `state: "all_done"`: skip implementation delegation and proceed to final build review
+   - If `state: "all_done"`: skip implementation delegation and proceed to facilitated final review
    - Otherwise: proceed to implementation
 
    **Workspace guard:** If status JSON reports `actionContext.mode: "workspace-planning"` and `allowedEditRoots` is empty, explain that full workspace apply is not supported in this slice. Treat linked repos and folders as read-only context, ask the user to select an affected area through an explicit implementation workflow, and STOP before editing files.
@@ -79,16 +79,18 @@ When UI is in scope, treat `.wireframe.json` as the visible-surface source and t
    - Progress: "N/M tasks complete"
    - Remaining tasks overview
    - Dynamic instruction from CLI
+   - The complete `## Agent Delegation Timeline` before any implementation delegation
 
 6. **Delegate tasks (loop until done or blocked)**
 
    At each iteration:
    - Determine each pending task's execution owner and split it only when needed for safe execution
-   - Compute dependencies, shared-file or generated-artifact conflicts, and the dependency-safe parallel ready set
+   - Before the first delegation, compute dependencies, shared-file or generated-artifact conflicts, and parallel execution lines for every pending task; declare the complete timeline before calling an implementation agent
+   - Update timeline state and evidence whenever work is dispatched, completed, blocked, reassigned, or superseded
    - Delegate frontend work to `unit/frontend/engineer`, backend work to `unit/backend/engineer`, and other repository work to `unit/build/builder`
    - Launch independent ready work in parallel and record the concrete dependency or conflict when serialization is required
-   - Accept current frontend and backend reviewer approval evidence, requesting the corresponding reviewer when evidence is missing, stale, or invalidated
-   - Mark a task complete in the tasks file only after accepting implementation, verification, and required reviewer evidence: `- [ ]` → `- [x]`
+   - Require each implementer to self-review and verify its work; request an intermediate review only when the owner explicitly requested it, and never make intermediate approval the default completion gate
+   - Mark a task complete in the tasks file only after accepting implementation and verification evidence: `- [ ]` → `- [x]`
    - Re-read apply instructions after each accepted batch and continue until `all_done`
 
    **Pause if:**
@@ -100,9 +102,9 @@ When UI is in scope, treat `.wireframe.json` as the visible-surface source and t
 
    Continue independent tasks that cannot be affected by a stopped task or material unresolved decision. Do not report the Change complete while any task remains blocked.
 
-7. **Run final review and show status**
+7. **Run facilitated final review and show status**
 
-   When apply instructions report `all_done`, request final review from `unit/build/reviewer`. Route correctable implementation findings to the responsible implementer and repeat affected unit review. Report archive-ready only after final approval.
+   When apply instructions report `all_done`, request final review from `unit/review/facilitator`. The facilitator always runs Build Reviewer and Ponytailer, adds affected domain Reviewers and Architects, executes independent review and cross-critique waves, and returns only retained findings. Route `REQUEST_CHANGES` findings to responsible implementers, rerun self-review and verification, then rerun the complete facilitator review. Report archive-ready only after the latest cycle returns `APPROVE`.
 
    Display:
    - Tasks completed this session
@@ -138,7 +140,7 @@ Working on task 4/7: <task description>
 - [x] Task 2
 ...
 
-Final build review approved. This change is archive-ready.
+Facilitated final review approved. This change is archive-ready.
 ```
 
 **Output On Pause (Issue Encountered)**
@@ -166,7 +168,8 @@ What would you like to do?
 - Keep going through tasks until done or blocked
 - Always read context files before starting (from the apply instructions output)
 - Do not perform or load a semantic review workflow
-- Compute ownership, splitting, dependencies, conflicts, and parallel groups at execution time
+- Compute ownership, splitting, dependencies, conflicts, and the complete parallel execution lines before the first implementation delegation
+- Keep the latest `## Agent Delegation Timeline` in every progress, pause, final-review, and completion report so session compaction can preserve it
 - Continue unaffected independent tasks when one task is stopped
 - Update task checkbox immediately after completing each task
 - Pause affected work on errors, safety boundaries, or material unresolved decisions; do not guess
