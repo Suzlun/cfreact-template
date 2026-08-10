@@ -394,7 +394,7 @@ pnpm dev:all
 
 ### GitHub Release Workflow
 
-`develop`のCIが成功すると`.github/workflows/prepare-release.yml`が`release`とRelease PRを作成または更新します。Release PRがmerge commitで`main`へ取り込まれてCIが成功すると、`.github/workflows/release.yml`が`vX.Y.Z`tag、GitHub Release、`main -> develop`同期PRを処理します。merge済みの`release`と`sync/main-to-develop`は`.github/workflows/cleanup-release-branches.yml`が自動削除し、次回処理時に最新のbase branchから再作成します。
+`develop`のCIが成功すると`.github/workflows/prepare-release.yml`が`release`とRelease PRを作成または更新します。Release PRがmerge commitで`main`へ取り込まれると、`.github/workflows/release.yml`が`vX.Y.Z`tag、GitHub Release、`main -> develop`同期PRを処理します。merge済みの`release`と`sync/main-to-develop`は`.github/workflows/cleanup-release-branches.yml`が自動削除し、次回処理時に最新のbase branchから再作成します。
 
 `.github/workflows/release.yml`は新しい`vX.Y.Z`tagとGitHub Releaseを作成した後、`.github/workflows/deploy.yml`へtagを明示してdispatchします。`production` EnvironmentにCloudflare credentialsが設定されている場合だけ、ビルド、D1/KV/R2の作成または再利用、本番環境へのデプロイを実行します。credentialsがなければデプロイだけを省略し、タグとGitHub Releaseには影響しません。
 

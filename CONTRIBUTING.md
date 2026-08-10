@@ -158,7 +158,7 @@ pnpm test:e2e        # migration 済み E2E 専用 D1 を使う Playwright
 
 - `develop`のCI成功後、通常ChangesetがあればPrepare Release Workflowが`release`とRelease PRを作成または更新します。
 - Release PRはmerge commitで`main`へ取り込みます。squash mergeとrebase mergeは使用しません。
-- `main`のCI成功後、Release Workflowが`vX.Y.Z`tagとGitHub Releaseを作成します。
+- Release PRが`main`へ取り込まれると、Release Workflowが`vX.Y.Z`tagとGitHub Releaseを作成します。
 - Release Workflowが検証済みtagをDeploy Workflowへ明示dispatchし、Cloudflare credentialsが設定済みの場合だけ本番環境へdeployします。
 - リリース後は`sync/main-to-develop` PRが作成され、明示dispatchされたrequired checks成功後に自動mergeされます。
 - merge済みの`release`と`sync/main-to-develop`はCleanup Release Branches Workflowが自動削除します。

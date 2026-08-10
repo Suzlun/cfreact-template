@@ -7,7 +7,7 @@
 1. `develop`向けPull Requestへ通常またはempty Changesetが追加されていることを検査します。
 2. `develop`のCI成功後、未消費の通常Changesetがあれば`release`とRelease PRを作成または更新します。
 3. Release PRが開いている間に`develop`が進んだ場合、`release`へmerge commitで取り込み、前回リリース版から全Changesetを再計算します。
-4. Release PRが`main`へmergeされると`release`を自動削除し、CI成功後に検証済み`main` commitへ`vX.Y.Z`tagとGitHub Releaseを作成します。
+4. Release PRが`main`へmergeされると`release`を自動削除し、検証済み`main` commitへ`vX.Y.Z`tagとGitHub Releaseを作成します。
 5. `vX.Y.Z`tagとGitHub Releaseを作成した同じRelease Workflowが独立したDeploy Workflowを明示dispatchし、Cloudflare credentialsが設定されている場合だけ本番環境へdeployします。
 6. `sync/main-to-develop`から`develop`への同期PRを作成し、明示dispatchしたrequired checks成功後にmerge commitで自動mergeしてbranchを自動削除します。
 7. 自動取り込みで競合した場合は強制更新せず、対象PRへ停止理由をコメントします。

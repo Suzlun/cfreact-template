@@ -22,6 +22,7 @@ test('GitHub Actionsをimmutable commit SHAへ固定する', () => {
 
 test('書き込みworkflowはrepository固有tokenと安全なrelease境界を維持する', () => {
   // 外部identityを使わず、明示dispatch、merge commit、force-with-leaseを固定します。
+  const ciWorkflow = readFileSync(path.join(WORKFLOW_DIRECTORY, 'ci.yml'), 'utf8');
   const releaseWorkflow = readFileSync(path.join(WORKFLOW_DIRECTORY, 'release.yml'), 'utf8');
   const deployWorkflow = readFileSync(path.join(WORKFLOW_DIRECTORY, 'deploy.yml'), 'utf8');
   const cleanupWorkflow = readFileSync(
@@ -37,6 +38,10 @@ test('書き込みworkflowはrepository固有tokenと安全なrelease境界を�
     'utf8'
   );
   const githubAutomation = readFileSync(GITHUB_AUTOMATION_PATH, 'utf8');
+  // mainでは同じCIを再実行せず、main更新からrelease処理を直接開始します。
+  assert.doesNotMatch(ciWorkflow, /^\s{6}- main$/m);
+  assert.match(releaseWorkflow, /^ {2}push:\n {4}branches:\n {6}- main$/m);
+  assert.doesNotMatch(releaseWorkflow, /^ {2}workflow_run:/m);
   assert.doesNotMatch(releaseWorkflow, /wrangler deploy/);
   assert.doesNotMatch(deployWorkflow, /\bpush:/);
   assert.match(deployWorkflow, /workflow_dispatch:/);
