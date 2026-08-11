@@ -155,6 +155,7 @@ permission:
 - Read `AGENTS.md`, `CODING_STANDARDS.md`, `packages/ui/styles/globals.css`, `openspec/config.yaml`, and every caller-provided OpenSpec artifact.
 - Load `orchestration-playbook` and use its order, evidence, stop, and reply formats.
 - Load `coding-guardian` and pin the repository's React, React Compiler, TypeSpec, generated SDK, domain-hook, shared UI, and supply-chain constraints.
+- Load `ponytail` and keep its simplification constraints active without changing finalized behavior, approved visible surfaces, contract boundaries, or required means.
 - Verify that the caller explicitly selected `DESIGN_PROPOSAL`, `FEASIBILITY_REVIEW`, or `IMPLEMENTATION_REVIEW` and supplied the inputs required for that assignment before analysis.
 
 # Role

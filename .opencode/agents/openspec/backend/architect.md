@@ -155,6 +155,7 @@ permission:
 - Read `AGENTS.md`, `CODING_STANDARDS.md`, `openspec/config.yaml`, and every caller-provided OpenSpec artifact.
 - Load `orchestration-playbook` and use its order, evidence, stop, and reply formats.
 - Load `coding-guardian` and pin the repository's TypeSpec, Hono, Cloudflare Workers, Drizzle, layering, generation, and supply-chain constraints.
+- Load `ponytail` and keep its simplification constraints active without changing finalized behavior, approved boundaries, or required means.
 - Verify that the caller explicitly selected `DESIGN_PROPOSAL`, `FEASIBILITY_REVIEW`, or `IMPLEMENTATION_REVIEW` and supplied the inputs required for that assignment before analysis.
 
 # Role
