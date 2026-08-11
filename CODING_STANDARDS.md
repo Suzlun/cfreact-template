@@ -1086,7 +1086,7 @@ fail 条件
   - 内訳
     - `pnpm lint:ui-reuse` は公開 UI と Storybook catalog の対応、UI/app 間のコード clone を検査する
     - `pnpm lint:eslint` はローカルESLintルールのテスト後に `eslint .` を実行
-    - `pnpm lint:openspec` は `pnpm exec openspec validate --all --strict`、Change Intent確認、Scenario IDカバレッジ、Change task scope、wireframe previewの各検査を実行
+    - `pnpm lint:openspec` は `behavior-change` / `architecture-change` スキーマ検証、`pnpm exec openspec validate --all --strict`、OpenSpec 規則試験、提案検査、活動中差分を含む Scenario と試験の追跡検査、作業パッケージと設計の対象範囲検査を実行
     - `pnpm lint:supply-chain` は `node scripts/security/verify-pnpm-supply-chain.mjs` を実行
 - 公開 UI ごとに対応する Storybook catalog を置く
   - 強制: `pnpm lint:ui-reuse` → `scripts/ui/verify-public-component-catalog.mjs`
@@ -1173,32 +1173,48 @@ fail 条件
     feat: add login
     ```
 
-## 13. OpenSpec: 仕様を自動テストで担保する
+## 13. OpenSpec: 永続的な振る舞い契約を自動試験で担保する
 
 ルール
 
-- OpenSpec の spec は `pnpm exec openspec validate --all --strict` を通す
+- OpenSpec の二つの変更スキーマと全成果物は厳格検証を通す
   - 強制: `pnpm lint` → `pnpm lint:openspec` → `scripts.lint:openspec` → `package.json`
   - NG例
-    - `pnpm lint` で OpenSpec validate が失敗する
+    - `behavior-change` または `architecture-change` のスキーマが不正
+    - 活動中 Change の成果物が選択したスキーマに違反する
   - OK例
     ```sh
     pnpm lint:openspec
     ```
 
-- downstream artifact は所有者確認済みの `intent.md` から作成する
-  - 強制: `pnpm lint` → `node scripts/openspec/verify-change-intent.mjs` → `scripts/openspec/verify-change-intent.mjs`
+- 後続成果物は解決済みの `proposal.md` から作成する
+  - 強制: `pnpm lint` → `node scripts/openspec/verify-change-proposal.mjs` → `scripts/openspec/verify-change-proposal.mjs`
   - NG例
-    - `Intent-Status: DRAFT` または `Owner-Confirmation: PENDING` のまま `proposal.md`、delta spec、`design.md`、`tasks.md`、wireframe を作成する
+    - `Intent-Resolution: DRAFT` のまま差分仕様、`design.md`、`tasks.md` を作成する
+    - `UX-Mode: CONTINUITY` で `### Continuity Source` を記載しない
+    - `UX-Mode: SHAPE` で `### Primary User Task` または `### UX Direction` を記載しない
   - OK例
-    - repository の事実、推論、仮定、反証確認を分けて所有者へ提示し、明示確認後に両 marker を `CONFIRMED` にして downstream artifact を作成する
+    - 依頼自体が重要な曖昧さを解消している場合は `Intent-Resolution: REQUEST_SUFFICIENT` とする
+    - 再構成した意図を所有者が明示確認した場合は `Intent-Resolution: OWNER_CONFIRMED` とする
+    - 成果、成果の制約、必須手段、候補手段を分離し、必須見出しと根拠をすべて記載する
 
-- Spec は `openspec/specs/**/spec.md` に置く
+- OpenSpec は観測可能な振る舞いの契約とし、詳細な実装計画にしない
+  - 強制: `pnpm lint` → `node scripts/openspec/verify-change-task-scope.mjs` → `scripts/openspec/verify-change-task-scope.mjs`
+  - NG例
+    - `tasks.md` をファイル、補助処理、試験階層ごとの計画へ分解する
+    - `design.md` に物質的な設計判断以外の見出しを追加する
+  - OK例
+    - `tasks.md` を `- [ ] WP<number>: <成果>`、`Covers`、`Completion Evidence` を持つ粗い作業パッケージ台帳にする
+    - ファイル、補助処理、試験の詳細は現在の作業パッケージと検証結果から実装時に段階的に決める
+
+- Scenario 検査は主仕様へ活動中差分を重ねた実効仕様を対象にする
   - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs`
   - NG例
-    - `openspec/changes/.../spec.md` だけを更新して main spec に反映しない
+    - 活動中差分の自動化対象 Scenario に対応する試験参照がない
+    - 複数の活動中 Change が同じ Requirement へ異なる操作を指定する
   - OK例
-    - main spec を更新して lint 対象に含める
+    - `openspec/specs/**/spec.md` と `openspec/changes/*/specs/**/spec.md` を合わせた実効仕様で整合する
+    - 一件だけの確認に `node scripts/openspec/verify-scenario-coverage.mjs --change <change-id>` を使い、完了前には引数なしの全体検査も行う
 
 - Scenario 見出しは `#### Scenario:` で始め、末尾に安定 ID を付ける
   - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `extractScenarioId`
@@ -1256,14 +1272,14 @@ fail 条件
     ```
 
 - Spec に同じ Scenario ID を複数置かない
-  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `getDuplicateScenarioErrors`
+  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `validateCoverage`
   - NG例
     - 2 つの `spec.md` に同じ ID がある
   - OK例
     - ID を一意にする
 
 - Spec にない Scenario ID をテストで参照しない
-  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `orphans`
+  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `validateCoverage`
   - NG例
     ```ts
     test('[USER-MGMT-S999] typo', async () => {});
@@ -1272,3 +1288,46 @@ fail 条件
     ```ts
     test('[USER-MGMT-S001] create user', async () => {});
     ```
+
+## 14. プルリクエストの変更運用記録
+
+ルール
+
+- プルリクエスト本文に三つの独立した変更運用軸を記載する
+  - 強制: `.github/workflows/validate-pr-template.yml`
+  - 必須値
+    - `Operation Lane`: `DIRECT`、`BEHAVIOR`、`ARCHITECTURE`
+    - `UX Mode`: `NONE`、`CONTINUITY`、`SHAPE`
+    - `Review Depth`: `STANDARD`、`DEEP`
+  - NG例
+    - `Operation Lane: BEHAVIOR` から `UX Mode: SHAPE` を暗黙に決め、UX モードを記載しない
+  - OK例
+    ```md
+    - Operation Lane: ARCHITECTURE
+    - UX Mode: CONTINUITY
+    - Review Depth: DEEP
+    ```
+
+- `BEHAVIOR` と `ARCHITECTURE` は OpenSpec Change と Scenario ID を記載する
+  - 強制: `.github/workflows/validate-pr-template.yml`
+  - NG例
+    ```md
+    - Operation Lane: BEHAVIOR
+    - OpenSpec Change: なし
+    - Scenario IDs: なし
+    ```
+  - OK例
+    ```md
+    - Operation Lane: BEHAVIOR
+    - OpenSpec Change: improve-account-recovery
+    - Scenario IDs: ACCOUNT-RECOVERY-S001, ACCOUNT-RECOVERY-S002
+    ```
+  - 補足
+    - `DIRECT` は理由付きの `なし` を使用できる
+
+- 実際の UI / UX 変更ではデスクトップとモバイルの変更前後画像をすべて添付する
+  - 強制: `.github/workflows/validate-pr-template.yml`
+  - NG例
+    - `UI / UX変更: あり` で `Mobile Before` の画像がない
+  - OK例
+    - `Desktop Before`、`Desktop After`、`Mobile Before`、`Mobile After` の各節に画像を添付する

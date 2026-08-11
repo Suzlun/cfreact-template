@@ -6,9 +6,10 @@
 
 - コーディング規則（一次資料）: `CODING_STANDARDS.md`
   - `eslint.config.js` は規約の自動検査（実装）として追従させます
-- 仕様（契約）: `openspec/specs/**/spec.md`
-  - `pnpm lint` で `pnpm exec openspec validate --all --strict`、Change Intent 確認ゲート、Scenario ID カバレッジ検査が走ります
-  - `openspec/changes/**` の delta spec は、`/opsx-sync` または `/opsx-archive` で main spec に反映してから検査対象になります
+- 変更運用（一次資料）: `docs/change-operation.md`
+- 永続的な振る舞い契約: `openspec/specs/**/spec.md`
+  - `pnpm lint` で変更スキーマ、提案、厳格な成果物形式、Scenario と試験の追跡、作業パッケージと設計の対象範囲を検査します
+  - `openspec/changes/*/specs/**/spec.md` の活動中差分は、主仕様へ重ねた実効仕様として同期前から検査されます
 
 ## 前提環境
 
@@ -76,11 +77,40 @@ Husky によりコミット時に検証されます。
 - ESLint 例外は `CODING_STANDARDS.md` の分類に従い、単発なら構造化した `eslint-disable-next-line`、反復する外部 API なら専用境界と import 制約で管理する
 - 自動生成ファイルは手で直さない
   - 例: `packages/frontend/src/api/generated/**`
-- 仕様が変わる変更は spec とテストをセットで更新する
-  - `openspec/specs/**` の `#### Scenario: ... (..-S001)` に対して、テストタイトルに `[...-S001]` を含める
+- 振る舞い契約が変わる変更は仕様と試験を一緒に更新する
+  - 主仕様または活動中差分の `#### Scenario: ... (..-S001)` に対して、試験タイトルに `[...-S001]` を含める
   - 自動化できない Scenario は `Tags: manual` を明示する
-- OpenSpec Change は、依頼の意味を repository の事実と照合して所有者が確認した`intent.md`から開始する
-  - `Intent-Status: CONFIRMED`と`Owner-Confirmation: CONFIRMED`になる前にproposal以降を作成しない
+- OpenSpec Change の `proposal.md` は、依頼を成果、成果の制約、必須手段、候補手段へ分類し、リポジトリの事実と照合した権威ある解釈とする
+  - 重要な曖昧さが残る間は `Intent-Resolution: DRAFT` とし、差分仕様、設計、作業パッケージを作成しない
+
+## 変更運用
+
+変更を始める前に、`docs/change-operation.md` に従って三軸を独立に決めます。
+
+| 軸               | 値                                     | 判断内容                           |
+| ---------------- | -------------------------------------- | ---------------------------------- |
+| `Operation Lane` | `DIRECT` / `BEHAVIOR` / `ARCHITECTURE` | 振る舞い・構造をどの運用で扱うか   |
+| `UX Mode`        | `NONE` / `CONTINUITY` / `SHAPE`        | 利用者に見える体験をどう扱うか     |
+| `Review Depth`   | `STANDARD` / `DEEP`                    | 独立レビューをどの深さで実施するか |
+
+- `DIRECT`: 観測可能な振る舞いも物質的な内部構造も変えない。OpenSpec Change は不要です。
+- `BEHAVIOR`: 観測可能な振る舞いを変更する。`behavior-change` の OpenSpec Change が必要です。
+- `ARCHITECTURE`: 物質的な内部構造を変更する。`architecture-change` の OpenSpec Change が必要です。
+- `SHAPE` は UX の方向付けが必要な場合だけ使用します。運用区分から UX モードを推測しません。
+- 実際の UI 変更にはプロダクトデザイナーの関与と、デスクトップ・モバイル双方の実ブラウザ確認が必要です。
+- 画像生成による UI モックアップは任意の非契約証跡であり、仕様や実ブラウザ確認を置き換えません。
+- `STANDARD` を既定とし、重要なセキュリティ、データ、外部契約、移行、領域横断の構造、活動中 Change との相互作用に危険がある場合は `DEEP` を選びます。
+
+OpenSpec Changeは、`BEHAVIOR`なら`pnpm exec openspec new change <change-id> --schema behavior-change`、`ARCHITECTURE`なら`pnpm exec openspec new change <change-id> --schema architecture-change`で作成し、`openspec/changes/**`を手作業で作りません。OpenSpec `1.8.0`の`new change`は`openspec/config.yaml#schema`をChange作成時の既定値として参照しないため、`--schema`を省略しません。OpenCodeの公式コアコマンドとスキルは`pnpm gen:openspec`でOpenSpec `1.8.0`から同時に再生成し、`.opencode/commands/opsx-*.md`と`.opencode/skills/openspec-*/SKILL.md`を手編集しません。
+
+OpenSpec の `tasks.md` は粗い作業パッケージ台帳です。ファイル、補助処理、試験階層の詳細は、現在の作業パッケージと検証結果に基づき実装時に段階的に決めます。
+
+一つの Change に対する Scenario と試験の追跡は次で確認し、完了前には引数なしの全体検査も実行します。
+
+```bash
+node scripts/openspec/verify-scenario-coverage.mjs --change <change-id>
+node scripts/openspec/verify-scenario-coverage.mjs
+```
 
 ## React Compiler と Hooks
 
@@ -148,11 +178,14 @@ pnpm test:e2e        # migration 済み E2E 専用 D1 を使う Playwright
 2. 変更・テスト・ドキュメントを追加/更新（必要な範囲で）
 3. アプリケーション版へ影響する変更では`pnpm changeset`で通常Changesetを追加する。versionを上げない変更は`pnpm changeset --empty`を使い、template保守だけの変更にはChangesetを追加しない
 4. `pnpm lint` と `pnpm check`、関連テストを通す
-5. `develop`向けPRに以下を記載
+5. `develop` 向けプルリクエストに以下を記載
    - 変更の目的/背景
    - 変更点の要約
+   - `Operation Lane`、`UX Mode`、`Review Depth`
+   - `OpenSpec Change` と `Scenario IDs`。`BEHAVIOR` と `ARCHITECTURE` では必須、`DIRECT` では理由付きの `なし` を使用可能
    - 動作確認内容（コマンド、確認手順）
    - 破壊的変更がある場合は影響範囲と移行方法
+   - 実際の UI / UX 変更がある場合は `Desktop Before`、`Desktop After`、`Mobile Before`、`Mobile After` の画像
 
 ## リリース
 

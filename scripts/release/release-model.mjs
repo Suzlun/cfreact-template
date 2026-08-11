@@ -201,11 +201,17 @@ export function createPullRequestBody(kind, version) {
 
 - 変更内容: ${mainChange}
 
+## 変更運用
+
+- Operation Lane: DIRECT
+- UX Mode: NONE
+- Review Depth: STANDARD
+
 ## 関連Issue / OpenSpec
 
 - Issue: なし（理由: リリース運用の自動PR）
 - OpenSpec Change: なし（理由: リリース実行はOpenSpec完了境界の対象外）
-- Scenario ID: なし（理由: リリース運用の自動PR）
+- Scenario IDs: なし（理由: リリース運用の自動PR）
 
 ## セキュリティ確認
 
@@ -236,6 +242,7 @@ export function createPullRequestBody(kind, version) {
 - デスクトップ確認: 個別変更のPRとCIで確認
 - モバイル確認: 個別変更のPRとCIで確認
 - アクセシビリティ確認: 個別変更のPRとStorybookテストで確認
+- プロダクトデザイナー確認: なし（理由: 自動PR固有のUI変更なし）
 
 ### UI / UXスクリーンショット
 

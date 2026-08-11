@@ -98,7 +98,7 @@ cfreact-template/
 | `packages/ui/stories/`              | 共通 UI の Storybook catalog          |
 | `packages/typespec/`                | API 契約の正と OpenAPI 生成先         |
 | `drizzle/migrations/`               | D1 マイグレーション                   |
-| `openspec/`                         | OpenSpec 設定と仕様スキーマ           |
+| `openspec/`                         | 永続的な振る舞い契約と変更差分        |
 
 ## 前提条件
 
@@ -267,10 +267,10 @@ AI 支援開発に OpenCode と OpenSpec を使用する場合：
    ```
 
 3. **OpenCode 内でスラッシュコマンドを使用:**
-   - `/opsx-propose <name-or-description>` - change を作成し、必要 artifact を生成
-   - `/opsx-apply <name>` - tasks に沿って実装
-   - `/opsx-sync <name>` - delta specs を main specs に同期
-   - `/opsx-archive <name>` - 完了した change を archive
+   - `/opsx-propose <name-or-description>` - Change を作成し、必要な成果物を生成
+   - `/opsx-apply <name>` - 作業パッケージに沿って実装
+   - `/opsx-sync <name>` - 差分仕様を主仕様に同期
+   - `/opsx-archive <name>` - 完了した Change を履歴へ移動
    - `/opsx-explore <topic>` - 実装せずに調査・検討
    - `/change-builder <brief>` - 仕様設計を複数 change に分割して提案
 
@@ -477,43 +477,61 @@ GitHub Actionsからリリースする場合は、Cloudflare認証情報を`prod
 
 アプリケーション実行時の送信元/送信先は `wrangler.toml` の `EMAIL_FROM` と `EMAIL_TO` で設定します。D1/KV/R2 は Wrangler binding として提供されるため、`CLOUDFLARE_DATABASE_ID` や `CLOUDFLARE_D1_TOKEN` をアプリケーション secret として設定する構成ではありません。
 
-## OpenSpec による仕様駆動開発
+## OpenSpec と変更運用
 
-このテンプレートには、OpenSpec の運用をサポートするディレクトリ構造が含まれています。
+変更運用の一次資料は [`docs/change-operation.md`](docs/change-operation.md) です。すべての変更で、次の三軸を独立に選びます。
 
-### OpenSpec とは
+- `Operation Lane`: `DIRECT`、`BEHAVIOR`、`ARCHITECTURE`
+- `UX Mode`: `NONE`、`CONTINUITY`、`SHAPE`
+- `Review Depth`: `STANDARD`、`DEEP`
 
-OpenSpec は仕様駆動開発（Spec-Driven Development）のためのワークフローです。change（変更単位）に intent/proposal/specs/design/tasks を揃え、AI コーディングアシスタントと協力して、依頼の意味の確認から実装まで段階的に進めます。
+`DIRECT` は観測可能な振る舞いも物質的な内部構造も変えない作業です。`BEHAVIOR` は `behavior-change`、`ARCHITECTURE` は `architecture-change` の OpenSpec Change を使用します。UX の方向付けは任意であり、必要な変更だけが `SHAPE` を選びます。実際の UI 変更にはプロダクトデザイナーの関与と、デスクトップ・モバイル双方の実ブラウザ確認が必要です。画像生成による UI モックアップは任意の非契約証跡であり、仕様や実ブラウザ確認を置き換えません。
 
-### 基本の開発プロセス
+### 永続的な振る舞い契約
 
-1. **Intent**: 依頼を成果・必須制約・候補手段に分け、repository の事実と照合した解釈を所有者が確認する
-2. **Proposal**: 確認済み Intent から目的・変更範囲・影響を固める
-3. **Wireframe**: UIがある場合は`openspec/designer`がJSON、生成preview、screenshot evidenceを確定する
-4. **Specs**: 仕様（要求・受け入れ条件）を文書化する
-5. **Design**: 実装方針・設計を固める
-6. **Tasks**: 実装可能なタスクに分解する
-7. **Apply**: tasks に沿って実装する
+OpenSpec は、利用者または外部契約から観測できる振る舞いの永続的な契約であり、実装全体の基本計画ではありません。
 
-`intent.md`が`CONFIRMED`になる前に下流 artifact を作成することは、`pnpm lint:openspec`で拒否されます。
+- 主仕様は `openspec/specs/**/spec.md` に置きます。
+- 活動中の差分仕様は `openspec/changes/*/specs/**/spec.md` に置きます。
+- `behavior-change` は提案、差分仕様、作業パッケージを管理します。
+- `architecture-change` はこれらに加え、物質的な設計判断を `design.md` で管理します。
+- Requirement と Scenario には観測可能な終端状態だけを記載します。
+- `tasks.md` は粗い作業パッケージ台帳とし、ファイル、補助処理、試験階層ごとの詳細計画を置きません。
+
+実装時は、現在の作業パッケージ、リポジトリの実態、直前の検証結果を基に、ファイル・補助処理・試験の詳細を段階的に決めます。
+
+### Scenario と試験
+
+Scenario 見出しは `(USER-MGMT-S001)` のような安定した識別子で終え、自動試験の題名は `[USER-MGMT-S001]` のように参照します。自動化できない Scenario には `Tags: manual` を記載します。
+
+既定の検査は、主仕様へすべての活動中差分を重ね、識別子の重複、試験参照の欠落、孤立参照、活動中 Change 間の競合を確認します。一つの Change だけを確認する場合は次を実行し、完了前には引数なしの全体検査も実行します。
+
+```bash
+node scripts/openspec/verify-scenario-coverage.mjs --change <change-id>
+node scripts/openspec/verify-scenario-coverage.mjs
+```
 
 ### プロジェクトの初期化
 
-この repository では `openspec/config.yaml` と schema が既に含まれています。CLI の状態確認には次を使います。
+このリポジトリは`@fission-ai/openspec` `1.8.0`、`openspec/config.yaml`、二つの変更スキーマを使用します。OpenCodeの公式コアコマンドとスキルは手編集せず、`pnpm gen:openspec`でOpenSpec公式の`init`から同時に再生成します。Changeディレクトリも手作成せず、運用区分に対応する`--schema`を付けた`openspec new change`で作成します。OpenSpec `1.8.0`は`openspec/config.yaml#schema`をChange作成時の既定値として参照しないため、`--schema`を省略しません。
 
 ```bash
+pnpm gen:openspec
+pnpm exec openspec new change <change-id> --schema behavior-change
 pnpm exec openspec list
+pnpm lint:openspec
 ```
 
 ### スラッシュコマンド
 
 OpenCode で以下のコマンドが使えます：
 
-- **`/opsx-propose <name-or-description>`** - change を作成し、必要 artifact を生成
-- **`/opsx-apply <name>`** - tasks に沿って実装
-- **`/opsx-sync <name>`** - delta specs を main specs に同期
-- **`/opsx-archive <name>`** - change を archive
+- **`/opsx-propose <name-or-description>`** - Change を作成し、必要な成果物を生成
+- **`/opsx-apply <name>`** - 作業パッケージに沿って実装
+- **`/opsx-sync <name>`** - 差分仕様を主仕様へ同期
+- **`/opsx-archive <name>`** - 完了した Change を履歴へ移動
 - **`/opsx-explore <topic>`** - 実装せずに調査・検討
+- **`/opsx-update <name>`** - 既存の計画成果物を整合させる
 
 ### 使用例
 

@@ -48,6 +48,8 @@ coverage/
 # Misc
 .turbo/
 .devcontainer/.host-git/
+__pycache__/
+*.py[cod]
 
 # Serena MCP Server
 .serena/cache/

@@ -1,105 +1,151 @@
 ---
 name: coding-guardian
-description: Enforce this repository's real React, Hono, Drizzle, and TypeSpec rules while editing code, docs, or tooling.
+description: Enforce this repository's real React, Hono, Drizzle, TypeSpec, OpenSpec, and verification rules while editing code, documentation, or tooling.
 ---
 
 # Coding Guardian
 
-この skill は、このリポジトリで実際に fail する規約と検証フローから外れないようにガードします。
+Keep changes aligned with the rules and command paths that actually fail in this
+repository.
 
-- 返答言語: `AGENTS.md` に従う
-- 重要: まず `CODING_STANDARDS.md` と enforcement entrypoint を読む
-- 重要: API 契約の正は `packages/typespec/main.tsp`
-- 重要: 生成物は手編集しない
-- 重要: frontend は React + TSX + Vite + React Router であり、`packages/frontend/web` や SvelteKit 前提を持ち込まない
-- 重要: backend は TypeScript + Hono + Cloudflare Workers + Drizzle であり、Go / Gin / GORM 前提を持ち込まない
-- 重要: `pnpm lint` には OpenSpec validate と Scenario coverage check が含まれる
+- Follow `AGENTS.md` for communication language.
+- Read `docs/change-operation.md`, `CODING_STANDARDS.md`, and the enforcement
+  entrypoints before editing.
+- Treat `packages/typespec/main.tsp` as the API contract source of truth.
+- Never hand-edit generated artifacts.
+- Frontend is React, TSX, Vite, and React Router. Do not introduce assumptions
+  about `packages/frontend/web` or SvelteKit.
+- Backend is TypeScript, Hono, Cloudflare Workers, and Drizzle. Do not introduce
+  Go, Gin, or GORM assumptions.
 
 ## Workflow
 
-### 1) Load the repository rules before editing
+### 1. Load Repository Rules
 
-最初に次を読む。
+Read:
 
 - `AGENTS.md`
+- `docs/change-operation.md`
 - `CODING_STANDARDS.md`
 - `CONTRIBUTING.md`
 - `.opencode/skills/coding-guardian/references/repo-entrypoints.md`
 
-特に重要な enforcement entrypoint:
+Important enforcement entrypoints:
 
-- root flow: `package.json`, `.github/workflows/ci.yml`, `.husky/pre-commit`, `.husky/commit-msg`, `.lintstagedrc.json`, `commitlint.config.js`, `eslint.config.js`
-- TypeSpec / codegen: `packages/typespec/package.json`, `packages/typespec/tspconfig.yaml`, `packages/typespec/README.md`, `packages/frontend/orval.config.ts`
-- frontend: `packages/frontend/package.json`, `packages/frontend/tsconfig.*.json`, `packages/frontend/src/app/**`, `packages/frontend/src/domain/**`, `packages/frontend/src/api/**`, `packages/ui/**`
-- React Compiler: `packages/build-config/react-compiler.js`, `packages/frontend/vite.config.ts`, `packages/frontend/vitest.app.config.ts`, `packages/ui/vitest.config.ts`, `scripts/eslint/**`
-- backend: `packages/backend/package.json`, `packages/backend/tsconfig.*.json`, `packages/backend/src/entry/**`, `packages/backend/src/app/**`, `packages/backend/src/http/**`, `packages/backend/src/persistence/**`, `packages/backend/src/usecases/**`, `packages/backend/src/domain/**`, `packages/backend/src/types/**`, `packages/backend/src/drizzle/**`, `packages/backend/src/http/contracts/openapi-contract.test.ts`
-- OpenSpec: `scripts/openspec/verify-change-intent.mjs`, `scripts/openspec/verify-scenario-coverage.mjs`, `scripts/openspec/verify-change-task-scope.mjs`, `scripts/openspec/verify-wireframe-previews.mjs`
+- Root: `package.json`, `.github/workflows/ci.yml`, `.husky/pre-commit`,
+  `.husky/commit-msg`, `.lintstagedrc.json`, `commitlint.config.js`,
+  `eslint.config.js`
+- TypeSpec/codegen: `packages/typespec/package.json`,
+  `packages/typespec/tspconfig.yaml`, `packages/typespec/README.md`,
+  `packages/frontend/orval.config.ts`
+- Frontend: `packages/frontend/package.json`, frontend TypeScript configs,
+  `packages/frontend/src/app/**`, `packages/frontend/src/domain/**`,
+  `packages/frontend/src/api/**`, `packages/ui/**`
+- React Compiler: `packages/build-config/react-compiler.js`, frontend/UI
+  Vite/Vitest configs, `scripts/eslint/**`
+- Backend: backend package and TypeScript configs, all backend layers, Drizzle,
+  and `packages/backend/src/http/contracts/openapi-contract.test.ts`
+- OpenSpec: generated core commands and skills, both custom schemas, and the
+  proposal, Scenario coverage, and task scope validators under
+  `scripts/openspec/**`
+- Pull requests: `.github/pull_request_template.md` and
+  `.github/workflows/validate-pr-template.yml`
 
-### 2) Classify the change before editing
+### 2. Classify Before Editing
 
-- Contract / codegen: `packages/typespec/**`, `packages/frontend/src/api/**`, `packages/frontend/orval.config.ts`
-- Frontend: `packages/frontend/src/app/**`, `packages/frontend/src/domain/**`, `packages/ui/**`
+- Select `Operation Lane` from `DIRECT | BEHAVIOR | ARCHITECTURE`.
+- Select `UX Mode` independently from `NONE | CONTINUITY | SHAPE`.
+- Select `Review Depth` independently from `STANDARD | DEEP`.
+- `DIRECT` changes neither observable behavior nor material architecture.
+- `BEHAVIOR` uses `behavior-change`.
+- `ARCHITECTURE` uses `architecture-change`.
+- Use `DEEP` for material security, data, external-contract, migration,
+  cross-domain architecture, or active-Change interaction risk.
+
+Area mapping:
+
+- Contract/codegen: `packages/typespec/**`, frontend API, Orval config
+- Frontend: frontend app/domain and shared UI
 - Backend: `packages/backend/**`
-- Tooling / workflow: root config, scripts, hooks, CI, `.opencode/**`
+- Tooling/workflow: root config, scripts, hooks, CI, `.opencode/**`
 
-固定の依存方向:
+Dependency directions:
 
-- Client: `packages/frontend/src/app -> packages/frontend/src/domain -> packages/frontend/src/api` and `packages/frontend/src/app -> packages/ui`
-- Server: `packages/backend/src/entry -> packages/backend/src/app -> (packages/backend/src/http | packages/backend/src/persistence | packages/backend/src/usecases) -> packages/backend/src/domain -> packages/backend/src/types`
-- Persistence schema: `packages/backend/src/persistence -> packages/backend/src/drizzle`
+- Client: `app -> domain -> api` and `app -> ui`
+- Server: `entry -> app -> (http | persistence | usecases) -> domain -> types`
+- Persistence schema: `persistence -> drizzle`
 
-### 3) Implement without breaking enforced rules
+### 3. Preserve Enforced Boundaries
 
-- Contract を変えるときは `packages/typespec/main.tsp` を直し、`pnpm gen:api-sdk` と `pnpm check:codegen` で整合を取る
-- `packages/typespec/openapi/openapi.json` と `packages/frontend/src/api/generated/client.ts` は手で直さない
-- Frontend app / domain で `fetch`, `globalThis.fetch`, `axios`, `cross-fetch` を直接使わない
-- Frontend app の pages / components から `@cfreact-template/frontend/api` を直 import しない。domain hook を経由する
-- React と TSX はこの repo の正規 frontend 実装であり、Svelte 用の制約へ読み替えない
-- frontend/domain/UI の手書き React コードは `@cfreact-template/build-config/react-compiler` の共通設定でコンパイルし、runtime source から build tooling を import しない
-- app components では React 組み込み Hook を使わず、domain と手書き UI の通常の `useMemo` / `useCallback` / `memo` は Compiler へ委譲する。上流由来の対象外は `scripts/eslint/disable-policy.mjs` へ集約する
-- ESLint の単発例外は許可リストにある1ルールだけを構造化した `eslint-disable-next-line` で管理し、頻出する非互換 API は `scripts/eslint/disable-policy.mjs` の専用境界へ集約する
-- `packages/frontend/src/domain/hooks/**` では `use*` export、`{ data, actions }` 戻り値、`*Data` / `*Actions` 型注釈を守る
-- 再利用したい見た目は `@cfreact-template/ui` に寄せ、画面固有の構成だけを `packages/frontend/src/app` に置く
-- Backend HTTP は `packages/backend/src/http`、配線は `packages/backend/src/app`、永続化は `packages/backend/src/persistence` / `packages/backend/src/drizzle` に置く
-- `packages/backend/src/http` から `packages/backend/src/persistence` を直 import しない。`c.env` も HTTP 層で直接読まない
-- `packages/backend/src/domain` と `packages/backend/src/usecases` では adapter import や framework 依存を持ち込まない
-- `packages/**/src/**/*.{ts,tsx}` の export は、生成物とテストを除き TSDoc を付ける
-- OpenSpec を触るときは `openspec/specs/**/spec.md` の Scenario ID とテストタイトルの参照を崩さない
+- Change TypeSpec first, then run `pnpm gen:api-sdk` and
+  `pnpm check:codegen`.
+- Never edit generated OpenAPI or SDK output manually.
+- Never edit `.opencode/commands/opsx-*.md` or
+  `.opencode/skills/openspec-*/SKILL.md` manually; regenerate both with
+  `pnpm gen:openspec` from the pinned OpenSpec version.
+- Never call `fetch`, `axios`, or `cross-fetch` from frontend app/domain code.
+- App pages/components import domain hooks, never the API package directly.
+- Use the shared React Compiler configuration; runtime source never imports
+  build tooling.
+- App components use no React built-in hooks. Domain and handwritten UI leave
+  ordinary memoization to React Compiler.
+- Keep structured one-line ESLint exceptions within the allowlist; isolate
+  recurring incompatible APIs behind the declared shared boundary.
+- Domain hooks export `use*`, return `{ data, actions }`, and declare `*Data` and
+  `*Actions` return types.
+- Put reusable presentation in `@cfreact-template/ui` and page composition in
+  frontend app.
+- Keep HTTP, app wiring, persistence, and domain responsibilities in their
+  declared backend layers.
+- HTTP never imports persistence directly or reads `c.env` directly.
+- Domain and use cases remain framework- and adapter-independent.
+- Add required Japanese TSDoc to public package exports, except generated and
+  test code.
+- OpenSpec persists observable behavior, not a file-level implementation plan.
+- Keep `tasks.md` as coarse work packages; decide files, helpers, test layer, and
+  local order during progressive implementation.
+- Preserve Scenario IDs across main Specs, active deltas, and test titles.
+- Validate one Change with
+  `node scripts/openspec/verify-scenario-coverage.mjs --change <change-id>`, then
+  run the global active-Change check.
+- Actual UI changes require a production designer and real desktop/mobile
+  browser review. Generated mockups are optional non-contract evidence.
+- PRs record Operation Lane, UX Mode, Review Depth, OpenSpec Change, and
+  Scenario IDs. BEHAVIOR and ARCHITECTURE require a Change and Scenario IDs.
 
-### 4) Verify with the real repo flow
+### 4. Verify Through Real Commands
 
-変更内容に応じて、少なくとも次を実行する。
+- Contract/generated changes: `pnpm gen:api-sdk`, `pnpm check:codegen`
+- TypeSpec: `pnpm format:check`, `pnpm check`
+- JS/TS/TSX: `pnpm lint`, `pnpm test:run`
+- Frontend: `pnpm test:frontend`
+- Backend: `pnpm test:backend`
+- Cross-cutting/release-ready: `pnpm build`
+- Skill changes: skill validator under `opencode-skills-devkit`
+- OpenSpec changes: `pnpm lint:openspec`
+- PR template/validator: `pnpm test:release`
 
-- Contract / generated 変更: `pnpm gen:api-sdk` -> `pnpm check:codegen`
-- TypeSpec 変更: `pnpm format:check` -> `pnpm check`
-- JS / TS / TSX 変更: `pnpm lint` -> `pnpm test:run`
-- Frontend-focused 変更: `pnpm test:frontend`
-- Backend-focused 変更: `pnpm test:backend`
-- Release-ready な変更や横断変更: `pnpm build`
-- Skill 変更: `python3 .opencode/skills/opencode-skills-devkit/scripts/validate_skills.py --root .`
+Changed-file helper:
 
-Changed-file 向けの軽量チェック:
+```bash
+.opencode/skills/coding-guardian/scripts/check_changed.sh [base]
+```
 
-- `.opencode/skills/coding-guardian/scripts/check_changed.sh [base]`
+### 5. Report
 
-### 5) What to report back
+Report the touched areas, enforced rules applied, generation performed,
+commands and results, and any verification that could not run.
 
-- 触った領域
-- どの enforced rule に合わせて設計したか
-- 生成が必要だったか、実行したか
-- 実行した command と結果
-- まだ未実行の verify があれば、その理由
+## Prevent These Violations
 
-## Common violations to prevent
-
-- generated file の手編集
-- `packages/frontend/src/app` から `@cfreact-template/frontend/api` の直 import
-- frontend app / domain での `fetch` / `axios` / `cross-fetch`
-- hooks が `{ data, actions }` を返さない
-- React Compiler 設定を frontend/UI ごとに複製する、または runtime source から build tooling を参照する
-- 頻出する Compiler 非互換 API を専用境界外から直接 import する
-- 理由・代替案・不採用理由・再評価条件のない `eslint-disable-next-line`
-- export に必要な TSDoc がない
-- `packages/backend/src/http` から `packages/backend/src/persistence` の直 import
-- HTTP 層での `c.env` 直接参照
-- OpenSpec の Scenario ID とテスト参照の不整合
+- Hand-editing generated files
+- App-to-API imports or frontend app/domain network calls
+- Domain hooks without `{ data, actions }`
+- Duplicated React Compiler config or runtime imports of build tooling
+- Repeated incompatible APIs outside their declared boundary
+- Unsupported ESLint exceptions
+- Missing required TSDoc
+- HTTP-to-persistence imports or direct `c.env` access
+- Scenario/Test traceability drift
+- Collapsing Operation Lane and UX Mode into one classification
+- Turning OpenSpec into a file-, helper-, or test-layer implementation plan

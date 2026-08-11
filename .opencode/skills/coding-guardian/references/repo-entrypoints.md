@@ -5,6 +5,7 @@ Read these files before applying `coding-guardian` in this repository.
 ## Core flow
 
 - `AGENTS.md`: project workflow, required commands, language policy
+- `docs/change-operation.md`: authoritative operation lane, UX mode, review depth, and OpenSpec boundary policy
 - `CODING_STANDARDS.md`: mechanically enforced rules summary
 - `CONTRIBUTING.md`: contributor workflow and required checks
 - `package.json`: root command graph for dev, build, lint, check, codegen, and tests
@@ -42,10 +43,19 @@ Read these files before applying `coding-guardian` in this repository.
 
 ## OpenSpec enforcement
 
-- `scripts/openspec/verify-scenario-coverage.mjs`: Scenario ID coverage checks used by `pnpm lint`
-- `scripts/openspec/verify-change-intent.mjs`: owner-confirmed Intent gate for downstream Change artifacts
-- `scripts/openspec/verify-change-task-scope.mjs`: repository-local completion boundary for Change tasks and acceptance
-- `scripts/openspec/verify-wireframe-previews.mjs`: generated wireframe preview drift check
+- `.opencode/commands/opsx-*.md` and `.opencode/skills/openspec-*/SKILL.md`: OpenSpec `1.8.0` core definitions generated together by `pnpm gen:openspec`
+- `.opencode/skills/openspec/**`: repository-specific supplements layered on the generated core skills
+- `openspec/schemas/behavior-change/schema.yaml`: observable behavior Change artifact order and scope
+- `openspec/schemas/architecture-change/schema.yaml`: material architecture Change artifact order and scope
+- `scripts/openspec/verify-change-proposal.mjs`: resolved proposal structure, request classification, and `UX-Mode` evidence
+- `scripts/openspec/verify-scenario-coverage.mjs`: main specs plus active delta application, Scenario/Test traceability, and `--change` selection
+- `scripts/openspec/verify-change-task-scope.mjs`: coarse Work Package and material design scope
+
+## Pull request enforcement
+
+- `.github/pull_request_template.md`: `Operation Lane`, `UX Mode`, `Review Depth`, OpenSpec Change, Scenario IDs, and UI evidence fields
+- `.github/workflows/validate-pr-template.yml`: lane vocabulary, OpenSpec requirements, Scenario ID format, checklist completion, production-designer evidence, real-browser confirmation, and desktop/mobile before/after images
+- `scripts/release/workflow-policy.test.mjs`: executes the embedded validator against direct, behavior, architecture, and UI evidence cases
 
 ## Important reality checks
 

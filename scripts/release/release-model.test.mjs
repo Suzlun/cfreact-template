@@ -162,6 +162,12 @@ test('自動PR本文はrepository標準テンプレートの必須情報を満�
   // releaseと同期の双方で空欄や未確認checkboxが残らないことを確認します。
   for (const kind of ['release', 'sync']) {
     const body = createPullRequestBody(kind, '1.2.3');
+    assert.match(body, /## 変更運用/);
+    assert.match(body, /- Operation Lane: DIRECT/);
+    assert.match(body, /- UX Mode: NONE/);
+    assert.match(body, /- Review Depth: STANDARD/);
+    assert.match(body, /- Scenario IDs: なし/);
+    assert.match(body, /- プロダクトデザイナー確認: なし/);
     assert.match(body, /## セキュリティ確認/);
     assert.match(body, /## リリース影響/);
     assert.doesNotMatch(body, /- \[ ]/);

@@ -3,3 +3,7 @@ pnpm-lock.yaml
 
 # Serena MCP のローカル状態はリポジトリ整形の対象外にする。
 .serena/
+
+# OpenSpec 公式 CLI が生成するコマンドとスキルは生成元の書式を保持する。
+.opencode/commands/opsx-*.md
+.opencode/skills/openspec-*/SKILL.md
