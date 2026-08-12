@@ -107,7 +107,8 @@ Dependency directions:
 - Preserve Scenario IDs across main Specs, active deltas, and test titles.
 - Validate one Change with
   `node scripts/openspec/verify-scenario-coverage.mjs --change <change-id>`, then
-  run the global active-Change check.
+  require full test references at apply completion with the same command plus
+  `--require-test-references`, then run the global active-Change check.
 - Actual UI changes require a production designer and real desktop/mobile
   browser review. Generated mockups are optional non-contract evidence.
 - PRs record Operation Lane, UX Mode, Review Depth, OpenSpec Change, and

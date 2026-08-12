@@ -9,7 +9,7 @@
 - 変更運用（一次資料）: `docs/change-operation.md`
 - 永続的な振る舞い契約: `openspec/specs/**/spec.md`
   - `pnpm lint` で変更スキーマ、提案、厳格な成果物形式、Scenario と試験の追跡、作業パッケージと設計の対象範囲を検査します
-  - `openspec/changes/*/specs/**/spec.md` の活動中差分は、主仕様へ重ねた実効仕様として同期前から検査されます
+  - 活動中差分は同期前から構造、識別子、競合を検査し、計画時は主仕様の試験参照だけを必須とします
 
 ## 前提環境
 
@@ -78,7 +78,7 @@ Husky によりコミット時に検証されます。
 - 自動生成ファイルは手で直さない
   - 例: `packages/frontend/src/api/generated/**`
 - 振る舞い契約が変わる変更は仕様と試験を一緒に更新する
-  - 主仕様または活動中差分の `#### Scenario: ... (..-S001)` に対して、試験タイトルに `[...-S001]` を含める
+  - 主仕様の自動化対象 Scenario と、実装を完了する活動中差分の Scenario に対して、試験タイトルに `[...-S001]` を含める
   - 自動化できない Scenario は `Tags: manual` を明示する
 - OpenSpec Change の `proposal.md` は、依頼を成果、成果の制約、必須手段、候補手段へ分類し、リポジトリの事実と照合した権威ある解釈とする
   - 重要な曖昧さが残る間は `Intent-Resolution: DRAFT` とし、差分仕様、設計、作業パッケージを作成しない
@@ -109,6 +109,7 @@ OpenSpec の `tasks.md` は粗い作業パッケージ台帳です。ファイ�
 
 ```bash
 node scripts/openspec/verify-scenario-coverage.mjs --change <change-id>
+node scripts/openspec/verify-scenario-coverage.mjs --change <change-id> --require-test-references
 node scripts/openspec/verify-scenario-coverage.mjs
 ```
 

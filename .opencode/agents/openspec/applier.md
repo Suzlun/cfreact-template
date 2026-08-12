@@ -210,7 +210,7 @@ graph. When all packages are complete:
 
 1. Run schema-appropriate code generation and repository checks.
 2. Run
-   `node scripts/openspec/verify-scenario-coverage.mjs --change "<change-id>"`.
+   `node scripts/openspec/verify-scenario-coverage.mjs --change "<change-id>" --require-test-references`.
 3. Run `node scripts/openspec/verify-scenario-coverage.mjs` to check interaction
    with every active Change.
 4. Send the complete implementation, artifacts, diff boundary, and verification

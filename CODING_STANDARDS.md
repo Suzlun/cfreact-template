@@ -1207,14 +1207,14 @@ fail 条件
     - `tasks.md` を `- [ ] WP<number>: <成果>`、`Covers`、`Completion Evidence` を持つ粗い作業パッケージ台帳にする
     - ファイル、補助処理、試験の詳細は現在の作業パッケージと検証結果から実装時に段階的に決める
 
-- Scenario 検査は主仕様へ活動中差分を重ねた実効仕様を対象にする
+- Scenario 検査は計画時と実装完了時の責務を分離する
   - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs`
   - NG例
-    - 活動中差分の自動化対象 Scenario に対応する試験参照がない
     - 複数の活動中 Change が同じ Requirement へ異なる操作を指定する
   - OK例
-    - `openspec/specs/**/spec.md` と `openspec/changes/*/specs/**/spec.md` を合わせた実効仕様で整合する
-    - 一件だけの確認に `node scripts/openspec/verify-scenario-coverage.mjs --change <change-id>` を使い、完了前には引数なしの全体検査も行う
+    - 計画時は活動中差分の構造、識別子、競合と、主仕様の試験参照を検査する
+    - 実装完了時は `node scripts/openspec/verify-scenario-coverage.mjs --change <change-id> --require-test-references` で選択 Change の実効仕様と試験参照を一致させる
+    - 最後に引数なしの全体検査で活動中 Change 間の相互作用を確認する
 
 - Scenario 見出しは `#### Scenario:` で始め、末尾に安定 ID を付ける
   - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `extractScenarioId`
@@ -1260,7 +1260,7 @@ fail 条件
     - GIVEN ...
     ```
 
-- manual でない Scenario はテストタイトルで参照する
+- 主仕様および実装完了時の活動中差分にある manual でない Scenario はテストタイトルで参照する
   - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `SCENARIO_REF_PATTERN`
   - NG例
     ```ts
@@ -1272,7 +1272,7 @@ fail 条件
     ```
 
 - Spec に同じ Scenario ID を複数置かない
-  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `validateCoverage`
+  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `validateScenarioDefinitions`
   - NG例
     - 2 つの `spec.md` に同じ ID がある
   - OK例
