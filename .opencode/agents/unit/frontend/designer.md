@@ -3,7 +3,7 @@ description: Designs and implements production-visible UI across shared componen
 mode: subagent
 hidden: true
 model: openai/gpt-5.6-sol
-reasoningEffort: 'xhigh'
+reasoningEffort: 'medium'
 temperature: 0.1
 permission:
   edit:

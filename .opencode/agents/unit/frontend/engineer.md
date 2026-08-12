@@ -2,8 +2,8 @@
 description: Implements frontend domain, API, TypeSpec integration, routing, data and action wiring, caching, and workflows without redesigning visible UI.
 mode: subagent
 hidden: true
-model: openai/gpt-5.6-luna
-reasoningEffort: 'max'
+model: openai/gpt-5.6-sol
+reasoningEffort: 'medium'
 temperature: 0.1
 permission:
   edit:
