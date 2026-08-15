@@ -1201,9 +1201,14 @@ fail 条件
 - OpenSpec は観測可能な振る舞いの契約とし、詳細な実装計画にしない
   - 強制: `pnpm lint` → `node scripts/openspec/verify-change-task-scope.mjs` → `scripts/openspec/verify-change-task-scope.mjs`
   - NG例
+    - 顧客が母語で利用できる成果ではなく、i18nのRFC準拠または使用パッケージをRequirementにする
     - `tasks.md` をファイル、補助処理、試験階層ごとの計画へ分解する
     - `design.md` に物質的な設計判断以外の見出しを追加する
+    - `design.md`で既存コード、導入済みパッケージ、実績のある外部パッケージの候補または採否を記載しない
   - OK例
+    - 顧客が求める言語で利用できる終端状態をRequirementにし、規格やパッケージは設計上の手段として扱う
+    - 希望体験そのものを表す可視のUI構成または配置を成果の制約として記載する
+    - `Reuse Assessment`で再利用候補と採用対象を示し、独自実装時だけ全候補で成果を満たせない根拠を記載する
     - `tasks.md` を `- [ ] WP<number>: <成果>`、`Covers`、`Completion Evidence` を持つ粗い作業パッケージ台帳にする
     - ファイル、補助処理、試験の詳細は現在の作業パッケージと検証結果から実装時に段階的に決める
 
