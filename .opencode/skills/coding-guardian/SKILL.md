@@ -43,10 +43,10 @@ Important enforcement entrypoints:
   `packages/frontend/src/api/**`, `packages/ui/**`
 - React Compiler: `packages/build-config/react-compiler.js`, frontend/UI
   Vite/Vitest configs, `scripts/eslint/**`
-- Backend: backend package and TypeScript configs, all backend layers, Drizzle,
-  and `packages/backend/src/http/contracts/openapi-contract.test.ts`
+- Backend: backend package and TypeScript configs, all backend layers, and
+  Drizzle
 - OpenSpec: generated core commands and skills, both custom schemas, and the
-  proposal, Scenario coverage, and task scope validators under
+  proposal, Scenario validation, and task scope validators under
   `scripts/openspec/**`
 - Pull requests: `.github/pull_request_template.md` and
   `.github/workflows/validate-pr-template.yml`
@@ -102,13 +102,20 @@ Dependency directions:
 - Add required Japanese TSDoc to public package exports, except generated and
   test code.
 - OpenSpec persists observable behavior, not a file-level implementation plan.
-- Keep `tasks.md` as coarse work packages; decide files, helpers, test layer, and
-  local order during progressive implementation.
-- Preserve Scenario IDs across main Specs, active deltas, and test titles.
+- Keep `tasks.md` as coarse work packages; decide files, helpers,
+  policy-compliant test details, and local order during progressive implementation.
+- Allow only Playwright E2E tests for high-value customer journeys and pure unit
+  tests for isolated deterministic customer-impacting rules. Unit tests never
+  access databases, networks, filesystems, servers, Workerd, or other runtimes.
+- Do not create integration, connection, contract, real-database,
+  Workerd-specific, or runtime-specific test suites.
+- Never add production APIs, exports, factories, branches, bindings, or
+  configuration solely for test access. Remove the test instead.
+- Playwright E2E test titles exclusively own Scenario ID references. Scenarios
+  do not require automated test references, and unit tests never reference IDs.
 - Validate one Change with
   `node scripts/openspec/verify-scenario-coverage.mjs --change <change-id>`, then
-  require full test references at apply completion with the same command plus
-  `--require-test-references`, then run the global active-Change check.
+  run the global active-Change check.
 - Actual UI changes require a production designer and real desktop/mobile
   browser review. Generated mockups are optional non-contract evidence.
 - PRs record Operation Lane, UX Mode, Review Depth, OpenSpec Change, and
@@ -147,6 +154,6 @@ commands and results, and any verification that could not run.
 - Unsupported ESLint exceptions
 - Missing required TSDoc
 - HTTP-to-persistence imports or direct `c.env` access
-- Scenario/Test traceability drift
+- One-way Playwright E2E-to-Scenario traceability drift
 - Collapsing Operation Lane and UX Mode into one classification
 - Turning OpenSpec into a file-, helper-, or test-layer implementation plan

@@ -1212,14 +1212,15 @@ fail 条件
     - `tasks.md` を `- [ ] WP<number>: <成果>`、`Covers`、`Completion Evidence` を持つ粗い作業パッケージ台帳にする
     - ファイル、補助処理、試験の詳細は現在の作業パッケージと検証結果から実装時に段階的に決める
 
-- Scenario 検査は計画時と実装完了時の責務を分離する
+- Scenario検査は仕様構造とPlaywright E2E試験からの一方向参照を検証する
   - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs`
   - NG例
     - 複数の活動中 Change が同じ Requirement へ異なる操作を指定する
+    - Playwright E2E試験の題名が存在しないScenario識別子を参照する
   - OK例
-    - 計画時は活動中差分の構造、識別子、競合と、主仕様の試験参照を検査する
-    - 実装完了時は `node scripts/openspec/verify-scenario-coverage.mjs --change <change-id> --require-test-references` で選択 Change の実効仕様と試験参照を一致させる
+    - `node scripts/openspec/verify-scenario-coverage.mjs --change <change-id>`で選択Changeの実効仕様を検査する
     - 最後に引数なしの全体検査で活動中 Change 間の相互作用を確認する
+    - Scenarioから自動試験への参照欠落は検査しない
 
 - Scenario 見出しは `#### Scenario:` で始め、末尾に安定 ID を付ける
   - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `extractScenarioId`
@@ -1245,37 +1246,6 @@ fail 条件
     #### Scenario: Create user (USER-MGMT-S001)
     ```
 
-- `Tags: manual` を付けた Scenario はカバレッジ必須から外す
-  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `isManualScenario`
-  - NG例
-
-    ```md
-    #### Scenario: Hard to automate (PAYMENTS-S014)
-
-    - GIVEN ...
-    ```
-
-  - OK例
-
-    ```md
-    #### Scenario: Hard to automate (PAYMENTS-S014)
-
-    Tags: manual
-
-    - GIVEN ...
-    ```
-
-- 主仕様および実装完了時の活動中差分にある manual でない Scenario はテストタイトルで参照する
-  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `SCENARIO_REF_PATTERN`
-  - NG例
-    ```ts
-    it('create user', async () => {});
-    ```
-  - OK例
-    ```ts
-    it('[USER-MGMT-S001] create user', async () => {});
-    ```
-
 - Spec に同じ Scenario ID を複数置かない
   - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `validateScenarioDefinitions`
   - NG例
@@ -1283,8 +1253,8 @@ fail 条件
   - OK例
     - ID を一意にする
 
-- Spec にない Scenario ID をテストで参照しない
-  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `validateCoverage`
+- SpecにないScenario IDをPlaywright E2E試験の題名で参照しない
+  - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `collectTestReferences` と `validateReferences`
   - NG例
     ```ts
     test('[USER-MGMT-S999] typo', async () => {});

@@ -39,7 +39,6 @@ Read these files before applying `coding-guardian` in this repository.
 
 - `packages/backend/package.json`: Workers, Hono, persistence, and layer check scripts
 - `packages/backend/tsconfig.*.json`: backend layer-specific TypeScript boundaries
-- `packages/backend/src/http/contracts/openapi-contract.test.ts`: server OpenAPI must match TypeSpec-generated OpenAPI
 
 ## OpenSpec enforcement
 
@@ -48,7 +47,7 @@ Read these files before applying `coding-guardian` in this repository.
 - `openspec/schemas/behavior-change/schema.yaml`: observable behavior Change artifact order and scope
 - `openspec/schemas/architecture-change/schema.yaml`: material architecture Change artifact order and scope
 - `scripts/openspec/verify-change-proposal.mjs`: resolved proposal structure, request classification, and `UX-Mode` evidence
-- `scripts/openspec/verify-scenario-coverage.mjs`: main specs plus active delta application, Scenario/Test traceability, and `--change` selection
+- `scripts/openspec/verify-scenario-coverage.mjs`: main specs plus active delta application, one-way Playwright E2E-to-Scenario traceability, and `--change` selection
 - `scripts/openspec/verify-change-task-scope.mjs`: coarse Work Package and material design scope
 
 ## Pull request enforcement

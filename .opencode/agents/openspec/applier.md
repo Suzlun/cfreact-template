@@ -185,7 +185,8 @@ decompose every package into files or steps up front.
 
 At each iteration, select the dependency-safe ready package set. Produce a
 detailed execution plan only for each package being dispatched now. That local
-plan may choose files, private APIs, helpers, test layers, fixtures, and order.
+plan may choose files, private APIs, helpers, fixtures, and order. Test selection
+must follow the repository's Playwright E2E or pure-unit boundary.
 Discard or revise it as runtime evidence changes; it is not an OpenSpec artifact.
 
 Delegate frontend work to `unit/frontend/engineer`, backend work to
@@ -200,8 +201,8 @@ Return `PROPOSER_REVIEW_REQUIRED` only when implementation reveals an unresolved
 decision that crosses the planning-completion boundary in
 `docs/change-operation.md`.
 
-Do not return for file selection, private API shape, helper decomposition, test
-layer, fixture structure, concrete representations within resolved contract
+Do not return for file selection, private API shape, helper decomposition,
+policy-compliant test selection, fixture structure, concrete representations within resolved contract
 meaning, or implementation order when resolved boundaries are preserved.
 Continue independent packages that cannot be affected by a blocked decision.
 
@@ -212,7 +213,7 @@ graph. When all packages are complete:
 
 1. Run schema-appropriate code generation and repository checks.
 2. Run
-   `node scripts/openspec/verify-scenario-coverage.mjs --change "<change-id>" --require-test-references`.
+   `node scripts/openspec/verify-scenario-coverage.mjs --change "<change-id>"`.
 3. Run `node scripts/openspec/verify-scenario-coverage.mjs` to check interaction
    with every active Change.
 4. Send the complete implementation, artifacts, diff boundary, and verification

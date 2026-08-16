@@ -502,13 +502,12 @@ OpenSpec は、利用者または外部契約から観測できる振る舞い�
 
 ### Scenario と試験
 
-Scenario 見出しは `(USER-MGMT-S001)` のような安定した識別子で終え、自動試験の題名は `[USER-MGMT-S001]` のように参照します。自動化できない Scenario には `Tags: manual` を記載します。
+Scenario見出しは`(USER-MGMT-S001)`のような安定した識別子で終えます。追跡はPlaywright E2E試験からScenarioへの一方向であり、試験題名から`[USER-MGMT-S001]`のように既存Scenarioを参照できます。Scenarioごとの自動試験は要求せず、純粋な単体試験はScenario識別子を参照しません。
 
-既定の検査は、活動中差分の構造、識別子の重複、Change 間の競合と、主仕様の試験参照を確認します。計画時は一つ目、実装完了時は二つ目、相互作用の最終確認では三つ目を実行します。
+既定の検査は、活動中差分の構造、識別子の重複、Change間の競合と、Playwright E2E試験題名にあるScenario参照の有効性を確認します。一つのChangeを確認した後、相互作用の最終確認として引数なしの検査も実行します。
 
 ```bash
 node scripts/openspec/verify-scenario-coverage.mjs --change <change-id>
-node scripts/openspec/verify-scenario-coverage.mjs --change <change-id> --require-test-references
 node scripts/openspec/verify-scenario-coverage.mjs
 ```
 
