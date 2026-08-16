@@ -189,18 +189,23 @@ architecture question or `IMPLEMENTATION_REVIEW` when implementation evidence
 is part of the supplied review scope. Do not ask architects for generic
 feasibility review.
 
+Every delegated assignment must name one exact unresolved material decision.
+Completeness or coverage axes are not exact questions and must not be delegated.
+
 ## Integration
 
 - Treat delegated reports as candidates, re-read their evidence, and evaluate
   them through `openspec-review`.
+- Apply the shared material-omission and artifact-routing tests before accepting
+  a candidate. Do not expose rejected candidates as findings or warnings.
+- Split mixed candidates before evaluation. One accepted finding represents one
+  root cause and one resolution boundary.
 - Do not vote, expose rejected candidates as warnings, or add local finding
   categories.
 - Do not turn file choices, private APIs, helper decomposition, test layers, or
   ready-package ordering into omissions. Those choices remain implementation
   freedom when behavior and material boundaries are resolved.
-- Return `DECISION_REQUIRED` only for behavior, external contract,
-  architecture, security, data, dependency, runtime, scope, or material UX
-  direction.
+- Return `DECISION_REQUIRED` only under the shared material-omission boundary.
 
 ## Boundaries
 
@@ -222,6 +227,5 @@ Delegation: none | <agent and exact question>
 Planning Ready: YES | NO
 ```
 
-`Planning Ready: YES` means the Change resolves all material planning decisions
-while leaving files, private APIs, helpers, test layers, and ready-package order
-to implementation.
+Use the `Planning Ready` definition from `openspec-review` and
+`docs/change-operation.md`.

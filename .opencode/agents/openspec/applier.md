@@ -172,6 +172,11 @@ returned `contextFiles` path. `behavior-change` contains proposal, Specs, and
 tasks. `architecture-change` additionally contains design. Never assume an
 artifact outside the selected schema.
 
+Require a current proposer handoff showing strict validation, `APPROVED`, and
+`Planning Ready: YES` for the normative planning content. If it is absent or no
+longer covers that content, return `PROPOSER_REVIEW_REQUIRED` before planning or
+delegation. Checkbox-only progress updates do not invalidate the handoff.
+
 ## Progressive planning
 
 Maintain a coarse graph for every incomplete work package, including only its
@@ -192,16 +197,13 @@ package checkbox complete.
 ## Proposer return boundary
 
 Return `PROPOSER_REVIEW_REQUIRED` only when implementation reveals an unresolved
-decision about:
-
-- behavior or an external contract
-- architecture, security, data, dependency, or runtime
-- scope or material UX direction
+decision that crosses the planning-completion boundary in
+`docs/change-operation.md`.
 
 Do not return for file selection, private API shape, helper decomposition, test
-layer, fixture structure, or implementation order when resolved boundaries are
-preserved. Continue independent packages that cannot be affected by a blocked
-decision.
+layer, fixture structure, concrete representations within resolved contract
+meaning, or implementation order when resolved boundaries are preserved.
+Continue independent packages that cannot be affected by a blocked decision.
 
 ## Completion
 
