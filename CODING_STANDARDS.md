@@ -999,23 +999,23 @@
 
 ルール
 
-- `packages/**/src/**/*.{ts,tsx}` は 1 ファイル 500 行以内にする
+- `packages/**/src/**/*.{ts,tsx}` は 1 ファイル 1500 行以内にする
   - 強制: `pnpm lint` → `eslint .` → `rules['max-lines']` → `eslint.config.js` と `.eslintrc-maxlines.json`
   - 例外: `packages/ui/stories/**/*.stories.{ts,tsx}`
     - Story は表示例、状態、interaction、accessibility 検証を公開対象ごとの 1 ファイルへ集約する実行可能カタログのため、ファイル行数では分割しない
   - NG例
-    - 600 行の巨大ファイル
+    - 1600 行の巨大ファイル
   - OK例
-    - 分割して 500 行以内
+    - 同じ責務を行数だけで分断せず、異なるアーキテクチャ責務がある場合だけ抽出して 1500 行以内に保つ
 
-- `packages/**/src/**/*.{ts,tsx}` は 1 関数 100 行以内にする
+- `packages/**/src/**/*.{ts,tsx}` は 1 関数 250 行以内にする
   - 強制: `pnpm lint` → `eslint .` → `rules['max-lines-per-function']` → `eslint.config.js` と `.eslintrc-maxlines.json`
   - 例外: `packages/ui/stories/**/*.stories.{ts,tsx}`
     - Story の `render` と `play` は 1 つの利用状態と検証手順を連続して読めることを優先し、行数だけを理由に分割しない
   - NG例
-    - 150 行の関数
+    - 300 行の関数
   - OK例
-    - 関数を分割して 100 行以内
+    - 同じ処理を行数だけで補助関数へ分断せず、再利用または独立した責務がある場合だけ抽出して 250 行以内に保つ
 
 ## 11. 例外
 
