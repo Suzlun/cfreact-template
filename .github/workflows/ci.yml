@@ -56,6 +56,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
+
       - name: Validate release branch
         if: >-
           ${{
@@ -79,8 +82,14 @@ jobs:
       - name: Type check
         run: pnpm check
 
-      - name: Unit tests
+      - name: React UI, shared UI, and pure rule tests
         run: pnpm test:run
+
+      - name: Storybook browser tests
+        run: pnpm test:storybook
+
+      - name: E2E customer journeys
+        run: pnpm test:e2e
 
       - name: Build Storybook
         run: pnpm build:storybook

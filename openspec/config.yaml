@@ -3,7 +3,7 @@ schema: behavior-change
 context: |
   Repository: cfreact-template
   Tech stack: TypeScript, React, Cloudflare Workers, Hono, Drizzle ORM
-  Testing: Vitest (pure unit), Playwright (E2E)
+  Testing: Vitest (pure unit and customer-facing React/UI), Storybook browser tests, Playwright (E2E)
 
   Intent resolution boundary:
   - `proposal.md` is the authoritative interpretation of the request.
@@ -34,8 +34,10 @@ context: |
   - Active delta specs participate in structural, duplicate-ID, and conflict validation before archive or sync.
   - Every Scenario heading ends with a stable ID such as `(USER-MGMT-S001)`.
   - Playwright E2E test titles may reference existing Scenario IDs such as `[USER-MGMT-S001]`.
-  - Scenario definitions do not require automated test references, and pure unit tests never reference Scenario IDs.
-  - Only Playwright E2E tests and pure unit tests are allowed. Do not add integration, connection, contract, real-database, Workerd-specific, or runtime-specific test suites.
+  - Scenario definitions do not require automated test references. Only Playwright E2E titles may reference Scenario IDs.
+  - Allowed tests are high-value Playwright E2E journeys, pure deterministic customer-impacting rules, customer-facing React UI rendering and interactions, and Storybook browser tests.
+  - React UI tests may use jsdom, MSW, and Testing Library when they exercise customer-visible behavior.
+  - Do not add integration, connection, backend HTTP/OpenAPI contract, real-database, Workerd-specific, filesystem/child-process tooling self-test, or runtime-specific suites.
   - Never change production APIs, exports, factories, branches, bindings, or configuration solely to support tests.
 
   Spec Units:

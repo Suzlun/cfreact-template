@@ -85,7 +85,11 @@ If a section has no enforceable rules beyond a short scope note, keep it brief.
    - `scripts/openspec/verify-change-task-scope.mjs`
    - `.github/pull_request_template.md`
    - `.github/workflows/validate-pr-template.yml`
-   - `scripts/release/workflow-policy.test.mjs`
+   - `vitest.config.ts`
+   - `packages/frontend/vitest.app.config.ts`
+   - `packages/ui/vitest.unit.config.ts`
+   - `packages/ui/vitest.config.ts`
+   - `scripts/release/release-model.test.mjs`
 3. Extract only rules that actually fail in this repo, including repo-specific ones such as:
    - TypeSpec is the source of truth; generated OpenAPI and frontend SDK are not hand-edited; codegen drift fails.
    - Frontend boundaries such as `app -> domain -> api`, no direct API import from app, no direct `fetch` or `axios`, exported declarations require TSDoc, and hooks must return `{ data, actions }`.

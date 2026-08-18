@@ -29,8 +29,4 @@ const openApiApp = new OpenAPIHono<ApiEnv>({
 registerHelloRoutes(openApiApp);
 registerUsersRoutes(openApiApp);
 
-/** Generate the OpenAPI document for the registered routes. */
-const getOpenApiDocument = (...args: Parameters<typeof openApiApp.getOpenAPIDocument>) =>
-  openApiApp.getOpenAPIDocument(...args);
-
-export { getOpenApiDocument, openApiApp };
+export { openApiApp };

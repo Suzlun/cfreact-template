@@ -43,8 +43,9 @@ Important enforcement entrypoints:
   `packages/frontend/src/api/**`, `packages/ui/**`
 - React Compiler: `packages/build-config/react-compiler.js`, frontend/UI
   Vite/Vitest configs, `scripts/eslint/**`
-- Backend: backend package and TypeScript configs, all backend layers, and
-  Drizzle
+- Backend: backend package and TypeScript configs, including the independent
+  production HTTP boundary in `packages/backend/tsconfig.http.json`, all backend
+  layers, and Drizzle
 - OpenSpec: generated core commands and skills, both custom schemas, and the
   proposal, Scenario validation, and task scope validators under
   `scripts/openspec/**`
@@ -104,15 +105,18 @@ Dependency directions:
 - OpenSpec persists observable behavior, not a file-level implementation plan.
 - Keep `tasks.md` as coarse work packages; decide files, helpers,
   policy-compliant test details, and local order during progressive implementation.
-- Allow only Playwright E2E tests for high-value customer journeys and pure unit
-  tests for isolated deterministic customer-impacting rules. Unit tests never
-  access databases, networks, filesystems, servers, Workerd, or other runtimes.
-- Do not create integration, connection, contract, real-database,
-  Workerd-specific, or runtime-specific test suites.
+- Allow high-value Playwright E2E journeys, isolated pure deterministic
+  customer-impacting rules, customer-facing React UI rendering and interaction
+  tests, and Storybook browser tests. React UI tests may use jsdom, MSW, and
+  Testing Library when they exercise customer-visible behavior.
+- Pure tests never access databases, networks, filesystems, servers, Workerd, or
+  other runtimes. Do not create integration, connection, backend HTTP/OpenAPI
+  contract, real-database, Workerd-specific, filesystem/child-process tooling
+  self-test, or runtime-specific suites.
 - Never add production APIs, exports, factories, branches, bindings, or
   configuration solely for test access. Remove the test instead.
 - Playwright E2E test titles exclusively own Scenario ID references. Scenarios
-  do not require automated test references, and unit tests never reference IDs.
+  do not require automated test references, and all other tests never reference IDs.
 - Validate one Change with
   `node scripts/openspec/verify-scenario-coverage.mjs --change <change-id>`, then
   run the global active-Change check.
@@ -127,11 +131,17 @@ Dependency directions:
 - TypeSpec: `pnpm format:check`, `pnpm check`
 - JS/TS/TSX: `pnpm lint`, `pnpm test:run`
 - Frontend: `pnpm test:frontend`
-- Backend: `pnpm test:backend`
+- Shared UI: `pnpm test:ui-package`
+- Storybook browser: `pnpm test:storybook`
+- Customer journeys: `pnpm test:e2e`
 - Cross-cutting/release-ready: `pnpm build`
 - Skill changes: skill validator under `opencode-skills-devkit`
 - OpenSpec changes: `pnpm lint:openspec`
-- PR template/validator: `pnpm test:release`
+- Pure release rules: `pnpm test:release`
+- CI gate: install configured Playwright browsers, run `pnpm test:run`,
+  `pnpm test:storybook`, and `pnpm test:e2e`, then build Storybook. Do not run
+  frontend or shared UI tests separately in CI because `pnpm test:run` already
+  contains them.
 
 Changed-file helper:
 

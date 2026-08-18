@@ -9,7 +9,9 @@ Read these files before applying `coding-guardian` in this repository.
 - `CODING_STANDARDS.md`: mechanically enforced rules summary
 - `CONTRIBUTING.md`: contributor workflow and required checks
 - `package.json`: root command graph for dev, build, lint, check, codegen, and tests
-- `.github/workflows/ci.yml`: default CI order
+- `.github/workflows/ci.yml`: default CI order, Playwright browser installation,
+  React/shared UI and pure-rule tests, Storybook browser tests, E2E customer
+  journeys, and Storybook build
 
 ## Git hooks
 
@@ -23,6 +25,9 @@ Read these files before applying `coding-guardian` in this repository.
 - `eslint.config.js`: frontend boundaries for `app` / `domain` / `ui`, direct API import bans, direct fetch bans, TSDoc rules, and hook structure rules
 - `packages/frontend/package.json`: Vite React app, API SDK, domain hook, and shared UI scripts
 - `packages/build-config/react-compiler.js`: shared React Compiler plugins used by frontend and UI Vitest/Vite configs
+- `packages/frontend/vitest.app.config.ts`: customer-facing React UI rendering and interaction tests
+- `packages/ui/vitest.unit.config.ts`: customer-facing shared UI rendering and interaction tests
+- `packages/ui/vitest.config.ts`: Storybook browser test projects
 - `scripts/eslint/**`: structured inline-disable policy, manual memoization checks, and recurring incompatible-library boundaries
 - `packages/frontend/tsconfig.*.json`: frontend layer-specific TypeScript boundaries
 - `packages/ui/styles/globals.css`: design token and global style baseline used by the current app
@@ -39,6 +44,7 @@ Read these files before applying `coding-guardian` in this repository.
 
 - `packages/backend/package.json`: Workers, Hono, persistence, and layer check scripts
 - `packages/backend/tsconfig.*.json`: backend layer-specific TypeScript boundaries
+- `packages/backend/tsconfig.http.json`: independent production HTTP layer typecheck without test-only types or configuration
 
 ## OpenSpec enforcement
 
@@ -54,7 +60,7 @@ Read these files before applying `coding-guardian` in this repository.
 
 - `.github/pull_request_template.md`: `Operation Lane`, `UX Mode`, `Review Depth`, OpenSpec Change, Scenario IDs, and UI evidence fields
 - `.github/workflows/validate-pr-template.yml`: lane vocabulary, OpenSpec requirements, Scenario ID format, checklist completion, production-designer evidence, real-browser confirmation, and desktop/mobile before/after images
-- `scripts/release/workflow-policy.test.mjs`: executes the embedded validator against direct, behavior, architecture, and UI evidence cases
+- `scripts/release/release-model.test.mjs`: pure deterministic release rules included by `pnpm test:run`
 
 ## Important reality checks
 

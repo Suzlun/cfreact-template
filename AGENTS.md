@@ -73,16 +73,20 @@ Before beginning any work, you MUST summarize your understanding of the Credo be
 ## Testing
 
 - Automated tests exist only to protect confirmed customer value by detecting unintended regressions before customers encounter them.
-- Only two automated test categories are allowed:
+- Only these automated test categories are allowed:
   - Playwright E2E tests exercise high-value customer journeys through public product surfaces. They exclusively own Scenario ID references in titles such as `test('[USER-MGMT-S001] Create a user', async () => { ... })`.
   - Pure unit tests protect deterministic, customer-impacting rules in isolation. They MUST NOT access a database, network, filesystem, server, Workerd, or another runtime, and MUST NOT reference Scenario IDs.
-- Integration, connection, contract, real-database, Workerd-specific, and runtime-specific test suites are prohibited. Preserve customer journeys with Playwright E2E tests and isolated rules with pure unit tests instead.
+  - React customer-facing UI tests exercise customer-visible rendering and interactions. jsdom, MSW, and Testing Library are allowed when they support that purpose, and these tests MUST NOT reference Scenario IDs.
+  - Storybook browser tests protect customer-facing shared UI rendering, interactions, responsive states, themes, and accessibility, and MUST NOT reference Scenario IDs.
+- Integration, connection, backend HTTP/OpenAPI contract, real-database, Workerd-specific, filesystem/child-process tooling self-test, and runtime-specific test suites are prohibited. Preserve customer journeys, customer-visible UI, and isolated rules through the allowed categories instead.
 - Never add or retain production APIs, exports, factories, branches, bindings, or configuration solely to support tests. Remove the test rather than changing production code for test access.
 - Use the fewest tests that preserve the highest-value outcomes. Do not duplicate the same customer assurance across layers or files.
-- All unit tests: `pnpm test:run`
-- Server tests: `pnpm test:backend`
-- Client tests: `pnpm test:frontend`
+- Retained React/UI and pure rule tests: `pnpm test:run`
+- Client UI tests: `pnpm test:frontend`
+- Shared UI tests: `pnpm test:ui-package`
+- Storybook browser tests: `pnpm test:storybook`
 - E2E: `pnpm test:e2e`
+- CI installs the configured Playwright browsers, runs `pnpm test:run`, `pnpm test:storybook`, and `pnpm test:e2e`, and builds Storybook. Do not duplicate the frontend or shared UI suites with separate CI invocations because `pnpm test:run` already includes both.
 
 ## Pull Requests
 

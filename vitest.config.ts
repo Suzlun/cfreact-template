@@ -4,7 +4,7 @@ import { defineConfig } from 'vitest/config';
  * Vitest monorepo projects.
  *
  * Run all tests: `pnpm test:run`
- * Run a single project: `vitest run --project backend-http`
+ * Run a single project: `vitest run --project frontend-app`
  */
 export default defineConfig({
   test: {
@@ -14,13 +14,6 @@ export default defineConfig({
         root: './packages/frontend',
         test: {
           name: 'frontend-app',
-        },
-      },
-      {
-        extends: './packages/backend/vitest.http.config.ts',
-        root: './packages/backend',
-        test: {
-          name: 'backend-http',
         },
       },
       {

@@ -332,10 +332,9 @@ pnpm dev:all
 | `pnpm lint:supply-chain` | pnpm のサプライチェーン防御設定を検証               |
 | `pnpm format`            | Prettier でコードをフォーマット                     |
 | `pnpm format:check`      | CSS/YAML を含むフォーマット差分を検証               |
-| `pnpm test:run`          | Vitestとリリース自動化の単体テストを非watchで実行   |
-| `pnpm test:frontend`     | frontend の Vitest project を実行                   |
-| `pnpm test:backend`      | backend-http Vitest project を実行                  |
-| `pnpm test:ui-package`   | UI package の Vitest project を実行                 |
+| `pnpm test:run`          | React/UI試験と純粋なリリース規則試験を非watchで実行 |
+| `pnpm test:frontend`     | Reactの顧客向けUI試験を実行                         |
+| `pnpm test:ui-package`   | 共通UIのjsdom試験を実行                             |
 | `pnpm test:storybook`    | 全 Story を desktop/mobile・Light/Dark で検証       |
 | `pnpm test:e2e`          | migration 済み E2E 専用 D1 を使う Playwright を実行 |
 | `pnpm check:codegen`     | OpenAPI / SDK の生成差分を検証                      |
@@ -343,7 +342,9 @@ pnpm dev:all
 | `pnpm migrate:studio`    | Drizzle Studio を開く                               |
 | `pnpm deploy`            | Cloudflare Workers にデプロイ                       |
 | `pnpm changeset`         | リリース内容とSemVer影響を記録                      |
-| `pnpm test:release`      | Changesetsリリース自動化のテストを実行              |
+| `pnpm test:release`      | 純粋で決定的なリリース規則試験を実行                |
+
+CIは設定済みのPlaywrightブラウザを導入し、`pnpm test:run`でReactの顧客向けUI、共通UI、純粋なリリース規則を一度だけ検証します。続けて`pnpm test:storybook`、`pnpm test:e2e`、`pnpm build:storybook`を実行し、共通UIの実ブラウザ状態、高価値の顧客作業、Storybookの静的ビルドを必須検証にします。
 
 ### データベースマイグレーション
 
@@ -502,7 +503,9 @@ OpenSpec は、利用者または外部契約から観測できる振る舞い�
 
 ### Scenario と試験
 
-Scenario見出しは`(USER-MGMT-S001)`のような安定した識別子で終えます。追跡はPlaywright E2E試験からScenarioへの一方向であり、試験題名から`[USER-MGMT-S001]`のように既存Scenarioを参照できます。Scenarioごとの自動試験は要求せず、純粋な単体試験はScenario識別子を参照しません。
+Scenario見出しは`(USER-MGMT-S001)`のような安定した識別子で終えます。追跡はPlaywright E2E試験からScenarioへの一方向であり、試験題名から`[USER-MGMT-S001]`のように既存Scenarioを参照できます。Scenarioごとの自動試験は要求せず、純粋な単体試験、Reactの顧客向けUI試験、Storybookブラウザ試験はScenario識別子を参照しません。
+
+許可する自動試験は、価値の高い顧客作業を通すPlaywright E2E、顧客成果へ影響する決定的な規則の純粋な単体試験、利用者に見える描画と操作を保全するReact UI試験、顧客向け共通UIを実ブラウザで保全するStorybook試験です。React UI試験では目的に応じてjsdom、MSW、Testing Libraryを利用できます。Workerd固有、実データベース、接続、バックエンドHTTP・OpenAPI契約、ファイルシステム・子プロセスを使うツール自己試験は作成しません。
 
 既定の検査は、活動中差分の構造、識別子の重複、Change間の競合と、Playwright E2E試験題名にあるScenario参照の有効性を確認します。一つのChangeを確認した後、相互作用の最終確認として引数なしの検査も実行します。
 

@@ -185,7 +185,7 @@ meaning local to the implementation agent, including:
 - concrete representations within resolved contract meaning
 - concrete files and private APIs
 - helper names and internal decomposition
-- policy-compliant Playwright E2E or pure-unit selection and fixture organization
+- policy-compliant Playwright E2E, pure-rule, customer-facing React UI, or Storybook browser selection and fixture organization
 - implementation order within a ready work package
 
 For `DIRECT`, report a compact implementation outcome, affected ownership area,

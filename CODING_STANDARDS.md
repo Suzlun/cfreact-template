@@ -44,8 +44,6 @@
 - 共通
   - `ui`: `packages/ui/**/*`
   - `drizzle`: `packages/backend/src/drizzle/**/*`
-- 契約生成物
-  - `typespec-openapi`: `packages/typespec/openapi/openapi.json`
 
 ルール
 
@@ -87,7 +85,7 @@
   - `backend-types` → `backend-types`
   - `backend-usecases` → `backend-domain`, `backend-usecases`, `backend-types`
   - `backend-persistence` → `backend-usecases`, `backend-domain`, `backend-types`, `backend-persistence`, `drizzle`
-  - `backend-http` → `backend-http`, `backend-usecases`, `backend-domain`, `backend-types`, `typespec-openapi`
+  - `backend-http` → `backend-http`, `backend-usecases`, `backend-domain`, `backend-types`
   - `backend-app` → `backend-app`, `backend-http`, `backend-persistence`, `backend-usecases`, `backend-domain`, `backend-types`
   - `backend-entry` → `backend-app`
 - クライアント
@@ -1058,12 +1056,12 @@
   - OK例
     - upstream script は直接 lint 修正せず、必要な場合は upstream 更新または wrapper 側で対応する
 
-- テストは制約を一部緩和する
+- Reactと共通UIの試験は制約を一部緩和する
   - 強制: `pnpm lint` → `eslint .` → `files: ['**/*.test.*', '**/*.spec.*']` のルール上書き → `eslint.config.js`
   - NG例
     - 本番コードと同じ制約で書く必要があると思い込む
   - OK例
-    - テストでは制約が一部オフになっている前提で書く
+    - 利用者に見える描画と操作を保全するReactまたは共通UI試験では、試験用の制約緩和を利用する
 
 ## 12. 変更手順
 
@@ -1085,8 +1083,8 @@ fail 条件
   - 強制: `scripts.lint` → `package.json`
   - 内訳
     - `pnpm lint:ui-reuse` は公開 UI と Storybook catalog の対応、UI/app 間のコード clone を検査する
-    - `pnpm lint:eslint` はローカルESLintルールのテスト後に `eslint .` を実行
-    - `pnpm lint:openspec` は `behavior-change` / `architecture-change` スキーマ検証、`pnpm exec openspec validate --all --strict`、OpenSpec 規則試験、提案検査、活動中差分を含む Scenario と試験の追跡検査、作業パッケージと設計の対象範囲検査を実行
+    - `pnpm lint:eslint` はリポジトリ全体へESLintを直接実行する
+    - `pnpm lint:openspec` は `behavior-change` / `architecture-change` スキーマ検証、`pnpm exec openspec validate --all --strict`、提案検査、活動中差分を含む Scenario と試験の追跡検査、作業パッケージと設計の対象範囲検査を直接実行する
     - `pnpm lint:supply-chain` は `node scripts/security/verify-pnpm-supply-chain.mjs` を実行
 - 公開 UI ごとに対応する Storybook catalog を置く
   - 強制: `pnpm lint:ui-reuse` → `scripts/ui/verify-public-component-catalog.mjs`
@@ -1113,8 +1111,13 @@ fail 条件
   - 実行
     - `pnpm gen:api-sdk`
     - `git diff --exit-code -- packages/typespec/openapi/openapi.json packages/frontend/src/api/generated/client.ts`
-- CI は `pnpm format:check` と `pnpm check` と `pnpm test:run` も実行する
+- CI は整形、lint、型、顧客価値を守る全試験、Storybookビルド、生成差分を検証する
   - 強制: `.github/workflows/ci.yml`
+  - `pnpm test:run` はReactの顧客向けUI試験、共通UIのjsdom試験、純粋で決定的なリリース規則試験だけを実行する
+  - CIは設定済みのPlaywrightブラウザを導入し、Storybookブラウザ試験を`pnpm test:storybook`、価値の高い顧客作業を`pnpm test:e2e`で実行する
+  - CIは`pnpm build:storybook`でStorybookの静的ビルドも検証する
+  - frontendと共通UIの試験は`pnpm test:run`に含まれるため、CIで`pnpm test:frontend`または`pnpm test:ui-package`を重複実行しない
+  - Workerd固有、実データベース、接続、バックエンドHTTP・OpenAPI契約、ファイルシステム・子プロセスを使うツール自己試験の実行入口は設けない
 
 フォーマット
 
@@ -1220,7 +1223,7 @@ fail 条件
   - OK例
     - `node scripts/openspec/verify-scenario-coverage.mjs --change <change-id>`で選択Changeの実効仕様を検査する
     - 最後に引数なしの全体検査で活動中 Change 間の相互作用を確認する
-    - Scenarioから自動試験への参照欠落は検査しない
+    - Scenarioから自動試験への参照欠落は検査せず、Playwright以外の試験はScenario識別子を参照しない
 
 - Scenario 見出しは `#### Scenario:` で始め、末尾に安定 ID を付ける
   - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs` の `extractScenarioId`

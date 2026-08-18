@@ -186,7 +186,8 @@ decompose every package into files or steps up front.
 At each iteration, select the dependency-safe ready package set. Produce a
 detailed execution plan only for each package being dispatched now. That local
 plan may choose files, private APIs, helpers, fixtures, and order. Test selection
-must follow the repository's Playwright E2E or pure-unit boundary.
+must follow the repository's allowed Playwright E2E, pure-rule, customer-facing
+React UI, and Storybook browser boundaries.
 Discard or revise it as runtime evidence changes; it is not an OpenSpec artifact.
 
 Delegate frontend work to `unit/frontend/engineer`, backend work to

@@ -79,8 +79,11 @@ Husky によりコミット時に検証されます。
   - 例: `packages/frontend/src/api/generated/**`
 - 振る舞い契約が変わる変更は仕様と必要な試験を一緒に更新する
   - Playwright E2E試験だけが題名から既存Scenarioを`[...-S001]`の形式で参照する
-  - Scenarioごとの自動試験は要求せず、純粋な単体試験はScenario識別子を参照しない
-  - 試験分類はPlaywright E2E試験と純粋な単体試験だけとし、試験専用の製品側API、公開要素、生成処理、分岐、Binding、設定を作らない
+  - Scenarioごとの自動試験は要求せず、純粋な単体試験、Reactの顧客向けUI試験、Storybookブラウザ試験はScenario識別子を参照しない
+  - Playwright E2E、純粋で決定的な単体試験、Reactの顧客向けUI試験、Storybookブラウザ試験だけを使用する
+  - Reactの顧客向けUI試験では、利用者に見える描画と操作を保全する目的でjsdom、MSW、Testing Libraryを利用できる
+  - Workerd固有、実データベース、接続、バックエンドHTTP・OpenAPI契約、ファイルシステム・子プロセスを使うツール自己試験を作らない
+  - 試験専用の製品側API、公開要素、生成処理、分岐、Binding、設定を作らない
 - OpenSpec Change の `proposal.md` は、依頼を成果、成果の制約、必須手段、候補手段へ分類し、リポジトリの事実と照合した権威ある解釈とする
   - 重要な曖昧さが残る間は `Intent-Resolution: DRAFT` とし、差分仕様、設計、作業パッケージを作成しない
 
@@ -166,12 +169,14 @@ pnpm check
 必要に応じて関連テストも実行してください。
 
 ```bash
-pnpm test:run        # すべてのVitest projectとリリース自動化テスト
-pnpm test:frontend   # @cfreact-template/frontend
-pnpm test:backend    # backend-http Vitest project
-pnpm test:ui-package # UI package の Vitest project
+pnpm test:run        # React/UI試験と純粋なリリース規則試験
+pnpm test:frontend   # Reactの顧客向けUI試験
+pnpm test:ui-package # 共通UIのjsdom試験
+pnpm test:storybook  # Storybookの実ブラウザ試験
 pnpm test:e2e        # migration 済み E2E 専用 D1 を使う Playwright
 ```
+
+CIはPlaywrightのChromium、Firefox、WebKitを導入し、`pnpm test:run`、`pnpm test:storybook`、`pnpm test:e2e`、`pnpm build:storybook`を必須検証として実行します。`pnpm test:run`にはReactの顧客向けUI試験と共通UI試験が含まれるため、CIでは`pnpm test:frontend`と`pnpm test:ui-package`を重複実行しません。
 
 ## プルリクエストの流れ
 

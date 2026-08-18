@@ -3,8 +3,9 @@ import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { UsersPage } from '@cfreact-template/frontend/app/pages/users/UsersPage';
-import { server } from '@cfreact-template/frontend/app/tests/mocks/server';
-import { render, screen, waitFor } from '@cfreact-template/frontend/app/tests/utils/test-utils';
+
+import { server } from '../../tests/mocks/server';
+import { render, screen, waitFor } from '../../tests/utils/test-utils';
 
 describe('UsersPage', () => {
   describe('データ取得', () => {

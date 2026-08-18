@@ -5,8 +5,7 @@
   "type": "module",
   "description": "Full-stack template for Cloudflare Workers with React, Hono, and Drizzle ORM",
   "imports": {
-    "#openspec/change-artifacts": "./scripts/openspec/change-artifacts.mjs",
-    "#openspec/guard-test-fixture": "./scripts/openspec/guard-test-fixture.mjs"
+    "#openspec/change-artifacts": "./scripts/openspec/change-artifacts.mjs"
   },
   "packageManager": "pnpm@11.16.0",
   "engines": {
@@ -37,7 +36,6 @@
     "test:run": "vitest run && pnpm test:release",
     "test:coverage": "vitest run --coverage",
     "test:frontend": "pnpm --filter @cfreact-template/frontend test",
-    "test:backend": "vitest run --project backend-http",
     "test:ui-package": "vitest run --project ui",
     "test:storybook": "pnpm --filter @cfreact-template/ui test:storybook",
     "test:e2e": "playwright test",
@@ -46,14 +44,11 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "lint": "pnpm lint:ui-reuse && pnpm lint:eslint && pnpm lint:openspec && pnpm lint:supply-chain",
-    "lint:eslint": "pnpm test:eslint-rules && eslint packages/ui && eslint packages/frontend && eslint . --ignore-pattern packages/ui --ignore-pattern packages/frontend",
-    "lint:ui-reuse": "pnpm test:ui-reuse-rules && node scripts/ui/verify-public-component-catalog.mjs && jscpd --config .jscpd.json --format typescript,tsx --skip-local --exit-code 1 --no-tips packages/ui packages/frontend/src/app",
-    "lint:openspec": "pnpm exec openspec schema validate behavior-change && pnpm exec openspec schema validate architecture-change && pnpm exec openspec validate --all --strict && pnpm test:openspec-rules && node scripts/openspec/verify-change-proposal.mjs && node scripts/openspec/verify-scenario-coverage.mjs && node scripts/openspec/verify-change-task-scope.mjs",
+    "lint:eslint": "eslint packages/ui && eslint packages/frontend && eslint . --ignore-pattern packages/ui --ignore-pattern packages/frontend",
+    "lint:ui-reuse": "node scripts/ui/verify-public-component-catalog.mjs && jscpd --config .jscpd.json --format typescript,tsx --skip-local --exit-code 1 --no-tips packages/ui packages/frontend/src/app",
+    "lint:openspec": "pnpm exec openspec schema validate behavior-change && pnpm exec openspec schema validate architecture-change && pnpm exec openspec validate --all --strict && node scripts/openspec/verify-change-proposal.mjs && node scripts/openspec/verify-scenario-coverage.mjs && node scripts/openspec/verify-change-task-scope.mjs",
     "lint:supply-chain": "node scripts/security/verify-pnpm-supply-chain.mjs",
-    "test:eslint-rules": "node --test scripts/eslint/*.test.mjs",
-    "test:ui-reuse-rules": "node --test scripts/ui/*.test.mjs",
-    "test:openspec-rules": "node --test scripts/openspec/*.test.mjs",
-    "test:release": "node --test scripts/release/*.test.mjs",
+    "test:release": "node --test scripts/release/release-model.test.mjs",
     "release:check-pr-changeset": "node scripts/release/check-pr-changeset.mjs",
     "release:render": "node scripts/release/render-release.mjs",
     "release:validate": "node scripts/release/validate-release.mjs",
@@ -65,7 +60,6 @@
   },
   "devDependencies": {
     "@changesets/cli": "2.31.1",
-    "@cloudflare/vitest-pool-workers": "^0.16.15",
     "@commitlint/cli": "^20.3.0",
     "@commitlint/config-conventional": "^20.3.0",
     "@eslint/eslintrc": "^3.3.3",

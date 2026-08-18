@@ -36,34 +36,22 @@ test.describe('ユーザー管理フロー', () => {
     await page.goto('/users');
   });
 
-  test('ページが正しく表示される', async ({ page }) => {
-    // ページタイトルの確認
-    await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible();
+  test('ユーザー一覧で既存ユーザーを確認できる', async ({ page }, testInfo) => {
+    const identifier = `${testInfo.project.name}-${String(testInfo.parallelIndex)}-${String(Date.now())}`;
+    const name = `Listed User ${identifier}`;
+    const email = `listed-user-${identifier}@example.com`;
 
-    // フォームの確認
-    await expect(page.getByPlaceholder('Name')).toBeVisible();
-    await expect(page.getByPlaceholder('Email')).toBeVisible();
-    await expect(page.getByRole('button', { name: /create user/i })).toBeVisible();
+    // 公開APIで一覧確認用の既存ユーザーを用意し、画面を再読込して取得結果を検証する。
+    const response = await page.request.post('/api/v1/users', { data: { email, name } });
+    expect(response.ok()).toBeTruthy();
+    await page.reload();
+
+    await expect(page.getByRole('table')).toBeVisible();
+    await expect(page.getByText(name)).toBeVisible();
+    await expect(page.getByText(email)).toBeVisible();
   });
 
-  test('ユーザー一覧が表示される', async ({ page }) => {
-    // ユーザー一覧が表示されるまで待つ
-    await waitForTableOrEmptyState(page);
-
-    // テーブルまたは空メッセージのいずれかが表示されることを確認
-    const hasTable = await page
-      .locator('table')
-      .isVisible()
-      .catch(() => false);
-    const hasEmptyMessage = await page
-      .getByText(/no users found/i)
-      .isVisible()
-      .catch(() => false);
-
-    expect(hasTable || hasEmptyMessage).toBeTruthy();
-  });
-
-  test('新しいユーザーを作成できる', async ({ page }, testInfo) => {
+  test('新しいユーザーを作成して一覧で確認できる', async ({ page }, testInfo) => {
     // データの初期状態を待つ
     await waitForTableOrEmptyState(page);
 
@@ -72,58 +60,5 @@ test.describe('ユーザー管理フロー', () => {
 
     // 作成したユーザーがリストに表示されることを確認
     await expect(page.getByText(user.email)).toBeVisible();
-  });
-
-  test('フォームのバリデーションが機能する', async ({ page }) => {
-    // 空の必須入力では作成操作を開始できない。
-    await expect(page.getByRole('button', { name: /create user/i })).toBeDisabled();
-
-    // ブラウザのバリデーションメッセージが表示される（HTML5 required属性）
-    const nameInput = page.getByPlaceholder('Name');
-    await expect(nameInput).toHaveAttribute('required');
-
-    const emailInput = page.getByPlaceholder('Email');
-    await expect(emailInput).toHaveAttribute('required');
-    await expect(emailInput).toHaveAttribute('type', 'email');
-  });
-
-  test('複数のユーザーを連続して作成できる', async ({ page }, testInfo) => {
-    // データの初期状態を待つ
-    await waitForTableOrEmptyState(page);
-
-    const identifier = `${testInfo.project.name}-${String(testInfo.parallelIndex)}-${String(Date.now())}`;
-
-    // 1人目のユーザーを作成
-    await page.getByPlaceholder('Name').fill(`User 1 ${identifier}`);
-    await page.getByPlaceholder('Email').fill(`user1-${identifier}@example.com`);
-    await page.getByRole('button', { name: /create user/i }).click();
-
-    // 完了を待つ
-    await expect(page.getByText(`User 1 ${identifier}`)).toBeVisible({ timeout: 5000 });
-    await expect(page.getByPlaceholder('Name')).toHaveValue('', { timeout: 5000 });
-
-    // 2人目のユーザーを作成
-    await page.getByPlaceholder('Name').fill(`User 2 ${identifier}`);
-    await page.getByPlaceholder('Email').fill(`user2-${identifier}@example.com`);
-    await page.getByRole('button', { name: /create user/i }).click();
-
-    // 完了を待つ
-    // 両方のユーザーが表示されることを確認
-    await expect(page.getByText(`User 1 ${identifier}`)).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText(`User 2 ${identifier}`)).toBeVisible();
-  });
-
-  test('ユーザーリストがテーブル形式で表示される', async ({ page }, testInfo) => {
-    await createTestUser(page, testInfo);
-
-    // テーブルヘッダーの確認
-    await expect(page.getByRole('columnheader', { name: /id/i })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: /name/i })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: /email/i })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: /created at/i })).toBeVisible();
-
-    // データ行が存在することを確認
-    const rows = page.locator('table tbody tr');
-    expect(await rows.count()).toBeGreaterThan(0);
   });
 });

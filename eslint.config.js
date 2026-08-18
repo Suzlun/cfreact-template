@@ -173,11 +173,6 @@ export default tseslint.config(
         },
       },
       'boundaries/elements': [
-        {
-          type: 'typespec-openapi',
-          pattern: 'packages/typespec/openapi/openapi.json',
-          mode: 'full',
-        },
         { type: 'backend-entry', pattern: 'packages/backend/src/entry/index.ts', mode: 'full' },
         { type: 'backend-app', pattern: 'packages/backend/src/app/**/*', mode: 'full' },
         { type: 'backend-http', pattern: 'packages/backend/src/http/**/*', mode: 'full' },
@@ -365,13 +360,7 @@ export default tseslint.config(
             },
             {
               from: ['backend-http'],
-              allow: [
-                'backend-http',
-                'backend-usecases',
-                'backend-domain',
-                'backend-types',
-                'typespec-openapi',
-              ],
+              allow: ['backend-http', 'backend-usecases', 'backend-domain', 'backend-types'],
             },
             {
               from: ['backend-app'],
@@ -1609,12 +1598,6 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/backend/src/http/**/*.test.ts', 'packages/backend/src/http/**/*.test.tsx'],
-    rules: {
-      'no-restricted-imports': 'off',
-    },
-  },
-  {
     files: ['packages/backend/src/http/schemas/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
@@ -1709,6 +1692,7 @@ export default tseslint.config(
     ignores: [
       '**/index.ts',
       'packages/frontend/src/api/generated/**/*.{ts,tsx}',
+      'packages/frontend/src/app/tests/**/*.{ts,tsx}',
       '**/*.test.ts',
       '**/*.test.tsx',
       '**/*.spec.ts',
