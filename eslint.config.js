@@ -28,6 +28,53 @@ import { directUiPrimitiveRestrictions } from './scripts/ui/ui-reuse-policy.mjs'
 const compat = new FlatCompat();
 const publicUiComponentNames = loadPublicUiComponentNames();
 
+// リソース名を境界の捕捉値として再利用し、異なるリソースの内部実装を
+// 同じ層として誤って許可しないようにする。
+const sameBackendModule = (types) =>
+  (Array.isArray(types) ? types : [types]).map((type) => [
+    type,
+    { module: '{{ from.captured.module }}' },
+  ]);
+
+// 公開モジュール入口と構成起点専用別名を分離し、後続の `Flat Config` が
+// no-restricted-imports を置換しても同じ禁止条件を明示的に引き継げるようにする。
+const backendModuleDeepImportRestriction = {
+  group: ['@cfreact-template/backend/modules/*/**'],
+  message:
+    'リソースモジュールの内部実装は直接参照せず、対象モジュールの `index.ts` を経由してください。',
+};
+const backendCompositionImportRestriction = {
+  group: ['@cfreact-template/backend/composition/**'],
+  message:
+    '構成起点専用の別名は `app` 以外から参照できません。モジュール間参照は対象モジュールの `index.ts` を経由してください。',
+};
+const backendInternalImportRestrictions = [
+  backendModuleDeepImportRestriction,
+  backendCompositionImportRestriction,
+];
+
+// ハンドラーとサービスが外部通信や HTTP オブジェクトを基盤境界から迂回して生成しないよう、
+// 未修飾グローバルと globalThis 経由の両方を同じ禁止集合で検査する。
+const backendModuleForbiddenGlobals = ['fetch', 'Request', 'Response', 'Headers'].map((name) => ({
+  name,
+  message:
+    'ハンドラーとサービスはグローバル HTTP API を直接利用せず、宣言された依存または Hono コンテキスト API を利用してください。',
+}));
+const backendModuleGlobalThisRestrictions = [
+  {
+    selector:
+      "MemberExpression[object.name='globalThis'][property.name=/^(fetch|Request|Response|Headers)$/], MemberExpression[object.name='globalThis'][computed=true][property.value=/^(fetch|Request|Response|Headers)$/]",
+    message:
+      'ハンドラーとサービスは globalThis の HTTP API を直接利用せず、宣言された依存または Hono コンテキスト API を利用してください。',
+  },
+  {
+    selector:
+      "VariableDeclarator[init.name='globalThis'] > ObjectPattern > Property[key.name=/^(fetch|Request|Response|Headers)$/], VariableDeclarator[init.name='globalThis'] > ObjectPattern > Property[key.value=/^(fetch|Request|Response|Headers)$/], AssignmentExpression[right.name='globalThis'] > ObjectPattern > Property[key.name=/^(fetch|Request|Response|Headers)$/], AssignmentExpression[right.name='globalThis'] > ObjectPattern > Property[key.value=/^(fetch|Request|Response|Headers)$/]",
+    message:
+      'ハンドラーとサービスは globalThis から HTTP API を分割代入せず、宣言された依存または Hono コンテキスト API を利用してください。',
+  },
+];
+
 const exportTsdocPlugin = {
   rules: {
     'require-export-tsdoc': {
@@ -175,14 +222,79 @@ export default tseslint.config(
       'boundaries/elements': [
         { type: 'backend-entry', pattern: 'packages/backend/src/entry/index.ts', mode: 'full' },
         { type: 'backend-app', pattern: 'packages/backend/src/app/**/*', mode: 'full' },
-        { type: 'backend-http', pattern: 'packages/backend/src/http/**/*', mode: 'full' },
         {
-          type: 'backend-persistence',
-          pattern: 'packages/backend/src/persistence/**/*',
+          type: 'backend-generated-api',
+          pattern: 'packages/backend/src/generated/api/openapi.ts',
           mode: 'full',
         },
-        { type: 'backend-domain', pattern: 'packages/backend/src/domain/**/*', mode: 'full' },
-        { type: 'backend-usecases', pattern: 'packages/backend/src/usecases/**/*', mode: 'full' },
+        {
+          type: 'backend-generated-resource',
+          pattern: 'packages/backend/src/generated/api/(*)/**/*',
+          mode: 'full',
+          capture: ['module'],
+        },
+        {
+          type: 'backend-platform-http',
+          pattern: 'packages/backend/src/platform/http/**/*',
+          mode: 'full',
+        },
+        {
+          type: 'backend-platform-database',
+          pattern: 'packages/backend/src/platform/database/**/*',
+          mode: 'full',
+        },
+        {
+          type: 'backend-platform-email',
+          pattern: 'packages/backend/src/platform/email/**/*',
+          mode: 'full',
+        },
+        {
+          type: 'backend-platform-observability',
+          pattern: 'packages/backend/src/platform/observability/**/*',
+          mode: 'full',
+        },
+        {
+          type: 'backend-module-handler',
+          pattern: 'packages/backend/src/modules/(*)/handlers/**/*',
+          mode: 'full',
+          capture: ['module'],
+        },
+        {
+          type: 'backend-module-service',
+          pattern: 'packages/backend/src/modules/(*)/*.service.ts',
+          mode: 'full',
+          capture: ['module'],
+        },
+        {
+          type: 'backend-module-repository',
+          pattern: 'packages/backend/src/modules/(*)/*.repository.ts',
+          mode: 'full',
+          capture: ['module'],
+        },
+        {
+          type: 'backend-module-schema',
+          pattern: 'packages/backend/src/modules/(*)/*.schema.ts',
+          mode: 'full',
+          capture: ['module'],
+        },
+        {
+          type: 'backend-module-domain',
+          pattern: 'packages/backend/src/modules/(*)/domain/**/*',
+          mode: 'full',
+          capture: ['module'],
+        },
+        {
+          type: 'backend-module-entry',
+          pattern: 'packages/backend/src/modules/(*)/index.ts',
+          mode: 'full',
+          capture: ['module'],
+        },
+        {
+          type: 'backend-module-support',
+          pattern: 'packages/backend/src/modules/(*)/*.ts',
+          mode: 'full',
+          capture: ['module'],
+        },
         { type: 'backend-types', pattern: 'packages/backend/src/types/**/*', mode: 'full' },
         { type: 'frontend-api', pattern: 'packages/frontend/src/api/**/*', mode: 'full' },
         { type: 'frontend-domain', pattern: 'packages/frontend/src/domain/**/*', mode: 'full' },
@@ -195,7 +307,6 @@ export default tseslint.config(
         { type: 'ui', pattern: 'packages/ui/styles/**/*', mode: 'full' },
         { type: 'ui', pattern: 'packages/ui/tests/**/*', mode: 'full' },
         { type: 'ui-storybook', pattern: 'packages/ui/stories/**/*', mode: 'full' },
-        { type: 'drizzle', pattern: 'packages/backend/src/drizzle/**/*', mode: 'full' },
       ],
     },
     rules: {
@@ -297,11 +408,6 @@ export default tseslint.config(
           },
           pathGroups: [
             {
-              pattern: '@cfreact-template/backend/drizzle',
-              group: 'internal',
-              position: 'after',
-            },
-            {
               pattern: '@cfreact-template/frontend/**',
               group: 'internal',
               position: 'after',
@@ -329,53 +435,122 @@ export default tseslint.config(
       'unicorn/prefer-type-error': 'error',
       'unicorn/throw-new-error': 'error',
 
-      // ===== Clean Architecture boundaries =====
+      // ===== リソース中心のバックエンド／フロントエンド境界 =====
       'boundaries/element-types': [
         'error',
         {
           default: 'disallow',
-          message: 'Clean Architecture violation: %{from} is not allowed to import from %{target}.',
+          message:
+            'Architecture boundary violation: %{from} is not allowed to import from %{target}.',
           rules: [
-            {
-              from: ['backend-domain'],
-              allow: ['backend-domain', 'backend-types'],
-            },
             {
               from: ['backend-types'],
               allow: ['backend-types'],
             },
             {
-              from: ['backend-usecases'],
-              allow: ['backend-domain', 'backend-usecases', 'backend-types'],
-            },
-            {
-              from: ['backend-persistence'],
-              allow: [
-                'backend-usecases',
-                'backend-domain',
-                'backend-types',
-                'backend-persistence',
-                'drizzle',
-              ],
-            },
-            {
-              from: ['backend-http'],
-              allow: ['backend-http', 'backend-usecases', 'backend-domain', 'backend-types'],
-            },
-            {
               from: ['backend-app'],
               allow: [
                 'backend-app',
-                'backend-http',
-                'backend-persistence',
-                'backend-usecases',
-                'backend-domain',
+                'backend-generated-api',
+                'backend-generated-resource',
+                'backend-module-entry',
+                'backend-module-repository',
+                'backend-platform-database',
+                'backend-platform-email',
+                'backend-platform-http',
+                'backend-platform-observability',
                 'backend-types',
               ],
             },
             {
               from: ['backend-entry'],
               allow: ['backend-app'],
+            },
+            {
+              from: ['backend-generated-resource'],
+              allow: [
+                'backend-generated-api',
+                ...sameBackendModule(['backend-generated-resource', 'backend-module-handler']),
+              ],
+            },
+            {
+              from: ['backend-platform-http'],
+              allow: ['backend-platform-http', 'backend-types'],
+            },
+            {
+              from: ['backend-platform-database'],
+              allow: ['backend-platform-database', 'backend-types'],
+            },
+            {
+              from: ['backend-platform-email'],
+              allow: ['backend-platform-email', 'backend-types'],
+            },
+            {
+              from: ['backend-platform-observability'],
+              allow: ['backend-platform-observability', 'backend-types'],
+            },
+            {
+              from: ['backend-module-handler'],
+              allow: [
+                'backend-generated-api',
+                'backend-platform-http',
+                'backend-types',
+                ...sameBackendModule([
+                  'backend-generated-resource',
+                  'backend-module-entry',
+                  'backend-module-service',
+                  'backend-module-support',
+                ]),
+              ],
+            },
+            {
+              from: ['backend-module-service'],
+              allow: [
+                'backend-module-entry',
+                'backend-types',
+                ...sameBackendModule([
+                  'backend-module-domain',
+                  'backend-module-repository',
+                  'backend-module-support',
+                ]),
+              ],
+            },
+            {
+              from: ['backend-module-repository'],
+              allow: [
+                'backend-platform-database',
+                'backend-types',
+                ...sameBackendModule(['backend-module-schema', 'backend-module-support']),
+              ],
+            },
+            {
+              from: ['backend-module-schema'],
+              allow: [...sameBackendModule('backend-module-schema')],
+            },
+            {
+              from: ['backend-module-domain'],
+              allow: [
+                'backend-types',
+                ...sameBackendModule(['backend-module-domain', 'backend-module-support']),
+              ],
+            },
+            {
+              from: ['backend-module-entry'],
+              allow: [
+                ...sameBackendModule([
+                  'backend-module-domain',
+                  'backend-module-service',
+                  'backend-module-support',
+                ]),
+              ],
+            },
+            {
+              from: ['backend-module-support'],
+              allow: [
+                'backend-generated-api',
+                'backend-types',
+                ...sameBackendModule(['backend-generated-resource', 'backend-module-support']),
+              ],
             },
             {
               from: ['frontend-api'],
@@ -397,28 +572,9 @@ export default tseslint.config(
               from: ['ui-storybook'],
               allow: ['ui-storybook', 'ui'],
             },
-            {
-              from: ['drizzle'],
-              allow: ['drizzle'],
-            },
           ],
         },
       ],
-
-      // Domain / UseCase は外部ライブラリに依存しない
-      'boundaries/external': [
-        'error',
-        {
-          default: 'allow',
-          rules: [
-            {
-              from: ['backend-domain', 'backend-usecases'],
-              disallow: ['*'],
-            },
-          ],
-        },
-      ],
-
       // ===== セキュリティ =====
       'no-eval': 'error',
       'no-implied-eval': 'error',
@@ -462,7 +618,6 @@ export default tseslint.config(
       'packages/ui/lib/**/*.{ts,tsx}',
       'packages/ui/tests/**/*.{ts,tsx}',
       'packages/ui/stories/**/*.{ts,tsx}',
-      'packages/backend/src/drizzle/**/*.{ts,tsx}',
     ],
     rules: {
       'boundaries/no-unknown-files': 'error',
@@ -475,6 +630,7 @@ export default tseslint.config(
   {
     files: ['packages/**/src/**/*.{ts,tsx}', 'packages/ui/**/*.{ts,tsx}'],
     ignores: [
+      'packages/backend/src/generated/**/*.{ts,tsx}',
       'packages/frontend/src/api/generated/**/*.{ts,tsx}',
       'packages/ui/vitest.config.ts',
       '**/*.test.ts',
@@ -1324,20 +1480,120 @@ export default tseslint.config(
   {
     files: ['packages/backend/src/**/*.{ts,tsx}'],
     rules: {
-      'no-restricted-imports': [
+      // 各バックエンド要素が利用できる外部パッケージを責務ごとに閉じ、基盤依存の流入を防ぐ。
+      'boundaries/external': [
         'error',
         {
-          patterns: [
+          default: 'disallow',
+          rules: [
+            { from: ['backend-app'], allow: ['hono'] },
             {
-              group: ['../**'],
-              message:
-                '@cfreact-template/backend/* エイリアスでパッケージ内の上位ディレクトリを参照してください。',
+              from: ['backend-generated-resource'],
+              allow: ['@hono/zod-validator', 'hono', 'zod'],
             },
-            {
-              group: ['@cfreact-template/backend/app/**'],
-              message: 'App層の依存はappパッケージ内でのみ利用してください。',
-            },
+            { from: ['backend-module-handler'], allow: ['hono'] },
+            { from: ['backend-module-service'], allow: ['ulid'] },
+            { from: ['backend-module-repository'], allow: ['drizzle-orm'] },
+            { from: ['backend-module-schema'], allow: ['drizzle-orm'] },
+            { from: ['backend-platform-http'], allow: ['hono'] },
+            { from: ['backend-platform-database'], allow: ['drizzle-orm'] },
+            { from: ['backend-platform-email'], allow: ['cloudflare:email'] },
+            { from: ['backend-types'], allow: ['@cloudflare/workers-types'] },
           ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/backend/src/generated/**/*.{ts,tsx}'],
+    rules: {
+      // `Orval` と `openapi-typescript` の出力は生成器所有なので、手書きの
+      // TSDoc・型安全性・コメント・整形規則を適用しない。ただし、依存方向と
+      // 公開入口の境界は後続の boundaries 規則で検査する。
+      '@typescript-eslint/await-thenable': 'off',
+      '@typescript-eslint/consistent-type-definitions': 'off',
+      '@typescript-eslint/consistent-indexed-object-style': 'off',
+      '@typescript-eslint/consistent-type-imports': 'off',
+      '@typescript-eslint/no-confusing-void-expression': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-invalid-void-type': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      '@typescript-eslint/no-unnecessary-type-parameters': 'off',
+      '@typescript-eslint/no-unnecessary-condition': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
+      '@typescript-eslint/prefer-optional-chain': 'off',
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/strict-boolean-expressions': 'off',
+      'export-tsdoc/require-export-tsdoc': 'off',
+      'import/order': 'off',
+      'max-lines': 'off',
+      'max-lines-per-function': 'off',
+      'prefer-arrow-callback': 'off',
+    },
+  },
+  {
+    files: ['packages/backend/src/modules/*/handlers/**/*.{ts,tsx}'],
+    rules: {
+      // 前置きと検証処理のインポートは `Orval` 所有、関数本体は開発者所有の混合領域。
+      '@typescript-eslint/consistent-type-definitions': 'off',
+      '@typescript-eslint/consistent-type-imports': 'off',
+      '@typescript-eslint/require-await': 'off',
+      'import/order': 'off',
+      'no-restricted-globals': ['error', ...backendModuleForbiddenGlobals],
+      'no-restricted-syntax': [
+        'error',
+        ...backendModuleGlobalThisRestrictions,
+        {
+          selector:
+            "MemberExpression[property.name='env'], MemberExpression[computed=true][property.value='env']",
+          message:
+            'ハンドラーはコンテキストの env へ直接アクセスせず、構成起点が注入した依存だけを利用してください。',
+        },
+        {
+          selector:
+            "ObjectPattern > Property[key.name='env'], ObjectPattern > Property[computed=true][key.value='env']",
+          message:
+            'ハンドラーは env プロパティを分割代入せず、構成起点が注入した依存だけを利用してください。',
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/backend/src/modules/*/*.service.{ts,tsx}'],
+    rules: {
+      // サービスの外部作用は注入済み関数へ限定し、実行環境の HTTP グローバルへ直接到達させない。
+      'no-restricted-globals': ['error', ...backendModuleForbiddenGlobals],
+      'no-restricted-syntax': ['error', ...backendModuleGlobalThisRestrictions],
+    },
+  },
+  {
+    files: ['packages/backend/src/modules/**/*.{ts,tsx}'],
+    rules: {
+      // ハンドラー本体を含む開発者所有のモジュール実装には、通常のサイズ制約を適用する。
+      'max-lines': [
+        'error',
+        {
+          max: 1500,
+          skipComments: true,
+          skipBlankLines: true,
+        },
+      ],
+      'max-lines-per-function': [
+        'error',
+        {
+          max: 250,
+          skipComments: true,
+          skipBlankLines: true,
+          IIFEs: true,
         },
       ],
     },
@@ -1349,145 +1605,126 @@ export default tseslint.config(
         'error',
         {
           patterns: [
+            backendModuleDeepImportRestriction,
+            {
+              regex: '^@cfreact-template/backend/composition/(?!modules/users/users\\.repository$)',
+              message:
+                'アプリケーション構成は宣言済みの構成起点専用別名以外からモジュール内部を参照できません。',
+            },
+            {
+              group: ['../**'],
+              message:
+                'アプリケーション構成の親を越える相対インポートは禁止です。モジュールの内部実装は構成専用別名で参照してください。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: [
+      'packages/backend/src/entry/**/*.{ts,tsx}',
+      'packages/backend/src/generated/**/*.{ts,tsx}',
+      'packages/backend/src/modules/**/*.{ts,tsx}',
+      'packages/backend/src/platform/**/*.{ts,tsx}',
+      'packages/backend/src/types/**/*.{ts,tsx}',
+    ],
+    ignores: ['packages/backend/src/app/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: backendInternalImportRestrictions,
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/backend/src/modules/*/*.{ts,tsx}'],
+    ignores: [
+      'packages/backend/src/modules/*/handlers/**/*.{ts,tsx}',
+      'packages/backend/src/modules/*/index.ts',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            ...backendInternalImportRestrictions,
+            {
+              group: ['../**'],
+              message:
+                'モジュールの親を越える相対インポートは禁止です。別の層はバックエンド専用別名で参照してください。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/backend/src/modules/*/handlers/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            ...backendInternalImportRestrictions,
+            {
+              regex: '^\\.\\./\\.\\./(?!\\.\\./generated/)',
+              message:
+                'ハンドラーの親を越える相対インポートは `Orval` が生成する同一リソースの生成物参照だけに限定します。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/backend/src/modules/*/index.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            ...backendInternalImportRestrictions,
+            {
+              group: ['../**'],
+              message:
+                'モジュールの親を越える相対インポートは禁止です。別の層はバックエンド専用別名で参照してください。',
+            },
+            {
+              group: ['./handlers/**', './*.repository', './*.schema'],
+              message:
+                'リソースの公開 `index.ts` からハンドラー、リポジトリ、スキーマを公開できません。サービスと公開型だけを再エクスポートしてください。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/backend/src/**/*.{ts,tsx}'],
+    ignores: [
+      'packages/backend/src/app/**/*.{ts,tsx}',
+      'packages/backend/src/generated/**/*.{ts,tsx}',
+      'packages/backend/src/modules/**/*.{ts,tsx}',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            ...backendInternalImportRestrictions,
             {
               group: ['../**'],
               message:
                 '@cfreact-template/backend/* エイリアスでパッケージ内の上位ディレクトリを参照してください。',
             },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    files: ['packages/backend/src/domain/**/*.{ts,tsx}'],
-    rules: {
-      'no-console': 'error',
-      'no-restricted-globals': ['error', 'fetch', 'Headers', 'Request', 'Response'],
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
             {
-              group: [
-                '@cfreact-template/backend/http/**',
-                '@cfreact-template/backend/persistence/**',
-                '../http/**',
-                '../persistence/**',
-              ],
-              message: 'Domain層からAdaptersを参照しないでください。',
-            },
-            {
-              group: [
-                'hono',
-                'hono/**',
-                'drizzle-orm',
-                'drizzle-orm/**',
-                '@cloudflare/**',
-                'cloudflare:*',
-                'zod',
-                '@hono/zod-openapi',
-              ],
-              message: 'Domain層ではフレームワークやインフラ依存を禁止します。',
+              group: ['@cfreact-template/backend/app/**'],
+              message: 'アプリケーション層の依存は app パッケージ内でのみ利用してください。',
             },
           ],
-        },
-      ],
-    },
-  },
-  {
-    files: ['packages/backend/src/usecases/**/*.{ts,tsx}'],
-    rules: {
-      // UseCase は配線/手順に寄せて、複雑化を Domain 側へ押し戻す
-      'sonarjs/cognitive-complexity': ['error', 10],
-      complexity: ['error', { max: 10 }],
-      'max-depth': ['error', 3],
-
-      'no-console': 'error',
-      'no-restricted-globals': ['error', 'fetch', 'Headers', 'Request', 'Response'],
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: [
-                '@cfreact-template/backend/http/**',
-                '@cfreact-template/backend/persistence/**',
-                '../http/**',
-                '../persistence/**',
-              ],
-              message: 'UseCase層からAdaptersを参照しないでください。',
-            },
-            {
-              group: [
-                'hono',
-                'hono/**',
-                'drizzle-orm',
-                'drizzle-orm/**',
-                '@cloudflare/**',
-                'cloudflare:*',
-                'zod',
-                '@hono/zod-openapi',
-              ],
-              message: 'UseCase層ではフレームワークやインフラ依存を禁止します。',
-            },
-          ],
-        },
-      ],
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: "ThrowStatement > NewExpression[callee.name='Error']",
-          message:
-            'UseCase層での throw new Error は禁止です。Domain で定義したエラー型を使用してください。',
-        },
-        {
-          selector:
-            'TSInterfaceDeclaration[id.name=/.*(Repository|Port|Gateway|Notifier)$/], TSTypeAliasDeclaration[id.name=/.*(Repository|Port|Gateway|Notifier)$/]',
-          message:
-            'UseCase層で Port/Repository などのインターフェースを定義しないでください。Domain層に定義してください。',
-        },
-        {
-          selector: "ClassDeclaration[superClass.type='Identifier'][superClass.name=/Error$/]",
-          message:
-            'UseCase層で Error 派生クラスを定義しないでください。Domain層で定義してください。',
-        },
-        {
-          selector:
-            "TSInterfaceDeclaration[id.name='AppVariables'], TSTypeAliasDeclaration[id.name='AppVariables']",
-          message:
-            'AppVariables は UseCase 層に定義しないでください。HTTPアダプタ層で管理してください。',
-        },
-      ],
-    },
-  },
-  {
-    files: ['packages/backend/src/app/server.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: "CallExpression[callee.property.name='set'][arguments.0.value='kv']",
-          message:
-            'server.ts で kv を Context へ直接注入しないでください。必要なら app で組み立てた依存を UseCase 経由で渡してください。',
-        },
-        {
-          selector: "CallExpression[callee.property.name='set'][arguments.0.value='r2']",
-          message:
-            'server.ts で r2 を Context へ直接注入しないでください。必要なら app で組み立てた依存を UseCase 経由で渡してください。',
-        },
-      ],
-    },
-  },
-  {
-    files: ['packages/backend/src/http/context.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: "TSPropertySignature[key.name='kv'], TSPropertySignature[key.name='r2']",
-          message:
-            'AppVariables に KV/R2 の生バインディングを追加しないでください。UseCase 経由の依存だけを公開してください。',
         },
       ],
     },
@@ -1510,153 +1747,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/backend/src/drizzle/**/*.ts'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['../**'],
-              message:
-                '@cfreact-template/backend/drizzle/* エイリアスでパッケージ内の上位ディレクトリを参照してください。',
-            },
-          ],
-        },
-      ],
-    },
-  },
-  {
     files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
     rules: {
       'no-restricted-imports': 'off',
       'no-restricted-syntax': 'off',
     },
   },
-  {
-    files: ['packages/backend/src/http/**/*.{ts,tsx}'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            {
-              name: '@cfreact-template/backend/app',
-              message:
-                'HTTPアダプタ層から App 層を参照しないでください。必要な型は usecases/types から参照してください。',
-            },
-            {
-              name: 'zod',
-              message: 'zod は packages/backend/src/http/schemas 配下でのみ使用してください。',
-            },
-            {
-              name: '@hono/zod-openapi',
-              importNames: ['OpenAPIHono', 'createRoute'],
-              message: 'createRoute / OpenAPIHono は routes 以外で import しないでください。',
-            },
-          ],
-          patterns: [
-            {
-              group: ['../**'],
-              message:
-                '@cfreact-template/backend/* エイリアスでパッケージ内の上位ディレクトリを参照してください。',
-            },
-            {
-              group: [
-                '../persistence/**',
-                '../../persistence/**',
-                '@cfreact-template/backend/persistence/**',
-              ],
-              message:
-                'HTTPアダプタ層から直接Persistence層を参照せず、UseCase経由でアクセスしてください。',
-            },
-            {
-              group: ['@cfreact-template/backend/app/**'],
-              message:
-                'HTTPアダプタ層から App 層を参照しないでください。必要な型は usecases/types から参照してください。',
-            },
-          ],
-        },
-      ],
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: "MemberExpression[object.name='c'][property.name='env']",
-          message: 'HTTP層から直接c.envを参照せず、appレイヤが注入する依存を利用してください。',
-        },
-        {
-          selector:
-            'TSInterfaceDeclaration[id.name=/.*(Repository|Port|Gateway|Notifier)$/], TSTypeAliasDeclaration[id.name=/.*(Repository|Port|Gateway|Notifier)$/]',
-          message:
-            'HTTP層で Port/Repository などのインターフェースを定義しないでください。Domain層に定義してください。',
-        },
-        {
-          selector: "ClassDeclaration[superClass.type='Identifier'][superClass.name=/Error$/]",
-          message: 'HTTP層で Error 派生クラスを定義しないでください。Domain層で定義してください。',
-        },
-      ],
-    },
-  },
-  {
-    files: ['packages/backend/src/http/schemas/**/*.{ts,tsx}'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            {
-              name: '@hono/zod-openapi',
-              importNames: ['OpenAPIHono', 'createRoute'],
-              message: 'createRoute / OpenAPIHono は routes 以外で import しないでください。',
-            },
-          ],
-          patterns: [
-            {
-              group: [
-                '../persistence/**',
-                '../../persistence/**',
-                '@cfreact-template/backend/persistence/**',
-              ],
-              message:
-                'HTTPアダプタ層から直接Persistence層を参照せず、UseCase経由でアクセスしてください。',
-            },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    files: ['packages/backend/src/http/routes/**/*.{ts,tsx}'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            {
-              name: 'hono',
-              message: 'OpenAPI ルートでは @hono/zod-openapi を使用してください。',
-            },
-            {
-              name: 'zod',
-              message: 'zod は packages/backend/src/http/schemas 配下でのみ使用してください。',
-            },
-          ],
-          patterns: [
-            {
-              group: [
-                '../persistence/**',
-                '../../persistence/**',
-                '@cfreact-template/backend/persistence/**',
-              ],
-              message:
-                'HTTPアダプタ層から直接Persistence層を参照せず、UseCase経由でアクセスしてください。',
-            },
-          ],
-        },
-      ],
-    },
-  },
-
   // ESLint 設定ファイルやテストのゆるめ設定
   {
     files: ['eslint.config.js'],
@@ -1691,6 +1787,7 @@ export default tseslint.config(
     files: ['packages/**/*.{ts,tsx}'],
     ignores: [
       '**/index.ts',
+      'packages/backend/src/**/*.{ts,tsx}',
       'packages/frontend/src/api/generated/**/*.{ts,tsx}',
       'packages/frontend/src/app/tests/**/*.{ts,tsx}',
       '**/*.test.ts',
@@ -1804,6 +1901,7 @@ export default tseslint.config(
   {
     files: [
       'eslint.config.js',
+      'scripts/codegen/**/*.mjs',
       'scripts/eslint/**/*.mjs',
       'scripts/release/**/*.mjs',
       'scripts/ui/**/*.mjs',

@@ -43,9 +43,10 @@ Important enforcement entrypoints:
   `packages/frontend/src/api/**`, `packages/ui/**`
 - React Compiler: `packages/build-config/react-compiler.js`, frontend/UI
   Vite/Vitest configs, `scripts/eslint/**`
-- Backend: backend package and TypeScript configs, including the independent
-  production HTTP boundary in `packages/backend/tsconfig.http.json`, all backend
-  layers, and Drizzle
+- Backend: backend package and its single `packages/backend/tsconfig.json`, the
+  Resource-first `entry/app/generated/modules/platform/types` elements, Orval
+  configuration, the normalization and verification scripts under
+  `scripts/codegen/**`, and Drizzle
 - OpenSpec: generated core commands and skills, both custom schemas, and the
   proposal, Scenario validation, and task scope validators under
   `scripts/openspec/**`
@@ -73,8 +74,9 @@ Area mapping:
 Dependency directions:
 
 - Client: `app -> domain -> api` and `app -> ui`
-- Server: `entry -> app -> (http | persistence | usecases) -> domain -> types`
-- Persistence schema: `persistence -> drizzle`
+- Server: `entry -> app`; `app -> generated API/Resources | Module entries/Repositories | platform | types`; generated Resource routes -> generated API plus same-Resource generated files and smart Handlers; Handler -> generated API/Types plus same-Resource generated/entry/Service/support; Service -> Types plus same-Resource Repository/Domain/support and other Module public entries; Repository -> same-Resource schema/support plus Platform/Types; Domain -> same-Resource Domain/support plus Types
+- Platform is four distinct elements: HTTP, database, email, and observability. Do not treat them as one aggregate dependency target.
+- Module-internal relative imports are allowed. Cross-Module relatives, parent escapes, and Module deep imports are prohibited.
 
 ### 3. Preserve Enforced Boundaries
 
@@ -96,10 +98,17 @@ Dependency directions:
   `*Actions` return types.
 - Put reusable presentation in `@cfreact-template/ui` and page composition in
   frontend app.
-- Keep HTTP, app wiring, persistence, and domain responsibilities in their
-  declared backend layers.
-- HTTP never imports persistence directly or reads `c.env` directly.
-- Domain and use cases remain framework- and adapter-independent.
+- Keep generated Resource routes, app composition, Module responsibilities,
+  Platform adapters, and shared Types in their declared backend elements.
+- `entry` imports `app` only; `app` owns Binding-to-service composition.
+- Current Resources are `users`, `hello`, and `health`. Use Handler -> Service -> Repository only where the Resource needs those responsibilities; `hello` and `health` currently stop at the Handler.
+- Module public entries are the only cross-Module implementation surface.
+- Only `app` may use `@cfreact-template/backend/composition/modules/*`; package exports and shared TypeScript paths never expose that alias or Module internals.
+- `packages/backend/src/generated/api/**` is fully generator-owned and exempt from handwritten comment/TSDoc/style rules while boundaries still apply. Orval owns smart-handler preambles; smart-handler bodies remain under normal handwritten implementation, detailed-comment, and TSDoc rules.
+- Keep backend external imports within the `boundaries/external` allowlist. Handler and Service code never uses HTTP globals, and Handlers never access `env` directly.
+- Keep expected failures in `Result` values and map them to safe `{ code, message }` responses. Wrap generated response validators with `guardResponseValidation`, route unsafe validation details through the logged fixed-500 path, and parse create-user success with the generated schema. Derive duplicate-email 409 responses from the database uniqueness result rather than error-string parsing.
+- Keep backend checks in `packages/backend/tsconfig.json`, and keep package exports limited to the Worker, `app`, shared Types, and Resource `index.ts` entries.
+- Keep `scripts/codegen/normalize-backend-handler-imports.mjs` in the backend generation path. Generated-artifact tracking must use dynamic filesystem enumeration and `git ls-files --cached -z`, accepting staged additions while rejecting untracked artifacts before the drift check.
 - Add required Japanese TSDoc to public package exports, except generated and
   test code.
 - OpenSpec persists observable behavior, not a file-level implementation plan.
@@ -127,7 +136,7 @@ Dependency directions:
 
 ### 4. Verify Through Real Commands
 
-- Contract/generated changes: `pnpm gen:api-sdk`, `pnpm check:codegen`
+- Contract/generated changes: `pnpm gen:api-sdk`, then `pnpm check:codegen` for Handler import normalization, manifest, dynamically tracked outputs, and drift
 - TypeSpec: `pnpm format:check`, `pnpm check`
 - JS/TS/TSX: `pnpm lint`, `pnpm test:run`
 - Frontend: `pnpm test:frontend`
@@ -163,7 +172,9 @@ commands and results, and any verification that could not run.
 - Repeated incompatible APIs outside their declared boundary
 - Unsupported ESLint exceptions
 - Missing required TSDoc
-- HTTP-to-persistence imports or direct `c.env` access
+- Handler-to-Repository imports or Handler access to Context `env`
+- Backend external imports outside the element-specific allowlist
+- Generated response validation that can expose validator details instead of reaching the logged fixed-500 path
 - One-way Playwright E2E-to-Scenario traceability drift
 - Collapsing Operation Lane and UX Mode into one classification
 - Turning OpenSpec into a file-, helper-, or test-layer implementation plan

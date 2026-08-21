@@ -4,6 +4,7 @@ import "@typespec/openapi3";
 
 // Shared models
 import "./src/common/errors.tsp";
+import "./src/models/health.tsp";
 import "./src/models/hello.tsp";
 import "./src/models/user.tsp";
 
@@ -11,6 +12,7 @@ import "./src/models/user.tsp";
 import "./src/routes/v1/_namespace.tsp";
 import "./src/routes/v1/hello.tsp";
 import "./src/routes/v1/users.tsp";
+import "./src/routes/health.tsp";
 
 using Http;
 using TypeSpec.OpenAPI;

@@ -70,7 +70,10 @@ const handlers = [
     const userId = String(id);
     const found = users.find((u) => u.id === userId);
     if (found == null) {
-      return HttpResponse.json({ error: 'Not Found' }, { status: 404 });
+      return HttpResponse.json(
+        { code: 'USER_NOT_FOUND', message: 'User not found' },
+        { status: 404 }
+      );
     }
     return HttpResponse.json(found);
   }),

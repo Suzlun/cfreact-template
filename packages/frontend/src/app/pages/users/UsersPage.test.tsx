@@ -70,7 +70,10 @@ describe('UsersPage', () => {
       // エラーを返すようにモックを上書き
       server.use(
         http.get('/api/v1/users', () => {
-          return HttpResponse.json({ message: 'Failed to fetch users' }, { status: 500 });
+          return HttpResponse.json(
+            { code: 'INTERNAL_ERROR', message: 'Failed to fetch users' },
+            { status: 500 }
+          );
         })
       );
 
@@ -80,7 +83,7 @@ describe('UsersPage', () => {
         expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
       });
 
-      expect(screen.getByText(/error loading users/i)).toBeInTheDocument();
+      expect(screen.getByText(/user request failed/i)).toBeInTheDocument();
     });
   });
 
@@ -133,6 +136,34 @@ describe('UsersPage', () => {
         expect(screen.getByText('New Test User')).toBeInTheDocument();
         expect(screen.getByText('newuser@example.com')).toBeInTheDocument();
       });
+    });
+
+    it('作成エラー時に案内と入力内容を保持する', async () => {
+      const user = userEvent.setup();
+      server.use(
+        http.post('/api/v1/users', () => {
+          return HttpResponse.json(
+            { code: 'USER_EMAIL_ALREADY_EXISTS', message: 'User email already exists' },
+            { status: 409 }
+          );
+        })
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      });
+
+      const nameInput = screen.getByPlaceholderText('Name');
+      const emailInput = screen.getByPlaceholderText('Email');
+      await user.type(nameInput, 'Duplicate User');
+      await user.type(emailInput, 'duplicate@example.com');
+      await user.click(screen.getByRole('button', { name: /create user/i }));
+
+      const alert = await screen.findByRole('alert');
+      expect(alert).toHaveTextContent('User request failed');
+      expect(alert).toHaveTextContent('User email already exists');
+      expect(nameInput).toHaveValue('Duplicate User');
+      expect(emailInput).toHaveValue('duplicate@example.com');
     });
 
     it('空のフォームは送信できない', async () => {

@@ -61,4 +61,40 @@ test.describe('ユーザー管理フロー', () => {
     // 作成したユーザーがリストに表示されることを確認
     await expect(page.getByText(user.email)).toBeVisible();
   });
+
+  test('重複メールでは安全な案内を表示し、入力と既存ユーザーを保つ', async ({ page }, testInfo) => {
+    const identifier = `${testInfo.project.name}-${String(testInfo.parallelIndex)}-${String(Date.now())}`;
+    const existingName = `Existing User ${identifier}`;
+    const duplicateName = `Duplicate User ${identifier}`;
+    const email = `duplicate-user-${identifier}@example.com`;
+
+    // D1 準備処理中の一時的な HTTP 応答を避け、公開 API が利用可能になってから顧客経路の準備を始める。
+    await expect
+      .poll(async () => (await page.request.get('/api/v1/users')).status(), { timeout: 30000 })
+      .toBe(200);
+
+    // 公開 API で既存ユーザーを用意し、画面を再読込して重複送信前の一覧へ反映する。
+    const createResponse = await page.request.post('/api/v1/users', {
+      data: { email, name: existingName },
+    });
+    expect(createResponse.status()).toBe(201);
+    await page.reload();
+    await expect(page.getByRole('row').filter({ hasText: email })).toContainText(existingName);
+
+    // 同じメールアドレスを別名で送信し、利用者へ内部情報を含まない重複案内が見えることを確認する。
+    await page.getByPlaceholder('Name').fill(duplicateName);
+    await page.getByPlaceholder('Email').fill(email);
+    await page.getByRole('button', { name: /create user/i }).click();
+    const errorAlert = page.getByRole('alert');
+    await expect(errorAlert).toContainText('User request failed');
+    await expect(errorAlert).toContainText('User email already exists');
+
+    // 修正に必要な入力を保持し、一覧には登録済みの一件だけが残ることを同じ画面で確認する。
+    await expect(page.getByPlaceholder('Name')).toHaveValue(duplicateName);
+    await expect(page.getByPlaceholder('Email')).toHaveValue(email);
+    const matchingRows = page.getByRole('row').filter({ hasText: email });
+    await expect(matchingRows).toHaveCount(1);
+    await expect(matchingRows).toContainText(existingName);
+    await expect(page.getByText(duplicateName, { exact: true })).toHaveCount(0);
+  });
 });

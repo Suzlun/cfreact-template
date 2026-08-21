@@ -6,6 +6,9 @@
   },
   "tags": [
     {
+      "name": "health"
+    },
+    {
       "name": "hello"
     },
     {
@@ -25,6 +28,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HelloResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalError"
                 }
               }
             }
@@ -48,6 +61,16 @@
                   "items": {
                     "$ref": "#/components/schemas/User"
                   }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalError"
                 }
               }
             }
@@ -75,7 +98,27 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/InvalidRequestError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The request conflicts with the current state of the server.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserEmailAlreadyExistsError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalError"
                 }
               }
             }
@@ -124,7 +167,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/InvalidRequestError"
                 }
               }
             }
@@ -134,13 +177,53 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/UserNotFoundError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalError"
                 }
               }
             }
           }
         },
         "tags": ["users"]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Returns service health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalError"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["health"]
       }
     }
   },
@@ -159,14 +242,20 @@
           }
         }
       },
-      "ErrorResponse": {
+      "HealthResponse": {
         "type": "object",
-        "required": ["error"],
+        "required": ["status", "timestamp"],
         "properties": {
-          "error": {
-            "type": "string"
+          "status": {
+            "type": "string",
+            "enum": ["ok"]
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
           }
-        }
+        },
+        "description": "サービスの稼働確認 API が返す成功 payload。"
       },
       "HelloResponse": {
         "type": "object",
@@ -180,6 +269,34 @@
             "format": "date-time"
           }
         }
+      },
+      "InternalError": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["INTERNAL_ERROR"]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "description": "サーバー内部の詳細を公開せずに予期しない失敗を通知する安全なエラー。"
+      },
+      "InvalidRequestError": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["INVALID_REQUEST"]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "description": "入力が公開 API の契約を満たさない場合に返す安全なエラー。"
       },
       "User": {
         "type": "object",
@@ -201,12 +318,40 @@
           }
         }
       },
+      "UserEmailAlreadyExistsError": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["USER_EMAIL_ALREADY_EXISTS"]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "description": "メールアドレスの一意制約によりユーザーを作成できない場合に返す安全なエラー。"
+      },
       "UserId": {
         "type": "string",
         "minLength": 26,
         "maxLength": 26,
         "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
         "format": "ulid"
+      },
+      "UserNotFoundError": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["USER_NOT_FOUND"]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "description": "指定されたユーザーが存在しない場合に返す安全なエラー。"
       }
     }
   },

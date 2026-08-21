@@ -11,7 +11,12 @@ namespace CfreactTemplate.ApiV1;
 @operationId("getHello")
 @get
 @route("/hello")
-op getHello(): {
-  @statusCode statusCode: 200;
-  @body body: CfreactTemplate.HelloResponse;
-};
+op getHello():
+  | {
+      @statusCode statusCode: 200;
+      @body body: CfreactTemplate.HelloResponse;
+    }
+  | {
+      @statusCode statusCode: 500;
+      @body body: CfreactTemplate.InternalError;
+    };

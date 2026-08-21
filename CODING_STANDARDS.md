@@ -16,99 +16,65 @@
 
 ## 3. プロジェクト構造
 
-この構造は依存方向チェックの入力として使われます。
+この構造は `eslint-plugin-boundaries` の要素定義と依存方向検査の入力として使われます。
 
-ルール
+現在のリソースは `users`、`hello`、`health` です。`users` はハンドラー、サービス、リポジトリ、`Drizzle` スキーマを持ち、`hello` と `health` はサービスやリポジトリを必要としないハンドラーまでの構成です。
 
-- 依存方向チェックは以下のパスを層として扱う
-  - 強制: `pnpm lint` → `eslint .` → `settings['boundaries/elements']` → `eslint.config.js`
-  - NG例
-    - `packages/backend/unknown/src/foo.ts` のような層外に置くと、依存方向チェックの層に含まれない
-  - OK例
-    - `packages/backend/src/usecases/foo.ts` のように、層に一致する場所へ置く
+### サーバー要素
 
-層の定義
+- `backend-entry`: `packages/backend/src/entry/index.ts`
+- `backend-app`: `packages/backend/src/app/**/*`
+- `backend-generated-api`: `packages/backend/src/generated/api/openapi.ts`
+- `backend-generated-resource`: `packages/backend/src/generated/api/<module>/**/*`
+- `backend-platform-http`: `packages/backend/src/platform/http/**/*`
+- `backend-platform-database`: `packages/backend/src/platform/database/**/*`
+- `backend-platform-email`: `packages/backend/src/platform/email/**/*`
+- `backend-platform-observability`: `packages/backend/src/platform/observability/**/*`
+- `backend-module-handler`: `packages/backend/src/modules/<module>/handlers/**/*`
+- `backend-module-service`: `packages/backend/src/modules/<module>/*.service.ts`
+- `backend-module-repository`: `packages/backend/src/modules/<module>/*.repository.ts`
+- `backend-module-schema`: `packages/backend/src/modules/<module>/*.schema.ts`
+- `backend-module-domain`: `packages/backend/src/modules/<module>/domain/**/*`
+- `backend-module-entry`: `packages/backend/src/modules/<module>/index.ts`
+- `backend-module-support`: `packages/backend/src/modules/<module>/*.ts`（上記を除く）
+- `backend-types`: `packages/backend/src/types/**/*`
 
-- サーバー
-  - `backend-entry`: `packages/backend/src/entry/index.ts`
-  - `backend-app`: `packages/backend/src/app/**/*`
-  - `backend-http`: `packages/backend/src/http/**/*`
-  - `backend-persistence`: `packages/backend/src/persistence/**/*`
-  - `backend-domain`: `packages/backend/src/domain/**/*`
-  - `backend-usecases`: `packages/backend/src/usecases/**/*`
-  - `backend-types`: `packages/backend/src/types/**/*`
-- クライアント
-  - `frontend-api`: `packages/frontend/src/api/**/*`
-  - `frontend-domain`: `packages/frontend/src/domain/**/*`
-  - `frontend-app`: `packages/frontend/src/app/**/*`
-- 共通
-  - `ui`: `packages/ui/**/*`
-  - `drizzle`: `packages/backend/src/drizzle/**/*`
+### クライアント・共通要素
 
-ルール
+- `frontend-api`: `packages/frontend/src/api/**/*`
+- `frontend-domain`: `packages/frontend/src/domain/**/*`
+- `frontend-app`: `packages/frontend/src/app/**/*`
+- `ui`: `packages/ui/index.ts`、`packages/ui/SafeHTML.tsx`、`packages/ui/components/**/*`、`packages/ui/hooks/**/*`、`packages/ui/lib/**/*`、`packages/ui/styles/**/*`、`packages/ui/tests/**/*`
+- `ui-storybook`: `packages/ui/stories/**/*`
 
-- 層に属さない TS/TSX ファイルを作らない
-  - 強制: `pnpm lint` → `eslint .` → `rules['boundaries/no-unknown-files']` → `eslint.config.js`
-  - 対象
-    - `packages/backend/**/src/**/*.{ts,tsx}`
-    - `packages/frontend/**/src/**/*.{ts,tsx}`
-    - `packages/ui/**/*.{ts,tsx}`
-    - `packages/backend/src/drizzle/**/*.{ts,tsx}`
-  - NG例
-    - `packages/backend/foo/src/x.ts`（どの層にも一致しない）
-  - OK例
-    - `packages/backend/src/usecases/x.ts`（層に一致する）
+要素に属さない TS/TSX ファイルは `boundaries/no-unknown-files` で失敗します。対象は `packages/backend/src/**/*.{ts,tsx}`、`packages/frontend/src/**/*.{ts,tsx}`、および上記の `ui` と `ui-storybook` に対応する TS/TSX パスです。
 
 ## 4. 依存方向
 
-ルール
+許可されていない要素へのインポートは `pnpm lint` → `eslint .` → `rules['boundaries/element-types']` → `eslint.config.js` で失敗します。許可方向は次のとおりです。
 
-- 許可されていない層への import をしない
-  - 強制: `pnpm lint` → `eslint .` → `rules['boundaries/element-types']` → `eslint.config.js`
-  - 補足
-    - このリポジトリは default を禁止にしており、許可表にある依存だけを許可する
-  - NG例
-    ```ts
-    // packages/backend/src/domain/foo.ts
-    import { routes } from '@cfreact-template/backend/http';
-    ```
-  - OK例
-    ```ts
-    // packages/backend/src/domain/foo.ts
-    import type { Something } from '@cfreact-template/backend/types';
-    ```
+- `backend-entry` → `backend-app`
+- `backend-app` → `backend-app | backend-generated-api | backend-generated-resource | backend-module-entry | backend-module-repository | backend-platform-http | backend-platform-database | backend-platform-email | backend-platform-observability | backend-types`
+- `backend-generated-resource` → `backend-generated-api`、同じリソースの `backend-generated-resource | backend-module-handler`
+- `backend-platform-http` → `backend-platform-http | backend-types`
+- `backend-platform-database` → `backend-platform-database | backend-types`
+- `backend-platform-email` → `backend-platform-email | backend-types`
+- `backend-platform-observability` → `backend-platform-observability | backend-types`
+- `backend-module-handler` → `backend-generated-api | backend-platform-http | backend-types`、同じリソースの `backend-generated-resource | backend-module-entry | backend-module-service | backend-module-support`
+- `backend-module-service` → `backend-types`、同じリソースの `backend-module-repository | backend-module-domain | backend-module-support`、各リソースの `backend-module-entry`
+- `backend-module-repository` → `backend-platform-database | backend-types`、同じリソースの `backend-module-schema | backend-module-support`
+- `backend-module-schema` → 同じリソースの `backend-module-schema`
+- `backend-module-domain` → `backend-types`、同じリソースの `backend-module-domain | backend-module-support`
+- `backend-module-entry` → 同じリソースの `backend-module-service | backend-module-domain | backend-module-support`
+- `backend-module-support` → `backend-generated-api | backend-types`、同じリソースの `backend-generated-resource | backend-module-support`
+- `backend-types` → `backend-types`
+- `frontend-api` → `frontend-api`
+- `frontend-domain` → `frontend-domain | frontend-api`
+- `frontend-app` → `frontend-app | frontend-domain | ui`
+- `ui` → `ui`
+- `ui-storybook` → `ui-storybook | ui`
 
-許可表
-
-- サーバー
-  - `backend-domain` → `backend-domain`, `backend-types`
-  - `backend-types` → `backend-types`
-  - `backend-usecases` → `backend-domain`, `backend-usecases`, `backend-types`
-  - `backend-persistence` → `backend-usecases`, `backend-domain`, `backend-types`, `backend-persistence`, `drizzle`
-  - `backend-http` → `backend-http`, `backend-usecases`, `backend-domain`, `backend-types`
-  - `backend-app` → `backend-app`, `backend-http`, `backend-persistence`, `backend-usecases`, `backend-domain`, `backend-types`
-  - `backend-entry` → `backend-app`
-- クライアント
-  - `frontend-api` → `frontend-api`
-  - `frontend-domain` → `frontend-domain`, `frontend-api`
-  - `frontend-app` → `frontend-app`, `frontend-domain`, `ui`
-- 共通
-  - `ui` → `ui`
-  - `drizzle` → `drizzle`
-
-ルール
-
-- 層から層外ファイルを import しない
-  - 強制: `pnpm lint` → `eslint .` → `rules['boundaries/no-unknown']` → `eslint.config.js`
-  - NG例
-    ```ts
-    // packages/backend/src/http/x.ts
-    import something from '../../../../scripts/something';
-    ```
-  - OK例
-    ```ts
-    // 層に属する場所へ移動してから import する
-    ```
+リソース名は `eslint-plugin-boundaries` の `capture` で取得します。同じ要素でも `captured.module` が異なるリソースは許可されません。要素外ファイルへの依存は `boundaries/no-unknown`、親ディレクトリへの逃避はバックエンド用の `no-restricted-imports` でも失敗します。
 
 ## 5. import / export
 
@@ -167,8 +133,8 @@
     export { something } from './something';
     ```
 
-- `packages/**/src/**/*.{ts,tsx}` では相対 import を各ディレクトリの `index.ts` 経由にする
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/**/src/**/*.{ts,tsx}']`
+- `packages/**/src/**/*.{ts,tsx}` では、モジュール内部以外の実装を相対インポートで直接参照しない
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` と `rules['boundaries/element-types']` → `eslint.config.js`
   - NG例
     ```ts
     import { parse2 } from './utils/parse2';
@@ -178,19 +144,19 @@
     import { something } from './utils';
     ```
 
-- サーバーと UI と Drizzle は上位ディレクトリ参照の相対 import を禁止し、エイリアスを使う
+- `packages/backend/src/platform`、`packages/backend/src/types`、`packages/ui` は上位ディレクトリ参照の相対インポートを禁止し、エイリアスを使う
   - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js`
   - 対象
-    - `packages/backend/src/**/*.{ts,tsx}`
+    - `packages/backend/src/platform/**/*.{ts,tsx}`
+    - `packages/backend/src/types/**/*.{ts,tsx}`
     - `packages/ui/**/*.{ts,tsx}`
-    - `packages/backend/src/drizzle/**/*.ts`
   - NG例
     ```ts
-    import { x } from '../domain/x';
+    import { x } from '../platform/x';
     ```
   - OK例
     ```ts
-    import { x } from '@cfreact-template/backend/domain';
+    import { x } from '@cfreact-template/backend/platform/x';
     ```
 
 - ESLint の inline 無効化は、許可リストにある単発例外を `eslint-disable-next-line` で1ルールだけ無効化する場合に限定する
@@ -228,6 +194,7 @@
 - `packages/**/src/**/*.{ts,tsx}` の export には直前に TSDoc を付ける
   - 強制: `pnpm lint` → `eslint .` → `rules['export-tsdoc/require-export-tsdoc']` → `eslint.config.js`
   - 対象外
+    - `packages/backend/src/generated/**/*.{ts,tsx}`
     - `packages/frontend/src/api/generated/**/*.{ts,tsx}`
     - `**/*.test.ts`, `**/*.test.tsx`, `**/*.spec.ts`, `**/*.spec.tsx`
   - NG例
@@ -248,20 +215,33 @@
 
 ルール
 
-- 公開 API の契約と SDK の生成物を手で編集しない
+- 公開 API の契約、完全生成ファイル、スマートハンドラーの生成前置きを手で編集しない
   - 強制: `pnpm check:codegen` → `scripts.check:codegen` → `package.json`
   - 強制: pre-commit hook → `pnpm check:codegen` → `.husky/pre-commit`
   - 生成物
     - `packages/typespec/openapi/openapi.json`
+    - `packages/backend/src/generated/api/openapi.ts`
+    - `packages/backend/src/generated/api/<resource>/**`
+    - `packages/backend/src/modules/*/handlers/**`（`Orval` 前置きは生成器所有、関数本体は開発者所有）
     - `packages/frontend/src/api/generated/client.ts`
-  - 生成物は git 管理対象
-    - 強制: `pnpm check:codegen` 内の `git ls-files --error-unmatch ...` → `package.json`
+  - 生成物は Git 管理対象
+    - 強制: `pnpm check:codegen` → `scripts/codegen/verify-generated-artifacts.mjs` → `git ls-files --cached -z`
+    - 現在の OpenAPI 操作、生成物ルート、実在する各モジュールのハンドラーディレクトリから対象ファイルを動的に列挙する
+    - ステージ済みの新規ファイルは受理し、未追跡の生成物は失敗させる
+  - ハンドラー一覧は OpenAPI のリソース `tag` と `operationId` に一致させる
+    - 強制: `pnpm check:codegen` → `scripts/codegen/verify-backend-handlers.mjs`
+    - 不足したハンドラー、余分なハンドラー、契約から消えた生成リソースのいずれでも失敗する
+  - `Orval` が生成したハンドラーのコンテキスト参照を型専用インポートへ正規化する
+    - 強制: `pnpm gen:api-sdk` → `packages/backend/package.json#scripts.gen:api` → `scripts/codegen/normalize-backend-handler-imports.mjs`
+    - 期待するコンテキスト参照が一つだけでない場合は失敗し、正規化後に `Prettier` を実行する
   - 再生成
     - `pnpm gen:api-sdk`
   - 入力と出力の定義
-    - TypeSpec の入口: `packages/typespec/main.tsp`
+    - `TypeSpec` の入口: `packages/typespec/main.tsp`
     - OpenAPI の出力: `packages/typespec/tspconfig.yaml` の `options['@typespec/openapi3'].output-file` と `options['@typespec/openapi3'].emitter-output-dir`
-    - SDK の出力: `packages/frontend/orval.config.ts` の `input` と `output.target`
+    - バックエンド型の出力: `packages/backend/package.json` の `gen:types`
+    - バックエンドのリソースとハンドラーの出力: `packages/backend/orval.config.ts`
+    - フロントエンド SDK の出力: `packages/frontend/orval.config.ts` の `input` と `output.target`
   - NG例
     ```diff
     -  "title": "cfreact-template API"
@@ -774,224 +754,106 @@
 
 ## 9. サーバー実装規則
 
-ルール
+この節は、現在の `packages/backend/src` に対して `eslint.config.js` が実際に適用するリソース中心の構造を要約します。
 
-- サーバーの App パッケージの内部パスを import しない
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/backend/**/src/**/*.{ts,tsx}']`
-  - NG例
-    ```ts
-    import { buildDeps } from '@cfreact-template/backend/app/server';
-    ```
-  - OK例
-    ```ts
-    import { buildDeps } from '@cfreact-template/backend/app';
-    ```
+### 9.1 ソース要素
 
-- Domain と UseCase では `console` を使わない
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-console']` → `eslint.config.js` の `files: ['packages/backend/src/domain/**/*.{ts,tsx}', 'packages/backend/src/usecases/**/*.{ts,tsx}']`
-  - NG例
-    ```ts
-    console.log('x');
-    ```
-  - OK例
-    ```ts
-    // ログは外側の層で行う
-    ```
+| 要素                             | 対象                                                       | 所有する責務                                                 |
+| -------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------ |
+| `backend-entry`                  | `packages/backend/src/entry/index.ts`                      | `Cloudflare Workers` の公開入口。`app` だけを参照する        |
+| `backend-app`                    | `packages/backend/src/app/**/*`                            | 構成起点。生成リソース、モジュール、基盤、共有型を組み立てる |
+| `backend-generated-api`          | `packages/backend/src/generated/api/openapi.ts`            | `openapi-typescript` が生成する共有 OpenAPI 型               |
+| `backend-generated-resource`     | `packages/backend/src/generated/api/<module>/**/*`         | `Orval` が生成するリソース別 `Hono` 経路、検証処理、スキーマ |
+| `backend-platform-http`          | `packages/backend/src/platform/http/**/*`                  | HTTP 応答検証などの基盤処理                                  |
+| `backend-platform-database`      | `packages/backend/src/platform/database/**/*`              | `D1` と `Drizzle` の接続処理                                 |
+| `backend-platform-email`         | `packages/backend/src/platform/email/**/*`                 | `Cloudflare Email Workers` の送信処理                        |
+| `backend-platform-observability` | `packages/backend/src/platform/observability/**/*`         | 内部失敗の記録                                               |
+| `backend-module-handler`         | `packages/backend/src/modules/<module>/handlers/**/*`      | 契約済み入力とサービス結果を HTTP 応答へ変換する             |
+| `backend-module-service`         | `packages/backend/src/modules/<module>/*.service.ts`       | リソースの業務処理と副作用を調整する                         |
+| `backend-module-repository`      | `packages/backend/src/modules/<module>/*.repository.ts`    | リソース所有データを永続化する                               |
+| `backend-module-schema`          | `packages/backend/src/modules/<module>/*.schema.ts`        | リソース所有の `Drizzle` スキーマ                            |
+| `backend-module-domain`          | `packages/backend/src/modules/<module>/domain/**/*`        | リソース固有の純粋なドメイン規則                             |
+| `backend-module-entry`           | `packages/backend/src/modules/<module>/index.ts`           | リソースの唯一の公開入口                                     |
+| `backend-module-support`         | `packages/backend/src/modules/<module>/*.ts`（上記を除く） | リソース内で共有する補助型、応答、補助処理                   |
+| `backend-types`                  | `packages/backend/src/types/**/*`                          | 複数リソースで共有する型                                     |
 
-- Domain と UseCase では `fetch` と `Request` と `Response` と `Headers` を使わない
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-globals']` → `eslint.config.js`
-  - NG例
-    ```ts
-    const res = await fetch('https://example.com');
-    ```
-  - OK例
-    ```ts
-    // 外側の層が I/O を行い、内側は純粋な入力で処理する
-    ```
+要素外のバックエンド `TypeScript` ファイルは `boundaries/no-unknown-files`、要素外へのインポートは `boundaries/no-unknown` と `boundaries/element-types` で失敗します。
 
-- Domain と UseCase ではフレームワークとインフラ依存を import しない
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/backend/src/domain/**/*.{ts,tsx}', 'packages/backend/src/usecases/**/*.{ts,tsx}']`
-  - 対象
-    - `hono`, `drizzle-orm`, `@cloudflare/**`, `cloudflare:*`, `zod`, `@hono/zod-openapi`
-  - NG例
-    ```ts
-    import { z } from 'zod';
-    ```
-  - OK例
-    ```ts
-    // スキーマや HTTP 依存は HTTP アダプタに置く
-    ```
+### 9.2 依存方向
 
-- Domain と UseCase では外部ライブラリを import しない
-  - 強制: `pnpm lint` → `eslint .` → `rules['boundaries/external']` → `eslint.config.js`
-  - NG例
-    ```ts
-    import { v4 as uuidv4 } from 'uuid';
-    ```
-  - OK例
-    ```ts
-    // 外部依存が必要なら外側の層に移し、内側は入力として受け取る
-    ```
+- `backend-entry` → `backend-app`
+- `backend-app` → `backend-app | backend-generated-api | backend-generated-resource | backend-module-entry | backend-module-repository | backend-platform-http | backend-platform-database | backend-platform-email | backend-platform-observability | backend-types`
+- `backend-generated-resource` → `backend-generated-api`、同じリソースの `backend-generated-resource | backend-module-handler`
+- `backend-platform-http` → `backend-platform-http | backend-types`
+- `backend-platform-database` → `backend-platform-database | backend-types`
+- `backend-platform-email` → `backend-platform-email | backend-types`
+- `backend-platform-observability` → `backend-platform-observability | backend-types`
+- `backend-module-handler` → `backend-generated-api | backend-platform-http | backend-types`、同じリソースの `backend-generated-resource | backend-module-entry | backend-module-service | backend-module-support`
+- `backend-module-service` → `backend-types`、同じリソースの `backend-module-repository | backend-module-domain | backend-module-support`、各リソースの `backend-module-entry`
+- `backend-module-repository` → `backend-platform-database | backend-types`、同じリソースの `backend-module-schema | backend-module-support`
+- `backend-module-schema` → 同じリソースの `backend-module-schema`
+- `backend-module-domain` → `backend-types`、同じリソースの `backend-module-domain | backend-module-support`
+- `backend-module-entry` → 同じリソースの `backend-module-service | backend-module-domain | backend-module-support`
+- `backend-module-support` → `backend-generated-api | backend-types`、同じリソースの `backend-generated-resource | backend-module-support`
+- `backend-types` → `backend-types`
 
-- Domain と UseCase から Adapters を参照しない
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/backend/src/domain/**/*.{ts,tsx}', 'packages/backend/src/usecases/**/*.{ts,tsx}']`
-  - NG例
-    ```ts
-    import { db } from '@cfreact-template/backend/persistence';
-    ```
-  - OK例
-    ```ts
-    import type { UserRepository } from '@cfreact-template/backend/domain';
-    ```
+`eslint-plugin-boundaries` の `capture` で `<module>` を取得し、`captured.module` が同じ要素だけを同一リソースとして許可します。そのため、同じファイル名や同じ要素であっても、別リソースの内部実装へは依存できません。サービスが別リソースを利用する場合だけ、`packages/backend/src/modules/<module>/index.ts` の公開入口を指定します。
 
-- UseCase で `throw new Error` をしない
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/backend/src/usecases/**/*.{ts,tsx}']`
-  - NG例
-    ```ts
-    throw new Error('failed');
-    ```
-  - OK例
-    ```ts
-    throw new DomainError('failed');
-    ```
+### 9.3 外部パッケージ
 
-- UseCase の複雑度を上げない
-  - 強制: `pnpm lint` → `eslint .` → `rules['sonarjs/cognitive-complexity']` → `eslint.config.js` の `files: ['packages/backend/src/usecases/**/*.{ts,tsx}']`
-  - 強制: `pnpm lint` → `eslint .` → `rules['complexity']` → `eslint.config.js` の `files: ['packages/backend/src/usecases/**/*.{ts,tsx}']`
-  - 強制: `pnpm lint` → `eslint .` → `rules['max-depth']` → `eslint.config.js` の `files: ['packages/backend/src/usecases/**/*.{ts,tsx}']`
-  - しきい値
-    - Cognitive Complexity: 10
-    - Complexity: 10
-    - Max Depth: 3
-  - NG例
-    ```ts
-    export async function useCase(x: number) {
-      if (x > 0) {
-        if (x > 1) {
-          if (x > 2) {
-            if (x > 3) {
-              return 4;
-            }
-          }
-        }
-      }
-      return 0;
-    }
-    ```
-  - OK例
-    ```ts
-    // 分岐を Domain の関数へ移し、UseCase は手順だけにする
-    export async function useCase(x: number) {
-      return await doDomainRule(x);
-    }
-    ```
+`pnpm lint` → `eslint .` → `rules['boundaries/external']` → `eslint.config.js` は、バックエンド要素から外部パッケージへの依存を既定で拒否し、次だけを許可します。
 
-- UseCase で `AppVariables` を定義しない
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/backend/src/usecases/**/*.{ts,tsx}']`
-  - NG例
-    ```ts
-    export type AppVariables = {};
-    ```
-  - OK例
-    ```ts
-    // HTTP アダプタで管理する
-    ```
+- `backend-app` → `hono`
+- `backend-generated-resource` → `@hono/zod-validator | hono | zod`
+- `backend-module-handler` → `hono`
+- `backend-module-service` → `ulid`
+- `backend-module-repository` → `drizzle-orm`
+- `backend-module-schema` → `drizzle-orm`
+- `backend-platform-http` → `hono`
+- `backend-platform-database` → `drizzle-orm`
+- `backend-platform-email` → `cloudflare:email`
+- `backend-types` → `@cloudflare/workers-types`
 
-ルール
+`backend-entry`、`backend-generated-api`、`backend-platform-observability`、`backend-module-domain`、`backend-module-entry`、`backend-module-support` には外部パッケージの許可がありません。
 
-- HTTP アダプタから Persistence を直接参照しない
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/backend/src/http/**/*.{ts,tsx}']`
-  - NG例
-    ```ts
-    import { userRepo } from '@cfreact-template/backend/persistence';
-    ```
-  - OK例
-    ```ts
-    import { createUser } from '@cfreact-template/backend/usecases';
-    ```
+### 9.4 HTTP 実行環境への直接到達
 
-- HTTP アダプタで `c.env` を参照しない
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/backend/src/http/**/*.{ts,tsx}']`
-  - NG例
-    ```ts
-    const db = c.env.DB;
-    ```
-  - OK例
-    ```ts
-    const db = deps.db;
-    ```
+- ハンドラーとサービスは、未修飾または `globalThis` 経由の `fetch`、`Request`、`Response`、`Headers` を使えません。
+  - 強制: `no-restricted-globals` と `no-restricted-syntax` → `eslint.config.js`
+- ハンドラーは、コンテキストの `env` 参照または分割代入を使えません。構成起点が注入した依存だけを利用します。
+  - 強制: `no-restricted-syntax` → `eslint.config.js` の `files: ['packages/backend/src/modules/*/handlers/**/*.{ts,tsx}']`
 
-- HTTP アダプタから App 層を参照しない
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/backend/src/http/**/*.{ts,tsx}']`
-  - NG例
-    ```ts
-    import { buildDeps } from '@cfreact-template/backend/app';
-    ```
-  - OK例
-    ```ts
-    import type { AppDependencies } from '@cfreact-template/backend/usecases';
-    ```
+### 9.5 相対インポートと公開入口
 
-- `zod` は `packages/backend/src/http/schemas` でだけ使う
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/backend/src/http/**/*.{ts,tsx}']` と `files: ['packages/backend/src/http/schemas/**/*.{ts,tsx}']`
-  - NG例
-    ```ts
-    // packages/backend/src/http/routes/foo.ts
-    import { z } from 'zod';
-    ```
-  - OK例
-    ```ts
-    // packages/backend/src/http/schemas/foo.ts
-    import { z } from 'zod';
-    ```
+- モジュール内の同一リソースへの相対インポートは許可します。生成されたハンドラー前置きから生成ファイルを参照する相対インポートも、`Orval` の生成契約として許可します。
+- リソースをまたぐ相対インポート、モジュールの親へ逃げる相対インポート、要素外ファイルへの相対インポートは `boundaries/element-types`、`boundaries/no-unknown`、または `no-restricted-imports` で禁止します。
+- `@cfreact-template/backend/modules/<module>/<internal-file>` のようなモジュール深部のパッケージインポートは禁止します。別リソースのサービスは `@cfreact-template/backend/modules/<module>` だけを使います。
+- モジュール要素の `capture` と既定拒否の `boundaries/element-types` により、別リソースの内部ファイルを拒否します。パッケージ形式の深いモジュールインポートは `no-restricted-imports` でも拒否します。
+- `packages/backend/package.json` の `exports` は `.`、`app`、各リソースのモジュール入口、`types` だけを公開します。生成物、基盤アダプター、構成起点専用別名、モジュール内部ファイル、型ファイルのワイルドカード公開は追加しません。
+- `TypeScript` の公開別名は各リソースの `index.ts` だけを解決します。構成起点が同じパッケージ内のリポジトリを構築する場合だけ、バックエンド専用の `@cfreact-template/backend/composition/modules/*` を `app` から利用できます。他の要素からこの別名を使うと `no-restricted-imports` で失敗します。
 
-- `createRoute` と `OpenAPIHono` は `packages/backend/src/http/routes` でだけ import する
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/backend/src/http/**/*.{ts,tsx}']` と `files: ['packages/backend/src/http/schemas/**/*.{ts,tsx}']`
-  - NG例
-    ```ts
-    // packages/backend/src/http/context.ts
-    import { OpenAPIHono } from '@hono/zod-openapi';
-    ```
-  - OK例
-    ```ts
-    // packages/backend/src/http/routes/v1.ts
-    import { OpenAPIHono, createRoute } from '@hono/zod-openapi';
-    ```
+### 9.6 生成コードとスマートハンドラー
 
-- OpenAPI ルートで `hono` を import しない
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js` の `files: ['packages/backend/src/http/routes/**/*.{ts,tsx}']`
-  - NG例
-    ```ts
-    import { Hono } from 'hono';
-    ```
-  - OK例
-    ```ts
-    import { OpenAPIHono } from '@hono/zod-openapi';
-    ```
+- `packages/backend/src/generated/api/**/*` は `openapi-typescript` と `Orval` が完全に所有します。`export-tsdoc/require-export-tsdoc`、手書きの型安全性、コメント、インポート整形、行数規則を適用しません。
+- 生成コードにも依存方向、要素の所属、モジュールの公開入口、深いモジュールインポートの禁止は適用します。生成物を理由に境界を無効化してはいけません。
+- `packages/backend/src/modules/*/handlers/**/*` は `Orval` の生成前置きと開発者が所有するスマートハンドラー本体の混在領域です。生成前置きに必要なインポート順序と型定義の例外だけを設定し、関数本体の型安全性、公開 API の TSDoc、複雑度、禁止 API、依存方向は通常どおり検査します。
+- OpenAPI 型、リソース経路、検証処理、コンテキスト、`Zod` スキーマ、スマートハンドラー前置きは入力契約から再生成します。`packages/backend/src/generated/api/**` は手で編集せず、スマートハンドラーは開発者所有の関数本体だけを編集します。
 
-ルール
+### 9.7 API 契約と生成
 
-- `packages/backend/src/app/server.ts` で KV と R2 を Context に直接注入しない
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/backend/src/app/server.ts']`
-  - NG例
-    ```ts
-    c.set('kv', env.KV);
-    ```
-  - OK例
-    ```ts
-    // UseCase 経由で必要な操作だけを依存として渡す
-    ```
+- API 契約の正は `packages/typespec/main.tsp` です。
+- `pnpm gen:api-sdk` は `TypeSpec` から OpenAPI を生成し、`openapi-typescript` のバックエンド共有型、`Orval` のリソース別 `Hono` 経路とスマートハンドラー、フロントエンド SDK を順に生成します。
+- バックエンド生成では、`Orval` の実行後に `scripts/codegen/normalize-backend-handler-imports.mjs` が各ハンドラーのコンテキスト参照を型専用インポートへ正規化し、その後に `Prettier` を実行します。
+- `pnpm check:codegen` は再生成後に `scripts/codegen/verify-backend-handlers.mjs` で OpenAPI のリソース `tag` と `operationId` に対するハンドラーの不足、余分、生成リソースの残骸を検出します。
+- 続いて `scripts/codegen/verify-generated-artifacts.mjs` が現在の生成物と全ハンドラーディレクトリを動的に列挙し、`git ls-files --cached -z` との照合でステージ済み追加を受理しながら未追跡ファイルを拒否します。最後に `git diff --exit-code` で OpenAPI、バックエンド生成物、スマートハンドラー、フロントエンド SDK の差分を検査します。
+- サーバーのルートや生成済み OpenAPI を SDK 入力の正にしません。
 
-- `packages/backend/src/http/context.ts` で `AppVariables` に `kv` と `r2` を追加しない
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/backend/src/http/context.ts']`
-  - NG例
-    ```ts
-    export type AppVariables = { kv: unknown };
-    ```
-  - OK例
-    ```ts
-    export type AppVariables = { deps: unknown };
-    ```
+### 9.8 TypeScript とパッケージ公開面
+
+- バックエンドの `TypeScript` プロジェクトは `packages/backend/tsconfig.json` 一つです。`src/**/*.ts` と `orval.config.ts` を対象にし、`pnpm --filter @cfreact-template/backend check:types` が `tsc --noEmit -p tsconfig.json` を実行します。
+- ルートの `pnpm check` は全パッケージの `check` を実行するため、このバックエンド型検査を含みます。CI も `pnpm check` を実行します。
+- `packages/backend/tsconfig.json` は生成物と基盤処理の内部別名、および `app` 専用のリポジトリ構築別名をバックエンド内部だけで解決します。ルートの `tsconfig.base.json` は `Cloudflare Workers`、`app`、共有型、各リソースの `index.ts` だけを公開別名として持ちます。
+- `packages/backend/package.json#exports` は `.`、`./app`、`./modules/users`、`./modules/hello`、`./modules/health`、`./types` だけです。
 
 ## 10. サイズ制約
 
@@ -1019,12 +881,17 @@
 
 ルール
 
-- 生成コードは lint の一部ルールを緩和する
-  - 強制: `pnpm lint` → `eslint .` → `files: ['packages/frontend/src/api/generated/**/*.{ts,tsx}']` のルール上書き → `eslint.config.js`
+- 完全生成コードは lint の一部ルールを緩和する
+  - 強制: `pnpm lint` → `eslint .` → `files: ['packages/backend/src/generated/**/*.{ts,tsx}']` と `files: ['packages/frontend/src/api/generated/**/*.{ts,tsx}']` のルール上書き → `eslint.config.js`
   - NG例
     - 生成コードを手で直しても `pnpm check:codegen` で差分が戻る
   - OK例
     - 入力元を変更して `pnpm gen:api-sdk`
+
+- スマートハンドラーは生成前置きに必要な規則だけを緩和する
+  - 強制: `pnpm lint` → `eslint .` → `files: ['packages/backend/src/modules/*/handlers/**/*.{ts,tsx}']` のルール上書き → `eslint.config.js`
+  - 緩和対象: 型定義形式、型専用インポート、`require-await`、インポート順序
+  - 関数本体には型安全性、TSDoc、禁止 API、依存方向、行数規則を適用する
 
 - shadcn/ui registry 由来コードは上流API形状を保つため lint の一部ルールを緩和する
   - 強制: `pnpm lint` → `eslint .` → `files: ['packages/ui/components/**/*.{ts,tsx}', 'packages/ui/hooks/use-mobile.ts', 'packages/ui/lib/utils.ts']` のルール上書き → `eslint.config.js`
@@ -1110,7 +977,9 @@ fail 条件
   - 強制: `scripts.check:codegen` → `package.json`
   - 実行
     - `pnpm gen:api-sdk`
-    - `git diff --exit-code -- packages/typespec/openapi/openapi.json packages/frontend/src/api/generated/client.ts`
+    - `node scripts/codegen/verify-backend-handlers.mjs`
+    - `node scripts/codegen/verify-generated-artifacts.mjs` による現在の生成物とハンドラーディレクトリの動的列挙、および `git ls-files --cached -z` との照合
+    - `git diff --exit-code -- packages/typespec/openapi/openapi.json packages/backend/src/generated/api packages/backend/src/modules/*/handlers packages/frontend/src/api/generated/client.ts`
 - CI は整形、lint、型、顧客価値を守る全試験、Storybookビルド、生成差分を検証する
   - 強制: `.github/workflows/ci.yml`
   - `pnpm test:run` はReactの顧客向けUI試験、共通UIのjsdom試験、純粋で決定的なリリース規則試験だけを実行する

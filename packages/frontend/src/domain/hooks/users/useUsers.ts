@@ -63,7 +63,16 @@ function useUsers(): { data: UsersData; actions: UsersActions } {
       if (!isValid) {
         return;
       }
-      await createUser.mutateAsync(formState[0]);
+
+      try {
+        // React Query に失敗状態を保持させつつ、画面側の void 呼び出しへ拒否済み Promise を漏らさない。
+        await createUser.mutateAsync(formState[0]);
+      } catch {
+        // 利用者が修正できるよう入力を保持し、公開する mutation error は data.error から表示する。
+        return;
+      }
+
+      // 作成に成功した場合だけ入力を消去し、失敗後の再送に必要な値を失わない。
       formState[1]({ name: '', email: '' });
     },
   };

@@ -11,10 +11,15 @@ namespace CfreactTemplate.ApiV1;
 @operationId("listUsers")
 @get
 @route("/users")
-op listUsers(): {
-  @statusCode statusCode: 200;
-  @body body: CfreactTemplate.User[];
-};
+op listUsers():
+  | {
+      @statusCode statusCode: 200;
+      @body body: CfreactTemplate.User[];
+    }
+  | {
+      @statusCode statusCode: 500;
+      @body body: CfreactTemplate.InternalError;
+    };
 
 @tag("users")
 @summary("Create a new user")
@@ -28,7 +33,15 @@ op createUser(@body body: CfreactTemplate.CreateUserInput):
     }
   | {
       @statusCode statusCode: 400;
-      @body body: CfreactTemplate.ErrorResponse;
+      @body body: CfreactTemplate.InvalidRequestError;
+    }
+  | {
+      @statusCode statusCode: 409;
+      @body body: CfreactTemplate.UserEmailAlreadyExistsError;
+    }
+  | {
+      @statusCode statusCode: 500;
+      @body body: CfreactTemplate.InternalError;
     };
 
 @tag("users")
@@ -43,9 +56,13 @@ op getUser(@path id: CfreactTemplate.UserId):
     }
   | {
       @statusCode statusCode: 400;
-      @body body: CfreactTemplate.ErrorResponse;
+      @body body: CfreactTemplate.InvalidRequestError;
     }
   | {
       @statusCode statusCode: 404;
-      @body body: CfreactTemplate.ErrorResponse;
+      @body body: CfreactTemplate.UserNotFoundError;
+    }
+  | {
+      @statusCode statusCode: 500;
+      @body body: CfreactTemplate.InternalError;
     };

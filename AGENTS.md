@@ -67,8 +67,8 @@ Before beginning any work, you MUST summarize your understanding of the Credo be
 
 - Source of truth: `packages/typespec/main.tsp`
 - Generated OpenAPI: `packages/typespec/openapi/openapi.json`
-- Regenerate OpenAPI + client SDK: `pnpm gen:api-sdk`
-- Codegen drift check (CI-style): `pnpm check:codegen`
+- Regenerate OpenAPI + backend API + frontend SDK: `pnpm gen:api-sdk`
+- Codegen drift and backend Handler manifest check (CI-style): `pnpm check:codegen`
 
 ## Testing
 
@@ -126,8 +126,14 @@ Before beginning any work, you MUST summarize your understanding of the Credo be
 - App pages may use `useState` only; app components must not use React built-in Hooks. Domain/UI effects are limited to external-system synchronization.
 - Ordinary performance-only `useMemo`, `useCallback`, and `memo` are prohibited in domain and handwritten UI code; upstream registry files listed in `scripts/eslint/disable-policy.mjs` retain their external reference contracts.
 - One-off ESLint exceptions use a single structured `eslint-disable-next-line`; recurring incompatible APIs must be isolated behind a reusable boundary declared in `scripts/eslint/disable-policy.mjs`.
-- Server dependency direction: `backend/src/entry -> backend/src/app -> (backend/src/http|backend/src/persistence|backend/src/usecases) -> backend/src/domain -> backend/src/types`
-- API contract direction: implementation must follow TypeSpec; do not generate OpenAPI from server routes for SDK input.
+- Server dependency direction: `backend/src/entry -> backend/src/app`; `app` composes generated Resource routes, Module public entries or Repositories reached only through `@cfreact-template/backend/composition/modules/*`, Platform adapters, and shared Types. Generated Resource routes may reference shared generated API types, their same-Resource generated files, and smart Handlers. A Handler may use shared generated API types and Types plus its same-Resource generated files, public entry, Service, or support; a Service may use shared Types, its same-Resource Repository, Domain, or support, plus another Resource's public entry; a Repository may use its same-Resource schema or support plus Platform and shared Types; a Domain may use same-Resource Domain or support plus shared Types. Module-internal relative imports are allowed, but cross-Module relatives and parent escapes are not, except for generator-owned smart-handler preambles that reach the same Resource's generated files.
+- Current server Resources are `users`, `hello`, and `health`. `users` uses Handler -> Service -> Repository and owns its Drizzle schema; `hello` and `health` stop at their Handlers because they need no Service or Repository.
+- Backend external-package imports are denied by default. The allowlist is limited to Hono in app/Handlers/HTTP Platform, generated Hono validation dependencies, ULID in Services, Drizzle in Repositories/schemas/database Platform, `cloudflare:email` in email Platform, and Workers types in shared Types. Handler and Service code must not bypass declared dependencies through HTTP globals; Handlers must not read `env` directly.
+- `packages/backend/src/generated/api/**` is fully owned by `openapi-typescript` and Orval, so generated files are exempt from handwritten comment, TSDoc, type-safety, and formatting rules while dependency boundaries remain enforced. Smart Handlers are mixed-ownership files: Orval owns the preamble and developers own the body, which remains subject to normal implementation, detailed-comment, and TSDoc rules.
+- Backend package exports expose only the Worker entry, app entry, shared Types entry, and each Resource's `index.ts`; they never expose generated files, Platform adapters, composition aliases, Handlers, Repositories, or schemas.
+- Expected failures cross backend boundaries as `Result` values and become safe `{ code, message }` responses. Generated response validators are wrapped by `guardResponseValidation`; unsafe validation details become exceptions that `app.onError` logs before returning the fixed 500 response. The create-user success payload is parsed with its generated schema. Duplicate user email is detected by the database uniqueness outcome and becomes 409 without parsing database error text.
+- The backend uses only `packages/backend/tsconfig.json`; `pnpm check` reaches its `tsc --noEmit` check. Backend generation normalizes Orval Context imports with `scripts/codegen/normalize-backend-handler-imports.mjs` before formatting. `pnpm check:codegen` regenerates all API artifacts, verifies the OpenAPI operation-to-Handler manifest, dynamically enumerates generated files and Handler directories, accepts staged additions reported by `git ls-files --cached -z`, rejects untracked artifacts, and rejects generated drift.
+- API contract direction: implementation follows `packages/typespec/main.tsp`; `pnpm gen:api-sdk` generates the OpenAPI document, backend `openapi-typescript` types, Orval Hono Resource routes and smart Handlers, and the frontend SDK. Never generate SDK input from server routes or hand-edit generated output.
 
 ## Change Operation
 

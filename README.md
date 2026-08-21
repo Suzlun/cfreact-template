@@ -15,8 +15,8 @@
 
 ### バックエンド
 
-- **Hono** 4.11.3 - 高速で軽量な Web フレームワーク
-- **Drizzle ORM** 0.45.1 - D1 用の型安全 ORM
+- **Hono** 4.12.25 - 高速で軽量な Web フレームワーク
+- **Drizzle ORM** 0.45.2 - D1 用の型安全 ORM
 - **Cloudflare Workers** - サーバーレスランタイム
 - **Cloudflare D1** - SQLite データベース
 - **Cloudflare KV** - キーバリューストレージ
@@ -47,14 +47,18 @@ cfreact-template/
 │   │       ├── domain/
 │   │       └── api/
 │   ├── backend/
+│   │   ├── orval.config.ts
+│   │   ├── tsconfig.json
 │   │   └── src/
 │   │       ├── entry/
 │   │       ├── app/
-│   │       ├── http/
-│   │       ├── usecases/
-│   │       ├── domain/
-│   │       ├── persistence/
-│   │       ├── drizzle/
+│   │       ├── generated/
+│   │       │   └── api/
+│   │       ├── modules/
+│   │       │   ├── users/
+│   │       │   ├── hello/
+│   │       │   └── health/
+│   │       ├── platform/
 │   │       └── types/
 │   ├── ui/
 │   │   ├── .storybook/
@@ -81,24 +85,53 @@ cfreact-template/
 └── package.json
 ```
 
-| パス                                | 役割                                  |
-| ----------------------------------- | ------------------------------------- |
-| `packages/frontend/src/app/`        | React のアプリ起動、ルーター、画面    |
-| `packages/frontend/src/domain/`     | TanStack Query hooks と provider      |
-| `packages/frontend/src/api/`        | OpenAPI 生成 SDK と API ラッパー      |
-| `packages/backend/src/entry/`       | Workers エントリーポイント            |
-| `packages/backend/src/app/`         | DI とアプリケーション配線             |
-| `packages/backend/src/http/`        | Hono ルートと HTTP 契約テスト         |
-| `packages/backend/src/usecases/`    | アプリケーションサービス              |
-| `packages/backend/src/domain/`      | ドメインモデルとリポジトリ契約        |
-| `packages/backend/src/persistence/` | Drizzle 永続化アダプタ                |
-| `packages/backend/src/drizzle/`     | Drizzle schema exports                |
-| `packages/backend/src/types/`       | Workers Bindings などの共有型         |
-| `packages/ui/`                      | Base UI ベースの共通 components/hooks |
-| `packages/ui/stories/`              | 共通 UI の Storybook catalog          |
-| `packages/typespec/`                | API 契約の正と OpenAPI 生成先         |
-| `drizzle/migrations/`               | D1 マイグレーション                   |
-| `openspec/`                         | 永続的な振る舞い契約と変更差分        |
+| パス                                  | 役割                                              |
+| ------------------------------------- | ------------------------------------------------- |
+| `packages/frontend/src/app/`          | React のアプリ起動、ルーター、画面                |
+| `packages/frontend/src/domain/`       | TanStack Query hooks と provider                  |
+| `packages/frontend/src/api/`          | OpenAPI 生成 SDK と API ラッパー                  |
+| `packages/backend/src/entry/`         | `Cloudflare Workers` の公開エントリーポイント     |
+| `packages/backend/src/app/`           | 構成起点と依存の組み立て                          |
+| `packages/backend/src/generated/api/` | `openapi-typescript` と `Orval` の完全生成物      |
+| `packages/backend/src/modules/`       | リソースごとの処理、業務、永続化、ドメイン規則    |
+| `packages/backend/src/platform/`      | `Cloudflare`、`Drizzle`、メール、観測のアダプター |
+| `packages/backend/src/types/`         | リソース間で共有する型                            |
+| `packages/backend/orval.config.ts`    | リソース別 `Hono` 経路とハンドラーの生成設定      |
+| `packages/backend/tsconfig.json`      | バックエンド全体を検査する単一 `TypeScript` 設定  |
+| `packages/ui/`                        | Base UI ベースの共通 components/hooks             |
+| `packages/ui/stories/`                | 共通 UI の Storybook catalog                      |
+| `packages/typespec/`                  | API 契約の正と OpenAPI 生成先                     |
+| `drizzle/migrations/`                 | D1 マイグレーション                               |
+| `openspec/`                           | 永続的な振る舞い契約と変更差分                    |
+
+### バックエンドのリソース中心構造
+
+`Cloudflare Workers` の入口は `packages/backend/src/entry/index.ts` に集約し、`app` の構成起点が生成リソース、モジュールの公開入口、基盤アダプター、共有型を組み立てます。リポジトリの構築に必要なモジュール内部実装は、バックエンド専用の `@cfreact-template/backend/composition/modules/*` から `app` だけが参照します。各リソースは `modules/<resource>/` に閉じ、次の責務を持ちます。
+
+現在のリソースは `users`、`hello`、`health` です。`users` はハンドラー、サービス、リポジトリの順に処理し、`Drizzle` スキーマも所有します。`hello` と `health` は永続化や業務サービスを必要としないため、生成リソースからスマートハンドラーまでで応答を完結します。
+
+- `handlers/`: `Orval` が生成する HTTP 前置きと、開発者が所有するスマートハンドラー本体。
+- `*.service.ts`: 入力の業務処理、リポジトリの調整、通知などの副作用の制御。
+- `*.repository.ts`: リソース所有のデータへアクセスする `Drizzle` リポジトリ。
+- `domain/`: リソース固有の純粋なドメイン規則。
+- `*.schema.ts` と `*.ts`: リソース所有のスキーマ、応答、型、補助処理。
+- `index.ts`: 他のリソースが利用できる唯一の公開入口。
+
+`eslint-plugin-boundaries` はリソース名を捕捉して同一リソースの内部依存だけを許可します。別リソースのサービスを使う場合は、そのリソースの `index.ts` だけを参照します。モジュール内の相対インポートは許可しますが、リソースをまたぐ相対インポート、親ディレクトリへの逃避、モジュール深部のパッケージインポートは失敗します。パッケージの公開先も `Cloudflare Workers`、`app`、共有型、各リソースの `index.ts` に限定し、生成物、基盤アダプター、ハンドラー、リポジトリ、スキーマ、構成起点専用別名を公開しません。
+
+バックエンドの外部パッケージは `boundaries/external` が既定で拒否します。`Hono` は構成起点、ハンドラー、HTTP 基盤、生成された検証処理だけ、`ulid` はサービスだけ、`Drizzle` はリポジトリ、スキーマ、データベース基盤だけ、`cloudflare:email` はメール基盤だけ、`@cloudflare/workers-types` は共有型だけで利用できます。ハンドラーとサービスは HTTP グローバルを直接使わず、ハンドラーは `env` を直接参照しません。
+
+完全生成物は `packages/backend/src/generated/api/` に置かれ、`openapi-typescript` が共有 OpenAPI 型を、`Orval` がリソース別 `Hono` 経路、検証処理、コンテキスト、`Zod` スキーマを生成します。このディレクトリは生成器が全面的に所有するため、手で編集しません。`Orval` はスマートハンドラーの前置きも生成しますが、その関数本体は開発者が実装します。
+
+バックエンド全体は `packages/backend/tsconfig.json` 一つで型検査し、`pnpm --filter @cfreact-template/backend check:types` が `tsc --noEmit` を実行します。`packages/backend/package.json` の公開先は `Cloudflare Workers`、`app`、共有型、`users`・`hello`・`health` の各 `index.ts` だけです。
+
+### バックエンドのエラー処理
+
+予測して処理する失敗は例外ではなく `Result` でリポジトリからサービス、ハンドラーへ渡します。ハンドラーは内部原因を含めず、`TypeSpec` 契約に沿った安全な `{ code, message }` だけを返します。永続化失敗はサービスが原因をログへ記録して固定の 500 応答へ変換し、捕捉されなかった例外は `app.onError` がログへ記録して同じ安全な 500 応答へ変換します。
+
+生成された応答検証処理を使うハンドラーでは、`guardResponseValidation` が検証処理の外側で最終応答を確認します。検証詳細を含む不安全な 400 応答は例外となり、`app.onError` が原因を記録して固定の 500 応答を返します。ユーザー作成の 201 応答は生成された `CreateUserResponse` で明示的に解析し、入力検証が返す不安全な 400 応答は `app` が固定の `INVALID_REQUEST` 応答へ置き換えます。
+
+ユーザーのメールアドレス重複は、`users.email` の一意制約と `ON CONFLICT DO NOTHING` の結果で判定します。データベースのエラー文は解析せず、重複を `USER_EMAIL_ALREADY_EXISTS` の 409 応答へ変換します。
 
 ## 前提条件
 
@@ -184,13 +217,12 @@ cfreact-template/
    - Storybook: http://localhost:6006
    - Drizzle Studio: `pnpm migrate:studio`
 
-### API SDK の再生成 (TypeSpec -> OpenAPI -> SDK)
+### API 契約と生成物の再生成（`TypeSpec` → OpenAPI → バックエンド／フロントエンド）
 
-このテンプレートでは TypeSpec を API 契約の正（Single Source of Truth）とし、
-TypeSpec から OpenAPI を生成してクライアント SDK（`packages/frontend/src/api`）を自動生成します。
+このテンプレートでは `TypeSpec` を API 契約の正とします。`TypeSpec` から OpenAPI を生成し、`openapi-typescript` でバックエンド共有型を、`Orval` でバックエンドのリソース別 `Hono` 経路とスマートハンドラー、フロントエンドの SDK を自動生成します。
 
 ```bash
-# TypeSpec から OpenAPI を生成し、SDK を再生成
+# TypeSpec -> OpenAPI -> バックエンド型・経路・ハンドラー -> フロントエンド SDK
 pnpm gen:api-sdk
 ```
 
@@ -198,8 +230,15 @@ pnpm gen:api-sdk
 
 ```bash
 pnpm gen:openapi
+pnpm --filter @cfreact-template/backend gen:api
 pnpm --filter @cfreact-template/frontend gen:api
 ```
+
+生成対象は `packages/typespec/openapi/openapi.json`、`packages/backend/src/generated/api/**`、
+`packages/backend/src/modules/*/handlers/**`、`packages/frontend/src/api/generated/client.ts` です。
+OpenAPI、`packages/backend/src/generated/api/**`、フロントエンド SDK は手で編集せず、入力の `TypeSpec` または `Orval` 設定を変更してから再生成してください。`Orval` のスマートハンドラーでは、生成前置きと検証処理は生成器が管理し、関数本体だけを開発者が実装します。バックエンド生成は `scripts/codegen/normalize-backend-handler-imports.mjs` でコンテキスト参照を型専用インポートへ正規化してから `Prettier` を実行します。
+
+`pnpm check:codegen` は同じ生成処理を再実行し、OpenAPI のリソース `tag` と `operationId` に対応するハンドラーの不足、余分、生成リソースの残骸を検出します。さらに、現在の生成物と全ハンドラーディレクトリを動的に列挙し、`git ls-files --cached -z` でステージ済みの追加を受理しながら未追跡ファイルを拒否した後、OpenAPI、バックエンド生成物、スマートハンドラー、フロントエンド SDK の差分を検出します。
 
 ### 方法 2: 手動セットアップ
 
@@ -318,31 +357,33 @@ pnpm dev:all
 
 ### 利用可能なスクリプト
 
-| スクリプト               | 説明                                                |
-| ------------------------ | --------------------------------------------------- |
-| `pnpm dev:frontend`      | Vite 開発サーバーを起動（フロントエンド）           |
-| `pnpm dev:backend`       | Wrangler 開発サーバーを起動（バックエンド）         |
-| `pnpm dev:all`           | 両方のサーバーを同時に起動                          |
-| `pnpm storybook`         | 共通 UI の Storybook 開発サーバーを起動             |
-| `pnpm build`             | フロントエンドとバックエンドの両方をビルド          |
-| `pnpm build:storybook`   | Storybook の静的サイトをビルド                      |
-| `pnpm check`             | TypeScript 型チェックを実行                         |
-| `pnpm lint`              | UI 再利用、ESLint、OpenSpec、サプライチェーンを検証 |
-| `pnpm lint:ui-reuse`     | 公開 UI catalog と UI/app 間のコード clone を検証   |
-| `pnpm lint:supply-chain` | pnpm のサプライチェーン防御設定を検証               |
-| `pnpm format`            | Prettier でコードをフォーマット                     |
-| `pnpm format:check`      | CSS/YAML を含むフォーマット差分を検証               |
-| `pnpm test:run`          | React/UI試験と純粋なリリース規則試験を非watchで実行 |
-| `pnpm test:frontend`     | Reactの顧客向けUI試験を実行                         |
-| `pnpm test:ui-package`   | 共通UIのjsdom試験を実行                             |
-| `pnpm test:storybook`    | 全 Story を desktop/mobile・Light/Dark で検証       |
-| `pnpm test:e2e`          | migration 済み E2E 専用 D1 を使う Playwright を実行 |
-| `pnpm check:codegen`     | OpenAPI / SDK の生成差分を検証                      |
-| `pnpm migrate:generate`  | Drizzle マイグレーションを生成                      |
-| `pnpm migrate:studio`    | Drizzle Studio を開く                               |
-| `pnpm deploy`            | Cloudflare Workers にデプロイ                       |
-| `pnpm changeset`         | リリース内容とSemVer影響を記録                      |
-| `pnpm test:release`      | 純粋で決定的なリリース規則試験を実行                |
+| スクリプト                                            | 説明                                                |
+| ----------------------------------------------------- | --------------------------------------------------- |
+| `pnpm dev:frontend`                                   | Vite 開発サーバーを起動（フロントエンド）           |
+| `pnpm dev:backend`                                    | Wrangler 開発サーバーを起動（バックエンド）         |
+| `pnpm dev:all`                                        | 両方のサーバーを同時に起動                          |
+| `pnpm storybook`                                      | 共通 UI の Storybook 開発サーバーを起動             |
+| `pnpm build`                                          | フロントエンドとバックエンドの両方をビルド          |
+| `pnpm build:storybook`                                | Storybook の静的サイトをビルド                      |
+| `pnpm check`                                          | TypeScript 型チェックを実行                         |
+| `pnpm --filter @cfreact-template/backend check:types` | 単一 `tsconfig` でバックエンドを型検査する          |
+| `pnpm gen:api-sdk`                                    | `TypeSpec` から API 生成物を再生成する              |
+| `pnpm lint`                                           | UI 再利用、ESLint、OpenSpec、サプライチェーンを検証 |
+| `pnpm lint:ui-reuse`                                  | 公開 UI catalog と UI/app 間のコード clone を検証   |
+| `pnpm lint:supply-chain`                              | pnpm のサプライチェーン防御設定を検証               |
+| `pnpm format`                                         | Prettier でコードをフォーマット                     |
+| `pnpm format:check`                                   | CSS/YAML を含むフォーマット差分を検証               |
+| `pnpm test:run`                                       | React/UI試験と純粋なリリース規則試験を非watchで実行 |
+| `pnpm test:frontend`                                  | Reactの顧客向けUI試験を実行                         |
+| `pnpm test:ui-package`                                | 共通UIのjsdom試験を実行                             |
+| `pnpm test:storybook`                                 | 全 Story を desktop/mobile・Light/Dark で検証       |
+| `pnpm test:e2e`                                       | migration 済み E2E 専用 D1 を使う Playwright を実行 |
+| `pnpm check:codegen`                                  | API 生成差分とバックエンドのハンドラー一覧を検証    |
+| `pnpm migrate:generate`                               | Drizzle マイグレーションを生成                      |
+| `pnpm migrate:studio`                                 | Drizzle Studio を開く                               |
+| `pnpm deploy`                                         | Cloudflare Workers にデプロイ                       |
+| `pnpm changeset`                                      | リリース内容とSemVer影響を記録                      |
+| `pnpm test:release`                                   | 純粋で決定的なリリース規則試験を実行                |
 
 CIは設定済みのPlaywrightブラウザを導入し、`pnpm test:run`でReactの顧客向けUI、共通UI、純粋なリリース規則を一度だけ検証します。続けて`pnpm test:storybook`、`pnpm test:e2e`、`pnpm build:storybook`を実行し、共通UIの実ブラウザ状態、高価値の顧客作業、Storybookの静的ビルドを必須検証にします。
 
@@ -350,8 +391,10 @@ CIは設定済みのPlaywrightブラウザを導入し、`pnpm test:run`でReact
 
 このテンプレートは、データベースマイグレーションに Drizzle Kit を使用します。
 
+現在の `users` テーブルは `packages/backend/src/modules/users/users.schema.ts` が所有し、`drizzle.config.ts` はこのファイルをスキーマ入力にします。所有場所の変更で既存履歴を作り直さず、`drizzle/migrations/0000_daily_dorian_gray.sql` から続く同じマイグレーションストリームを維持します。
+
 1. **スキーマを変更:**
-   - `packages/backend/src/drizzle/schema.ts` を編集
+   - 対象リソースの `packages/backend/src/modules/<resource>/*.schema.ts` を編集
 
 2. **マイグレーションを生成:**
 
@@ -381,7 +424,11 @@ CIは設定済みのPlaywrightブラウザを導入し、`pnpm test:run`でReact
 
 ### Hello
 
-- `GET /api/v1/hello` - シンプルなヘルスチェック
+- `GET /api/v1/hello` - Hono と Workers からの挨拶を返す
+
+### Health
+
+- `GET /health` - Worker が応答可能であることを返す
 
 ### Users
 
@@ -639,10 +686,14 @@ Story は製品コードへ import せず、`@cfreact-template/ui/*` の公開 s
 
 ### 新しい API ルートの追加
 
-1. `packages/typespec/src/routes/v1/**` と必要な model を更新
+1. `packages/typespec/src/routes/**` と必要なモデルを更新
 2. `pnpm gen:api-sdk` を実行
-3. `packages/backend/src/http/routes/` にルートハンドラーを作成
-4. `packages/backend/src/http/routes/openapi-app.ts` に登録
+3. 生成された `packages/backend/src/generated/api/<resource>/` のリソース経路を確認
+4. `packages/backend/src/modules/<resource>/handlers/` のスマートハンドラー本体だけを実装
+5. `packages/backend/src/app/server.ts` へリソース入口を追加する必要がある場合は `app` の構成起点として登録
+6. `pnpm check:codegen` でハンドラー一覧と全生成差分を検証
+
+リソースのパス、HTTP メソッド、スキーマ、検証処理は `TypeSpec` と生成器が所有します。手書きの `Hono` 経路を別に作ったり、生成された経路ファイルを直接編集したりしません。
 
 ## コード品質
 

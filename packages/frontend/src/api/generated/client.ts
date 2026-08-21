@@ -9,13 +9,52 @@ export interface CreateUserInput {
   email: string;
 }
 
-export interface ErrorResponse {
-  error: string;
+export type HealthResponseStatus = (typeof HealthResponseStatus)[keyof typeof HealthResponseStatus];
+
+export const HealthResponseStatus = {
+  ok: 'ok',
+} as const;
+
+/**
+ * サービスの稼働確認 API が返す成功 payload。
+ */
+export interface HealthResponse {
+  status: HealthResponseStatus;
+  timestamp: string;
 }
 
 export interface HelloResponse {
   message: string;
   timestamp: string;
+}
+
+export type InternalErrorCode = (typeof InternalErrorCode)[keyof typeof InternalErrorCode];
+
+export const InternalErrorCode = {
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+} as const;
+
+/**
+ * サーバー内部の詳細を公開せずに予期しない失敗を通知する安全なエラー。
+ */
+export interface InternalError {
+  code: InternalErrorCode;
+  message: string;
+}
+
+export type InvalidRequestErrorCode =
+  (typeof InvalidRequestErrorCode)[keyof typeof InvalidRequestErrorCode];
+
+export const InvalidRequestErrorCode = {
+  INVALID_REQUEST: 'INVALID_REQUEST',
+} as const;
+
+/**
+ * 入力が公開 API の契約を満たさない場合に返す安全なエラー。
+ */
+export interface InvalidRequestError {
+  code: InvalidRequestErrorCode;
+  message: string;
 }
 
 /**
@@ -32,15 +71,54 @@ export interface User {
   createdAt: string;
 }
 
+export type UserEmailAlreadyExistsErrorCode =
+  (typeof UserEmailAlreadyExistsErrorCode)[keyof typeof UserEmailAlreadyExistsErrorCode];
+
+export const UserEmailAlreadyExistsErrorCode = {
+  USER_EMAIL_ALREADY_EXISTS: 'USER_EMAIL_ALREADY_EXISTS',
+} as const;
+
+/**
+ * メールアドレスの一意制約によりユーザーを作成できない場合に返す安全なエラー。
+ */
+export interface UserEmailAlreadyExistsError {
+  code: UserEmailAlreadyExistsErrorCode;
+  message: string;
+}
+
+export type UserNotFoundErrorCode =
+  (typeof UserNotFoundErrorCode)[keyof typeof UserNotFoundErrorCode];
+
+export const UserNotFoundErrorCode = {
+  USER_NOT_FOUND: 'USER_NOT_FOUND',
+} as const;
+
+/**
+ * 指定されたユーザーが存在しない場合に返す安全なエラー。
+ */
+export interface UserNotFoundError {
+  code: UserNotFoundErrorCode;
+  message: string;
+}
+
 export type getHelloResponse200 = {
   data: HelloResponse;
   status: 200;
 };
 
+export type getHelloResponse500 = {
+  data: InternalError;
+  status: 500;
+};
+
 export type getHelloResponseSuccess = getHelloResponse200 & {
   headers: Headers;
 };
-export type getHelloResponse = getHelloResponseSuccess;
+export type getHelloResponseError = getHelloResponse500 & {
+  headers: Headers;
+};
+
+export type getHelloResponse = getHelloResponseSuccess | getHelloResponseError;
 
 export const getGetHelloUrl = () => {
   return `/api/v1/hello`;
@@ -66,10 +144,19 @@ export type listUsersResponse200 = {
   status: 200;
 };
 
+export type listUsersResponse500 = {
+  data: InternalError;
+  status: 500;
+};
+
 export type listUsersResponseSuccess = listUsersResponse200 & {
   headers: Headers;
 };
-export type listUsersResponse = listUsersResponseSuccess;
+export type listUsersResponseError = listUsersResponse500 & {
+  headers: Headers;
+};
+
+export type listUsersResponse = listUsersResponseSuccess | listUsersResponseError;
 
 export const getListUsersUrl = () => {
   return `/api/v1/users`;
@@ -96,14 +183,28 @@ export type createUserResponse201 = {
 };
 
 export type createUserResponse400 = {
-  data: ErrorResponse;
+  data: InvalidRequestError;
   status: 400;
+};
+
+export type createUserResponse409 = {
+  data: UserEmailAlreadyExistsError;
+  status: 409;
+};
+
+export type createUserResponse500 = {
+  data: InternalError;
+  status: 500;
 };
 
 export type createUserResponseSuccess = createUserResponse201 & {
   headers: Headers;
 };
-export type createUserResponseError = createUserResponse400 & {
+export type createUserResponseError = (
+  | createUserResponse400
+  | createUserResponse409
+  | createUserResponse500
+) & {
   headers: Headers;
 };
 
@@ -139,19 +240,28 @@ export type getUserResponse200 = {
 };
 
 export type getUserResponse400 = {
-  data: ErrorResponse;
+  data: InvalidRequestError;
   status: 400;
 };
 
 export type getUserResponse404 = {
-  data: ErrorResponse;
+  data: UserNotFoundError;
   status: 404;
+};
+
+export type getUserResponse500 = {
+  data: InternalError;
+  status: 500;
 };
 
 export type getUserResponseSuccess = getUserResponse200 & {
   headers: Headers;
 };
-export type getUserResponseError = (getUserResponse400 | getUserResponse404) & {
+export type getUserResponseError = (
+  | getUserResponse400
+  | getUserResponse404
+  | getUserResponse500
+) & {
   headers: Headers;
 };
 
@@ -174,4 +284,42 @@ export const getUser = async (id: UserId, options?: RequestInit): Promise<getUse
 
   const data: getUserResponse['data'] = body ? JSON.parse(body) : {};
   return { data, status: res.status, headers: res.headers } as getUserResponse;
+};
+
+export type getHealthResponse200 = {
+  data: HealthResponse;
+  status: 200;
+};
+
+export type getHealthResponse500 = {
+  data: InternalError;
+  status: 500;
+};
+
+export type getHealthResponseSuccess = getHealthResponse200 & {
+  headers: Headers;
+};
+export type getHealthResponseError = getHealthResponse500 & {
+  headers: Headers;
+};
+
+export type getHealthResponse = getHealthResponseSuccess | getHealthResponseError;
+
+export const getGetHealthUrl = () => {
+  return `/health`;
+};
+
+/**
+ * @summary Returns service health
+ */
+export const getHealth = async (options?: RequestInit): Promise<getHealthResponse> => {
+  const res = await fetch(getGetHealthUrl(), {
+    ...options,
+    method: 'GET',
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getHealthResponse['data'] = body ? JSON.parse(body) : {};
+  return { data, status: res.status, headers: res.headers } as getHealthResponse;
 };

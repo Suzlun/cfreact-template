@@ -1,14 +1,25 @@
 {
   "extends": "../../tsconfig.base.json",
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.types.json" },
-    { "path": "./tsconfig.domain.json" },
-    { "path": "./tsconfig.usecases.json" },
-    { "path": "./tsconfig.drizzle.json" },
-    { "path": "./tsconfig.persistence.json" },
-    { "path": "./tsconfig.http.json" },
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.entry.json" }
-  ]
+  "compilerOptions": {
+    "rootDir": ".",
+    "composite": false,
+    "noEmit": true,
+    "verbatimModuleSyntax": true,
+    "types": ["@cloudflare/workers-types"],
+    "paths": {
+      "@cfreact-template/backend": ["./src/entry/index.ts"],
+      "@cfreact-template/backend/app": ["./src/app/index.ts"],
+      "@cfreact-template/backend/generated/*": ["./src/generated/*"],
+      "@cfreact-template/backend/modules/users": ["./src/modules/users/index.ts"],
+      "@cfreact-template/backend/modules/hello": ["./src/modules/hello/index.ts"],
+      "@cfreact-template/backend/modules/health": ["./src/modules/health/index.ts"],
+      "@cfreact-template/backend/platform/*": ["./src/platform/*"],
+      "@cfreact-template/backend/types": ["./src/types/index.ts"],
+      "@cfreact-template/backend/composition/modules/users/users.repository": [
+        "./src/modules/users/users.repository.ts"
+      ]
+    }
+  },
+  "include": ["./src/**/*.ts", "./orval.config.ts"],
+  "exclude": ["node_modules", "dist", "build", ".wrangler"]
 }

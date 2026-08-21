@@ -166,7 +166,7 @@ function UsersPage() {
 
       {data.error != null && (
         <Alert variant="destructive">
-          <AlertTitle>Error loading users</AlertTitle>
+          <AlertTitle>User request failed</AlertTitle>
           {data.error.message}
         </Alert>
       )}

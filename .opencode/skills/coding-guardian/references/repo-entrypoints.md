@@ -42,9 +42,23 @@ Read these files before applying `coding-guardian` in this repository.
 
 ## Backend enforcement
 
-- `packages/backend/package.json`: Workers, Hono, persistence, and layer check scripts
-- `packages/backend/tsconfig.*.json`: backend layer-specific TypeScript boundaries
-- `packages/backend/tsconfig.http.json`: independent production HTTP layer typecheck without test-only types or configuration
+- `packages/backend/package.json`: Workers, Hono, Drizzle, Resource generation, the current package exports, and backend typecheck scripts
+- `packages/backend/tsconfig.json`: the single backend TypeScript project, private generated/Platform paths, public Module entry paths, and the app-only `@cfreact-template/backend/composition/modules/*` path
+- `packages/backend/orval.config.ts`: TypeSpec OpenAPI input and Orval Hono Resource/smart-handler outputs
+- `scripts/codegen/normalize-backend-handler-imports.mjs`: validates each generated Handler Context import shape and normalizes it to a type-only import before formatting
+- `scripts/codegen/verify-backend-handlers.mjs`: OpenAPI Resource tag/operation ID to smart-Handler manifest check used by `pnpm check:codegen`
+- `scripts/codegen/verify-generated-artifacts.mjs`: dynamically enumerates generated roots and Handler directories, accepts indexed additions from `git ls-files --cached -z`, and rejects untracked artifacts
+- `packages/backend/src/entry/**`: Workers public entry; imports `app` only
+- `packages/backend/src/app/**`: Composition Root that composes generated Resources, Module entries/internals, Platform adapters, and shared Types
+- `packages/backend/src/generated/api/**`: fully generator-owned `openapi-typescript` and Orval API files; handwritten comment/TSDoc/style exceptions apply while dependency boundaries remain active
+- `packages/backend/src/modules/**`: `users`, `hello`, and `health` Resource ownership; smart Handlers mix Orval-owned preambles with developer-owned bodies, and Service/Repository/Domain/schema/support are added only where needed
+- `packages/backend/src/platform/**`: Cloudflare/Drizzle/email/observability adapters; may depend only on Platform and shared Types
+- `packages/backend/src/types/**`: shared backend Types, including `Result` and the failure logger contract
+- `packages/backend/src/modules/users/users.schema.ts`: `users` table ownership; `drizzle.config.ts` points here while the existing migration stream remains under `drizzle/migrations/**`
+- `packages/backend/src/platform/http/responseValidation.ts`, generated-response Handler middleware, and `packages/backend/src/app/server.ts`: unsafe response-validator details become logged fixed 500 responses; unsafe request-validator details become fixed `INVALID_REQUEST` responses
+- `packages/backend/src/modules/users/users.responses.ts` and `packages/backend/src/modules/users/users.repository.ts`: safe `{ code, message }` responses and database-uniqueness duplicate handling without error-string parsing
+- `eslint.config.js`: `boundaries/elements` capture the Resource name and mechanically enforce the entry/app/generated/module/type directions plus distinct HTTP/database/email/observability Platform elements; `boundaries/external` default-denies packages per element; `no-restricted-imports`, global restrictions, and `env` restrictions preserve declared boundaries
+- `packages/backend/package.json#exports`: public package surface; generated files, Platform adapters, composition-only aliases, Handlers, Repositories, schemas, and other Module internals are not exported
 
 ## OpenSpec enforcement
 

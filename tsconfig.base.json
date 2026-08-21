@@ -14,22 +14,13 @@
       "@cfreact-template/frontend/api": ["./packages/frontend/src/api/index.ts"],
       "@cfreact-template/frontend/api/*": ["./packages/frontend/src/api/*"],
       "@cfreact-template/backend": ["./packages/backend/src/entry/index.ts"],
-      "@cfreact-template/backend/types": ["./packages/backend/src/types/index.ts"],
-      "@cfreact-template/backend/types/*": ["./packages/backend/src/types/*"],
-      "@cfreact-template/backend/domain": ["./packages/backend/src/domain/index.ts"],
-      "@cfreact-template/backend/domain/*": ["./packages/backend/src/domain/*"],
-      "@cfreact-template/backend/usecases": ["./packages/backend/src/usecases/index.ts"],
-      "@cfreact-template/backend/usecases/*": ["./packages/backend/src/usecases/*"],
-      "@cfreact-template/backend/http": ["./packages/backend/src/http/index.ts"],
-      "@cfreact-template/backend/http/*": ["./packages/backend/src/http/*"],
-      "@cfreact-template/backend/persistence": ["./packages/backend/src/persistence/index.ts"],
-      "@cfreact-template/backend/persistence/*": ["./packages/backend/src/persistence/*"],
       "@cfreact-template/backend/app": ["./packages/backend/src/app/index.ts"],
-      "@cfreact-template/backend/app/*": ["./packages/backend/src/app/*"],
-      "@cfreact-template/backend/entry": ["./packages/backend/src/entry/index.ts"],
-      "@cfreact-template/backend/entry/*": ["./packages/backend/src/entry/*"],
-      "@cfreact-template/backend/drizzle": ["./packages/backend/src/drizzle/index.ts"],
-      "@cfreact-template/backend/drizzle/*": ["./packages/backend/src/drizzle/*"]
+      "@cfreact-template/backend/modules/users": ["./packages/backend/src/modules/users/index.ts"],
+      "@cfreact-template/backend/modules/hello": ["./packages/backend/src/modules/hello/index.ts"],
+      "@cfreact-template/backend/modules/health": [
+        "./packages/backend/src/modules/health/index.ts"
+      ],
+      "@cfreact-template/backend/types": ["./packages/backend/src/types/index.ts"]
     },
     "resolveJsonModule": true,
     "allowJs": true,

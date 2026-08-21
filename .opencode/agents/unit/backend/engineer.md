@@ -164,8 +164,14 @@ If any are missing, do not start. Reply with Status BLOCKED and list missing inp
 - If another ready task can modify `pnpm-lock.yaml` or `pnpm-workspace.yaml`, return `BLOCKED` with the shared-file conflict so the caller serializes the dependency changes
 - Do not edit any OpenSpec `tasks.md`; `openspec/applier` owns completion bookkeeping after accepting implementation and review evidence
 - Treat this backend as TypeScript code on Hono and Cloudflare Workers, not Go
-- Respect the backend layering used in `eslint.config.js`
-- Keep HTTP concerns in `packages/backend/src/http`, dependency wiring in `packages/backend/src/app`, domain rules in `packages/backend/src/domain`, use cases in `packages/backend/src/usecases`, and persistence in `packages/backend/src/persistence`
+- Respect the Resource-first backend elements and dependency directions used in `eslint.config.js`
+- Keep the Workers entry in `packages/backend/src/entry`, Composition Root wiring in `packages/backend/src/app`, generated OpenAPI/Orval output in `packages/backend/src/generated`, Resource responsibilities in `packages/backend/src/modules`, external adapters in `packages/backend/src/platform`, and shared types in `packages/backend/src/types`
+- Treat `users`, `hello`, and `health` as the current Resources. Keep `users` on Handler -> Service -> Repository with its Resource-owned schema, and keep `hello` and `health` Handler-only unless the work order requires another real responsibility
+- Keep Module internals within their Resource, use each Resource's `index.ts` public entry for cross-Module access, and never deep-import another Module; only `app` may reach a Module internal through `@cfreact-template/backend/composition/modules/*`
+- Treat `packages/backend/src/generated/api/**` as fully generator-owned and exempt from handwritten comment/TSDoc/style rules while boundaries still apply. Treat smart-handler preambles as Orval-owned and keep developer-owned bodies under normal implementation, detailed-comment, and TSDoc rules
+- Keep external imports within the backend element-specific `boundaries/external` allowlist; do not use HTTP globals in Handlers or Services, and do not read `env` directly in Handlers
+- Return expected failures as `Result`, map them to safe `{ code, message }` payloads, wrap generated response validators with `guardResponseValidation`, and route unsafe validation details through the logged fixed-500 path. Parse create-user success with its generated schema, and use the database uniqueness outcome rather than error-string parsing for duplicate-email 409 responses
+- Keep backend type checking in the single `packages/backend/tsconfig.json`, preserve the package exports, and run `pnpm check:codegen` when contracts or generated surfaces change so Context imports are normalized, the Handler manifest is verified, dynamically enumerated staged outputs are accepted, untracked outputs are rejected, and drift is checked
 - Do not call `unit/backend/reviewer` unless the work order explicitly records an owner request for intermediate review
 
 ## Self-check and optional owner-requested review

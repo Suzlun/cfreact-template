@@ -7,44 +7,22 @@
   "exports": {
     ".": "./src/entry/index.ts",
     "./app": "./src/app/index.ts",
-    "./app/dependencies": "./src/app/dependencies/index.ts",
-    "./app/dependencies/users": "./src/app/dependencies/users.ts",
-    "./app/*": "./src/app/*.ts",
-    "./domain": "./src/domain/index.ts",
-    "./domain/*": "./src/domain/*.ts",
-    "./drizzle": "./src/drizzle/index.ts",
-    "./drizzle/*": "./src/drizzle/*.ts",
-    "./drizzle/schema": "./src/drizzle/schema.ts",
-    "./entry": "./src/entry/index.ts",
-    "./entry/*": "./src/entry/*.ts",
-    "./http": "./src/http/index.ts",
-    "./http/*": "./src/http/*.ts",
-    "./http/context": "./src/http/context.ts",
-    "./http/schemas": "./src/http/schemas/index.ts",
-    "./persistence": "./src/persistence/index.ts",
-    "./persistence/*": "./src/persistence/*.ts",
-    "./types": "./src/types/index.ts",
-    "./types/*": "./src/types/*.ts",
-    "./usecases": "./src/usecases/index.ts",
-    "./usecases/users": "./src/usecases/users/index.ts",
-    "./usecases/*": "./src/usecases/*.ts"
+    "./modules/users": "./src/modules/users/index.ts",
+    "./modules/hello": "./src/modules/hello/index.ts",
+    "./modules/health": "./src/modules/health/index.ts",
+    "./types": "./src/types/index.ts"
   },
   "scripts": {
     "dev": "wrangler dev --ip 0.0.0.0",
-    "build": "pnpm check:entry",
+    "build": "pnpm check",
     "deploy": "wrangler deploy",
-    "check": "pnpm check:types && pnpm check:domain && pnpm check:usecases && pnpm check:drizzle && pnpm check:persistence && pnpm check:http && pnpm check:app && pnpm check:entry",
-    "check:types": "tsc --noEmit -p tsconfig.types.json",
-    "check:domain": "tsc --noEmit -p tsconfig.domain.json",
-    "check:usecases": "tsc --noEmit -p tsconfig.usecases.json",
-    "check:drizzle": "tsc --noEmit -p tsconfig.drizzle.json",
-    "check:persistence": "tsc --noEmit -p tsconfig.persistence.json",
-    "check:http": "tsc --noEmit -p tsconfig.http.json",
-    "check:app": "tsc --noEmit -p tsconfig.app.json",
-    "check:entry": "tsc --noEmit -p tsconfig.entry.json"
+    "gen:types": "openapi-typescript ../typespec/openapi/openapi.json -o src/generated/api/openapi.ts",
+    "gen:api": "pnpm gen:types && orval --config ./orval.config.ts && node ../../scripts/codegen/normalize-backend-handler-imports.mjs && prettier --write \"src/generated/api/**/*.ts\" \"src/modules/*/handlers/**/*.ts\"",
+    "check": "pnpm check:types",
+    "check:types": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@hono/zod-openapi": "^1.4.0",
+    "@hono/zod-validator": "0.8.0",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.25",
     "ulid": "^3.0.2",
@@ -52,6 +30,8 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260613.1",
+    "openapi-typescript": "7.13.0",
+    "orval": "8.17.0",
     "typescript": "^5.9.3",
     "wrangler": "^4.100.0"
   }
