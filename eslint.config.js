@@ -260,6 +260,12 @@ export default tseslint.config(
           capture: ['module'],
         },
         {
+          type: 'backend-module-test',
+          pattern: 'packages/backend/src/modules/(*)/*.test.ts',
+          mode: 'full',
+          capture: ['module'],
+        },
+        {
           type: 'backend-module-service',
           pattern: 'packages/backend/src/modules/(*)/*.service.ts',
           mode: 'full',
@@ -498,6 +504,18 @@ export default tseslint.config(
                 ...sameBackendModule([
                   'backend-generated-resource',
                   'backend-module-entry',
+                  'backend-module-service',
+                  'backend-module-support',
+                ]),
+              ],
+            },
+            {
+              from: ['backend-module-test'],
+              allow: [
+                'backend-types',
+                ...sameBackendModule([
+                  'backend-module-domain',
+                  'backend-module-repository',
                   'backend-module-service',
                   'backend-module-support',
                 ]),
@@ -1492,6 +1510,7 @@ export default tseslint.config(
               allow: ['@hono/zod-validator', 'hono', 'zod'],
             },
             { from: ['backend-module-handler'], allow: ['hono'] },
+            { from: ['backend-module-test'], allow: ['vitest'] },
             { from: ['backend-module-service'], allow: ['ulid'] },
             { from: ['backend-module-repository'], allow: ['drizzle-orm'] },
             { from: ['backend-module-schema'], allow: ['drizzle-orm'] },
@@ -1929,7 +1948,7 @@ export default tseslint.config(
   },
   // vitest config は型情報なしで lint
   {
-    files: ['packages/ui/vitest.config.ts'],
+    files: ['packages/backend/vitest.config.ts', 'packages/ui/vitest.config.ts'],
     ...tseslint.configs.disableTypeChecked,
   },
 

@@ -37,7 +37,7 @@ This document is lint-as-rules. Include only rules that are mechanically enforce
 9. Keep OpenSpec documented as the persistent observable Behavior Contract, not a master implementation plan. Document one-way Playwright E2E-to-Scenario traceability, `--change`, coarse Work Packages, and progressive runtime planning.
 10. Document the independent `Operation Lane`, `UX Mode`, and `Review Depth` vocabulary enforced by `.github/workflows/validate-pr-template.yml`.
 11. Describe the backend exactly as the Resource-first `entry/app/generated/modules/platform/types` structure enforced by the distinct `backend-platform-http`, `backend-platform-database`, `backend-platform-email`, and `backend-platform-observability` elements. Never collapse them into a nonexistent aggregate element.
-12. Describe backend code generation exactly: Orval output is normalized by `scripts/codegen/normalize-backend-handler-imports.mjs`; `scripts/codegen/verify-backend-handlers.mjs` checks the operation-to-Handler manifest; and `scripts/codegen/verify-generated-artifacts.mjs` dynamically enumerates current artifacts and checks them against `git ls-files --cached -z` before the final drift check.
+12. Describe backend code generation exactly: `scripts/codegen/verify-codegen-roots.mjs` resolves real paths and rejects symbolic links before package generators write; Orval output is normalized by `scripts/codegen/normalize-backend-handler-imports.mjs`; `scripts/codegen/verify-backend-handlers.mjs` checks the operation-to-Handler manifest; and `scripts/codegen/verify-generated-artifacts.mjs` dynamically enumerates current artifacts and checks them against `git ls-files --cached -z` before the final drift check.
 
 ## Required Structure
 
@@ -83,6 +83,7 @@ If a section has no enforceable rules beyond a short scope note, keep it brief.
    - `packages/backend/tsconfig.json`
    - `packages/backend/orval.config.ts`
    - `packages/frontend/orval.config.ts`
+   - `scripts/codegen/verify-codegen-roots.mjs`
    - `scripts/codegen/normalize-backend-handler-imports.mjs`
    - `scripts/codegen/verify-backend-handlers.mjs`
    - `scripts/codegen/verify-generated-artifacts.mjs`

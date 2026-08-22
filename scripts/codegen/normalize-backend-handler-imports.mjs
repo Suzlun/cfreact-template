@@ -1,12 +1,20 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { readOpenApiOperations, resolvePathWithinRoot } from './openapi-operations.mjs';
+import {
+  readOpenApiOperations,
+  resolveExistingPathWithinRoot,
+  resolvePathWithinRoot,
+} from './openapi-operations.mjs';
 
 const repositoryRoot = path.resolve(import.meta.dirname, '../..');
 const openApiRoot = resolvePathWithinRoot(repositoryRoot, 'packages/typespec/openapi');
-const openApiPath = resolvePathWithinRoot(openApiRoot, 'openapi.json');
 const handlersRoot = resolvePathWithinRoot(repositoryRoot, 'packages/backend/src/modules');
+const openApiPath = await resolveExistingPathWithinRoot(
+  repositoryRoot,
+  openApiRoot,
+  'openapi.json'
+);
 
 // 共通の OpenAPI 操作解析を使い、一覧検査と同じハンドラー集合だけを正規化する。
 const expectedHandlers = await readOpenApiOperations(openApiPath);
@@ -14,7 +22,13 @@ const expectedHandlers = await readOpenApiOperations(openApiPath);
 // `Orval` 所有のコンテキストインポートだけを型専用インポートへ変換し、出力形状の変化は明示的に失敗させる。
 for (const { tag, operationId } of expectedHandlers) {
   // OpenAPI 由来の各要素を絶対パスへ解決し、モジュールルート外のファイルを読み書きしない。
-  const handlerPath = resolvePathWithinRoot(handlersRoot, tag, 'handlers', `${operationId}.ts`);
+  const handlerPath = await resolveExistingPathWithinRoot(
+    repositoryRoot,
+    handlersRoot,
+    tag,
+    'handlers',
+    `${operationId}.ts`
+  );
   const source = await readFile(handlerPath, 'utf8');
   const contextName = `${operationId[0].toUpperCase()}${operationId.slice(1)}Context`;
   const contextSource = `../../../generated/api/${tag}/${tag}.context`;

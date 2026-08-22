@@ -1,15 +1,29 @@
 import { glob, readdir } from 'node:fs/promises';
 import path from 'node:path';
 
-import { readOpenApiOperations, resolvePathWithinRoot } from './openapi-operations.mjs';
+import {
+  readOpenApiOperations,
+  resolveExistingPathWithinRoot,
+  resolvePathWithinRoot,
+} from './openapi-operations.mjs';
 
 const repositoryRoot = path.resolve(import.meta.dirname, '../..');
 const openApiRoot = resolvePathWithinRoot(repositoryRoot, 'packages/typespec/openapi');
-const openApiPath = resolvePathWithinRoot(openApiRoot, 'openapi.json');
 const modulesPath = resolvePathWithinRoot(repositoryRoot, 'packages/backend/src/modules');
 const generatedApiPath = resolvePathWithinRoot(
   repositoryRoot,
   'packages/backend/src/generated/api'
+);
+const openApiPath = await resolveExistingPathWithinRoot(
+  repositoryRoot,
+  openApiRoot,
+  'openapi.json'
+);
+const verifiedModulesPath = await resolveExistingPathWithinRoot(repositoryRoot, modulesPath, '.');
+const verifiedGeneratedApiPath = await resolveExistingPathWithinRoot(
+  repositoryRoot,
+  generatedApiPath,
+  '.'
 );
 
 // 共通解析結果から期待ハンドラーと有効なリソースタグを作り、検査側で OpenAPI の解釈を重複させない。
@@ -19,7 +33,7 @@ const expectedResources = new Set(operations.map(({ tag }) => tag));
 
 // 現在 OpenAPI に存在しないリソースも検出できるよう、実在する全モジュールのハンドラーを列挙する。
 const actualHandlerFiles = [];
-for await (const handlerFile of glob('*/handlers/**/*.ts', { cwd: modulesPath })) {
+for await (const handlerFile of glob('*/handlers/**/*.ts', { cwd: verifiedModulesPath })) {
   // `Node.js` が返す OS 固有区切りを一覧と同じ POSIX 表現へ揃え、`Windows` でも同じ比較結果にする。
   actualHandlerFiles.push(handlerFile.split(path.sep).join('/'));
 }
@@ -33,7 +47,7 @@ const missing = [...expectedHandlers].filter((handler) => !actualHandlers.has(ha
 const extra = [...actualHandlers].filter((handler) => !expectedHandlers.has(handler)).sort();
 
 // 共有型の `openapi.ts` は許可しつつ、契約から消えたリソースの生成ディレクトリを残さない。
-const generatedEntries = await readdir(generatedApiPath, { withFileTypes: true });
+const generatedEntries = await readdir(verifiedGeneratedApiPath, { withFileTypes: true });
 const extraGeneratedResources = generatedEntries
   .filter((entry) => entry.isDirectory() && !expectedResources.has(entry.name))
   .map((entry) => entry.name)

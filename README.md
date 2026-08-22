@@ -119,7 +119,7 @@ cfreact-template/
 
 `eslint-plugin-boundaries` はリソース名を捕捉して同一リソースの内部依存だけを許可します。別リソースのサービスを使う場合は、そのリソースの `index.ts` だけを参照します。モジュール内の相対インポートは許可しますが、リソースをまたぐ相対インポート、親ディレクトリへの逃避、モジュール深部のパッケージインポートは失敗します。パッケージの公開先も `Cloudflare Workers`、`app`、共有型、各リソースの `index.ts` に限定し、生成物、基盤アダプター、ハンドラー、リポジトリ、スキーマ、構成起点専用別名を公開しません。
 
-バックエンドの外部パッケージは `boundaries/external` が既定で拒否します。`Hono` は構成起点、ハンドラー、HTTP 基盤、生成された検証処理だけ、`ulid` はサービスだけ、`Drizzle` はリポジトリ、スキーマ、データベース基盤だけ、`cloudflare:email` はメール基盤だけ、`@cloudflare/workers-types` は共有型だけで利用できます。ハンドラーとサービスは HTTP グローバルを直接使わず、ハンドラーは `env` を直接参照しません。
+バックエンドの外部パッケージは `boundaries/external` が既定で拒否します。`Hono` は構成起点、ハンドラー、HTTP 基盤、生成された検証処理だけ、`ulid` はサービスだけ、`Drizzle` はリポジトリ、スキーマ、データベース基盤だけ、`cloudflare:email` はメール基盤だけ、`@cloudflare/workers-types` は共有型だけ、`vitest`は同じリソースの純粋試験だけで利用できます。ハンドラーとサービスは HTTP グローバルを直接使わず、ハンドラーは `env` を直接参照しません。
 
 完全生成物は `packages/backend/src/generated/api/` に置かれ、`openapi-typescript` が共有 OpenAPI 型を、`Orval` がリソース別 `Hono` 経路、検証処理、コンテキスト、`Zod` スキーマを生成します。このディレクトリは生成器が全面的に所有するため、手で編集しません。`Orval` はスマートハンドラーの前置きも生成しますが、その関数本体は開発者が実装します。
 
@@ -236,7 +236,7 @@ pnpm --filter @cfreact-template/frontend gen:api
 
 生成対象は `packages/typespec/openapi/openapi.json`、`packages/backend/src/generated/api/**`、
 `packages/backend/src/modules/*/handlers/**`、`packages/frontend/src/api/generated/client.ts` です。
-OpenAPI、`packages/backend/src/generated/api/**`、フロントエンド SDK は手で編集せず、入力の `TypeSpec` または `Orval` 設定を変更してから再生成してください。`Orval` のスマートハンドラーでは、生成前置きと検証処理は生成器が管理し、関数本体だけを開発者が実装します。バックエンド生成は `scripts/codegen/normalize-backend-handler-imports.mjs` でコンテキスト参照を型専用インポートへ正規化してから `Prettier` を実行します。
+OpenAPI、`packages/backend/src/generated/api/**`、フロントエンド SDK は手で編集せず、入力の `TypeSpec` または `Orval` 設定を変更してから再生成してください。各生成段階は書き込み前に`scripts/codegen/verify-codegen-roots.mjs`で入出力ルートの実体経路をリポジトリ内へ限定し、配下のシンボリックリンクを拒否します。`Orval` のスマートハンドラーでは、生成前置きと検証処理は生成器が管理し、関数本体だけを開発者が実装します。バックエンド生成は `scripts/codegen/normalize-backend-handler-imports.mjs` でコンテキスト参照を型専用インポートへ正規化してから `Prettier` を実行します。
 
 `pnpm check:codegen` は同じ生成処理を再実行し、OpenAPI のリソース `tag` と `operationId` に対応するハンドラーの不足、余分、生成リソースの残骸を検出します。さらに、現在の生成物と全ハンドラーディレクトリを動的に列挙し、`git ls-files --cached -z` でステージ済みの追加を受理しながら未追跡ファイルを拒否した後、OpenAPI、バックエンド生成物、スマートハンドラー、フロントエンド SDK の差分を検出します。
 
@@ -373,7 +373,7 @@ pnpm dev:all
 | `pnpm lint:supply-chain`                              | pnpm のサプライチェーン防御設定を検証               |
 | `pnpm format`                                         | Prettier でコードをフォーマット                     |
 | `pnpm format:check`                                   | CSS/YAML を含むフォーマット差分を検証               |
-| `pnpm test:run`                                       | React/UI試験と純粋なリリース規則試験を非watchで実行 |
+| `pnpm test:run`                                       | React/UI試験と純粋な業務・リリース規則試験を実行    |
 | `pnpm test:frontend`                                  | Reactの顧客向けUI試験を実行                         |
 | `pnpm test:ui-package`                                | 共通UIのjsdom試験を実行                             |
 | `pnpm test:storybook`                                 | 全 Story を desktop/mobile・Light/Dark で検証       |
@@ -385,7 +385,7 @@ pnpm dev:all
 | `pnpm changeset`                                      | リリース内容とSemVer影響を記録                      |
 | `pnpm test:release`                                   | 純粋で決定的なリリース規則試験を実行                |
 
-CIは設定済みのPlaywrightブラウザを導入し、`pnpm test:run`でReactの顧客向けUI、共通UI、純粋なリリース規則を一度だけ検証します。続けて`pnpm test:storybook`、`pnpm test:e2e`、`pnpm build:storybook`を実行し、共通UIの実ブラウザ状態、高価値の顧客作業、Storybookの静的ビルドを必須検証にします。
+CIは設定済みのPlaywrightブラウザを導入し、`pnpm test:run`でReactの顧客向けUI、共通UI、純粋なバックエンド業務・リリース規則を一度だけ検証します。続けて`pnpm test:storybook`、`pnpm test:e2e`、`pnpm build:storybook`を実行し、共通UIの実ブラウザ状態、高価値の顧客作業、Storybookの静的ビルドを必須検証にします。
 
 ### データベースマイグレーション
 

@@ -2,7 +2,11 @@ import { spawnSync } from 'node:child_process';
 import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 
-import { readOpenApiOperations, resolvePathWithinRoot } from './openapi-operations.mjs';
+import {
+  readOpenApiOperations,
+  resolveExistingPathWithinRoot,
+  resolvePathWithinRoot,
+} from './openapi-operations.mjs';
 
 const repositoryRoot = path.resolve(import.meta.dirname, '../..');
 const openApiRoot = resolvePathWithinRoot(repositoryRoot, 'packages/typespec/openapi');
@@ -27,9 +31,10 @@ const frontendGeneratedRoot = resolvePathWithinRoot(
  */
 const collectFiles = async (intendedRoot, relativeRoot, required) => {
   // 列挙前に絶対パスへ解決し、生成物ルート外のディレクトリを読み取らない。
-  const absoluteRoot = resolvePathWithinRoot(intendedRoot, relativeRoot);
+  let absoluteRoot;
   let entries;
   try {
+    absoluteRoot = await resolveExistingPathWithinRoot(repositoryRoot, intendedRoot, relativeRoot);
     // Node.js 標準の再帰列挙を使い、生成器ごとの固定ファイル名へ依存しない。
     entries = await readdir(absoluteRoot, { recursive: true, withFileTypes: true });
   } catch (error) {
@@ -62,9 +67,10 @@ const collectFiles = async (intendedRoot, relativeRoot, required) => {
  */
 const requireFile = async (intendedRoot, relativeFile) => {
   // stat の前に対象を絶対パスへ解決し、意図した生成物ルートの外側を参照しない。
-  const absoluteFile = resolvePathWithinRoot(intendedRoot, relativeFile);
+  let absoluteFile;
   let fileStats;
   try {
+    absoluteFile = await resolveExistingPathWithinRoot(repositoryRoot, intendedRoot, relativeFile);
     fileStats = await stat(absoluteFile);
   } catch (error) {
     throw new Error(`Required generated artifact is missing: ${relativeFile}`, { cause: error });
@@ -77,7 +83,9 @@ const requireFile = async (intendedRoot, relativeFile) => {
 };
 
 // OpenAPI 操作から必須ハンドラーとリソースディレクトリを決め、生成物名そのものは実ファイルから取得する。
-const operations = await readOpenApiOperations(resolvePathWithinRoot(openApiRoot, 'openapi.json'));
+const operations = await readOpenApiOperations(
+  await resolveExistingPathWithinRoot(repositoryRoot, openApiRoot, 'openapi.json')
+);
 const resourceTags = [...new Set(operations.map(({ tag }) => tag))].sort();
 const requiredFileLocations = [
   { root: openApiRoot, file: 'openapi.json' },
@@ -107,7 +115,8 @@ for (const root of [openApiRoot, backendGeneratedRoot, frontendGeneratedRoot]) {
 }
 
 // OpenAPI に存在しないリソースのハンドラーも含め、実在する全ハンドラールートのファイルを検査する。
-const modules = await readdir(modulesRoot, { withFileTypes: true });
+const verifiedModulesRoot = await resolveExistingPathWithinRoot(repositoryRoot, modulesRoot, '.');
+const modules = await readdir(verifiedModulesRoot, { withFileTypes: true });
 for (const moduleEntry of modules.filter((entry) => entry.isDirectory())) {
   const handlersRoot = path.join(moduleEntry.name, 'handlers');
   for (const file of await collectFiles(modulesRoot, handlersRoot, false)) {

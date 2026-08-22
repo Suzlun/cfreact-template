@@ -20,6 +20,6 @@
       ]
     }
   },
-  "include": ["./src/**/*.ts", "./orval.config.ts"],
+  "include": ["./src/**/*.ts", "./orval.config.ts", "./vitest.config.ts"],
   "exclude": ["node_modules", "dist", "build", ".wrangler"]
 }

@@ -43,8 +43,10 @@ Read these files before applying `coding-guardian` in this repository.
 ## Backend enforcement
 
 - `packages/backend/package.json`: Workers, Hono, Drizzle, Resource generation, the current package exports, and backend typecheck scripts
+- `packages/backend/vitest.config.ts`: pure deterministic same-Resource backend rule tests
 - `packages/backend/tsconfig.json`: the single backend TypeScript project, private generated/Platform paths, public Module entry paths, and the app-only `@cfreact-template/backend/composition/modules/*` path
 - `packages/backend/orval.config.ts`: TypeSpec OpenAPI input and Orval Hono Resource/smart-handler outputs
+- `scripts/codegen/verify-codegen-roots.mjs`: pre-write real-path containment and symbolic-link rejection for every generated root
 - `scripts/codegen/normalize-backend-handler-imports.mjs`: validates each generated Handler Context import shape and normalizes it to a type-only import before formatting
 - `scripts/codegen/verify-backend-handlers.mjs`: OpenAPI Resource tag/operation ID to smart-Handler manifest check used by `pnpm check:codegen`
 - `scripts/codegen/verify-generated-artifacts.mjs`: dynamically enumerates generated roots and Handler directories, accepts indexed additions from `git ls-files --cached -z`, and rejects untracked artifacts

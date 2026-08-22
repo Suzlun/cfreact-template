@@ -31,6 +31,7 @@
 - `backend-platform-email`: `packages/backend/src/platform/email/**/*`
 - `backend-platform-observability`: `packages/backend/src/platform/observability/**/*`
 - `backend-module-handler`: `packages/backend/src/modules/<module>/handlers/**/*`
+- `backend-module-test`: `packages/backend/src/modules/<module>/*.test.ts`
 - `backend-module-service`: `packages/backend/src/modules/<module>/*.service.ts`
 - `backend-module-repository`: `packages/backend/src/modules/<module>/*.repository.ts`
 - `backend-module-schema`: `packages/backend/src/modules/<module>/*.schema.ts`
@@ -61,6 +62,7 @@
 - `backend-platform-email` → `backend-platform-email | backend-types`
 - `backend-platform-observability` → `backend-platform-observability | backend-types`
 - `backend-module-handler` → `backend-generated-api | backend-platform-http | backend-types`、同じリソースの `backend-generated-resource | backend-module-entry | backend-module-service | backend-module-support`
+- `backend-module-test` → `backend-types`、同じリソースの`backend-module-domain | backend-module-repository | backend-module-service | backend-module-support`
 - `backend-module-service` → `backend-types`、同じリソースの `backend-module-repository | backend-module-domain | backend-module-support`、各リソースの `backend-module-entry`
 - `backend-module-repository` → `backend-platform-database | backend-types`、同じリソースの `backend-module-schema | backend-module-support`
 - `backend-module-schema` → 同じリソースの `backend-module-schema`
@@ -228,6 +230,9 @@
     - 強制: `pnpm check:codegen` → `scripts/codegen/verify-generated-artifacts.mjs` → `git ls-files --cached -z`
     - 現在の OpenAPI 操作、生成物ルート、実在する各モジュールのハンドラーディレクトリから対象ファイルを動的に列挙する
     - ステージ済みの新規ファイルは受理し、未追跡の生成物は失敗させる
+  - 生成前に入出力ルートの実体経路とシンボリックリンクを検査する
+    - 強制: 各パッケージの生成スクリプト → `scripts/codegen/verify-codegen-roots.mjs`
+    - OpenAPI、バックエンド生成物、モジュール、フロントエンド生成物の各ルートを実体経路でリポジトリ内へ限定し、配下のシンボリックリンクを拒否する
   - ハンドラー一覧は OpenAPI のリソース `tag` と `operationId` に一致させる
     - 強制: `pnpm check:codegen` → `scripts/codegen/verify-backend-handlers.mjs`
     - 不足したハンドラー、余分なハンドラー、契約から消えた生成リソースのいずれでも失敗する
@@ -769,6 +774,7 @@
 | `backend-platform-email`         | `packages/backend/src/platform/email/**/*`                 | `Cloudflare Email Workers` の送信処理                        |
 | `backend-platform-observability` | `packages/backend/src/platform/observability/**/*`         | 内部失敗の記録                                               |
 | `backend-module-handler`         | `packages/backend/src/modules/<module>/handlers/**/*`      | 契約済み入力とサービス結果を HTTP 応答へ変換する             |
+| `backend-module-test`            | `packages/backend/src/modules/<module>/*.test.ts`          | 同じリソースの純粋で決定的な業務規則を検証する               |
 | `backend-module-service`         | `packages/backend/src/modules/<module>/*.service.ts`       | リソースの業務処理と副作用を調整する                         |
 | `backend-module-repository`      | `packages/backend/src/modules/<module>/*.repository.ts`    | リソース所有データを永続化する                               |
 | `backend-module-schema`          | `packages/backend/src/modules/<module>/*.schema.ts`        | リソース所有の `Drizzle` スキーマ                            |
@@ -789,6 +795,7 @@
 - `backend-platform-email` → `backend-platform-email | backend-types`
 - `backend-platform-observability` → `backend-platform-observability | backend-types`
 - `backend-module-handler` → `backend-generated-api | backend-platform-http | backend-types`、同じリソースの `backend-generated-resource | backend-module-entry | backend-module-service | backend-module-support`
+- `backend-module-test` → `backend-types`、同じリソースの`backend-module-domain | backend-module-repository | backend-module-service | backend-module-support`
 - `backend-module-service` → `backend-types`、同じリソースの `backend-module-repository | backend-module-domain | backend-module-support`、各リソースの `backend-module-entry`
 - `backend-module-repository` → `backend-platform-database | backend-types`、同じリソースの `backend-module-schema | backend-module-support`
 - `backend-module-schema` → 同じリソースの `backend-module-schema`
@@ -806,6 +813,7 @@
 - `backend-app` → `hono`
 - `backend-generated-resource` → `@hono/zod-validator | hono | zod`
 - `backend-module-handler` → `hono`
+- `backend-module-test` → `vitest`
 - `backend-module-service` → `ulid`
 - `backend-module-repository` → `drizzle-orm`
 - `backend-module-schema` → `drizzle-orm`
@@ -814,7 +822,7 @@
 - `backend-platform-email` → `cloudflare:email`
 - `backend-types` → `@cloudflare/workers-types`
 
-`backend-entry`、`backend-generated-api`、`backend-platform-observability`、`backend-module-domain`、`backend-module-entry`、`backend-module-support` には外部パッケージの許可がありません。
+`backend-entry`、`backend-generated-api`、`backend-platform-observability`、`backend-module-domain`、`backend-module-entry`、`backend-module-support` には外部パッケージの許可がありません。`backend-module-test`の`vitest`許可は純粋試験だけに適用し、製品要素の外部依存を広げません。
 
 ### 9.4 HTTP 実行環境への直接到達
 
@@ -843,6 +851,7 @@
 
 - API 契約の正は `packages/typespec/main.tsp` です。
 - `pnpm gen:api-sdk` は `TypeSpec` から OpenAPI を生成し、`openapi-typescript` のバックエンド共有型、`Orval` のリソース別 `Hono` 経路とスマートハンドラー、フロントエンド SDK を順に生成します。
+- 各生成段階は書き込み前に `scripts/codegen/verify-codegen-roots.mjs` を実行し、生成ルートの実体経路をリポジトリ内へ限定して、配下のシンボリックリンクを拒否します。
 - バックエンド生成では、`Orval` の実行後に `scripts/codegen/normalize-backend-handler-imports.mjs` が各ハンドラーのコンテキスト参照を型専用インポートへ正規化し、その後に `Prettier` を実行します。
 - `pnpm check:codegen` は再生成後に `scripts/codegen/verify-backend-handlers.mjs` で OpenAPI のリソース `tag` と `operationId` に対するハンドラーの不足、余分、生成リソースの残骸を検出します。
 - 続いて `scripts/codegen/verify-generated-artifacts.mjs` が現在の生成物と全ハンドラーディレクトリを動的に列挙し、`git ls-files --cached -z` との照合でステージ済み追加を受理しながら未追跡ファイルを拒否します。最後に `git diff --exit-code` で OpenAPI、バックエンド生成物、スマートハンドラー、フロントエンド SDK の差分を検査します。
@@ -977,12 +986,13 @@ fail 条件
   - 強制: `scripts.check:codegen` → `package.json`
   - 実行
     - `pnpm gen:api-sdk`
+    - 各生成段階の `scripts/codegen/verify-codegen-roots.mjs` による実体経路とシンボリックリンクの事前検査
     - `node scripts/codegen/verify-backend-handlers.mjs`
     - `node scripts/codegen/verify-generated-artifacts.mjs` による現在の生成物とハンドラーディレクトリの動的列挙、および `git ls-files --cached -z` との照合
     - `git diff --exit-code -- packages/typespec/openapi/openapi.json packages/backend/src/generated/api packages/backend/src/modules/*/handlers packages/frontend/src/api/generated/client.ts`
 - CI は整形、lint、型、顧客価値を守る全試験、Storybookビルド、生成差分を検証する
   - 強制: `.github/workflows/ci.yml`
-  - `pnpm test:run` はReactの顧客向けUI試験、共通UIのjsdom試験、純粋で決定的なリリース規則試験だけを実行する
+  - `pnpm test:run` はReactの顧客向けUI試験、共通UIのjsdom試験、純粋で決定的なバックエンド業務・リリース規則試験だけを実行する
   - CIは設定済みのPlaywrightブラウザを導入し、Storybookブラウザ試験を`pnpm test:storybook`、価値の高い顧客作業を`pnpm test:e2e`で実行する
   - CIは`pnpm build:storybook`でStorybookの静的ビルドも検証する
   - frontendと共通UIの試験は`pnpm test:run`に含まれるため、CIで`pnpm test:frontend`または`pnpm test:ui-package`を重複実行しない

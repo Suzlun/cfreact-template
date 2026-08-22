@@ -17,29 +17,41 @@ type ApiErrorResponse = Extract<
 /**
  * API が公開する安全な失敗情報を、フロントエンド内部で失わずに伝播するエラー。
  *
- * 画面へ渡る `message` は従来どおり API の安全なメッセージを使いながら、障害判定に必要な
- * HTTP 状態番号とエラーコードを保持する。
+ * @remarks
+ * `message`にはAPIが公開を許可した文言だけを保持し、ドメイン層が利用者向けの回復案内を
+ * 選択できるよう、HTTP状態番号とエラーコードも保持する。生成SDKの応答本文そのものは
+ * API境界の外へ公開しない。
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await usersApi.create(payload);
+ * } catch (error) {
+ *   if (error instanceof FrontendApiError && error.code === 'USER_EMAIL_ALREADY_EXISTS') {
+ *     // メールアドレスの重複に適した回復案内へ変換する。
+ *   }
+ * }
+ * ```
  */
 class FrontendApiError extends Error {
+  /** APIが返したHTTP状態番号。 */
+  readonly status: ApiErrorResponse['status'];
+
+  /** APIが返した安全なエラーコード。 */
+  readonly code: ApiErrorResponse['data']['code'];
+
   /**
    * API の失敗応答から内部エラーを生成する。
    *
    * @param response - 生成 SDK が返した、状態番号と本文の対応が保証された失敗応答。
    */
-  constructor(readonly response: ApiErrorResponse) {
+  constructor(response: ApiErrorResponse) {
     // 既存画面のメッセージ表示を変えないため、安全な API メッセージを Error の本文へ渡す。
     super(response.data.message);
     this.name = 'FrontendApiError';
-  }
-
-  /** API が返した HTTP 状態番号。 */
-  get status(): ApiErrorResponse['status'] {
-    return this.response.status;
-  }
-
-  /** API が返した安全なエラーコード。 */
-  get code(): ApiErrorResponse['data']['code'] {
-    return this.response.data.code;
+    // 生成応答全体を保持せず、ドメイン層の安全な分岐に必要な公開値だけを投影する。
+    this.status = response.status;
+    this.code = response.data.code;
   }
 }
 
@@ -151,4 +163,4 @@ const usersApi = {
   },
 };
 
-export { helloApi, usersApi };
+export { FrontendApiError, helloApi, usersApi };

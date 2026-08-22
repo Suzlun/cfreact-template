@@ -66,7 +66,8 @@ describe('UsersPage', () => {
   });
 
   describe('エラーハンドリング', () => {
-    it('API エラー時にエラーメッセージが表示される', async () => {
+    it('一覧取得エラー時に回復案内を表示して空状態を隠す', async () => {
+      const user = userEvent.setup();
       // エラーを返すようにモックを上書き
       server.use(
         http.get('/api/v1/users', () => {
@@ -83,7 +84,26 @@ describe('UsersPage', () => {
         expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
       });
 
-      expect(screen.getByText(/user request failed/i)).toBeInTheDocument();
+      const alert = screen.getByRole('alert');
+      expect(alert).toHaveTextContent('Users could not be loaded');
+      expect(alert).toHaveTextContent(
+        'The user list is not displayed. Check your connection, then select Refresh List. Your form entries are preserved.'
+      );
+      expect(screen.queryByText(/no users found/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('table')).not.toBeInTheDocument();
+
+      const nameInput = screen.getByPlaceholderText('Name');
+      const emailInput = screen.getByPlaceholderText('Email');
+      await user.type(nameInput, 'Preserved User');
+      await user.type(emailInput, 'preserved@example.com');
+
+      // 通信回復後は既定Handlerへ戻し、画面内の再取得操作だけで一覧を復旧する。
+      server.resetHandlers();
+      await user.click(screen.getByRole('button', { name: /refresh list/i }));
+
+      expect(await screen.findByRole('table')).toBeInTheDocument();
+      expect(nameInput).toHaveValue('Preserved User');
+      expect(emailInput).toHaveValue('preserved@example.com');
     });
   });
 
@@ -138,7 +158,7 @@ describe('UsersPage', () => {
       });
     });
 
-    it('作成エラー時に案内と入力内容を保持する', async () => {
+    it('メール重複時に修正案内と入力内容を保持し、入力変更時に案内を解除する', async () => {
       const user = userEvent.setup();
       server.use(
         http.post('/api/v1/users', () => {
@@ -160,10 +180,55 @@ describe('UsersPage', () => {
       await user.click(screen.getByRole('button', { name: /create user/i }));
 
       const alert = await screen.findByRole('alert');
-      expect(alert).toHaveTextContent('User request failed');
-      expect(alert).toHaveTextContent('User email already exists');
+      expect(alert).toHaveTextContent('User could not be created');
+      expect(alert).toHaveTextContent(
+        'A user with this email address already exists. Enter a different email address and try again. Your current entries are preserved.'
+      );
       expect(nameInput).toHaveValue('Duplicate User');
       expect(emailInput).toHaveValue('duplicate@example.com');
+      expect(emailInput).toHaveAttribute('aria-invalid', 'true');
+      expect(emailInput).toHaveAttribute('aria-describedby', 'user-create-error-description');
+      expect(screen.getByText('Test User 1')).toBeInTheDocument();
+
+      await user.clear(emailInput);
+      await user.type(emailInput, 'available@example.com');
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(emailInput).not.toHaveAttribute('aria-invalid');
+      expect(emailInput).not.toHaveAttribute('aria-describedby');
+    });
+
+    it('作成時の内部失敗を安全に案内し、入力と既存一覧を保持する', async () => {
+      const user = userEvent.setup();
+      server.use(
+        http.post('/api/v1/users', () => {
+          return HttpResponse.json(
+            { code: 'INTERNAL_ERROR', message: 'Sensitive internal failure details' },
+            { status: 500 }
+          );
+        })
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      });
+
+      const nameInput = screen.getByPlaceholderText('Name');
+      const emailInput = screen.getByPlaceholderText('Email');
+      await user.type(nameInput, 'Retry User');
+      await user.type(emailInput, 'retry@example.com');
+      await user.click(screen.getByRole('button', { name: /create user/i }));
+
+      const alert = await screen.findByRole('alert');
+      expect(alert).toHaveTextContent('User could not be created');
+      expect(alert).toHaveTextContent(
+        'The request could not be completed. Try again. Your current entries are preserved.'
+      );
+      expect(alert).not.toHaveTextContent('Sensitive internal failure details');
+      expect(nameInput).toHaveValue('Retry User');
+      expect(emailInput).toHaveValue('retry@example.com');
+      expect(screen.getByText('Test User 1')).toBeInTheDocument();
+      expect(emailInput).not.toHaveAttribute('aria-invalid');
     });
 
     it('空のフォームは送信できない', async () => {

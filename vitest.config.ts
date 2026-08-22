@@ -10,6 +10,13 @@ export default defineConfig({
   test: {
     projects: [
       {
+        extends: './packages/backend/vitest.config.ts',
+        root: './packages/backend',
+        test: {
+          name: 'backend-rules',
+        },
+      },
+      {
         extends: './packages/frontend/vitest.app.config.ts',
         root: './packages/frontend',
         test: {

@@ -1,5 +1,6 @@
 import {
   Alert,
+  AlertDescription,
   AlertTitle,
   Button,
   Card,
@@ -76,6 +77,12 @@ function CreateUserForm({ data, actions }: { data: UsersData; actions: UsersActi
                   onChange={(event) => {
                     actions.updateEmail(event.target.value);
                   }}
+                  aria-invalid={data.createError?.field === 'email' ? true : undefined}
+                  aria-describedby={
+                    data.createError?.field === 'email'
+                      ? 'user-create-error-description'
+                      : undefined
+                  }
                   required
                   autoComplete="email"
                 />
@@ -102,6 +109,18 @@ function CreateUserForm({ data, actions }: { data: UsersData; actions: UsersActi
               </Button>
             </div>
             {data.isSubmitting && <Progress value={65} />}
+            {data.createError != null && (
+              <Alert
+                variant="destructive"
+                aria-labelledby="user-create-error-title"
+                aria-describedby="user-create-error-description"
+              >
+                <AlertTitle id="user-create-error-title">{data.createError.title}</AlertTitle>
+                <AlertDescription id="user-create-error-description">
+                  {data.createError.message}
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
         </form>
       </CardContent>
@@ -164,14 +183,20 @@ function UsersPage() {
         </div>
       )}
 
-      {data.error != null && (
-        <Alert variant="destructive">
-          <AlertTitle>User request failed</AlertTitle>
-          {data.error.message}
+      {data.listError != null && (
+        <Alert
+          variant="destructive"
+          aria-labelledby="users-list-error-title"
+          aria-describedby="users-list-error-description"
+        >
+          <AlertTitle id="users-list-error-title">{data.listError.title}</AlertTitle>
+          <AlertDescription id="users-list-error-description">
+            {data.listError.message}
+          </AlertDescription>
         </Alert>
       )}
 
-      {!data.isLoading && <UsersTable data={data} />}
+      {!data.isLoading && data.listError == null && <UsersTable data={data} />}
 
       <Separator />
       <div className="text-sm text-muted-foreground">

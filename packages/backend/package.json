@@ -16,8 +16,8 @@
     "dev": "wrangler dev --ip 0.0.0.0",
     "build": "pnpm check",
     "deploy": "wrangler deploy",
-    "gen:types": "openapi-typescript ../typespec/openapi/openapi.json -o src/generated/api/openapi.ts",
-    "gen:api": "pnpm gen:types && orval --config ./orval.config.ts && node ../../scripts/codegen/normalize-backend-handler-imports.mjs && prettier --write \"src/generated/api/**/*.ts\" \"src/modules/*/handlers/**/*.ts\"",
+    "gen:types": "node ../../scripts/codegen/verify-codegen-roots.mjs && openapi-typescript ../typespec/openapi/openapi.json -o src/generated/api/openapi.ts",
+    "gen:api": "pnpm gen:types && node ../../scripts/codegen/verify-codegen-roots.mjs && orval --config ./orval.config.ts && node ../../scripts/codegen/normalize-backend-handler-imports.mjs && prettier --write \"src/generated/api/**/*.ts\" \"src/modules/*/handlers/**/*.ts\"",
     "check": "pnpm check:types",
     "check:types": "tsc --noEmit -p tsconfig.json"
   },

@@ -105,10 +105,10 @@ Dependency directions:
 - Module public entries are the only cross-Module implementation surface.
 - Only `app` may use `@cfreact-template/backend/composition/modules/*`; package exports and shared TypeScript paths never expose that alias or Module internals.
 - `packages/backend/src/generated/api/**` is fully generator-owned and exempt from handwritten comment/TSDoc/style rules while boundaries still apply. Orval owns smart-handler preambles; smart-handler bodies remain under normal handwritten implementation, detailed-comment, and TSDoc rules.
-- Keep backend external imports within the `boundaries/external` allowlist. Handler and Service code never uses HTTP globals, and Handlers never access `env` directly.
+- Keep backend external imports within the `boundaries/external` allowlist. Vitest is limited to pure same-Resource test files. Handler and Service code never uses HTTP globals, and Handlers never access `env` directly.
 - Keep expected failures in `Result` values and map them to safe `{ code, message }` responses. Wrap generated response validators with `guardResponseValidation`, route unsafe validation details through the logged fixed-500 path, and parse create-user success with the generated schema. Derive duplicate-email 409 responses from the database uniqueness result rather than error-string parsing.
 - Keep backend checks in `packages/backend/tsconfig.json`, and keep package exports limited to the Worker, `app`, shared Types, and Resource `index.ts` entries.
-- Keep `scripts/codegen/normalize-backend-handler-imports.mjs` in the backend generation path. Generated-artifact tracking must use dynamic filesystem enumeration and `git ls-files --cached -z`, accepting staged additions while rejecting untracked artifacts before the drift check.
+- Keep `scripts/codegen/verify-codegen-roots.mjs` before every package generator so real paths remain inside the repository and symbolic links are rejected before writes. Keep `scripts/codegen/normalize-backend-handler-imports.mjs` in the backend generation path. Generated-artifact tracking must use dynamic filesystem enumeration and `git ls-files --cached -z`, accepting staged additions while rejecting untracked artifacts before the drift check.
 - Add required Japanese TSDoc to public package exports, except generated and
   test code.
 - OpenSpec persists observable behavior, not a file-level implementation plan.
@@ -136,7 +136,7 @@ Dependency directions:
 
 ### 4. Verify Through Real Commands
 
-- Contract/generated changes: `pnpm gen:api-sdk`, then `pnpm check:codegen` for Handler import normalization, manifest, dynamically tracked outputs, and drift
+- Contract/generated changes: `pnpm gen:api-sdk`, then `pnpm check:codegen` for real-path and symbolic-link preflight, Handler import normalization, manifest, dynamically tracked outputs, and drift
 - TypeSpec: `pnpm format:check`, `pnpm check`
 - JS/TS/TSX: `pnpm lint`, `pnpm test:run`
 - Frontend: `pnpm test:frontend`

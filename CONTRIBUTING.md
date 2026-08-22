@@ -152,13 +152,13 @@ pnpm --filter @cfreact-template/backend gen:api
 pnpm --filter @cfreact-template/frontend gen:api
 ```
 
-`openapi-typescript` は `packages/backend/src/generated/api/openapi.ts` を、`Orval` は `packages/backend/src/generated/api/<resource>/**` と `packages/backend/src/modules/<resource>/handlers/**` を生成します。`packages/backend/src/generated/api/**` は完全に生成器が所有します。`Orval` のスマートハンドラーでは生成前置きと検証処理を変更せず、開発者が所有する関数本体だけを実装します。生成後は `scripts/codegen/normalize-backend-handler-imports.mjs` がコンテキスト参照を型専用インポートへ正規化し、`Prettier` が整形します。
+`openapi-typescript` は `packages/backend/src/generated/api/openapi.ts` を、`Orval` は `packages/backend/src/generated/api/<resource>/**` と `packages/backend/src/modules/<resource>/handlers/**` を生成します。各生成段階は書き込み前に`scripts/codegen/verify-codegen-roots.mjs`で入出力ルートの実体経路をリポジトリ内へ限定し、配下のシンボリックリンクを拒否します。`packages/backend/src/generated/api/**` は完全に生成器が所有します。`Orval` のスマートハンドラーでは生成前置きと検証処理を変更せず、開発者が所有する関数本体だけを実装します。生成後は `scripts/codegen/normalize-backend-handler-imports.mjs` がコンテキスト参照を型専用インポートへ正規化し、`Prettier` が整形します。
 
 生成後は `pnpm check:codegen` を実行してください。このコマンドは OpenAPI のリソース `tag` と `operationId` に対応するハンドラーの不足、余分、生成リソースの残骸を検出します。続いて現在の生成物と全ハンドラーディレクトリを動的に列挙し、`git ls-files --cached -z` でステージ済み追加を受理しながら未追跡ファイルを拒否した後、生成差分を検出します。
 
 バックエンドの配置は `entry -> app` を入口とし、`app` が生成リソース、モジュール、基盤アダプター、共有型を組み立てます。現在の `users` はハンドラー、サービス、リポジトリとリソース所有スキーマを持ち、`hello` と `health` はハンドラーだけで完結します。新しい処理も必要な責務だけを同じリソースの `modules/<resource>/` に置き、外部アダプターは `platform/`、リソース間で共有する型は `types/` に置いてください。バックエンド全体の型検査には `packages/backend/tsconfig.json` 一つだけを使います。
 
-別リソースを利用するサービスは `@cfreact-template/backend/modules/<resource>` の `index.ts` だけを使い、生成物、ハンドラー、リポジトリ、スキーマを深いパスから参照しません。リポジトリ構築のための `@cfreact-template/backend/composition/modules/*` は `app` だけが使えます。外部パッケージは `boundaries/external` の要素別許可表に限定し、ハンドラーとサービスは HTTP グローバルを直接使わず、ハンドラーは `env` を直接参照しません。
+別リソースを利用するサービスは `@cfreact-template/backend/modules/<resource>` の `index.ts` だけを使い、生成物、ハンドラー、リポジトリ、スキーマを深いパスから参照しません。リポジトリ構築のための `@cfreact-template/backend/composition/modules/*` は `app` だけが使えます。外部パッケージは `boundaries/external` の要素別許可表に限定し、`vitest`は同じリソースの純粋試験だけで利用します。ハンドラーとサービスは HTTP グローバルを直接使わず、ハンドラーは `env` を直接参照しません。
 
 予測して処理する失敗は `Result` で返し、ハンドラーでは内部原因を含まない `{ code, message }` へ変換します。生成された応答検証処理には `guardResponseValidation` を先行させ、不安全な検証詳細は `app.onError` が記録して固定の 500 応答へ変換します。ユーザー作成の成功応答は生成スキーマで解析し、メールアドレス重複はデータベースの一意制約の結果で判定して 409 応答へ変換します。データベースのエラー文は解析しません。
 
@@ -190,7 +190,7 @@ pnpm check:codegen
 必要に応じて関連テストも実行してください。
 
 ```bash
-pnpm test:run        # React/UI試験と純粋なリリース規則試験
+pnpm test:run        # React/UI試験と純粋な業務・リリース規則試験
 pnpm test:frontend   # Reactの顧客向けUI試験
 pnpm test:ui-package # 共通UIのjsdom試験
 pnpm test:storybook  # Storybookの実ブラウザ試験

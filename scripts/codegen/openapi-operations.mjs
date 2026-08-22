@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { lstat, readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
 
 const operationMethods = new Set([
@@ -44,6 +44,55 @@ export const resolvePathWithinRoot = (intendedRoot, ...segments) => {
   }
 
   return resolvedPath;
+};
+
+/**
+ * 既存の入出力先を実体経路へ解決し、信頼するリポジトリと用途別ルートの両方に留まることを確認する。
+ *
+ * @param {string} trustedRoot シンボリックリンクで越えてはならないリポジトリルート。
+ * @param {string} intendedRoot 入出力を許可する用途別ルートディレクトリ。
+ * @param {...string} segments 用途別ルートから解決する既存のパス要素。
+ * @returns {Promise<string>} 実体経路で両方の境界内にあり、終端がシンボリックリンクでない絶対パス。
+ * @throws 用途別ルートまたは対象が存在しない場合、実体経路が境界外へ出る場合、終端がシンボリックリンクの場合に失敗する。
+ *
+ * @example
+ * ```js
+ * const file = await resolveExistingPathWithinRoot(
+ *   '/repo',
+ *   '/repo/generated',
+ *   'users',
+ *   'users.ts'
+ * );
+ * ```
+ */
+export const resolveExistingPathWithinRoot = async (trustedRoot, intendedRoot, ...segments) => {
+  // 字句上の用途別ルートと対象を先に制限し、絶対パスや `..` による境界外参照を拒否する。
+  const lexicalRoot = resolvePathWithinRoot(trustedRoot, intendedRoot);
+  const lexicalPath = resolvePathWithinRoot(lexicalRoot, ...segments);
+
+  // 実体経路を取得し、ルートまたは途中のディレクトリに置かれたシンボリックリンクも判定へ含める。
+  const [realTrustedRoot, realIntendedRoot, realResolvedPath, rootStats, pathStats] =
+    await Promise.all([
+      realpath(trustedRoot),
+      realpath(lexicalRoot),
+      realpath(lexicalPath),
+      lstat(lexicalRoot),
+      lstat(lexicalPath),
+    ]);
+
+  // 用途別ルート自体を外部へ差し替える構成を拒否し、生成器がリポジトリ外を所有しないようにする。
+  resolvePathWithinRoot(realTrustedRoot, realIntendedRoot);
+  if (rootStats.isSymbolicLink()) {
+    throw new Error(`Intended root must not be a symbolic link: ${lexicalRoot}`);
+  }
+
+  // 対象の実体も用途別ルート配下へ限定し、終端ファイルのリンクによる読み書き先の差し替えを拒否する。
+  resolvePathWithinRoot(realIntendedRoot, realResolvedPath);
+  if (pathStats.isSymbolicLink()) {
+    throw new Error(`Resolved path must not be a symbolic link: ${lexicalPath}`);
+  }
+
+  return realResolvedPath;
 };
 
 /**

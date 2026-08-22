@@ -1,5 +1,14 @@
 import { test, expect, type Page, type TestInfo } from '@playwright/test';
 
+test('ホームで生成された挨拶リソースの応答を確認できる', async ({ page }) => {
+  // 利用者が最初に開くホームへ移動し、生成された挨拶経路の成功結果が画面へ届くことを確認する。
+  await page.goto('/');
+
+  await expect(page.getByText('API Health', { exact: true })).toBeVisible();
+  await expect(page.getByText('Hello from Hono + Cloudflare Workers')).toBeVisible();
+  await expect(page.getByText('200 OK')).toBeVisible();
+});
+
 const waitForTableOrEmptyState = async (page: Page) => {
   const tableLocator = page.locator('table');
   const emptyMessageLocator = page.getByText(/no users found/i);
@@ -86,8 +95,10 @@ test.describe('ユーザー管理フロー', () => {
     await page.getByPlaceholder('Email').fill(email);
     await page.getByRole('button', { name: /create user/i }).click();
     const errorAlert = page.getByRole('alert');
-    await expect(errorAlert).toContainText('User request failed');
-    await expect(errorAlert).toContainText('User email already exists');
+    await expect(errorAlert).toContainText('User could not be created');
+    await expect(errorAlert).toContainText(
+      'A user with this email address already exists. Enter a different email address and try again.'
+    );
 
     // 修正に必要な入力を保持し、一覧には登録済みの一件だけが残ることを同じ画面で確認する。
     await expect(page.getByPlaceholder('Name')).toHaveValue(duplicateName);
