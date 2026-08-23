@@ -199,12 +199,10 @@ behavior or architecture Change can independently use any UX mode.
 
 - New work: classify both fields first. For `DIRECT`, delegate without creating
   or invoking an OpenSpec Change. For the other lanes, call `openspec/proposer`.
-- Apply: resolve the selected Change's schema and proposal `UX-Mode`. Require a
-  current proposer handoff showing strict validation, `APPROVED`, and
-  `Planning Ready: YES` for the current planning content before calling
-  `openspec/applier`; when that evidence is unavailable, call
-  `openspec/proposer` to converge the Change first. Never infer the lane from
-  task wording when the Change already declares its schema.
+- Apply: resolve the selected Change's schema and proposal `UX-Mode`, then call
+  `openspec/applier`. Do not request, verify, carry forward, or infer proposer or
+  analyzer approval or readiness evidence before delegation. Never infer the
+  lane from task wording when the Change already declares its schema.
 - Sync and archive: use the schema-neutral OpenSpec skills or commands. Their
   behavior does not depend on whether a Change contains `design.md`.
 - Exploration: call `planner` for a read-only routing and planning analysis when

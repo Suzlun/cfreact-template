@@ -172,10 +172,10 @@ returned `contextFiles` path. `behavior-change` contains proposal, Specs, and
 tasks. `architecture-change` additionally contains design. Never assume an
 artifact outside the selected schema.
 
-Require a current proposer handoff showing strict validation, `APPROVED`, and
-`Planning Ready: YES` for the normative planning content. If it is absent or no
-longer covers that content, return `PROPOSER_REVIEW_REQUIRED` before planning or
-delegation. Checkbox-only progress updates do not invalidate the handoff.
+Determine whether apply can proceed only from the current CLI state, required
+artifacts, and readable `contextFiles`. Do not request, verify, carry forward, or
+infer proposer or analyzer approval or readiness evidence. When the CLI state is
+ready and its required context is available, proceed to progressive planning.
 
 ## Progressive planning
 
