@@ -1108,6 +1108,19 @@ fail 条件
     - `tasks.md` を `- [ ] WP<number>: <成果>`、`Covers`、`Completion Evidence` を持つ粗い作業パッケージ台帳にする
     - ファイル、補助処理、試験の詳細は現在の作業パッケージと検証結果から実装時に段階的に決める
 
+- Architecture Changeは全delta Spec Unitの再利用判断を能力単位で記録する
+  - 強制: `pnpm lint:openspec` → `scripts/openspec/verify-change-reuse-decisions.mjs`
+  - NG例
+    - Requirement対応表があることを、外部パッケージ候補の調査完了と扱う
+    - 認証だけを調査した報告からi18n、フォーム、検証等の採否を決める
+    - 他packageの直接依存またはlockfileの推移依存を、対象packageで採用済みと扱う
+    - 一つのパッケージがSpec Unit全体を満たさないことを理由に、パッケージで代替可能な下位能力まで独自実装する
+  - OK例
+    - 各Spec Unitを翻訳、言語照合、入力検証、永続状態等の汎用能力へ分ける
+    - 再利用元分類、採用判断、対象と版、対象能力を調査範囲に含む報告を記録する
+    - 同じ調査報告が複数能力を明示的に扱う場合は複数行から参照する
+    - `LIMITED_COMPLEMENT`には既存資産と外部候補で代替できない証拠を記載する
+
 - Scenario検査は仕様構造とPlaywright E2E試験からの一方向参照を検証する
   - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs`
   - NG例

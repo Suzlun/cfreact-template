@@ -47,7 +47,7 @@
     "lint": "pnpm lint:ui-reuse && pnpm lint:eslint && pnpm lint:openspec && pnpm lint:supply-chain",
     "lint:eslint": "eslint packages/ui && eslint packages/frontend && eslint . --ignore-pattern packages/ui --ignore-pattern packages/frontend",
     "lint:ui-reuse": "node scripts/ui/verify-public-component-catalog.mjs && jscpd --config .jscpd.json --format typescript,tsx --skip-local --exit-code 1 --no-tips packages/ui packages/frontend/src/app",
-    "lint:openspec": "pnpm exec openspec schema validate behavior-change && pnpm exec openspec schema validate architecture-change && pnpm exec openspec validate --all --strict && node scripts/openspec/verify-change-proposal.mjs && node scripts/openspec/verify-scenario-coverage.mjs && node scripts/openspec/verify-change-task-scope.mjs",
+    "lint:openspec": "pnpm exec openspec schema validate behavior-change && pnpm exec openspec schema validate architecture-change && pnpm exec openspec validate --all --strict && node scripts/openspec/verify-change-proposal.mjs && node scripts/openspec/verify-change-reuse-decisions.mjs && node scripts/openspec/verify-scenario-coverage.mjs && node scripts/openspec/verify-change-task-scope.mjs",
     "lint:supply-chain": "node scripts/security/verify-pnpm-supply-chain.mjs",
     "test:release": "node --test scripts/release/release-model.test.mjs",
     "release:check-pr-changeset": "node scripts/release/check-pr-changeset.mjs",

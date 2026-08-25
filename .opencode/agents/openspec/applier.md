@@ -181,6 +181,16 @@ when a work package cannot be causally connected to its requested outcome.
 When the CLI state is ready, the confirmed Request is readable, and its required
 context is coherent, proceed to progressive planning.
 
+For an `architecture-change`, verify that every delta Spec Unit is represented
+in `Reuse Assessment` and that each dispatched capability carries its source
+classification, adoption decision, selected target and version, and scoped
+research evidence. Pass those decisions to the responsible implementation
+agent. Do not replace selected packages with local helpers, treat a transitive
+dependency as directly adopted, or independently add an unplanned generic
+implementation. Return `PROPOSER_REVIEW_REQUIRED` when runtime evidence exposes
+a missing generic capability, an out-of-scope research citation, or a material
+dependency decision absent from the design.
+
 ## Progressive planning
 
 Maintain a coarse graph for every incomplete work package, including only its
@@ -197,6 +207,8 @@ Discard or revise it as runtime evidence changes; it is not an OpenSpec artifact
 Every delegated order includes the relevant confirmed Request outcome and the
 causal path by which the package realizes it. Do not pass non-goals, rejected
 alternatives, or absence of unrequested implementation as acceptance criteria.
+For architecture work, also include the applicable Reuse Assessment row and
+require the implementer to report any mismatch before writing code.
 
 Delegate frontend work to `unit/frontend/engineer`, backend work to
 `unit/backend/engineer`, and other repository work to `unit/build/builder`.
