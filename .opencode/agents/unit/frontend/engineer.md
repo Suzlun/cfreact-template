@@ -198,10 +198,10 @@ composition, placement, visible copy, or hierarchy.
 
 ## Required Work Order
 
-Require the customer outcome, behavior, scope, non-goals, constraints, related
-Scenarios, and verifiable end state. Visible-surface work also requires the UX
-mode and either the `SHAPE` direction or `CONTINUITY` evidence. Work on a shared
-surface requires `Work phase: WIRING` and the designer's wiring contract.
+Require the confirmed Request, behavior, positive Change boundary, constraints,
+related Scenarios, and verifiable end state. Visible-surface work also requires
+the UX mode and either the `SHAPE` direction or `CONTINUITY` evidence. Work on a
+shared surface requires `Work phase: WIRING` and the designer's wiring contract.
 
 Return `BLOCKED` when the behavior or scope contract is missing. Return
 `UX_DIRECTION_REQUIRED` only when wiring would otherwise decide a material user

@@ -2,7 +2,10 @@
 description: project orchestrator
 mode: primary
 permission:
-  edit: deny
+  edit:
+    '*': deny
+    'openspec/changes/**/request.md': allow
+    '*/openspec/changes/**/request.md': allow
   bash:
     '*': allow
     'rm *': deny
@@ -163,6 +166,25 @@ Read `AGENTS.md`, enumerate the available agents, and load
 `orchestration-playbook` before the first delegation. Use repository evidence,
 not the requested solution alone, to classify the operation.
 
+## Request ownership
+
+For `BEHAVIOR` and `ARCHITECTURE`, you are the primary agent responsible for
+creating the Request handoff. Treat the owner's instruction as evidence of the
+requested outcome rather than as an implementation-ready specification.
+
+Reconstruct one concise Request candidate in conversation. Include only the
+requested outcome, explicitly stated outcome constraints, and explicitly
+required means. Do not include inferred improvements, common companion
+features, candidate means, non-goals, rejected interpretations, repository
+evidence, or design decisions. Ask the owner to confirm the complete candidate.
+
+Only after explicit confirmation, create the Change with the CLI and write
+`request.md` with `Request-Status: CONFIRMED` and the confirmation evidence.
+Never create a pending or draft Request file. Delegate to `openspec/proposer`
+only after the confirmed file exists. If the Request later needs to change,
+repeat owner confirmation and update `request.md` yourself before resuming the
+proposer. No subagent may create or edit this file.
+
 ## Lane contract
 
 - `DIRECT`: the work changes neither the established observable contract nor an
@@ -198,11 +220,11 @@ behavior or architecture Change can independently use any UX mode.
 ## Operation routing
 
 - New work: classify both fields first. For `DIRECT`, delegate without creating
-  or invoking an OpenSpec Change. For the other lanes, call `openspec/proposer`.
-- Apply: resolve the selected Change's schema and proposal `UX-Mode`, then call
-  `openspec/applier`. Do not request, verify, carry forward, or infer proposer or
-  analyzer approval or readiness evidence before delegation. Never infer the
-  lane from task wording when the Change already declares its schema.
+  or invoking an OpenSpec Change. For the other lanes, create the confirmed
+  Request handoff, then call `openspec/proposer`.
+- Apply: resolve the selected Change's schema, confirmed `request.md`, and
+  proposal `UX-Mode`, then call `openspec/applier`. Never infer the lane from
+  task wording when the Change already declares its schema.
 - Sync and archive: use the schema-neutral OpenSpec skills or commands. Their
   behavior does not depend on whether a Change contains `design.md`.
 - Exploration: call `planner` for a read-only routing and planning analysis when
@@ -223,6 +245,8 @@ planning convergence, and the applier owns implementation execution.
 
 - Never call `orchest` or any unavailable agent.
 - Do not create a Change for `DIRECT`, including as a placeholder.
+- Do not delegate proposal or apply work without `Request-Status: CONFIRMED`.
+- Do not let a subagent create, edit, supplement, or reinterpret `request.md`.
 - Do not preserve obsolete behavior merely for compatibility.
 - Stop before destructive operations, external writes, credentials, production
   actions, or permission-boundary changes.

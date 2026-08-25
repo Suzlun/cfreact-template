@@ -1069,21 +1069,35 @@ fail 条件
     pnpm lint:openspec
     ```
 
-- 後続成果物は解決済みの `proposal.md` から作成する
-  - 強制: `pnpm lint` → `node scripts/openspec/verify-change-proposal.mjs` → `scripts/openspec/verify-change-proposal.mjs`
+- 後続成果物は所有者確認済みの `request.md` から作成する
+  - 強制: OpenSpecの成果物依存、プライマリエージェントと`openspec/proposer`の受渡契約
   - NG例
-    - `Intent-Resolution: DRAFT` のまま差分仕様、`design.md`、`tasks.md` を作成する
+    - プライマリエージェントが所有者確認前に`request.md`を作成する
+    - `openspec/proposer`が`request.md`を作成、変更、補完、再解釈する
+    - リポジトリの事実、一般的な慣行、セキュリティ上の推奨、実装上の必要性から製品Requirementを追加する
+    - 確認済みRequestがないChangeを`openspec/proposer`が受理する
     - `UX-Mode: CONTINUITY` で `### Continuity Source` を記載しない
     - `UX-Mode: SHAPE` で `### Primary User Task` または `### UX Direction` を記載しない
   - OK例
-    - 依頼自体が重要な曖昧さを解消している場合は `Intent-Resolution: REQUEST_SUFFICIENT` とする
-    - 再構成した意図を所有者が明示確認した場合は `Intent-Resolution: OWNER_CONFIRMED` とする
-    - 成果、成果の制約、必須手段、候補手段を分離し、必須見出しと根拠をすべて記載する
+    - プライマリエージェントがRequest候補を会話で提示し、所有者の明示確認後だけ`Request-Status: CONFIRMED`を作成する
+    - `request.md`には確認済みRequest、明示した成果制約、明示的に必須とした手段、確認証跡だけを記載する
+    - `openspec/proposer`は確認済みRequestから直接導ける成果だけを提案、Specs、設計、作業パッケージへ反映する
+
+- OpenSpecの契約成果物は確認済みの肯定的成果だけを記録する
+  - 強制: `openspec/config.yaml`、両スキーマの成果物指示、`openspec-review`
+  - NG例
+    - 非目標、対象外、却下案、旧実装の不在、追加しない技術または機能をRequirementにする
+    - 削除した未要求の振る舞いを「その振る舞いを提供してはならない」という反対向きのRequirementへ置換する
+  - OK例
+    - 所有者が求める利用可能な終端状態を肯定形で記載する
+    - 不要なRequirementを`REMOVED Requirements`で除去し、主仕様から消す
+    - 認可された主体だけが変更できる保証を定義し、未認可要求が状態を変えないScenarioで確認する
 
 - OpenSpec は観測可能な振る舞いの契約とし、詳細な実装計画にしない
   - 強制: `pnpm lint` → `node scripts/openspec/verify-change-task-scope.mjs` → `scripts/openspec/verify-change-task-scope.mjs`
   - NG例
     - 顧客が母語で利用できる成果ではなく、i18nのRFC準拠または使用パッケージをRequirementにする
+    - 非目標または実装しない機能をRequirementにする
     - `tasks.md` をファイル、補助処理、試験階層ごとの計画へ分解する
     - `design.md` に物質的な設計判断以外の見出しを追加する
     - `design.md`で既存コード、導入済みパッケージ、実績のある外部パッケージの候補または採否を記載しない

@@ -166,7 +166,7 @@ direction, real browser use, and repository rules.
 
 ## Required Input
 
-Require the customer outcome and Scenarios, diff boundary and changed files,
+Require the confirmed Request and Scenarios, diff boundary and changed files,
 verification results, UX direction or continuity evidence when applicable,
 `Review phase: INDEPENDENT | CRITIQUE`, and local browser route and test-data
 conditions when browser review is possible.

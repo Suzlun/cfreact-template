@@ -156,9 +156,10 @@ semantic contract against the supplied Change.
 
 Require a `change-id` and preserve caller-provided planning roots and store
 flags. Run status, apply instructions, delta display, and strict validation.
-Read every schema-returned `contextFiles` path. Use `proposal.md` as the
-authoritative request interpretation and require only artifacts defined by the
-selected schema.
+Read every schema-returned `contextFiles` path. Require and read the
+primary-agent-owned `Request-Status: CONFIRMED` `request.md` as the authoritative
+request evidence. Treat `proposal.md` and downstream artifacts as fallible
+derivations and require only artifacts defined by the selected schema.
 
 Keep deterministic failures separate from semantic findings. Do not replace an
 architecture, perform generic feasibility review, or treat files, private APIs,

@@ -32,7 +32,7 @@ This document is lint-as-rules. Include only rules that are mechanically enforce
 6. Use this repo's actual TypeSpec setup precisely:
    - `packages/typespec/package.json` defines `format`, `format:check`, `gen:openapi`, and `check`
    - OpenAPI output is configured by `packages/typespec/tspconfig.yaml`
-7. Mention OpenSpec exactly as implemented today through the `behavior-change` and `architecture-change` schemas, `pnpm lint:openspec`, `scripts/openspec/verify-change-proposal.mjs`, `scripts/openspec/verify-scenario-coverage.mjs`, and `scripts/openspec/verify-change-task-scope.mjs`.
+7. Mention OpenSpec exactly as implemented today through the primary-agent-owned confirmed `request.md`, the `behavior-change` and `architecture-change` schemas, `pnpm lint:openspec`, `scripts/openspec/verify-change-proposal.mjs`, `scripts/openspec/verify-scenario-coverage.mjs`, and `scripts/openspec/verify-change-task-scope.mjs`.
 8. Use this repo's real file names and paths. Do not reference non-existent legacy paths such as `packages/frontend/web`, `packages/backend/internal/**`, `packages/backend/.golangci.yml`, `tools/scripts/*`, root `.spectral.yaml`, or `commitlint.config.cjs`.
 9. Keep OpenSpec documented as the persistent observable Behavior Contract, not a master implementation plan. Document one-way Playwright E2E-to-Scenario traceability, `--change`, coarse Work Packages, and progressive runtime planning.
 10. Document the independent `Operation Lane`, `UX Mode`, and `Review Depth` vocabulary enforced by `.github/workflows/validate-pr-template.yml`.

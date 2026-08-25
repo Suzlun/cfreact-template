@@ -166,6 +166,12 @@ Read every `contextFiles` path returned by the schema. Do not assume `design.md`
 exists: `behavior-change` has proposal, Specs, and tasks;
 `architecture-change` additionally has design.
 
+Require the primary-agent-owned `request.md` to contain
+`Request-Status: CONFIRMED` and owner confirmation evidence. Treat it as the
+authoritative request evidence and every later artifact as a fallible
+derivation. Return `FAILED` rather than reviewing or inferring a Request when it
+is absent, unconfirmed, unclear, or inconsistent.
+
 Keep deterministic validation failures separate from semantic findings.
 Validation must pass before `APPROVED`, but it does not mandate delegation.
 
@@ -196,6 +202,10 @@ Completeness or coverage axes are not exact questions and must not be delegated.
 
 - Treat delegated reports as candidates, re-read their evidence, and evaluate
   them through `openspec-review`.
+- Reject any candidate that creates product behavior absent from the confirmed
+  Request, including behavior justified only by common practice, apparent
+  customer value, security recommendation, repository evidence, or
+  implementation necessity.
 - Before retaining any candidate, identify the affected customer, the concrete
   experience or outcome harmed, the evidence-backed causal path from the
   observed fact to that harm, and the harm's severity, likelihood, and reach.
