@@ -132,7 +132,9 @@ Dependency directions:
 - Actual UI changes require a production designer and real desktop/mobile
   browser review. Generated mockups are optional non-contract evidence.
 - PRs record Operation Lane, UX Mode, Review Depth, OpenSpec Change, and
-  Scenario IDs. BEHAVIOR and ARCHITECTURE require a Change and Scenario IDs.
+  Scenario IDs. BEHAVIOR and ARCHITECTURE require a Change. BEHAVIOR and
+  ARCHITECTURE Changes with delta specs require Scenario IDs; an ARCHITECTURE
+  Change with `skip_specs: true` uses a reasoned `なし`.
 
 ### 4. Verify Through Real Commands
 

@@ -171,8 +171,10 @@ planning roots and store flags, read the reported `schemaName`, and read every
 returned `contextFiles` path. Require the primary-agent-owned `request.md` to
 contain `Request-Status: CONFIRMED` and owner confirmation evidence.
 `behavior-change` additionally contains proposal, Specs, and tasks.
-`architecture-change` additionally contains design. Never assume an artifact
-outside the selected schema.
+`architecture-change` additionally contains design and may report Specs as
+skipped when `.openspec.yaml` sets `skip_specs: true`. In that case, require no
+delta Spec, Scenario, Spec Unit, Reuse Assessment row, or corresponding research
+report. Never assume an artifact outside the selected schema.
 
 Treat the confirmed Request as authoritative request evidence and every later
 artifact as a fallible derivation. Return `PROPOSER_REVIEW_REQUIRED` without

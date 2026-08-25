@@ -1192,7 +1192,7 @@ fail 条件
     - Review Depth: DEEP
     ```
 
-- `BEHAVIOR` と `ARCHITECTURE` は OpenSpec Change と Scenario ID を記載する
+- `BEHAVIOR`と`ARCHITECTURE`はOpenSpec Changeを記載し、差分仕様を持つChangeはScenario IDも記載する
   - 強制: `.github/workflows/validate-pr-template.yml`
   - NG例
     ```md
@@ -1208,6 +1208,7 @@ fail 条件
     ```
   - 補足
     - `DIRECT` は理由付きの `なし` を使用できる
+    - `skip_specs: true`の`ARCHITECTURE`は、`Scenario IDs`に理由付きの`なし`を使用できる
 
 - 実際の UI / UX 変更ではデスクトップとモバイルの変更前後画像をすべて添付する
   - 強制: `.github/workflows/validate-pr-template.yml`
