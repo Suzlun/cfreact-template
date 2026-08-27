@@ -84,9 +84,15 @@ Husky によりコミット時に検証されます。
   - Reactの顧客向けUI試験では、利用者に見える描画と操作を保全する目的でjsdom、MSW、Testing Libraryを利用できる
   - Workerd固有、実データベース、接続、バックエンドHTTP・OpenAPI契約、ファイルシステム・子プロセスを使うツール自己試験を作らない
   - 試験専用の製品側API、公開要素、生成処理、分岐、Binding、設定を作らない
-- `BEHAVIOR`と`ARCHITECTURE`では、指示を受けたプライマリエージェントがRequest候補を会話で提示し、所有者の明示確認後だけChangeと`Request-Status: CONFIRMED`の`request.md`を作成する
-  - `openspec/proposer`は確認済み`request.md`がないChangeを受理せず、`request.md`を作成、変更、補完、再解釈しない
+- `BEHAVIOR`と`ARCHITECTURE`では、利用者が選択した`openspec/proposer`がRequest候補を会話で提示し、所有者の明示確認後だけChangeと`Request-Status: CONFIRMED`の`request.md`を作成する
+  - 具体的な解決手段より先に、利用者、現在の状況、変更動機、期待価値、望む成果を一つずつ確認し、確認済みの背景と変更動機を専用節へ保存する
+  - 変更動機には、困りごとや制約だけでなく、期待、機会、好奇心、未探索の可能性も含める
+  - 背景と変更動機は要求の理由として扱い、それ自体からRequirementや成果制約を作らない
+  - 利用者が`openspec/proposer`をプライマリエージェントとして選択し、所有者への質問、Request更新、全計画成果物の作成を所有させる
+  - 成果物の意味に関わる内容が自明でない場合は推測せず逐次確認し、背景、変更動機、期待価値、成果、成果制約、必須手段として明確な回答は確認証拠とともに`request.md`へ即時反映する
+  - 解決手段を示す入力は背景、変更動機、希望成果を先に確認し、所有者が拘束した場合だけ必須手段として扱う
   - `proposal.md`、Specsは確認済みRequestから直接導ける肯定的成果だけを記録し、非目標、対象外、却下案、旧実装の不在、追加しない技術または機能を契約化しない
+  - Requestの内容は成果物の意味に従って分配し、技術や構造は設計へ、観測可能な顧客価値はSpecsへ、実装成果は粗いWork Packageへ記載する
   - 不要なRequirementは`REMOVED Requirements`で除去し、反対向きのRequirementへ置き換えない
 
 ## 変更運用
@@ -108,7 +114,9 @@ Husky によりコミット時に検証されます。
 - 画像生成による UI モックアップは任意の非契約証跡であり、仕様や実ブラウザ確認を置き換えません。
 - `STANDARD` を既定とし、重要なセキュリティ、データ、外部契約、移行、領域横断の構造、活動中 Change との相互作用に危険がある場合は `DEEP` を選びます。
 
-OpenSpec Changeは、`BEHAVIOR`なら`pnpm exec openspec new change <change-id> --schema behavior-change`、`ARCHITECTURE`なら`pnpm exec openspec new change <change-id> --schema architecture-change`で作成し、`openspec/changes/**`を手作業で作りません。OpenSpec `1.8.0`の`new change`は`openspec/config.yaml#schema`をChange作成時の既定値として参照しないため、`--schema`を省略しません。OpenCodeの公式コアコマンドとスキルは`pnpm gen:openspec`でOpenSpec `1.8.0`から同時に再生成し、`.opencode/commands/opsx-*.md`と`.opencode/skills/openspec-*/SKILL.md`を手編集しません。
+OpenSpec Changeは、`BEHAVIOR`なら`pnpm exec openspec new change <change-id> --schema behavior-change`、`ARCHITECTURE`なら`pnpm exec openspec new change <change-id> --schema architecture-change`で作成し、`openspec/changes/**`を手作業で作りません。OpenSpec `1.8.0`の`new change`は`openspec/config.yaml#schema`をChange作成時の既定値として参照しないため、`--schema`を省略しません。`pnpm gen:openspec`は公式コマンドとスキルを同時に再生成し、生成物を手編集しません。
+
+計画には`openspec/proposer`、実装には`openspec/applier`を利用者が選択します。Proposerは全計画成果物、Applierは実装統括と`tasks.md`の進捗だけを所有します。計画の意味変更が必要になった場合は、ApplierからProposerへ利用者が切り替えます。
 
 OpenSpec の `tasks.md` は粗い作業パッケージ台帳です。ファイル、補助処理、試験階層の詳細は、現在の作業パッケージと検証結果に基づき実装時に段階的に決めます。
 

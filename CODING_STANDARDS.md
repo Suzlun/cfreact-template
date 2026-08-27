@@ -1070,18 +1070,20 @@ fail 条件
     ```
 
 - 後続成果物は所有者確認済みの `request.md` から作成する
-  - 強制: OpenSpecの成果物依存、プライマリエージェントと`openspec/proposer`の受渡契約
+  - 強制: OpenSpecの成果物依存、`openspec/proposer`、両スキーマの成果物指示
   - NG例
-    - プライマリエージェントが所有者確認前に`request.md`を作成する
-    - `openspec/proposer`が`request.md`を作成、変更、補完、再解釈する
+    - `openspec/proposer`が所有者確認前に`request.md`を作成する
+    - 背景や変更動機を確認せず、提示された解決手段からRequirementを推測する
+    - 成果物の意味に関わる自明でない内容を、所有者へ質問せず補完または推測する
     - リポジトリの事実、一般的な慣行、セキュリティ上の推奨、実装上の必要性から製品Requirementを追加する
-    - 確認済みRequestがないChangeを`openspec/proposer`が受理する
+    - 明確な所有者回答を`request.md`へ反映せず、下流成果物だけへ追加する
     - `UX-Mode: CONTINUITY` で `### Continuity Source` を記載しない
     - `UX-Mode: SHAPE` で `### Primary User Task` または `### UX Direction` を記載しない
   - OK例
-    - プライマリエージェントがRequest候補を会話で提示し、所有者の明示確認後だけ`Request-Status: CONFIRMED`を作成する
-    - `request.md`には確認済みRequest、明示した成果制約、明示的に必須とした手段、確認証跡だけを記載する
-    - `openspec/proposer`は確認済みRequestから直接導ける成果だけを提案、Specs、設計、作業パッケージへ反映する
+    - `openspec/proposer`が利用者、現状、変更動機、期待価値、望む成果を確認してRequest候補を提示し、所有者の明示確認後だけ`Request-Status: CONFIRMED`を作成する
+    - `request.md`には確認済みBackground、Motivation、Request、成果制約、必須手段、確認証拠だけを記載する
+    - `openspec/proposer`が自明でない意味判断を逐次確認し、背景、変更動機、期待価値を含む明確な回答を確認証拠とともにRequestへ即時反映する
+    - Requestを意味境界に従って提案、Specs、設計、作業パッケージへ分配する
 
 - OpenSpecの契約成果物は確認済みの肯定的成果だけを記録する
   - 強制: `openspec/config.yaml`、両スキーマの成果物指示、`openspec-review`

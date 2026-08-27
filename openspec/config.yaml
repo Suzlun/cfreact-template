@@ -6,10 +6,16 @@ context: |
   Testing: Vitest (pure unit and customer-facing React/UI), Storybook browser tests, Playwright (E2E)
 
   Request authority boundary:
-  - The primary agent that receives the owner's instruction reconstructs a Request candidate in conversation and creates `request.md` only after explicit owner confirmation.
+  - The user-selected `openspec/proposer` primary agent first interviews the owner about who is affected, the current situation, the motivation for change, the expected value, and the desired outcome; it does not require the owner to design a solution.
+  - Motivation includes negative drivers such as pain points or limitations and positive drivers such as opportunities, aspirations, curiosity, or unexplored possibilities.
+  - `openspec/proposer` reconstructs a Request candidate containing owner-confirmed Background, Motivation, Request, outcome constraints, and required means, and creates `request.md` only after explicit owner confirmation.
   - An unconfirmed Request candidate, inference, assumption, candidate means, non-goal, or rejected interpretation never becomes a repository artifact.
-  - `request.md` contains only the owner-confirmed Request, explicitly stated outcome constraints, explicitly required means, and confirmation evidence.
-  - `openspec/proposer` rejects a Change without `Request-Status: CONFIRMED` and never creates, edits, or supplements `request.md`.
+  - `request.md` contains only owner-confirmed background, motivation and expected value, requested outcomes, explicitly stated outcome constraints, explicitly required means, and confirmation evidence.
+  - Background and Motivation explain why the Request exists but never create Requirements or outcome constraints by themselves.
+  - Solution-shaped input is traced back to its background, motivation, and desired outcome before the named solution is treated as a required means.
+  - The user-selected `openspec/proposer` primary agent owns every planning artifact and never delegates owner questions or artifact authorship.
+  - During artifact work, any non-self-evident semantic choice returns to one focused owner question instead of being inferred or completed.
+  - An unambiguous owner answer that states background, motivation or expected value, an outcome, an outcome constraint, or required means is immediately added to `request.md` with that answer as confirmation evidence.
   - Repository evidence, common practice, security recommendations, implementation necessity, downstream artifacts, and tests cannot create product outcomes or Requirements.
   - Required Means constrain architecture and tasks. Candidate Means remain design options. Neither becomes a product Requirement or Scenario.
 
@@ -54,7 +60,7 @@ rules:
     - Keep outcomes separate from required and candidate means.
     - Cite repository evidence and record the positive Change boundary and observable success without adding outcomes.
     - Do not record non-goals, rejected interpretations, unused technologies, or the absence of old implementation in the proposal.
-    - Return to the primary agent when the Request is missing, unclear, or must change.
+    - Return to `openspec/proposer` when the Request is missing, unclear, or must change.
   specs:
     - Begin every delta spec with `## Purpose`.
     - Requirements and Scenarios contain only positive observable behavior or externally owned constraints directly entailed by the owner-confirmed Request.

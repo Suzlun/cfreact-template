@@ -306,8 +306,10 @@ AI 支援開発に OpenCode と OpenSpec を使用する場合：
    ```
 
 3. **OpenCode 内でスラッシュコマンドを使用:**
-   - `/opsx-propose <name-or-description>` - Change を作成し、必要な成果物を生成
-   - `/opsx-apply <name>` - 作業パッケージに沿って実装
+   - `openspec/proposer` - 背景と変更動機から逐次確認し、Requestと必要な成果物を作成するプライマリエージェント
+   - `openspec/applier` - 作業パッケージ、実装委任、進捗、検証を統括するプライマリエージェント
+   - `/opsx-propose <name-or-description>` - OpenSpec公式の汎用提案コマンド
+   - `/opsx-apply <name>` - OpenSpec公式の汎用適用コマンド
    - `/opsx-sync <name>` - 差分仕様を主仕様に同期
    - `/opsx-archive <name>` - 完了した Change を履歴へ移動
    - `/opsx-explore <topic>` - 実装せずに調査・検討
@@ -564,7 +566,7 @@ node scripts/openspec/verify-scenario-coverage.mjs
 
 ### プロジェクトの初期化
 
-このリポジトリは`@fission-ai/openspec` `1.8.0`、`openspec/config.yaml`、二つの変更スキーマを使用します。OpenCodeの公式コアコマンドとスキルは手編集せず、`pnpm gen:openspec`でOpenSpec公式の`init`から同時に再生成します。Changeディレクトリも手作成せず、運用区分に対応する`--schema`を付けた`openspec new change`で作成します。OpenSpec `1.8.0`は`openspec/config.yaml#schema`をChange作成時の既定値として参照しないため、`--schema`を省略しません。
+このリポジトリは`@fission-ai/openspec` `1.8.0`、`openspec/config.yaml`、二つの変更スキーマを使用します。`pnpm gen:openspec`はOpenSpec公式のコマンドとスキルを同時に再生成し、生成物は手編集しません。Changeディレクトリも手作成せず、運用区分に対応する`--schema`を付けた`openspec new change`で作成します。OpenSpec `1.8.0`は`openspec/config.yaml#schema`をChange作成時の既定値として参照しないため、`--schema`を省略しません。
 
 ```bash
 pnpm gen:openspec
@@ -573,12 +575,14 @@ pnpm exec openspec list
 pnpm lint:openspec
 ```
 
-### スラッシュコマンド
+### OpenSpec操作
 
-OpenCode で以下のコマンドが使えます：
+OpenCodeでは次のプライマリエージェントと公式コマンドを利用できます。
 
-- **`/opsx-propose <name-or-description>`** - Change を作成し、必要な成果物を生成
-- **`/opsx-apply <name>`** - 作業パッケージに沿って実装
+- **`openspec/proposer`** - 背景、変更動機、Request、全計画成果物を所有するプライマリエージェント
+- **`openspec/applier`** - 作業パッケージ、実装委任、進捗、検証を所有するプライマリエージェント
+- **`/opsx-propose <name-or-description>`** - OpenSpec公式の汎用提案コマンド
+- **`/opsx-apply <name>`** - OpenSpec公式の汎用適用コマンド
 - **`/opsx-sync <name>`** - 差分仕様を主仕様へ同期
 - **`/opsx-archive <name>`** - 完了した Change を履歴へ移動
 - **`/opsx-explore <topic>`** - 実装せずに調査・検討
@@ -586,11 +590,8 @@ OpenCode で以下のコマンドが使えます：
 
 ### 使用例
 
-```
-# OpenCode 内で実行
-/opsx-propose add-user-auth
-/opsx-apply add-user-auth
-```
+1. OpenCodeのエージェント選択で`openspec/proposer`を選び、実現したい成果や現在の関心を伝える。
+2. `Planning Ready: YES`の報告後、`openspec/applier`へ切り替えてChange識別子を伝える。
 
 ## Serena MCP - セマンティックコード検索
 

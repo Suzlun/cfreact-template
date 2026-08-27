@@ -83,9 +83,12 @@ Dependency directions:
 - Change TypeSpec first, then run `pnpm gen:api-sdk` and
   `pnpm check:codegen`.
 - Never edit generated OpenAPI or SDK output manually.
-- Never edit `.opencode/commands/opsx-*.md` or
-  `.opencode/skills/openspec-*/SKILL.md` manually; regenerate both with
+- Never edit `.opencode/commands/opsx-*.md` or generated
+  `.opencode/skills/openspec-*/SKILL.md` files manually; regenerate them with
   `pnpm gen:openspec` from the pinned OpenSpec version.
+- Treat generated proposal and apply skills as generic traversal. Apply the
+  repository-owned `openspec/proposer` or `openspec/applier` primary-agent
+  contract for permissions, dialogue, artifact ownership, and convergence.
 - Never call `fetch`, `axios`, or `cross-fetch` from frontend app/domain code.
 - App pages/components import domain hooks, never the API package directly.
 - Use the shared React Compiler configuration; runtime source never imports

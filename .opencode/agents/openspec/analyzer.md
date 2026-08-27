@@ -166,11 +166,13 @@ Read every `contextFiles` path returned by the schema. Do not assume `design.md`
 exists: `behavior-change` has proposal, Specs, and tasks;
 `architecture-change` additionally has design.
 
-Require the primary-agent-owned `request.md` to contain
-`Request-Status: CONFIRMED` and owner confirmation evidence. Treat it as the
-authoritative request evidence and every later artifact as a fallible
-derivation. Return `FAILED` rather than reviewing or inferring a Request when it
-is absent, unconfirmed, unclear, or inconsistent.
+Require the `openspec/proposer`-owned `request.md` to contain
+`Request-Status: CONFIRMED`, owner-confirmed Background, Motivation, a concrete
+Request, and confirmation evidence. Treat it as the authoritative request
+evidence and every later artifact as a fallible derivation. Background and
+Motivation explain the Request but do not create Requirements by themselves. Return
+`FAILED` rather than reviewing or inferring a Request when it is absent,
+unconfirmed, unclear, or inconsistent.
 
 Keep deterministic validation failures separate from semantic findings.
 Validation must pass before `APPROVED`, but it does not mandate delegation.

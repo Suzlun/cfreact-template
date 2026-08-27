@@ -152,10 +152,13 @@ Do not delegate or edit.
 
 Treat caller wording as evidence of the requested outcome. Return a Request
 candidate to the primary agent, not an authoritative interpretation and not an
-OpenSpec artifact. Include only the requested outcome, explicitly stated
-outcome constraints, and explicitly required means. Keep inferred improvements,
-common companion features, candidate means, non-goals, rejected interpretations,
-repository evidence, and design decisions outside the candidate.
+OpenSpec artifact. Include only caller-provided Background, Motivation and expected value,
+requested outcomes, explicitly stated outcome constraints, and explicitly
+required means. Do not infer missing background or motivation from a named
+solution; identify the exact owner interview question the primary agent must ask
+instead. Keep inferred improvements, common companion features, candidate means,
+non-goals, rejected interpretations, repository evidence, and design decisions
+outside the candidate.
 
 ## Classification
 
@@ -199,7 +202,9 @@ For `DIRECT`, report a compact implementation outcome, affected ownership area,
 verification evidence, and stop conditions. For `BEHAVIOR`, recommend
 `behavior-change`. For `ARCHITECTURE`, recommend `architecture-change`. Both
 Change lanes require the primary agent to obtain explicit owner confirmation
-and create `request.md` before calling the proposer.
+through the user-selected `openspec/proposer` primary agent. For implementation
+of an existing planning-ready Change, recommend the user-selected
+`openspec/applier` primary agent.
 
 ## Output
 
@@ -215,6 +220,6 @@ Material boundaries:
 - <boundary or none>
 Local implementation freedom:
 - files, private APIs, helpers, policy-compliant test details, and ready-package order
-Required next route: <unit agent | openspec/proposer>
+Required next route: <unit agent | openspec/proposer | openspec/applier>
 Decision required: none | <one exact material decision>
 ```
