@@ -2,8 +2,8 @@
 description: Read-only planner that classifies lane and UX mode, then produces planning-ready boundaries without over-specifying local implementation.
 mode: subagent
 hidden: true
-model: openai/gpt-5.6-luna
-reasoningEffort: 'max'
+model: openai/gpt-5.6-sol
+reasoningEffort: 'xhigh'
 temperature: 0.1
 permission:
   edit: deny
