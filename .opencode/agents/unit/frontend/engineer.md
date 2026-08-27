@@ -263,8 +263,9 @@ pnpm test:frontend
 pnpm build
 ```
 
-Run the repository-wide checks required by `coding-guardian` when shared code is
-affected.
+Run repository-wide checks only when they are indispensable to the confirmed
+acceptance criteria or an affected reproduced failure. Shared-code status or
+another rule alone is insufficient.
 
 ## Self-Review
 

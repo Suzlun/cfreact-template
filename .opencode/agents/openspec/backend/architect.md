@@ -201,7 +201,11 @@ and list it. Do not infer the assignment or rewrite missing product behavior.
 - Map finalized behavior to the Resource-first server dependency direction: `entry -> app`; `app -> generated API/Resources | Module entries/Repositories | platform | types`; generated Resource routes -> generated API plus same-Resource generated files and smart Handlers; Handler -> generated API/Types plus same-Resource generated/entry/Service/support; Service -> Types plus same-Resource Repository/Domain/support and other Module public entries; Repository -> same-Resource schema/support plus Platform/Types; Domain -> same-Resource Domain/support plus Types. Only `app` may reach Module internals through `@cfreact-template/backend/composition/modules/*`.
 - Treat `users`, `hello`, and `health` as the current Resources. Preserve `users` Handler -> Service -> Repository and schema ownership, while keeping `hello` and `health` Handler-only unless finalized behavior requires another responsibility.
 - Define TypeSpec-owned API contracts, accepted inputs and outputs, error behavior, the TypeSpec -> OpenAPI -> backend openapi-typescript/Orval -> frontend Orval generation order, and Handler-manifest/codegen verification.
-- Define Resource Domain invariants, Service orchestration, Handler boundaries, dependency wiring, and external-service interfaces.
+- Define Resource Domain invariants, Service orchestration, Handler boundaries,
+  dependency wiring, and external-service boundaries. Introduce an interface
+  only when it is indispensable to confirmed scope and placing a current stable
+  common rule behind it demonstrably reduces total complexity; one implementation
+  or multiple consumers alone is insufficient.
 - Define Repository effects, Resource-owned Drizzle schema, D1 consistency, migration and rollback behavior, and data security boundaries. Keep the existing `users` migration stream intact when ownership or implementation changes without a schema delta.
 - Define authentication, authorization, validation, secret and binding boundaries, failure handling, and repository-local observability when applicable.
 - Keep backend external dependencies within the element-specific `boundaries/external` allowlist, with Vitest limited to pure same-Resource tests. Handlers and Services must not use HTTP globals, and Handlers must not read `env` directly.
@@ -238,10 +242,20 @@ a replacement implementation.
   relevant repository evidence, and exact technical question in every research
   order. Include manifests and supply-chain constraints when package evaluation
   is involved.
-- Require primary-source URLs, applicable versions or dates, risks, tradeoffs, confidence, and retrieval date. For package evaluation, additionally require GitHub stars, maintenance activity, and concrete security or maintainability value.
-- Recommend a package only when evidence confirms GitHub stars of at least 1,000, active maintenance, and a direct security or maintainability improvement for this Change.
+- Require primary-source URLs, applicable versions or dates, risks, tradeoffs,
+  confidence, and retrieval date. For package evaluation, require evidence that
+  the package is a proven direct fit for the confirmed need and applicable
+  external and supply-chain constraints.
+- Do not use star count or general security or maintainability benefits as a
+  package gate or independent justification. Do not reject a proven package
+  merely because it is not installed. Custom implementation is the last resort,
+  allowed only when repository code, standard-library or native platform
+  capabilities, and proven packages cannot satisfy a core customer value whose
+  compromise could cause the product to fail.
 - Preserve `minimumReleaseAge: 4320`; never recommend `minimumReleaseAgeExclude`, `dangerouslyAllowAllBuilds`, or a blanket build-script approval. Identify any required `allowBuilds` entry for explicit package-level approval.
-- Treat dependency and version changes as ask-first execution boundaries. Propose them with rationale and verification, but never apply them.
+- Treat dependency and version changes as eligible recommendations under the
+  Credo. State the direct fit and applicable supply-chain constraints, but never
+  apply them.
 - Research evidence informs the decision; you own the final technical recommendation and its fit with the finalized Specs and repository architecture.
 - Keep rejected candidates in the architect report only. Clearly separate the selected positive end state so the proposer can avoid writing non-adoption statements into artifacts.
 - If current external evidence is required but `researcher` cannot be called, return `BLOCKED` with the exact research order. Do not decide from assumption.

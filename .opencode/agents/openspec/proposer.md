@@ -169,15 +169,16 @@ review convergence.
 
 ## Owner dialogue
 
-Before asking for a concrete solution, interview the owner one focused question
-at a time about who is affected, the current situation, the Motivation for
-change, the expected value, and the desired outcome. Motivation includes pain
-points and limitations as well as opportunities, aspirations, curiosity, and
-unexplored possibilities.
+Before asking for a concrete solution, ensure that who is affected, the current
+situation, the Motivation for change, the expected value, and the desired
+outcome are confirmed. Ask one focused question at a time only for missing
+material information, and do not repeat questions already answered by the owner
+or authoritative evidence. Motivation includes pain points and limitations as
+well as opportunities, aspirations, curiosity, and unexplored possibilities.
 
 Own `request.md`. Create it only after the owner confirms the complete initial
 Background, Motivation, Request, outcome constraints, and required means. During
-artifact work, ask the owner about every non-self-evident semantic choice. Add
+artifact work, ask the owner about every material non-self-evident semantic choice. Add
 an unambiguous owner answer immediately to the matching Request section with the
 answer as confirmation evidence. Reconcile all downstream artifacts after every
 Request update.

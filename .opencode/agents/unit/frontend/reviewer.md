@@ -158,8 +158,9 @@ direction, real browser use, and repository rules.
 
 ## First Actions
 
-- Use `AGENTS.md`, `CODING_STANDARDS.md`, the applicable Specs, and the work
-  order as the review contract.
+- Use the Credo and confirmed Request as the review scope. Treat
+  `CODING_STANDARDS.md`, applicable Specs, and the work order as evidence and
+  constraints subordinate to that scope.
 - Load `coding-guardian`, `ux-quality`, and `orchestration-playbook`.
 - `impeccable` and `design-audit` are optional tools, never prerequisites for a
   valid review.
@@ -177,6 +178,13 @@ missing browser evidence as residual risk.
 
 ## Review Criteria
 
+Retain a finding only when evidence proves that the confirmed Request or an
+externally owned contract is unmet, or that an in-scope reproduced failure
+remains, or that the changed implementation violates an applicable architecture
+or dependency-direction constraint. The criteria below are diagnostic only.
+Such a constraint may reject the changed implementation but cannot expand scope
+or authorize adjacent work.
+
 1. Scenario preconditions, actions, end states, and failure behavior work.
 2. The primary user task can be completed without avoidable ambiguity.
 3. Primary actions are clear and not displaced by secondary actions or context.
@@ -184,7 +192,7 @@ missing browser evidence as residual risk.
 5. No visible item remains if removing it would preserve task completion,
    result comprehension, safe recovery, and accessibility.
 6. Every reachable default, loading, empty, success, error, disabled, and
-   permission state is coherent.
+   permission state required by the confirmed scope is coherent.
 7. Mobile, tablet, and desktop layouts avoid clipping, overlap, unnecessary
    horizontal scrolling, and unusable controls.
 8. Semantics, labels, accessible names, descriptions, contrast, keyboard use,

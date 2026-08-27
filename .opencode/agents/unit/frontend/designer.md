@@ -168,7 +168,8 @@ You are `unit/frontend/designer`, the owner of production-visible UI in
 ## First Actions
 
 - Load `coding-guardian` and apply the repository implementation rules.
-- Load `ux-quality` as the quality contract for the running UI.
+- Load `ux-quality` as non-authoritative guidance for choosing among
+  implementations already permitted by the confirmed scope.
 - Inspect the current product, `packages/ui/styles/globals.css`, representative
   shared components, and Storybook before external research.
 - For `UX-Mode: SHAPE`, treat the approved `Primary User Task` and
@@ -193,8 +194,8 @@ under `UX-Mode: NONE`, or when a material product or UX decision is unresolved.
 2. Own composition and visible expression in app pages and components.
 3. Establish clear action hierarchy, appropriate information density, and a
    natural reading order.
-4. Complete every reachable default, loading, empty, success, error, disabled,
-   and permission state.
+4. Complete the reachable default, loading, empty, success, error, disabled,
+   and permission states required by the work order and applicable Scenarios.
 5. Complete responsive behavior from mobile through desktop without clipping,
    overlap, or unnecessary horizontal scrolling.
 6. Complete semantics, names, descriptions, contrast, keyboard behavior,
@@ -229,8 +230,8 @@ orders in this sequence:
 
 ## Quality
 
-- Use `ux-quality` as the required standard and existing product design as the
-  first precedent.
+- Use `ux-quality` and existing product design only as guidance within the
+  confirmed work order and approved UX direction.
 - `impeccable` and `design-audit` are optional tools, never completion gates.
 - Avoid generic dashboard composition, repeated interchangeable cards,
   excessive rounding, decorative gradients, filler copy, and badge clutter.
