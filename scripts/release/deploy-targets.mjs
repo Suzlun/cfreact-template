@@ -13,8 +13,15 @@ const option = (name, fallback) => {
 };
 const requestedTargets = option('--targets', 'all');
 const environment = option('--environment', 'production');
+const secretsFile = option('--secrets-file', undefined);
 if (requestedTargets === undefined || environment === undefined) {
   throw new Error('--targets and --environment require values.');
+}
+if (
+  arguments_.includes('--secrets-file') &&
+  (secretsFile === undefined || secretsFile.startsWith('--'))
+) {
+  throw new Error('--secrets-file requires a value.');
 }
 const dryRun = arguments_.includes('--dry-run');
 const manifest = JSON.parse(
@@ -32,6 +39,9 @@ for (const target of resolveDeployTargets(manifest, requestedTargets)) {
     path.join(repositoryRoot, target.renderedConfig),
     '--env',
     environment,
+    ...(secretsFile === undefined
+      ? []
+      : ['--secrets-file', path.resolve(repositoryRoot, secretsFile)]),
     ...(dryRun ? ['--dry-run'] : []),
   ];
   const result = spawnSync('pnpm', commandArguments, {

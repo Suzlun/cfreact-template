@@ -38,6 +38,7 @@ export default defineConfig({
       // E2E 専用 D1 state に migration を適用してから backend を起動する。
       command: 'pnpm test:e2e:backend',
       url: 'http://localhost:8787/health',
+      env: { CORE_API_TOKEN: 'e2e-only-token_0123456789abcdefghijklmnopqrstuvwxyz' },
       reuseExistingServer: process.env.CI === undefined,
       timeout: 120 * 1000,
     },

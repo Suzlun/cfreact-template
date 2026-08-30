@@ -4,6 +4,18 @@
  * cfreact-template core API
  * OpenAPI spec version: 1.0.0
  */
+export type AuthenticationRequiredErrorCode =
+  (typeof AuthenticationRequiredErrorCode)[keyof typeof AuthenticationRequiredErrorCode];
+
+export const AuthenticationRequiredErrorCode = {
+  AUTHENTICATION_REQUIRED: 'AUTHENTICATION_REQUIRED',
+} as const;
+
+export interface AuthenticationRequiredError {
+  code: AuthenticationRequiredErrorCode;
+  message: string;
+}
+
 export interface CreateUserInput {
   name: string;
   email: string;
@@ -75,6 +87,16 @@ export type listUsersResponse200 = {
   status: 200;
 };
 
+export type listUsersResponse400 = {
+  data: InvalidRequestError;
+  status: 400;
+};
+
+export type listUsersResponse401 = {
+  data: AuthenticationRequiredError;
+  status: 401;
+};
+
 export type listUsersResponse500 = {
   data: InternalError;
   status: 500;
@@ -83,14 +105,18 @@ export type listUsersResponse500 = {
 export type listUsersResponseSuccess = listUsersResponse200 & {
   headers: Headers;
 };
-export type listUsersResponseError = listUsersResponse500 & {
+export type listUsersResponseError = (
+  | listUsersResponse400
+  | listUsersResponse401
+  | listUsersResponse500
+) & {
   headers: Headers;
 };
 
 export type listUsersResponse = listUsersResponseSuccess | listUsersResponseError;
 
 export const getListUsersUrl = () => {
-  return `https://core.internal/internal/v1/users`;
+  return `/internal/v1/users`;
 };
 
 export const listUsers = async (
@@ -118,6 +144,11 @@ export type createUserResponse400 = {
   status: 400;
 };
 
+export type createUserResponse401 = {
+  data: AuthenticationRequiredError;
+  status: 401;
+};
+
 export type createUserResponse409 = {
   data: UserEmailAlreadyExistsError;
   status: 409;
@@ -133,6 +164,7 @@ export type createUserResponseSuccess = createUserResponse201 & {
 };
 export type createUserResponseError = (
   | createUserResponse400
+  | createUserResponse401
   | createUserResponse409
   | createUserResponse500
 ) & {
@@ -142,7 +174,7 @@ export type createUserResponseError = (
 export type createUserResponse = createUserResponseSuccess | createUserResponseError;
 
 export const getCreateUserUrl = () => {
-  return `https://core.internal/internal/v1/users`;
+  return `/internal/v1/users`;
 };
 
 export const createUser = async (
@@ -173,6 +205,11 @@ export type getUserResponse400 = {
   status: 400;
 };
 
+export type getUserResponse401 = {
+  data: AuthenticationRequiredError;
+  status: 401;
+};
+
 export type getUserResponse404 = {
   data: UserNotFoundError;
   status: 404;
@@ -188,6 +225,7 @@ export type getUserResponseSuccess = getUserResponse200 & {
 };
 export type getUserResponseError = (
   | getUserResponse400
+  | getUserResponse401
   | getUserResponse404
   | getUserResponse500
 ) & {
@@ -197,7 +235,7 @@ export type getUserResponseError = (
 export type getUserResponse = getUserResponseSuccess | getUserResponseError;
 
 export const getGetUserUrl = (id: UserId) => {
-  return `https://core.internal/internal/v1/users/${id}`;
+  return `/internal/v1/users/${id}`;
 };
 
 export const getUser = async (

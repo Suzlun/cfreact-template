@@ -6,6 +6,9 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 preview_urls = false
 
+[secrets]
+required = ["CORE_API_TOKEN"]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "cfreact-template-db"
@@ -23,6 +26,9 @@ EMAIL_TO = "recipient@example.com"
 name = "cfreact-template-core-production"
 workers_dev = false
 preview_urls = false
+
+[env.production.secrets]
+required = ["CORE_API_TOKEN"]
 
 [env.production.vars]
 EMAIL_FROM = "noreply@example.com"

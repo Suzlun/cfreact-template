@@ -33,7 +33,7 @@ type UsersHandlerEnv = {
  * ユーザー作成操作を契約済み HTTP 応答へ変換する処理担当を公開する。
  *
  * @remarks
- * 検証済み入力をcore SDKへ渡し、core結果をmain公開契約の201、400、409、500応答へ変換する。
+ * 検証済み入力をcore SDKへ渡し、coreの認証失敗を含む結果をmain公開契約の201、400、409、500応答へ変換する。
  *
  * @example
  * ```ts
@@ -63,6 +63,8 @@ export const createUserHandlers = factory.createHandlers(
           emailConflictResponse() satisfies operations['createUser']['responses'][409]['content']['application/json'],
           409
         );
+      // 内部通信の認証失敗は利用者の認証状態として公開せず、構成不備の固定500へ変換する。
+      case 401:
       case 500:
         return c.json(
           internalErrorResponse() satisfies operations['createUser']['responses'][500]['content']['application/json'],

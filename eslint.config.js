@@ -224,6 +224,7 @@ export default tseslint.config(
         },
       },
       'boundaries/elements': [
+        { type: 'core-sdk-test', pattern: 'packages/core-sdk/src/**/*.test.ts', mode: 'full' },
         { type: 'core-sdk', pattern: 'packages/core-sdk/src/**/*', mode: 'full' },
         { type: 'backend-entry', pattern: 'apps/main/src/backend/entry/index.ts', mode: 'full' },
         { type: 'backend-entry', pattern: 'packages/core/src/entry/index.ts', mode: 'full' },
@@ -558,6 +559,10 @@ export default tseslint.config(
             },
             {
               from: ['core-sdk'],
+              allow: ['core-sdk'],
+            },
+            {
+              from: ['core-sdk-test'],
               allow: ['core-sdk'],
             },
             {
@@ -1694,6 +1699,7 @@ export default tseslint.config(
           default: 'disallow',
           rules: [
             { from: ['backend-app'], allow: ['hono'] },
+            { from: ['core-sdk-test'], allow: ['vitest'] },
             {
               from: ['backend-generated-resource'],
               allow: ['@hono/zod-validator', 'hono', 'zod'],

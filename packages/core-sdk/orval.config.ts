@@ -6,7 +6,6 @@ export default defineConfig({
     output: {
       target: './src/generated/client.ts',
       client: 'fetch',
-      baseUrl: 'https://core.internal',
       clean: true,
       override: {
         fetch: {

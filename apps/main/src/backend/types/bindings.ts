@@ -14,6 +14,8 @@ import type { Fetcher, KVNamespace, R2Bucket } from '@cloudflare/workers-types';
 export interface Bindings {
   /** 共有業務を提供する非公開core Worker。 */
   CORE_API: Fetcher;
+  /** core APIがこのバックエンドを認証するBearerトークン。 */
+  CORE_API_TOKEN?: string;
   /** Worker 設定から注入され、現在の API 処理では参照しない KV 名前空間。 */
   KV: KVNamespace;
   /** Worker 設定から注入され、現在の API 処理では参照しない R2 バケット。 */

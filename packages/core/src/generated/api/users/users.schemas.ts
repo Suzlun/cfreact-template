@@ -18,17 +18,6 @@ export interface User {
   createdAt: string;
 }
 
-export type InternalErrorCode = (typeof InternalErrorCode)[keyof typeof InternalErrorCode];
-
-export const InternalErrorCode = {
-  INTERNAL_ERROR: 'INTERNAL_ERROR',
-} as const;
-
-export interface InternalError {
-  code: InternalErrorCode;
-  message: string;
-}
-
 export type InvalidRequestErrorCode =
   (typeof InvalidRequestErrorCode)[keyof typeof InvalidRequestErrorCode];
 
@@ -38,6 +27,29 @@ export const InvalidRequestErrorCode = {
 
 export interface InvalidRequestError {
   code: InvalidRequestErrorCode;
+  message: string;
+}
+
+export type AuthenticationRequiredErrorCode =
+  (typeof AuthenticationRequiredErrorCode)[keyof typeof AuthenticationRequiredErrorCode];
+
+export const AuthenticationRequiredErrorCode = {
+  AUTHENTICATION_REQUIRED: 'AUTHENTICATION_REQUIRED',
+} as const;
+
+export interface AuthenticationRequiredError {
+  code: AuthenticationRequiredErrorCode;
+  message: string;
+}
+
+export type InternalErrorCode = (typeof InternalErrorCode)[keyof typeof InternalErrorCode];
+
+export const InternalErrorCode = {
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+} as const;
+
+export interface InternalError {
+  code: InternalErrorCode;
   message: string;
 }
 

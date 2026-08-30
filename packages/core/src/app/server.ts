@@ -1,6 +1,8 @@
 import { Hono, type MiddlewareHandler } from 'hono';
+import { bearerAuth } from 'hono/bearer-auth';
 import { HTTPException } from 'hono/http-exception';
 import { logger } from 'hono/logger';
+import { timingSafeEqual } from 'hono/utils/buffer';
 
 import usersApi from '@cfreact-template/core/generated/api/users/users';
 import { inspectSafeErrorResponse } from '@cfreact-template/core/platform/http/responseValidation';
@@ -12,11 +14,20 @@ import type { components } from '@cfreact-template/core/generated/api/openapi';
 import type { Bindings } from '@cfreact-template/core/types';
 
 type CoreVariables = ReturnType<typeof createServices>;
+interface CoreEnv {
+  Bindings: Bindings;
+  Variables: CoreVariables;
+}
 
 const invalidRequestResponse = {
   code: 'INVALID_REQUEST',
   message: 'Invalid request',
 } satisfies components['schemas']['InvalidRequestError'];
+
+const authenticationRequiredResponse = {
+  code: 'AUTHENTICATION_REQUIRED',
+  message: 'Authentication required',
+} satisfies components['schemas']['AuthenticationRequiredError'];
 
 const notFoundResponse = {
   code: 'INVALID_REQUEST',
@@ -28,11 +39,29 @@ const internalErrorResponse = {
   message: 'Internal server error',
 } satisfies components['schemas']['InternalError'];
 
-const app = new Hono<{ Bindings: Bindings; Variables: CoreVariables }>();
+const app = new Hono<CoreEnv>();
 
 app.use('*', logger());
 
 // 外部所有HTTPサブツリーは、core契約のミドルウェアより前に必要な場合だけ明示的にマウントする。
+
+app.use(
+  '/internal/*',
+  bearerAuth<CoreEnv>({
+    verifyToken: (token, c) => {
+      const expectedToken = c.env.CORE_API_TOKEN;
+      return (
+        expectedToken !== undefined &&
+        expectedToken.length >= 43 &&
+        timingSafeEqual(expectedToken, token)
+      );
+    },
+    realm: 'core',
+    noAuthenticationHeader: { message: authenticationRequiredResponse },
+    invalidAuthenticationHeader: { message: invalidRequestResponse },
+    invalidToken: { message: authenticationRequiredResponse },
+  })
+);
 
 app.use('/internal/v1/users/*', async (c, next) => {
   const services = createServices(c.env);
@@ -57,7 +86,15 @@ app.route('/', usersApi);
 
 app.notFound((c) => c.json(notFoundResponse, 404));
 
-app.onError((error, c) => {
+app.onError(async (error, c) => {
+  if (error instanceof HTTPException && error.status === 401) {
+    const response = error.getResponse();
+    const inspection = await inspectSafeErrorResponse(response);
+    if (inspection.safe) {
+      return response;
+    }
+  }
+
   if (error instanceof HTTPException && error.status === 400) {
     return c.json(invalidRequestResponse, 400);
   }
@@ -66,5 +103,5 @@ app.onError((error, c) => {
   return c.json(internalErrorResponse, 500);
 });
 
-/** Service Bindingへ公開する非公開core Honoアプリ。 */
+/** 認証済みの内部HTTP要求へ応答するcore Honoアプリ。 */
 export default app;

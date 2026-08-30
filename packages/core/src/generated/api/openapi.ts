@@ -40,6 +40,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    AuthenticationRequiredError: {
+      /** @enum {string} */
+      code: 'AUTHENTICATION_REQUIRED';
+      message: string;
+    };
     CreateUserInput: {
       name: string;
       /** Format: email */
@@ -102,6 +107,24 @@ export interface operations {
           'application/json': components['schemas']['User'][];
         };
       };
+      /** @description The server could not understand the request due to invalid syntax. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InvalidRequestError'];
+        };
+      };
+      /** @description Access is unauthorized. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AuthenticationRequiredError'];
+        };
+      };
       /** @description Server error */
       500: {
         headers: {
@@ -142,6 +165,15 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['InvalidRequestError'];
+        };
+      };
+      /** @description Access is unauthorized. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AuthenticationRequiredError'];
         };
       };
       /** @description The request conflicts with the current state of the server. */
@@ -191,6 +223,15 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['InvalidRequestError'];
+        };
+      };
+      /** @description Access is unauthorized. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AuthenticationRequiredError'];
         };
       };
       /** @description The server cannot find the requested resource. */

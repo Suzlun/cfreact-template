@@ -35,17 +35,20 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       TF_TOKEN_app_terraform_io: ${{ secrets.HCP_TERRAFORM_TOKEN }}
       TERRAFORM_BACKEND_CONFIG: ${{ secrets.TERRAFORM_BACKEND_CONFIG }}
+      WORKER_SECRETS_FILE: ${{ runner.temp }}/worker-secrets.json
       WRANGLER_ENVIRONMENT: ${{ vars.WRANGLER_ENVIRONMENT || 'production' }}
     steps:
       - name: Detect Cloudflare credentials
         id: credentials
+        env:
+          CORE_API_TOKEN: ${{ secrets.CORE_API_TOKEN }}
         run: |
           # リリースとdeployを独立させ、credentials未設定の生成先では安全にdeployだけを省略します。
-          if [ -n "${CLOUDFLARE_API_TOKEN}" ] && [ -n "${CLOUDFLARE_ACCOUNT_ID}" ] && [ -n "${TF_TOKEN_app_terraform_io}" ] && [ -n "${TERRAFORM_BACKEND_CONFIG}" ]; then
+          if [ -n "${CLOUDFLARE_API_TOKEN}" ] && [ -n "${CLOUDFLARE_ACCOUNT_ID}" ] && [ -n "${CORE_API_TOKEN}" ] && [ -n "${TF_TOKEN_app_terraform_io}" ] && [ -n "${TERRAFORM_BACKEND_CONFIG}" ]; then
             printf '%s\n' 'configured=true' >> "${GITHUB_OUTPUT}"
           else
             printf '%s\n' 'configured=false' >> "${GITHUB_OUTPUT}"
-            printf '%s\n' 'Deploy skipped: configure Cloudflare and HCP Terraform credentials in the production environment.'
+            printf '%s\n' 'Deploy skipped: configure Cloudflare, core API, and HCP Terraform credentials in the production environment.'
           fi
 
       - name: Checkout release tag
@@ -121,10 +124,23 @@ jobs:
           # migration台帳を持つWrangler D1 migrationsで未適用分だけをcore配備前に適用します。
           pnpm --filter @cfreact-template/core exec wrangler d1 migrations apply DB --config "${GITHUB_WORKSPACE}/packages/core/wrangler.release.toml" --env "${WRANGLER_ENVIRONMENT}" --remote
 
+      - name: Prepare Worker secrets
+        if: ${{ steps.credentials.outputs.configured == 'true' }}
+        env:
+          CORE_API_TOKEN: ${{ secrets.CORE_API_TOKEN }}
+        run: |
+          # 一時ファイルだけをWranglerへ渡し、トークンを引数、ログ、リポジトリへ残しません。
+          umask 077
+          node -e "require('node:fs').writeFileSync(process.env.WORKER_SECRETS_FILE, JSON.stringify({ CORE_API_TOKEN: process.env.CORE_API_TOKEN }))"
+
       - name: Deploy selected targets
         if: ${{ steps.credentials.outputs.configured == 'true' }}
         env:
           DEPLOY_TARGETS: ${{ inputs.targets }}
         run: |
           # coreを依存appより先に配備し、台帳外の入力を受理しません。
-          pnpm release:deploy-targets -- --targets "${DEPLOY_TARGETS}" --environment "${WRANGLER_ENVIRONMENT}"
+          pnpm release:deploy-targets -- --targets "${DEPLOY_TARGETS}" --environment "${WRANGLER_ENVIRONMENT}" --secrets-file "${WORKER_SECRETS_FILE}"
+
+      - name: Remove Worker secrets file
+        if: ${{ always() && steps.credentials.outputs.configured == 'true' }}
+        run: rm -f "${WORKER_SECRETS_FILE}"

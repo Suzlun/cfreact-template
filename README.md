@@ -109,13 +109,22 @@ React -> main SDK -> main Hono -> core SDK -> core Hono -> Service -> Repository
 
 `apps/main`は公開契約、画面固有の応答写像、`hello`、`health`を所有します。`packages/core`は共有業務、`users`のService、Repository、Drizzleスキーマ、D1、メール、マイグレーションを所有します。main backendはcore実装を直接インポートせず、`packages/core-sdk`だけを利用します。
 
+core SDKは実行時に基底URL、Bearerトークン、Web標準`fetch`を受け取ります。現在のCloudflare構成では`CORE_API` Service Bindingの`fetch`を渡しますが、通信契約自体はCloudflareへ依存しません。片側または両側を別の実行基盤へ置く場合も、同じTypeSpec契約を証明書検証済みHTTPSとBearer認証で実装します。
+
+| バックエンド | core         | 通信方式                     |
+| ------------ | ------------ | ---------------------------- |
+| Cloudflare   | Cloudflare   | Service Binding + Bearer認証 |
+| Cloudflare   | Cloudflare外 | HTTPS + Bearer認証           |
+| Cloudflare外 | Cloudflare   | coreのHTTPS経路 + Bearer認証 |
+| Cloudflare外 | Cloudflare外 | HTTPS + Bearer認証           |
+
 main TypeSpec生成経路とcore TypeSpec生成経路は別の契約です。main Handlerはcoreの状態番号とDTOをmain公開契約へ明示的に写像し、core内部のエラー本文や実装型をブラウザーへ透過しません。生成サーバーファイルとSDKは手編集せず、スマートハンドラーの本体だけを実装します。
 
 外部パッケージがHTTP配下経路を所有する場合は、対象Workerの最上位Honoへ具体的にマウントします。外部経路はTypeSpecへ複写せず、製品API向けCORS、400応答整形、生成応答検証の対象外にします。既存のWorker-first接頭辞外へ置く場合はWranglerの`run_worker_first`にも基底パスを追加します。空のプラグイン登録表や動的探索は作りません。
 
 ### バックエンドのエラー処理
 
-予測して処理する失敗はcore内部で`Result`としてRepositoryからService、Handlerへ渡し、core HTTP契約の安全な`{ code, message }`へ変換します。main Handlerはcore SDK結果をmain TypeSpec契約へ再変換します。Service Binding失敗、未知の状態番号、生成スキーマ違反はmainの`app.onError`へ到達し、内部原因を記録して固定500を返します。
+予測して処理する失敗はcore内部で`Result`としてRepositoryからService、Handlerへ渡し、core HTTP契約の安全な`{ code, message }`へ変換します。main Handlerはcore SDK結果をmain TypeSpec契約へ再変換します。core通信の認証失敗、通信失敗、未知の状態番号、生成スキーマ違反は、利用者の認証状態として公開せず、内部原因を記録して固定500を返します。
 
 生成された応答検証処理を使うハンドラーでは、`guardResponseValidation` が検証処理の外側で最終応答を確認します。検証詳細を含む不安全な 400 応答は例外となり、`app.onError` が原因を記録して固定の 500 応答を返します。ユーザー作成の 201 応答は生成された `CreateUserResponse` で明示的に解析し、入力検証が返す不安全な 400 応答は `app` が固定の `INVALID_REQUEST` 応答へ置き換えます。
 
@@ -167,7 +176,15 @@ main TypeSpec生成経路とcore TypeSpec生成経路は別の契約です。mai
 
    HCP Terraformのremote backendを使用し、Cloudflare API tokenは環境変数で渡します。Terraform stateやbackend設定をGitへ追加しません。
 
-5. **ローカルD1へマイグレーションを適用:**
+5. **ローカルcore通信用のBearerトークンを設定:**
+
+   ```bash
+   export CORE_API_TOKEN="$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('base64url'))")"
+   ```
+
+   mainとcoreを起動する同じシェルへ設定します。`.env`や`.dev.vars`へ保存する場合はGitへ追加しません。
+
+6. **ローカルD1へマイグレーションを適用:**
 
    ```bash
    pnpm migrate:generate
@@ -176,7 +193,7 @@ main TypeSpec生成経路とcore TypeSpec生成経路は別の契約です。mai
 
    productionの未適用マイグレーションはDeploy Workflowがcore配備前に一度だけ適用します。
 
-6. **開発サーバーを起動:**
+7. **開発サーバーを起動:**
 
    ```bash
    # フロントエンドとバックエンドの両方を起動
@@ -190,7 +207,7 @@ main TypeSpec生成経路とcore TypeSpec生成経路は別の契約です。mai
     pnpm storybook  # Storybook http://localhost:6006
    ```
 
-7. **アプリケーションにアクセス:**
+8. **アプリケーションにアクセス:**
    - フロントエンド: http://localhost:5173
    - バックエンド API: http://localhost:8787/api/v1
    - Storybook: http://localhost:6006
@@ -298,6 +315,8 @@ AI 支援開発に OpenCode と OpenSpec を使用する場合：
 
 テンプレートは Vite のプロキシを使用して、フロントエンドからの `/api` リクエストを Workers 開発サーバーに転送します。
 
+バックエンドを起動するシェルには、mainとcoreで共有する開発用`CORE_API_TOKEN`を設定してください。値は利用環境ごとに生成し、ブラウザーへ公開しません。
+
 ```bash
 # ターミナル 1: Workers バックエンドを起動
 pnpm dev:backend
@@ -336,35 +355,35 @@ pnpm dev:all
 
 ### 利用可能なスクリプト
 
-| スクリプト                                           | 説明                                                |
-| ---------------------------------------------------- | --------------------------------------------------- |
-| `pnpm dev:frontend`                                  | Vite 開発サーバーを起動（フロントエンド）           |
-| `pnpm dev:backend`                                   | Wrangler 開発サーバーを起動（バックエンド）         |
-| `pnpm dev:all`                                       | 両方のサーバーを同時に起動                          |
-| `pnpm storybook`                                     | 共通 UI の Storybook 開発サーバーを起動             |
-| `pnpm build`                                         | フロントエンドとバックエンドの両方をビルド          |
-| `pnpm build:storybook`                               | Storybook の静的サイトをビルド                      |
-| `pnpm check`                                         | TypeScript 型チェックを実行                         |
-| `pnpm --filter @cfreact-template/main check:backend` | 単一 `tsconfig` でバックエンドを型検査する          |
-| `pnpm gen:api-sdk`                                   | `TypeSpec` から API 生成物を再生成する              |
-| `pnpm lint`                                          | UI 再利用、ESLint、OpenSpec、サプライチェーンを検証 |
-| `pnpm lint:ui-reuse`                                 | 公開 UI catalog と UI/app 間のコード clone を検証   |
-| `pnpm lint:supply-chain`                             | pnpm のサプライチェーン防御設定を検証               |
-| `pnpm format`                                        | Prettier でコードをフォーマット                     |
-| `pnpm format:check`                                  | CSS/YAML を含むフォーマット差分を検証               |
-| `pnpm test:run`                                      | React/UI試験と純粋な業務・リリース規則試験を実行    |
-| `pnpm test:frontend`                                 | Reactの顧客向けUI試験を実行                         |
-| `pnpm test:ui-package`                               | 共通UIのjsdom試験を実行                             |
-| `pnpm test:storybook`                                | 全 Story を desktop/mobile・Light/Dark で検証       |
-| `pnpm test:e2e`                                      | migration 済み E2E 専用 D1 を使う Playwright を実行 |
-| `pnpm check:codegen`                                 | API 生成差分とバックエンドのハンドラー一覧を検証    |
-| `pnpm migrate:generate`                              | Drizzle マイグレーションを生成                      |
-| `pnpm migrate:studio`                                | Drizzle Studio を開く                               |
-| `pnpm deploy`                                        | Cloudflare Workers にデプロイ                       |
-| `pnpm changeset`                                     | リリース内容とSemVer影響を記録                      |
-| `pnpm test:release`                                  | 純粋で決定的なリリース規則試験を実行                |
+| スクリプト                                           | 説明                                                  |
+| ---------------------------------------------------- | ----------------------------------------------------- |
+| `pnpm dev:frontend`                                  | Vite 開発サーバーを起動（フロントエンド）             |
+| `pnpm dev:backend`                                   | Wrangler 開発サーバーを起動（バックエンド）           |
+| `pnpm dev:all`                                       | 両方のサーバーを同時に起動                            |
+| `pnpm storybook`                                     | 共通 UI の Storybook 開発サーバーを起動               |
+| `pnpm build`                                         | フロントエンドとバックエンドの両方をビルド            |
+| `pnpm build:storybook`                               | Storybook の静的サイトをビルド                        |
+| `pnpm check`                                         | TypeScript 型チェックを実行                           |
+| `pnpm --filter @cfreact-template/main check:backend` | 単一 `tsconfig` でバックエンドを型検査する            |
+| `pnpm gen:api-sdk`                                   | `TypeSpec` から API 生成物を再生成する                |
+| `pnpm lint`                                          | UI 再利用、ESLint、OpenSpec、サプライチェーンを検証   |
+| `pnpm lint:ui-reuse`                                 | 公開 UI catalog と UI/app 間のコード clone を検証     |
+| `pnpm lint:supply-chain`                             | pnpm のサプライチェーン防御設定を検証                 |
+| `pnpm format`                                        | Prettier でコードをフォーマット                       |
+| `pnpm format:check`                                  | CSS/YAML を含むフォーマット差分を検証                 |
+| `pnpm test:run`                                      | React/UI試験と純粋なSDK・業務・リリース規則試験を実行 |
+| `pnpm test:frontend`                                 | Reactの顧客向けUI試験を実行                           |
+| `pnpm test:ui-package`                               | 共通UIのjsdom試験を実行                               |
+| `pnpm test:storybook`                                | 全 Story を desktop/mobile・Light/Dark で検証         |
+| `pnpm test:e2e`                                      | migration 済み E2E 専用 D1 を使う Playwright を実行   |
+| `pnpm check:codegen`                                 | API 生成差分とバックエンドのハンドラー一覧を検証      |
+| `pnpm migrate:generate`                              | Drizzle マイグレーションを生成                        |
+| `pnpm migrate:studio`                                | Drizzle Studio を開く                                 |
+| `pnpm deploy`                                        | Cloudflare Workers にデプロイ                         |
+| `pnpm changeset`                                     | リリース内容とSemVer影響を記録                        |
+| `pnpm test:release`                                  | 純粋で決定的なリリース規則試験を実行                  |
 
-CIは設定済みのPlaywrightブラウザを導入し、`pnpm test:run`でReactの顧客向けUI、共通UI、純粋なバックエンド業務・リリース規則を一度だけ検証します。続けて`pnpm test:storybook`、`pnpm test:e2e`、`pnpm build:storybook`を実行し、共通UIの実ブラウザ状態、高価値の顧客作業、Storybookの静的ビルドを必須検証にします。
+CIは設定済みのPlaywrightブラウザを導入し、`pnpm test:run`でReactの顧客向けUI、共通UI、純粋なcore SDK通信規則、バックエンド業務・リリース規則を一度だけ検証します。続けて`pnpm test:storybook`、`pnpm test:e2e`、`pnpm build:storybook`を実行し、共通UIの実ブラウザ状態、高価値の顧客作業、Storybookの静的ビルドを必須検証にします。
 
 ### データベースマイグレーション
 
@@ -432,6 +451,7 @@ GitHubの`production` Environmentには次を設定します。
 | 種別             | 名前                       | 用途                                   |
 | ---------------- | -------------------------- | -------------------------------------- |
 | Secret           | `CLOUDFLARE_API_TOKEN`     | migrationとWorker配備                  |
+| Secret           | `CORE_API_TOKEN`           | mainからcoreへの内部Bearer認証         |
 | VariableかSecret | `CLOUDFLARE_ACCOUNT_ID`    | productionのCloudflare account ID      |
 | Secret           | `HCP_TERRAFORM_TOKEN`      | HCP Terraform remote stateの読み取り   |
 | Secret           | `TERRAFORM_BACKEND_CONFIG` | remote backendのorganization/workspace |
@@ -474,14 +494,16 @@ GitHubの`production` Environmentには次を設定します。
 
    ```bash
    pnpm --filter @cfreact-template/core exec wrangler d1 migrations apply DB --config packages/core/wrangler.release.toml --env production --remote
-   pnpm release:deploy-targets -- --targets all --environment production
+   pnpm release:deploy-targets -- --targets all --environment production --secrets-file /secure/path/worker-secrets.json
    ```
+
+   `--secrets-file`で指定するファイルには`CORE_API_TOKEN`だけをJSONまたはdotenv形式で保存し、権限を所有者だけに限定して配備後に削除します。GitHub ActionsではDeploy Workflowがこの一時ファイルを作成して除去します。
 
 ### 環境変数
 
-GitHub Actionsからリリースする場合は、Cloudflare認証情報を`production` Environmentへ設定します。ActionsのPR作成権限を含む全設定は`docs/release-operations.md`を参照してください。
+GitHub Actionsからリリースする場合は、Cloudflare認証情報と256ビット以上のランダムな`CORE_API_TOKEN`を`production` Environmentへ設定します。Deploy Workflowは同じ値をmainとcoreのWorker Secretへ登録します。ActionsのPR作成権限を含む全設定は`docs/release-operations.md`を参照してください。
 
-メール送信元と宛先は`packages/core/wrangler.toml`、mainのKV/R2とcoreのD1は各Wrangler Bindingで設定します。資源IDはTerraform outputから一時設定へ注入し、公開branchへ保存しません。
+メール送信元と宛先は`packages/core/wrangler.toml`、mainのKV/R2とcoreのD1は各Wrangler Bindingで設定します。資源IDはTerraform outputから一時設定へ注入し、公開branchへ保存しません。`CORE_API_TOKEN`は平文の`vars`やTerraform stateへ保存せず、利用環境のSecret管理から両バックエンドへ注入します。
 
 ## OpenSpec と変更運用
 

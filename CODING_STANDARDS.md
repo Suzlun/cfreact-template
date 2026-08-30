@@ -25,6 +25,7 @@
 - `backend-*`: `apps/main/src/backend/**`と`packages/core/src/**`の同じ責務ディレクトリ
 - `backend-platform-database`、`backend-platform-email`: `packages/core/src/platform/**`
 - `backend-module-service`、`backend-module-repository`、`backend-module-schema`: `packages/core/src/modules/<module>/**`
+- `core-sdk-test`: `packages/core-sdk/src/**/*.test.ts`
 - `core-sdk`: `packages/core-sdk/src/**/*`
 
 ### クライアント・共通要素
@@ -44,6 +45,7 @@
 - `backend-entry` → `backend-app`
 - `backend-app` → `core-sdk | backend-app | backend-generated-api | backend-generated-resource | backend-module-entry | backend-module-repository | backend-platform-http | backend-platform-database | backend-platform-email | backend-platform-observability | backend-types`
 - `core-sdk` → `core-sdk`
+- `core-sdk-test` → `core-sdk`
 - `backend-generated-resource` → `backend-generated-api`、同じリソースの `backend-generated-resource | backend-module-handler`
 - `backend-platform-http` → `backend-platform-http | backend-types`
 - `backend-platform-database` → `backend-platform-database | backend-types`
@@ -771,6 +773,7 @@
 | `backend-module-entry`           | `apps/main/src/backend/modules/<module>/index.ts`           | リソースの唯一の公開入口                         |
 | `backend-module-support`         | `apps/main/src/backend/modules/<module>/*.ts`（上記を除く） | リソース内で共有する補助型、応答、補助処理       |
 | `backend-types`                  | `apps/main/src/backend/types/**/*`                          | 複数リソースで共有する型                         |
+| `core-sdk-test`                  | `packages/core-sdk/src/**/*.test.ts`                        | SDKの純粋で決定的な通信規則を検証する            |
 | `core-sdk`                       | `packages/core-sdk/src/**/*`                                | app backendからcoreを呼ぶ生成SDK境界             |
 
 要素外のバックエンド `TypeScript` ファイルは `boundaries/no-unknown-files`、要素外へのインポートは `boundaries/no-unknown` と `boundaries/element-types` で失敗します。
@@ -780,6 +783,7 @@
 - `backend-entry` → `backend-app`
 - `backend-app` → `core-sdk | backend-app | backend-generated-api | backend-generated-resource | backend-module-entry | backend-module-repository | backend-platform-http | backend-platform-database | backend-platform-email | backend-platform-observability | backend-types`
 - `core-sdk` → `core-sdk`
+- `core-sdk-test` → `core-sdk`
 - `backend-generated-resource` → `backend-generated-api`、同じリソースの `backend-generated-resource | backend-module-handler`
 - `backend-platform-http` → `backend-platform-http | backend-types`
 - `backend-platform-database` → `backend-platform-database | backend-types`
@@ -805,6 +809,7 @@ main backendからcore実装への直接依存は`no-restricted-imports`で拒�
 - `backend-generated-resource` → `@hono/zod-validator | hono | zod`
 - `backend-module-handler` → `hono`
 - `backend-module-test` → `vitest`
+- `core-sdk-test` → `vitest`
 - `backend-module-service` → `ulid`
 - `backend-module-repository` → `drizzle-orm`
 - `backend-module-schema` → `drizzle-orm`
@@ -813,7 +818,7 @@ main backendからcore実装への直接依存は`no-restricted-imports`で拒�
 - `backend-platform-email` → `cloudflare:email`
 - `backend-types` → `@cloudflare/workers-types`
 
-`backend-entry`、`backend-generated-api`、`backend-platform-observability`、`backend-module-domain`、`backend-module-entry`、`backend-module-support` には外部パッケージの許可がありません。`backend-module-test`の`vitest`許可は純粋試験だけに適用し、製品要素の外部依存を広げません。
+`backend-entry`、`backend-generated-api`、`backend-platform-observability`、`backend-module-domain`、`backend-module-entry`、`backend-module-support` には外部パッケージの許可がありません。`backend-module-test`と`core-sdk-test`の`vitest`許可は純粋試験だけに適用し、製品要素の外部依存を広げません。
 
 ### 9.4 HTTP 実行環境への直接到達
 
@@ -840,6 +845,7 @@ main backendからcore実装への直接依存は`no-restricted-imports`で拒�
 ### 9.7 API 契約と生成
 
 - 公開main APIの正は`apps/main/typespec/main.tsp`、内部core APIの正は`packages/core/typespec/main.tsp`です。
+- core TypeSpecはBearer認証を契約とし、core SDKは実行時に基底URL、トークン、Web標準`fetch`を受け取ります。Cloudflare Service Bindingは注入可能な通信手段の一つであり、SDK契約へ含めません。ネットワーク通信では証明書検証済みHTTPSを使用し、SDKは認証ヘッダーを上書きしてリダイレクトを拒否します。
 - `pnpm gen:api-sdk`は両OpenAPI、両Honoサーバー、frontend SDK、core SDKを生成します。
 - 各生成段階は書き込み前に `scripts/codegen/verify-codegen-roots.mjs` を実行し、生成ルートの実体経路をリポジトリ内へ限定して、配下のシンボリックリンクを拒否します。
 - バックエンド生成では、`Orval` の実行後に `scripts/codegen/normalize-backend-handler-imports.mjs` が各ハンドラーのコンテキスト参照を型専用インポートへ正規化し、その後に `Prettier` を実行します。
@@ -981,7 +987,7 @@ fail 条件
     - `git diff --exit-code -- apps/main/typespec/openapi/openapi.json apps/main/src/backend/generated/api apps/main/src/backend/modules/*/handlers apps/main/src/frontend/api/generated/client.ts`
 - CI は整形、lint、型、顧客価値を守る全試験、Storybookビルド、生成差分を検証する
   - 強制: `.github/workflows/ci.yml`
-  - `pnpm test:run` はReactの顧客向けUI試験、共通UIのjsdom試験、純粋で決定的なバックエンド業務・リリース規則試験だけを実行する
+  - `pnpm test:run` はReactの顧客向けUI試験、共通UIのjsdom試験、純粋で決定的なcore SDK通信・バックエンド業務・リリース規則試験だけを実行する
   - CIは設定済みのPlaywrightブラウザを導入し、Storybookブラウザ試験を`pnpm test:storybook`、価値の高い顧客作業を`pnpm test:e2e`で実行する
   - CIは`pnpm build:storybook`でStorybookの静的ビルドも検証する
   - frontendと共通UIの試験は`pnpm test:run`に含まれるため、CIで`pnpm test:frontend`または`pnpm test:ui-package`を重複実行しない

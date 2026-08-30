@@ -46,13 +46,14 @@ Read these files before applying `coding-guardian` in this repository.
 - `apps/main/package.json`: public system Worker, React assets, public Resource generation, and frontend/backend checks
 - `packages/core/package.json`: private core Worker, shared business implementation, D1/email, and internal Resource generation
 - `packages/core/vitest.config.ts`: pure deterministic same-Resource backend rule tests
+- `packages/core-sdk/src/client.ts` and `client.test.ts`: host-independent URL resolution, authorization overwrite, redirect refusal, and pure transport checks
 - `apps/main/tsconfig.backend.json`, `packages/core/tsconfig.json`, and `packages/core-sdk/tsconfig.json`: independent Worker and SDK boundaries
 - `scripts/codegen/verify-codegen-roots.mjs`: pre-write real-path containment and symbolic-link rejection for every generated root
 - `scripts/codegen/normalize-backend-handler-imports.mjs`: validates each generated Handler Context import shape and normalizes it to a type-only import before formatting
 - `scripts/codegen/verify-backend-handlers.mjs`: OpenAPI Resource tag/operation ID to smart-Handler manifest check used by `pnpm check:codegen`
 - `scripts/codegen/verify-generated-artifacts.mjs`: dynamically enumerates generated roots and Handler directories, accepts indexed additions from `git ls-files --cached -z`, and rejects untracked artifacts
 - `apps/main/src/backend/entry/**`: Workers public entry; imports `app` only
-- `apps/main/src/backend/app/**`: public Composition Root that injects only the core SDK into users routes
+- `apps/main/src/backend/app/**`: public Composition Root that injects the runtime core SDK transport and token into users routes
 - `packages/core/src/app/**`: private Composition Root that constructs Service, Repository, D1, and email dependencies
 - `apps/main/src/backend/generated/api/**`: fully generator-owned `openapi-typescript` and Orval API files; handwritten comment/TSDoc/style exceptions apply while dependency boundaries remain active
 - `apps/main/src/backend/modules/**`: public users mapping plus local hello and health Resources

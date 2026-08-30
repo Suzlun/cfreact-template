@@ -28,6 +28,26 @@
               }
             }
           },
+          "400": {
+            "description": "The server could not understand the request due to invalid syntax.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Access is unauthorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationRequiredError"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Server error",
             "content": {
@@ -61,6 +81,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InvalidRequestError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Access is unauthorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationRequiredError"
                 }
               }
             }
@@ -133,6 +163,16 @@
               }
             }
           },
+          "401": {
+            "description": "Access is unauthorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticationRequiredError"
+                }
+              }
+            }
+          },
           "404": {
             "description": "The server cannot find the requested resource.",
             "content": {
@@ -158,8 +198,26 @@
       }
     }
   },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
   "components": {
     "schemas": {
+      "AuthenticationRequiredError": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["AUTHENTICATION_REQUIRED"]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
       "CreateUserInput": {
         "type": "object",
         "required": ["name", "email"],
@@ -252,12 +310,18 @@
           }
         }
       }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "Bearer"
+      }
     }
   },
   "servers": [
     {
       "url": "/",
-      "description": "Internal service binding",
+      "description": "Internal core HTTP API",
       "variables": {}
     }
   ]

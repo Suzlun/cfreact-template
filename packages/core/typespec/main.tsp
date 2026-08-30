@@ -12,5 +12,6 @@ using TypeSpec.OpenAPI;
 
 @service(#{ title: "cfreact-template core API" })
 @info(#{ version: "1.0.0" })
-@server("/", "Internal service binding")
+@server("/", "Internal core HTTP API")
+@useAuth(BearerAuth)
 namespace CfreactTemplateCore;

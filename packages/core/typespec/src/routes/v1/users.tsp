@@ -6,6 +6,11 @@ using TypeSpec.OpenAPI;
 
 namespace CfreactTemplateCore.ApiV1;
 
+alias AuthenticationRequiredResponse = {
+  @statusCode statusCode: 401;
+  @body body: CfreactTemplateCore.AuthenticationRequiredError;
+};
+
 @tag("users")
 @operationId("listUsers")
 @get
@@ -16,9 +21,14 @@ op listUsers():
       @body body: CfreactTemplateCore.User[];
     }
   | {
+      @statusCode statusCode: 400;
+      @body body: CfreactTemplateCore.InvalidRequestError;
+    }
+  | {
       @statusCode statusCode: 500;
       @body body: CfreactTemplateCore.InternalError;
-    };
+    }
+  | AuthenticationRequiredResponse;
 
 @tag("users")
 @operationId("createUser")
@@ -40,7 +50,8 @@ op createUser(@body body: CfreactTemplateCore.CreateUserInput):
   | {
       @statusCode statusCode: 500;
       @body body: CfreactTemplateCore.InternalError;
-    };
+    }
+  | AuthenticationRequiredResponse;
 
 @tag("users")
 @operationId("getUser")
@@ -62,4 +73,5 @@ op getUser(@path id: CfreactTemplateCore.UserId):
   | {
       @statusCode statusCode: 500;
       @body body: CfreactTemplateCore.InternalError;
-    };
+    }
+  | AuthenticationRequiredResponse;

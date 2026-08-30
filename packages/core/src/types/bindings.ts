@@ -2,6 +2,8 @@ import type { D1Database, SendEmail } from '@cloudflare/workers-types';
 
 /** core Workerへ注入するCloudflareバインディング。 */
 export interface Bindings {
+  /** core APIが呼び出し元バックエンドを認証するBearerトークン。 */
+  CORE_API_TOKEN?: string;
   /** ユーザー情報を保存するD1データベース。 */
   DB: D1Database;
   /** ユーザー作成通知を送信するCloudflare Emailバインディング。 */

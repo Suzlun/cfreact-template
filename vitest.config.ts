@@ -17,6 +17,14 @@ export default defineConfig({
         },
       },
       {
+        root: './packages/core-sdk',
+        test: {
+          name: 'core-sdk',
+          environment: 'node',
+          include: ['src/**/*.test.ts'],
+        },
+      },
+      {
         extends: './apps/main/vitest.frontend.config.ts',
         root: './apps/main',
         test: {

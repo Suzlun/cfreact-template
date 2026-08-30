@@ -71,12 +71,13 @@ GitHubの`production` EnvironmentへCloudflareとHCP Terraformの認証情報を
 | 種別             | 名前                       | 用途                                 |
 | ---------------- | -------------------------- | ------------------------------------ |
 | Secret           | `CLOUDFLARE_API_TOKEN`     | D1 migrationとWorkers deploy         |
+| Secret           | `CORE_API_TOKEN`           | mainからcoreへの内部Bearer認証       |
 | VariableかSecret | `CLOUDFLARE_ACCOUNT_ID`    | deploy対象のCloudflare account       |
 | Secret           | `HCP_TERRAFORM_TOKEN`      | HCP Terraform remote stateの読み取り |
 | Secret           | `TERRAFORM_BACKEND_CONFIG` | remote backend設定                   |
 | Variable（任意） | `WRANGLER_ENVIRONMENT`     | 未設定時は`production`               |
 
-長期資源の作成・変更は`infra/terraform/production`だけが所有します。Cloudflare API tokenはmigrationとWorker配備に必要な権限へ限定します。credentials未設定でもタグとGitHub Releaseは作成され、Deploy Workflowだけが安全に省略されます。
+長期資源の作成・変更は`infra/terraform/production`だけが所有します。Cloudflare APIトークンはマイグレーションとWorker配備に必要な権限へ限定します。`CORE_API_TOKEN`は環境ごとに生成した256ビット以上のランダム値とし、平文のWrangler変数やTerraform stateへ保存しません。Deploy Workflowは一時ファイルから同じ値を両Worker Secretへ登録し、配備後にファイルを除去します。認証情報が未設定でもタグとGitHub Releaseは作成され、Deploy Workflowだけが安全に省略されます。
 
 ### Terraform state
 

@@ -4,6 +4,9 @@ tsconfig = "tsconfig.backend.json"
 compatibility_date = "2025-11-13"
 compatibility_flags = ["nodejs_compat"]
 
+[secrets]
+required = ["CORE_API_TOKEN"]
+
 [assets]
 directory = "./dist"
 not_found_handling = "single-page-application"
@@ -23,6 +26,9 @@ bucket_name = "cfreact-template-bucket"
 
 [env.production]
 name = "cfreact-template-server-production"
+
+[env.production.secrets]
+required = ["CORE_API_TOKEN"]
 
 [env.production.assets]
 directory = "./dist"

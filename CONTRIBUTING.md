@@ -28,6 +28,7 @@
    ```
 2. 開発サーバー
    ```bash
+   export CORE_API_TOKEN="$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('base64url'))")"
    pnpm dev:backend    # main + core Workers (http://localhost:8787)
    pnpm dev:frontend   # React (http://localhost:5173)
    # または
@@ -153,7 +154,7 @@ node scripts/openspec/verify-scenario-coverage.mjs
 
 ### API
 
-公開main APIの正は`apps/main/typespec/main.tsp`、内部core APIの正は`packages/core/typespec/main.tsp`です。変更後は両Honoサーバー、frontend SDK、core SDKを一括再生成してください。
+公開main APIの正は`apps/main/typespec/main.tsp`、内部core APIの正は`packages/core/typespec/main.tsp`です。core契約のBearer認証もTypeSpecへ定義し、core SDKへ実行時の基底URL、トークン、標準`fetch`を注入します。変更後は両Honoサーバー、frontend SDK、core SDKを一括再生成してください。
 
 ```bash
 pnpm gen:api-sdk
@@ -205,7 +206,7 @@ pnpm check:codegen
 必要に応じて関連テストも実行してください。
 
 ```bash
-pnpm test:run        # React/UI試験と純粋な業務・リリース規則試験
+pnpm test:run        # React/UI試験と純粋なSDK・業務・リリース規則試験
 pnpm test:frontend   # Reactの顧客向けUI試験
 pnpm test:ui-package # 共通UIのjsdom試験
 pnpm test:storybook  # Storybookの実ブラウザ試験
@@ -240,7 +241,7 @@ CIはPlaywrightのChromium、Firefox、WebKitを導入し、`pnpm test:run`、`p
 - 生成先repositoryで必要なActionsのPR作成権限、ruleset、Production Environment設定は`docs/release-operations.md`を参照してください。リリース用GitHub AppやPATは使用しません。
 - TerraformがD1、KV、R2を所有し、Deploy Workflowはremote stateのoutputから一時Wrangler設定を生成します。
 - Deploy Workflowはmigration、core、mainの順に処理します。手動再配備では`.release/deploy-targets.json`の対象だけを指定できます。
-- `production` EnvironmentにはCloudflare認証情報、HCP Terraform token、backend設定を登録します。
+- `production` EnvironmentにはCloudflare認証情報、HCP Terraformトークン、バックエンド設定、256ビット以上のランダムな`CORE_API_TOKEN`を登録します。
 - Cloudflare Email Routingの送信元・宛先検証はdashboardで完了してください。
 
 不明点があれば Issue/PR で相談してください。

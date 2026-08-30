@@ -2,4 +2,4 @@
 export { createCoreSdk } from './client';
 
 /** core APIのSDK契約を公開する。 */
-export type { CoreSdk } from './client';
+export type { CoreSdk, CoreSdkConfig } from './client';

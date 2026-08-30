@@ -5,6 +5,11 @@ model InvalidRequestError {
   message: string;
 }
 
+model AuthenticationRequiredError {
+  code: "AUTHENTICATION_REQUIRED";
+  message: string;
+}
+
 model UserNotFoundError {
   code: "USER_NOT_FOUND";
   message: string;
