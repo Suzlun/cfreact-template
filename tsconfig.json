@@ -4,11 +4,10 @@
     "rootDir": "."
   },
   "include": [
-    "drizzle.config.ts",
     "vitest.config.ts",
     "playwright.config.ts",
     "tests/**/*",
     ".opencode/plugins/**/*.ts"
   ],
-  "exclude": ["node_modules", "dist", "build", ".wrangler", "packages"]
+  "exclude": ["node_modules", "dist", "build", ".wrangler", "apps", "packages"]
 }

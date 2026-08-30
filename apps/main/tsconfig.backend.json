@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "verbatimModuleSyntax": true,
+    "types": ["@cloudflare/workers-types"],
+    "paths": {
+      "@cfreact-template/core-sdk": ["../../packages/core-sdk/src/index.ts"],
+      "@cfreact-template/main/backend": ["./src/backend/entry/index.ts"],
+      "@cfreact-template/main/backend/app": ["./src/backend/app/index.ts"],
+      "@cfreact-template/main/backend/generated/*": ["./src/backend/generated/*"],
+      "@cfreact-template/main/backend/modules/users": ["./src/backend/modules/users/index.ts"],
+      "@cfreact-template/main/backend/modules/hello": ["./src/backend/modules/hello/index.ts"],
+      "@cfreact-template/main/backend/modules/health": ["./src/backend/modules/health/index.ts"],
+      "@cfreact-template/main/backend/platform/*": ["./src/backend/platform/*"],
+      "@cfreact-template/main/backend/types": ["./src/backend/types/index.ts"]
+    }
+  },
+  "include": ["./src/backend/**/*.ts", "./orval.backend.config.ts"],
+  "exclude": ["node_modules", "dist", "build", ".wrangler"]
+}

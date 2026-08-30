@@ -30,10 +30,10 @@ This document is lint-as-rules. Include only rules that are mechanically enforce
    - `commit-msg`: `pnpm commitlint --edit $1`
    - Break down what `.lintstagedrc.json` actually runs for TS, TSX, JS, JSX, JSON, and Markdown
 6. Use this repo's actual TypeSpec setup precisely:
-   - `packages/typespec/package.json` defines `format`, `format:check`, `gen:openapi`, and `check`
-   - OpenAPI output is configured by `packages/typespec/tspconfig.yaml`
+   - `apps/main/package.json` and `packages/core/package.json` define TypeSpec formatting, generation, and checks
+   - OpenAPI output is configured by both TypeSpec `tspconfig.yaml` files
 7. Mention OpenSpec exactly as implemented today through the `openspec/proposer`-owned confirmed `request.md`, the `behavior-change` and `architecture-change` schemas, `pnpm lint:openspec`, `scripts/openspec/verify-change-proposal.mjs`, `scripts/openspec/verify-scenario-coverage.mjs`, and `scripts/openspec/verify-change-task-scope.mjs`.
-8. Use this repo's real file names and paths. Do not reference non-existent legacy paths such as `packages/frontend/web`, `packages/backend/internal/**`, `packages/backend/.golangci.yml`, `tools/scripts/*`, root `.spectral.yaml`, or `commitlint.config.cjs`.
+8. Use this repo's real file names and paths. Do not reference non-existent legacy paths such as `apps/main/web`, `apps/main/internal/**`, `apps/main/.golangci.yml`, `tools/scripts/*`, root `.spectral.yaml`, or `commitlint.config.cjs`.
 9. Keep OpenSpec documented as the persistent observable Behavior Contract, not a master implementation plan. Document one-way Playwright E2E-to-Scenario traceability, `--change`, coarse Work Packages, and progressive runtime planning.
 10. Document the independent `Operation Lane`, `UX Mode`, and `Review Depth` vocabulary enforced by `.github/workflows/validate-pr-template.yml`.
 11. Describe the backend exactly as the Resource-first `entry/app/generated/modules/platform/types` structure enforced by the distinct `backend-platform-http`, `backend-platform-database`, `backend-platform-email`, and `backend-platform-observability` elements. Never collapse them into a nonexistent aggregate element.
@@ -76,13 +76,16 @@ If a section has no enforceable rules beyond a short scope note, keep it brief.
    - `.lintstagedrc.json`
    - `commitlint.config.js`
    - `eslint.config.js`
-   - `packages/typespec/package.json`
-   - `packages/typespec/tspconfig.yaml`
-   - `packages/typespec/README.md`
-   - `packages/backend/package.json`
-   - `packages/backend/tsconfig.json`
-   - `packages/backend/orval.config.ts`
-   - `packages/frontend/orval.config.ts`
+   - `apps/main/package.json`
+   - `packages/core/package.json`
+   - `apps/main/typespec/tspconfig.yaml`
+   - `apps/main/typespec/README.md`
+   - `apps/main/package.json`
+   - `apps/main/tsconfig.backend.json`
+   - `apps/main/orval.backend.config.ts`
+   - `apps/main/orval.frontend.config.ts`
+   - `packages/core/orval.config.ts`
+   - `packages/core-sdk/orval.config.ts`
    - `scripts/codegen/verify-codegen-roots.mjs`
    - `scripts/codegen/normalize-backend-handler-imports.mjs`
    - `scripts/codegen/verify-backend-handlers.mjs`
@@ -95,7 +98,7 @@ If a section has no enforceable rules beyond a short scope note, keep it brief.
    - `.github/pull_request_template.md`
    - `.github/workflows/validate-pr-template.yml`
    - `vitest.config.ts`
-   - `packages/frontend/vitest.app.config.ts`
+   - `apps/main/vitest.frontend.config.ts`
    - `packages/ui/vitest.unit.config.ts`
    - `packages/ui/vitest.config.ts`
    - `scripts/release/release-model.test.mjs`
@@ -104,7 +107,7 @@ If a section has no enforceable rules beyond a short scope note, keep it brief.
    - Frontend boundaries such as `app -> domain -> api`, no direct API import from app, no direct `fetch` or `axios`, exported declarations require TSDoc, and hooks must return `{ data, actions }`.
    - Backend boundaries across `entry/app/generated/modules/platform/types`, same-Resource restrictions, Module public entries, the app-only composition alias, and the distinct Platform element types.
    - Backend external-package allowlists, Handler and Service HTTP-global restrictions, and direct Handler `env` access restrictions.
-   - Full generator ownership, mixed smart-Handler ownership, package exports, and the single `packages/backend/tsconfig.json` wherever a mechanically enforced rule exists. Do not present implementation-only conventions as lint rules without a failing enforcement point.
+   - Full generator ownership, mixed smart-Handler ownership, package exports, and the independent main/core/core-sdk TypeScript projects wherever a mechanically enforced rule exists. Do not present implementation-only conventions as lint rules without a failing enforcement point.
    - Handler import normalization, dynamic generated-artifact discovery, staged-file acceptance, untracked-artifact rejection, and final generated drift detection.
    - Exact CI step order and exact git hook behavior.
    - `DIRECT`, `BEHAVIOR`, and `ARCHITECTURE` are independent from `NONE`, `CONTINUITY`, and `SHAPE`; review depth is independently `STANDARD` or `DEEP`.

@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "outDir": "./dist/app",
+    "paths": {
+      "@cfreact-template/core-sdk": ["./src/__forbidden__/core-sdk.ts"],
+      "@cfreact-template/main/frontend": ["./src/frontend/app/index.ts"],
+      "@cfreact-template/main/frontend/app": ["./src/frontend/app/index.ts"],
+      "@cfreact-template/main/frontend/app/*": ["./src/frontend/app/*"],
+      "@cfreact-template/main/frontend/api": ["./src/frontend/api/index.ts"],
+      "@cfreact-template/main/frontend/api/types": ["./src/frontend/api/types/index.ts"],
+      "@cfreact-template/main/frontend/api/*": ["./src/frontend/api/*"],
+      "@cfreact-template/main/frontend/domain": ["./src/frontend/domain/index.ts"],
+      "@cfreact-template/main/frontend/domain/hooks/hello": [
+        "./src/frontend/domain/hooks/hello/index.ts"
+      ],
+      "@cfreact-template/main/frontend/domain/hooks/users": [
+        "./src/frontend/domain/hooks/users/index.ts"
+      ],
+      "@cfreact-template/main/frontend/domain/*": ["./src/frontend/domain/*"]
+    }
+  },
+  "include": ["src/frontend/app/**/*", "vite.config.ts", "vitest.frontend.config.ts"]
+}

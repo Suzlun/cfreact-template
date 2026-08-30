@@ -10,8 +10,8 @@
     "packages/ui/**/*.test.{ts,tsx}",
     "packages/ui/**/*.spec.{ts,tsx}",
     "packages/ui/*.{config,d}.{ts,tsx}",
-    "packages/frontend/src/app/tests/**",
-    "packages/frontend/src/app/**/*.test.{ts,tsx}",
-    "packages/frontend/src/app/**/*.spec.{ts,tsx}"
+    "apps/main/src/frontend/app/tests/**",
+    "apps/main/src/frontend/app/**/*.test.{ts,tsx}",
+    "apps/main/src/frontend/app/**/*.spec.{ts,tsx}"
   ]
 }

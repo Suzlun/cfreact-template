@@ -158,7 +158,7 @@ async function dispatchDeploy() {
   if (typeof defaultBranch !== 'string' || defaultBranch.trim() === '') {
     throw new Error('Repository default branch is unavailable.');
   }
-  await dispatchWorkflow('deploy.yml', defaultBranch, { tag });
+  await dispatchWorkflow('deploy.yml', defaultBranch, { tag, targets: 'all' });
 }
 
 async function dispatchWorkflow(workflowFile, reference, inputs) {

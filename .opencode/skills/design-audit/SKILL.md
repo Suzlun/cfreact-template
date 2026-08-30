@@ -19,7 +19,7 @@ Read and internalize before forming any design opinion:
 1. Design system: `packages/ui/src/styles/tailwind.css`, `packages/ui/src/components/**`, `packages/ui/src/lib/utils.ts`, and `packages/ui/package.json`.
 2. Frontend guidelines: `AGENTS.md`, `CODING_STANDARDS.md`, `.opencode/agents/unit/frontend/*.md`, and `.opencode/skills/coding-guardian/SKILL.md`.
 3. App flow and product requirements: `openspec/specs/**/spec.md`, relevant `openspec/changes/**`, and `README.md` when needed.
-4. Tech stack: root `package.json`, `packages/frontend/package.json`, and `packages/ui/package.json`.
+4. Tech stack: root `package.json`, `apps/main/package.json`, and `packages/ui/package.json`.
 5. Live app, when feasible: inspect the relevant route at mobile, tablet, and desktop sizes before finalizing a visual audit.
 
 If a generic upstream file such as `DESIGN_SYSTEM.md`, `APP_FLOW.md`, `PRD.md`, `progress.txt`, or `LESSONS.md` does not exist, do not invent it. Use the repository mapping above and report the missing artifact only when it blocks a decision.

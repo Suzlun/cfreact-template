@@ -8,7 +8,7 @@
 2. `develop`のCI成功後、未消費の通常Changesetがあれば`release`とRelease PRを作成または更新します。
 3. Release PRが開いている間に`develop`が進んだ場合、`release`へmerge commitで取り込み、前回リリース版から全Changesetを再計算します。
 4. Release PRが`main`へmergeされると`release`を自動削除し、検証済み`main` commitへ`vX.Y.Z`tagとGitHub Releaseを作成します。
-5. `vX.Y.Z`tagとGitHub Releaseを作成した同じRelease Workflowが独立したDeploy Workflowを明示dispatchし、Cloudflare credentialsが設定されている場合だけ本番環境へdeployします。
+5. `vX.Y.Z`tagとGitHub Releaseを作成した同じRelease WorkflowがDeploy Workflowを明示dispatchします。Deploy WorkflowはTerraform stateを読み、D1 migration、core Worker、main Workerの順に配備します。
 6. `sync/main-to-develop`から`develop`への同期PRを作成し、明示dispatchしたrequired checks成功後にmerge commitで自動mergeしてbranchを自動削除します。
 7. 自動取り込みで競合した場合は強制更新せず、対象PRへ停止理由をコメントします。
 
@@ -66,19 +66,31 @@ Deploy Workflowはtag pushを発火条件にせず、Release Workflowからの�
 
 ### Production Environment
 
-GitHubの`production` EnvironmentへCloudflare認証情報を登録します。
+GitHubの`production` EnvironmentへCloudflareとHCP Terraformの認証情報を登録します。
 
-| 種別             | 名前                    | 用途                                    |
-| ---------------- | ----------------------- | --------------------------------------- |
-| Secret           | `CLOUDFLARE_API_TOKEN`  | Cloudflare resource作成とWorkers deploy |
-| VariableかSecret | `CLOUDFLARE_ACCOUNT_ID` | deploy対象のCloudflare account          |
-| Variable（任意） | `WRANGLER_ENVIRONMENT`  | 未設定時は`production`                  |
+| 種別             | 名前                       | 用途                                 |
+| ---------------- | -------------------------- | ------------------------------------ |
+| Secret           | `CLOUDFLARE_API_TOKEN`     | D1 migrationとWorkers deploy         |
+| VariableかSecret | `CLOUDFLARE_ACCOUNT_ID`    | deploy対象のCloudflare account       |
+| Secret           | `HCP_TERRAFORM_TOKEN`      | HCP Terraform remote stateの読み取り |
+| Secret           | `TERRAFORM_BACKEND_CONFIG` | remote backend設定                   |
+| Variable（任意） | `WRANGLER_ENVIRONMENT`     | 未設定時は`production`               |
 
-Cloudflare API tokenは対象accountのD1、KV、R2、Workersへ必要な権限だけを付与します。credentialsが未設定でもタグとGitHub Releaseは作成され、Deploy Workflowだけが安全に省略されます。credentials設定後に既存tagをdeployする場合は、Deploy Workflowを`workflow_dispatch`で実行し、対象の`vX.Y.Z`tagを入力します。
+長期資源の作成・変更は`infra/terraform/production`だけが所有します。Cloudflare API tokenはmigrationとWorker配備に必要な権限へ限定します。credentials未設定でもタグとGitHub Releaseは作成され、Deploy Workflowだけが安全に省略されます。
+
+### Terraform state
+
+HCP Terraformにproduction用workspaceを一つ作成し、`TERRAFORM_BACKEND_CONFIG`へremote backendのorganizationとworkspace設定を保存します。`HCP_TERRAFORM_TOKEN`はそのworkspaceのstate読み取り権限を持つteam tokenとします。Cloudflare providerの認証には`CLOUDFLARE_API_TOKEN`を環境変数で渡し、state、plan、backend設定をGitへ追加しません。
+
+HCP Terraform workspaceを`infra/terraform/production`へ接続し、Pull Requestではspeculative plan、承認済みproduction変更ではapplyを実行します。repository CIはcredentialsを使わず`fmt`と`validate`だけを実行し、Deploy Workflowはapply済みstateのoutputだけを読み取ります。
+
+HCP workspaceには`TF_VAR_cloudflare_account_id`と、sensitiveな`CLOUDFLARE_API_TOKEN`を設定します。D1、KV、R2の名前を変更する場合だけ対応するTerraform variablesを追加設定します。
+
+既存のD1、KV、R2がある生成先では、最初の`apply`前にそれぞれをTerraform stateへimportします。`terraform plan`が削除または置換を示す場合は適用せず、実資源名とimport IDを確認します。D1、KV、R2には`prevent_destroy`を設定しています。
 
 ## Changesetの追加
 
-アプリケーション版へ影響する`develop`向けPull RequestへChangesetを1つ追加します。対象は`packages/**`、`drizzle/**`、root `package.json`、`pnpm-lock.yaml`、`pnpm-workspace.yaml`、`wrangler.toml`です。template workflow、release tooling、文書だけの保守では、生成先repositoryへpending releaseを持ち込まないようChangesetを追加しません。
+アプリケーション版へ影響する`develop`向けPull RequestへChangesetを1つ追加します。対象は`apps/**`、`packages/**`、root `package.json`、`pnpm-lock.yaml`、`pnpm-workspace.yaml`です。template workflow、release tooling、文書だけの保守では、生成先repositoryへpending releaseを持ち込まないようChangesetを追加しません。
 
 ```bash
 # 顧客へ届く変更
@@ -113,7 +125,7 @@ Release PRのCIとレビューが完了したら、merge commitで`main`へmerge
 
 Release WorkflowはRelease PR由来ではない通常の`main`更新をリリースしません。Release PRのmerge、単一version、Changeset消費、CHANGELOG、`develop`の祖先関係を確認した後にtagとGitHub Releaseを作成します。
 
-Release Workflowは`vX.Y.Z`tagとGitHub Releaseを作成した後、Deploy Workflowへtagを明示してdispatchします。Deploy Workflowはtag対象commitが`main`履歴に含まれることと、tag名とrelease planのversion一致を検証してからCloudflareへdeployします。同じRelease Workflowを再実行した場合、同じSHAのtagとGitHub Releaseは再利用されます。既存tagが別SHAを指している場合は失敗します。
+Release Workflowは`vX.Y.Z`tagとGitHub Releaseを作成した後、Deploy Workflowへtagと`all`対象を明示してdispatchします。手動実行では`.release/deploy-targets.json`にある`core`または`main`を選択でき、`main`は同じタグの`core`を先行配備します。Deploy Workflowはtag対象commitが`main`履歴に含まれることと、tag名とrelease planのversion一致を検証してから配備します。
 
 ## 競合時の対応
 

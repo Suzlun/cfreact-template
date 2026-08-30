@@ -9,19 +9,15 @@ export const RELEASE_PLAN_PATH = '.release/plan.json';
 const CHANGESET_PATH_PATTERN = /^\.changeset\/(?!README\.md$)[^/]+\.md$/;
 const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const BUMP_TYPES = new Set(['auto', 'patch', 'minor', 'major']);
-const ROOT_RELEASE_FILES = new Set([
-  'package.json',
-  'pnpm-lock.yaml',
-  'pnpm-workspace.yaml',
-  'wrangler.toml',
-]);
+const ROOT_RELEASE_FILES = new Set(['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml']);
+const WORKSPACE_DIRECTORIES = ['apps', 'packages'];
 
 export function requiresApplicationChangeset(fileName) {
   // テンプレート保守を生成先のpending releaseへ混入させず、実アプリ構成の変更だけを対象にします。
   return (
     ROOT_RELEASE_FILES.has(fileName) ||
-    fileName.startsWith('packages/') ||
-    fileName.startsWith('drizzle/')
+    fileName.startsWith('apps/') ||
+    fileName.startsWith('packages/')
   );
 }
 
@@ -66,11 +62,12 @@ export function parseReleasePlan(value) {
 }
 
 export function readWorkspacePackages(rootDirectory = process.cwd()) {
-  // pnpm-workspace.yamlの`packages/*`契約に合わせ、各workspace manifestを安定した順序で収集します。
-  const packagesDirectory = path.join(rootDirectory, 'packages');
-  return readdirSync(packagesDirectory, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => path.join('packages', entry.name, 'package.json'))
+  // pnpm-workspace.yamlの直下workspace契約に合わせ、各manifestを安定した順序で収集します。
+  return WORKSPACE_DIRECTORIES.flatMap((workspaceDirectory) =>
+    readdirSync(path.join(rootDirectory, workspaceDirectory), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => path.join(workspaceDirectory, entry.name, 'package.json'))
+  )
     .filter((manifestPath) => {
       try {
         readFileSync(path.join(rootDirectory, manifestPath));
@@ -84,6 +81,69 @@ export function readWorkspacePackages(rootDirectory = process.cwd()) {
       manifestPath,
       manifest: JSON.parse(readFileSync(path.join(rootDirectory, manifestPath), 'utf8')),
     }));
+}
+
+export function resolveDeployTargets(manifest, requestedTargets) {
+  if (typeof manifest !== 'object' || manifest === null || Array.isArray(manifest)) {
+    throw new TypeError('Deploy target manifest must be an object.');
+  }
+
+  const entries = Object.entries(manifest);
+  const targets = new Map(entries);
+  for (const [name, target] of entries) {
+    if (
+      typeof target !== 'object' ||
+      target === null ||
+      Array.isArray(target) ||
+      typeof target.workspace !== 'string' ||
+      typeof target.wranglerConfig !== 'string' ||
+      typeof target.renderedConfig !== 'string' ||
+      !Array.isArray(target.dependsOn) ||
+      target.dependsOn.some((dependency) => typeof dependency !== 'string')
+    ) {
+      throw new TypeError(`Invalid deploy target: ${name}`);
+    }
+  }
+
+  const selected =
+    requestedTargets === 'all'
+      ? entries.map(([name]) => name)
+      : requestedTargets
+          .split(',')
+          .map((name) => name.trim())
+          .filter((name) => name !== '');
+  if (selected.length === 0) {
+    throw new Error('At least one deploy target is required.');
+  }
+
+  const ordered = [];
+  const visiting = new Set();
+  const visited = new Set();
+  const visit = (name) => {
+    if (visited.has(name)) {
+      return;
+    }
+    const target = targets.get(name);
+    if (target === undefined) {
+      throw new Error(`Unknown deploy target: ${name}`);
+    }
+    if (visiting.has(name)) {
+      throw new Error(`Deploy target dependency cycle includes: ${name}`);
+    }
+
+    visiting.add(name);
+    for (const dependency of target.dependsOn) {
+      visit(dependency);
+    }
+    visiting.delete(name);
+    visited.add(name);
+    ordered.push({ name, ...target });
+  };
+
+  for (const name of selected) {
+    visit(name);
+  }
+  return ordered;
 }
 
 export function assertSingleVersion(rootManifest, workspacePackages, releasePlan) {

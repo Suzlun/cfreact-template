@@ -6,21 +6,40 @@
     "moduleResolution": "Bundler",
     "rootDir": ".",
     "paths": {
-      "@cfreact-template/frontend": ["./packages/frontend/src/app/index.ts"],
-      "@cfreact-template/frontend/app": ["./packages/frontend/src/app/index.ts"],
-      "@cfreact-template/frontend/app/*": ["./packages/frontend/src/app/*"],
-      "@cfreact-template/frontend/domain": ["./packages/frontend/src/domain/index.ts"],
-      "@cfreact-template/frontend/domain/*": ["./packages/frontend/src/domain/*"],
-      "@cfreact-template/frontend/api": ["./packages/frontend/src/api/index.ts"],
-      "@cfreact-template/frontend/api/*": ["./packages/frontend/src/api/*"],
-      "@cfreact-template/backend": ["./packages/backend/src/entry/index.ts"],
-      "@cfreact-template/backend/app": ["./packages/backend/src/app/index.ts"],
-      "@cfreact-template/backend/modules/users": ["./packages/backend/src/modules/users/index.ts"],
-      "@cfreact-template/backend/modules/hello": ["./packages/backend/src/modules/hello/index.ts"],
-      "@cfreact-template/backend/modules/health": [
-        "./packages/backend/src/modules/health/index.ts"
+      "@cfreact-template/core-sdk": ["./packages/core-sdk/src/index.ts"],
+      "@cfreact-template/core": ["./packages/core/src/entry/index.ts"],
+      "@cfreact-template/core/app": ["./packages/core/src/app/index.ts"],
+      "@cfreact-template/core/modules/users": ["./packages/core/src/modules/users/index.ts"],
+      "@cfreact-template/core/types": ["./packages/core/src/types/index.ts"],
+      "@cfreact-template/main/frontend": ["./apps/main/src/frontend/app/index.ts"],
+      "@cfreact-template/main/frontend/app": ["./apps/main/src/frontend/app/index.ts"],
+      "@cfreact-template/main/frontend/app/*": ["./apps/main/src/frontend/app/*"],
+      "@cfreact-template/main/frontend/domain": ["./apps/main/src/frontend/domain/index.ts"],
+      "@cfreact-template/main/frontend/domain/*": ["./apps/main/src/frontend/domain/*"],
+      "@cfreact-template/main/frontend/api": ["./apps/main/src/frontend/api/index.ts"],
+      "@cfreact-template/main/frontend/api/generated": [
+        "./apps/main/src/frontend/api/generated/client.ts"
       ],
-      "@cfreact-template/backend/types": ["./packages/backend/src/types/index.ts"]
+      "@cfreact-template/main/frontend/api/types": ["./apps/main/src/frontend/api/types/index.ts"],
+      "@cfreact-template/main/frontend/api/*": ["./apps/main/src/frontend/api/*"],
+      "@cfreact-template/main/frontend/domain/hooks/hello": [
+        "./apps/main/src/frontend/domain/hooks/hello/index.ts"
+      ],
+      "@cfreact-template/main/frontend/domain/hooks/users": [
+        "./apps/main/src/frontend/domain/hooks/users/index.ts"
+      ],
+      "@cfreact-template/main/backend": ["./apps/main/src/backend/entry/index.ts"],
+      "@cfreact-template/main/backend/app": ["./apps/main/src/backend/app/index.ts"],
+      "@cfreact-template/main/backend/modules/users": [
+        "./apps/main/src/backend/modules/users/index.ts"
+      ],
+      "@cfreact-template/main/backend/modules/hello": [
+        "./apps/main/src/backend/modules/hello/index.ts"
+      ],
+      "@cfreact-template/main/backend/modules/health": [
+        "./apps/main/src/backend/modules/health/index.ts"
+      ],
+      "@cfreact-template/main/backend/types": ["./apps/main/src/backend/types/index.ts"]
     },
     "resolveJsonModule": true,
     "allowJs": true,

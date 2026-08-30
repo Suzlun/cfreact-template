@@ -1,5 +1,6 @@
 import { glob, readdir } from 'node:fs/promises';
 import path from 'node:path';
+import process from 'node:process';
 
 import {
   readOpenApiOperations,
@@ -8,16 +9,35 @@ import {
 } from './openapi-operations.mjs';
 
 const repositoryRoot = path.resolve(import.meta.dirname, '../..');
-const openApiRoot = resolvePathWithinRoot(repositoryRoot, 'packages/typespec/openapi');
-const modulesPath = resolvePathWithinRoot(repositoryRoot, 'packages/backend/src/modules');
+const arguments_ = process.argv.slice(2);
+const readOption = (name, fallback) => {
+  const optionIndex = arguments_.indexOf(name);
+  if (optionIndex === -1) {
+    return fallback;
+  }
+  const value = arguments_[optionIndex + 1];
+  if (value === undefined || value.startsWith('--')) {
+    throw new Error(`${name} requires a repository-relative path.`);
+  }
+  return value;
+};
+const openApiFile = readOption(
+  '--openapi',
+  'apps/main/typespec/openapi/openapi.json'
+);
+const openApiRoot = resolvePathWithinRoot(repositoryRoot, path.dirname(openApiFile));
+const modulesPath = resolvePathWithinRoot(
+  repositoryRoot,
+  readOption('--modules', 'apps/main/src/backend/modules')
+);
 const generatedApiPath = resolvePathWithinRoot(
   repositoryRoot,
-  'packages/backend/src/generated/api'
+  readOption('--generated', 'apps/main/src/backend/generated/api')
 );
 const openApiPath = await resolveExistingPathWithinRoot(
   repositoryRoot,
   openApiRoot,
-  'openapi.json'
+  path.basename(openApiFile)
 );
 const verifiedModulesPath = await resolveExistingPathWithinRoot(repositoryRoot, modulesPath, '.');
 const verifiedGeneratedApiPath = await resolveExistingPathWithinRoot(

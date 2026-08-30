@@ -3,6 +3,11 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "features": {
+    "ghcr.io/devcontainers/features/terraform:1": {
+      "version": "1.16.0"
+    }
+  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -11,6 +16,7 @@
         "bradlc.vscode-tailwindcss",
         "hediet.vscode-drawio",
         "ms-azuretools.vscode-docker",
+        "hashicorp.terraform",
         "typespec.typespec-vscode",
         "vitest.explorer",
         "ms-playwright.playwright",

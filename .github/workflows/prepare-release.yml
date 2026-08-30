@@ -132,7 +132,7 @@ jobs:
           # 生成差分がある場合だけcommitし、同じ入力での再実行を冪等にします。
           if [ -n "$(git status --porcelain)" ]; then
             version=$(node -p "JSON.parse(require('node:fs').readFileSync('.release/plan.json', 'utf8')).version")
-            git add .changeset .release CHANGELOG.md package.json packages pnpm-lock.yaml
+            git add .changeset .release CHANGELOG.md package.json apps packages pnpm-lock.yaml
             git commit -m "chore(release): render v${version} [release automation]"
           fi
           if [ "${RECREATED_BRANCH}" = 'true' ]; then

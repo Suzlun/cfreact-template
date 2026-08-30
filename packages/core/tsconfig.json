@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "composite": false,
+    "noEmit": true,
+    "types": ["@cloudflare/workers-types"],
+    "paths": {
+      "@cfreact-template/core": ["./src/entry/index.ts"],
+      "@cfreact-template/core/app": ["./src/app/index.ts"],
+      "@cfreact-template/core/generated/*": ["./src/generated/*"],
+      "@cfreact-template/core/modules/users": ["./src/modules/users/index.ts"],
+      "@cfreact-template/core/platform/*": ["./src/platform/*"],
+      "@cfreact-template/core/types": ["./src/types/index.ts"],
+      "@cfreact-template/core/composition/modules/users/users.repository": [
+        "./src/modules/users/users.repository.ts"
+      ]
+    }
+  },
+  "include": ["src/**/*.ts", "drizzle.config.ts", "orval.config.ts", "vitest.config.ts"],
+  "exclude": ["node_modules", "dist", "build", ".wrangler"]
+}

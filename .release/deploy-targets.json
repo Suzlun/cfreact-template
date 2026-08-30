@@ -1,0 +1,14 @@
+{
+  "core": {
+    "workspace": "@cfreact-template/core",
+    "wranglerConfig": "packages/core/wrangler.toml",
+    "renderedConfig": "packages/core/wrangler.release.toml",
+    "dependsOn": []
+  },
+  "main": {
+    "workspace": "@cfreact-template/main",
+    "wranglerConfig": "apps/main/wrangler.toml",
+    "renderedConfig": "apps/main/wrangler.release.toml",
+    "dependsOn": ["core"]
+  }
+}

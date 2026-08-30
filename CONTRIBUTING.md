@@ -15,6 +15,7 @@
 
 - Node.js 24.12+ / pnpm 11.16.0+（`corepack enable` 推奨）
 - Wrangler 4.57.0+
+- Terraform 1.16
 - agent-browser CLI（ブラウザ自動操作用。Dev Container では Chrome for Testing または OS Chromium とあわせて自動導入）
 - （任意）Dev Container + Docker（推奨）
 
@@ -27,8 +28,8 @@
    ```
 2. 開発サーバー
    ```bash
-   pnpm dev:backend    # @cfreact-template/backend (http://localhost:8787)
-   pnpm dev:frontend    # @cfreact-template/frontend  (http://localhost:5173)
+   pnpm dev:backend    # main + core Workers (http://localhost:8787)
+   pnpm dev:frontend   # React (http://localhost:5173)
    # または
    pnpm dev:all
    ```
@@ -52,7 +53,8 @@
 - 命名例: `feat/<topic>` / `fix/<topic>` / `docs/<topic>` / `refactor/<topic>`
 - 1PR = 1意図（混ぜすぎない）
 - Pull Requestのbaseは`develop`にする
-- `packages/**`、`drizzle/**`、root manifest、lockfile、Wrangler設定を変更する`develop`向けPull Requestには通常Changesetまたはempty Changesetを1つ追加する
+- アプリケーション版へ影響する`apps/**`、`packages/**`、root manifest、lockfileの変更には通常Changesetまたはempty Changesetを1つ追加する
+- template workflow、release tooling、文書だけの保守にはpending Changesetを追加しない
 - template workflow、release tooling、文書だけの保守では、生成先へpending releaseを持ち込むChangesetを追加しない
 - Release PRの`release -> main`と同期PRの`main -> develop`は自動化に任せる
 
@@ -76,7 +78,7 @@ Husky によりコミット時に検証されます。
 - まず `CODING_STANDARDS.md` の意図（層の責務・依存方向）に沿って配置する
 - ESLint 例外は `CODING_STANDARDS.md` の分類に従い、単発なら構造化した `eslint-disable-next-line`、反復する外部 API なら専用境界と import 制約で管理する
 - 自動生成ファイルは手で直さない
-  - 例: `packages/typespec/openapi/openapi.json`、`packages/backend/src/generated/**`、`packages/backend/src/modules/*/handlers/**` の `Orval` 前置き、`packages/frontend/src/api/generated/**`
+  - 例: `apps/main/typespec/openapi/openapi.json`、`apps/main/src/backend/generated/**`、`apps/main/src/backend/modules/*/handlers/**` の `Orval` 前置き、`apps/main/src/frontend/api/generated/**`
 - 振る舞い契約が変わる変更は仕様と必要な試験を一緒に更新する
   - Playwright E2E試験だけが題名から既存Scenarioを`[...-S001]`の形式で参照する
   - Scenarioごとの自動試験は要求せず、純粋な単体試験、Reactの顧客向けUI試験、Storybookブラウザ試験はScenario識別子を参照しない
@@ -145,13 +147,13 @@ node scripts/openspec/verify-scenario-coverage.mjs
 - frontend は `@base-ui/react`、Radix、shadcn、各 widget 実装、`class-variance-authority`、`clsx`、`tailwind-merge` を直接利用せず、`@cfreact-template/ui` の公開 API を利用します。
 - app では公開 UI と同名のコンポーネントを再宣言せず、共有 UI を app package から再 export しません。
 - 公開 UI を追加するときは、同名の `packages/ui/stories/*.stories.tsx` を追加し、対応する公開 subpath から実 UI を利用します。
-- `pnpm lint:ui-reuse` は UI catalog の整合と `packages/ui` / `packages/frontend/src/app` 間のコード clone を検査します。
+- `pnpm lint:ui-reuse` は UI catalog の整合と `packages/ui` / `apps/main/src/frontend/app` 間のコード clone を検査します。
 
 ## 自動生成
 
 ### API
 
-API 契約（`TypeSpec`）を変更したら、OpenAPI、バックエンドの共有型とリソース経路、スマートハンドラー、フロントエンド SDK を一括で再生成してください。正の入力は `packages/typespec/main.tsp` であり、サーバー経路や生成済み OpenAPI を入力へ戻しません。
+公開main APIの正は`apps/main/typespec/main.tsp`、内部core APIの正は`packages/core/typespec/main.tsp`です。変更後は両Honoサーバー、frontend SDK、core SDKを一括再生成してください。
 
 ```bash
 pnpm gen:api-sdk
@@ -161,17 +163,17 @@ pnpm gen:api-sdk
 
 ```bash
 pnpm gen:openapi
-pnpm --filter @cfreact-template/backend gen:api
-pnpm --filter @cfreact-template/frontend gen:api
+pnpm gen:backend
+pnpm gen:core
 ```
 
-`openapi-typescript` は `packages/backend/src/generated/api/openapi.ts` を、`Orval` は `packages/backend/src/generated/api/<resource>/**` と `packages/backend/src/modules/<resource>/handlers/**` を生成します。各生成段階は書き込み前に`scripts/codegen/verify-codegen-roots.mjs`で入出力ルートの実体経路をリポジトリ内へ限定し、配下のシンボリックリンクを拒否します。`packages/backend/src/generated/api/**` は完全に生成器が所有します。`Orval` のスマートハンドラーでは生成前置きと検証処理を変更せず、開発者が所有する関数本体だけを実装します。生成後は `scripts/codegen/normalize-backend-handler-imports.mjs` がコンテキスト参照を型専用インポートへ正規化し、`Prettier` が整形します。
+`openapi-typescript`と`Orval`はmainとcoreの生成サーバー、スマートハンドラー、`apps/main/src/frontend/api/generated/client.ts`、`packages/core-sdk/src/generated/client.ts`を所有します。スマートハンドラーでは生成前置きを変更せず、関数本体だけを実装します。
 
 生成後は `pnpm check:codegen` を実行してください。このコマンドは OpenAPI のリソース `tag` と `operationId` に対応するハンドラーの不足、余分、生成リソースの残骸を検出します。続いて現在の生成物と全ハンドラーディレクトリを動的に列挙し、`git ls-files --cached -z` でステージ済み追加を受理しながら未追跡ファイルを拒否した後、生成差分を検出します。
 
-バックエンドの配置は `entry -> app` を入口とし、`app` が生成リソース、モジュール、基盤アダプター、共有型を組み立てます。現在の `users` はハンドラー、サービス、リポジトリとリソース所有スキーマを持ち、`hello` と `health` はハンドラーだけで完結します。新しい処理も必要な責務だけを同じリソースの `modules/<resource>/` に置き、外部アダプターは `platform/`、リソース間で共有する型は `types/` に置いてください。バックエンド全体の型検査には `packages/backend/tsconfig.json` 一つだけを使います。
+main backendは`entry -> app -> generated route -> Handler -> core-sdk`、coreは`entry -> app -> generated route -> Handler -> Service -> Repository`です。mainはcore実装、Repository、Schema、D1へ直接依存しません。`apps/main/tsconfig.backend.json`と`packages/core/tsconfig.json`を個別に型検査します。
 
-別リソースを利用するサービスは `@cfreact-template/backend/modules/<resource>` の `index.ts` だけを使い、生成物、ハンドラー、リポジトリ、スキーマを深いパスから参照しません。リポジトリ構築のための `@cfreact-template/backend/composition/modules/*` は `app` だけが使えます。外部パッケージは `boundaries/external` の要素別許可表に限定し、`vitest`は同じリソースの純粋試験だけで利用します。ハンドラーとサービスは HTTP グローバルを直接使わず、ハンドラーは `env` を直接参照しません。
+main backendが共有業務を呼ぶ場合は`@cfreact-template/core-sdk`だけを使います。core内の別リソースを利用する場合は公開`index.ts`を使い、Repository構築用のcomposition別名はcoreの`app`だけが利用します。ハンドラーは`env`を直接参照しません。
 
 予測して処理する失敗は `Result` で返し、ハンドラーでは内部原因を含まない `{ code, message }` へ変換します。生成された応答検証処理には `guardResponseValidation` を先行させ、不安全な検証詳細は `app.onError` が記録して固定の 500 応答へ変換します。ユーザー作成の成功応答は生成スキーマで解析し、メールアドレス重複はデータベースの一意制約の結果で判定して 409 応答へ変換します。データベースのエラー文は解析しません。
 
@@ -179,13 +181,13 @@ pnpm --filter @cfreact-template/frontend gen:api
 
 スキーマを変更したらマイグレーションを生成してください。
 
-`users` テーブルは `packages/backend/src/modules/users/users.schema.ts` が所有します。既存の `drizzle/migrations/0000_daily_dorian_gray.sql` を置き換えたり履歴を開始し直したりせず、同じマイグレーションストリームへ差分を追加します。
+`users` テーブルは `packages/core/src/modules/users/users.schema.ts` が所有します。既存の `packages/core/drizzle/migrations/0000_daily_dorian_gray.sql` を置き換えたり履歴を開始し直したりせず、同じマイグレーションストリームへ差分を追加します。
 
 ```bash
 pnpm migrate:generate
 ```
 
-適用は `wrangler d1 execute ...`（README 参照）。
+ローカル適用は`pnpm migrate:apply`、production適用はDeploy Workflowの`wrangler d1 migrations apply`を使います。
 
 ## 実装時のチェック
 
@@ -236,12 +238,9 @@ CIはPlaywrightのChromium、Firefox、WebKitを導入し、`pnpm test:run`、`p
 - リリース後は`sync/main-to-develop` PRが作成され、明示dispatchされたrequired checks成功後に自動mergeされます。
 - merge済みの`release`と`sync/main-to-develop`はCleanup Release Branches Workflowが自動削除します。
 - 生成先repositoryで必要なActionsのPR作成権限、ruleset、Production Environment設定は`docs/release-operations.md`を参照してください。リリース用GitHub AppやPATは使用しません。
-- Cloudflare Deploy Button では `https://deploy.workers.cloudflare.com/?url=https://github.com/[アカウント名]/[リポジトリ名]/tree/main` を使用します。
-- Deploy Button/Workers Builds は `package.json` の `deploy` script を使い、`pnpm build && wrangler deploy --env production` を実行します。
-- Deploy Button/Workers Builds では、`wrangler.toml` の production placeholder を有効な D1 database ID と KV namespace ID に置き換え、必要な R2 bucket を事前に用意します。
-- GitHub Actionsの`production` Environmentに`CLOUDFLARE_API_TOKEN`と`CLOUDFLARE_ACCOUNT_ID`がある場合、Deploy WorkflowはD1/KV/R2を名前で作成または再利用し、実ID入りの一時Wrangler設定で直接deployします。未設定の場合もリリース自体は成功します。
-- このrepoはrootから `pnpm build` と `wrangler deploy --env production` を実行する前提です。frontend assetsは `packages/frontend/dist`、backend entryは `packages/backend/src/entry/index.ts` です。
-- Workers Builds の build variable には `PNPM_VERSION=11.16.0` を設定し、pnpmのバージョン差によるinstall差分を避けてください。
-- Cloudflare Email Routing は送信元/送信先の検証が必要なため、Deploy Button後にCloudflare dashboardで設定してください。
+- TerraformがD1、KV、R2を所有し、Deploy Workflowはremote stateのoutputから一時Wrangler設定を生成します。
+- Deploy Workflowはmigration、core、mainの順に処理します。手動再配備では`.release/deploy-targets.json`の対象だけを指定できます。
+- `production` EnvironmentにはCloudflare認証情報、HCP Terraform token、backend設定を登録します。
+- Cloudflare Email Routingの送信元・宛先検証はdashboardで完了してください。
 
 不明点があれば Issue/PR で相談してください。

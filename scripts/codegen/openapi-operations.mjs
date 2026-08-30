@@ -106,7 +106,7 @@ export const resolveExistingPathWithinRoot = async (trustedRoot, intendedRoot, .
  *
  * @example
  * ```js
- * const operations = await readOpenApiOperations('/repo/packages/typespec/openapi/openapi.json');
+ * const operations = await readOpenApiOperations('/repo/apps/main/typespec/openapi/openapi.json');
  * ```
  */
 export const readOpenApiOperations = async (openApiPath) => {

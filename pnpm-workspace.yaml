@@ -1,4 +1,5 @@
 packages:
+  - 'apps/*'
   - 'packages/*'
 
 # Wait 72 hours after npm publish before resolving new dependency versions.

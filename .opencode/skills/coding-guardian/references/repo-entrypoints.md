@@ -23,44 +23,46 @@ Read these files before applying `coding-guardian` in this repository.
 ## Frontend enforcement
 
 - `eslint.config.js`: frontend boundaries for `app` / `domain` / `ui`, direct API import bans, direct fetch bans, TSDoc rules, and hook structure rules
-- `packages/frontend/package.json`: Vite React app, API SDK, domain hook, and shared UI scripts
+- `apps/main/package.json`: Vite React app, API SDK, domain hook, and shared UI scripts
 - `packages/build-config/react-compiler.js`: shared React Compiler plugins used by frontend and UI Vitest/Vite configs
-- `packages/frontend/vitest.app.config.ts`: customer-facing React UI rendering and interaction tests
+- `apps/main/vitest.frontend.config.ts`: customer-facing React UI rendering and interaction tests
 - `packages/ui/vitest.unit.config.ts`: customer-facing shared UI rendering and interaction tests
 - `packages/ui/vitest.config.ts`: Storybook browser test projects
 - `scripts/eslint/**`: structured inline-disable policy, manual memoization checks, and recurring incompatible-library boundaries
-- `packages/frontend/tsconfig.*.json`: frontend layer-specific TypeScript boundaries
+- `apps/main/tsconfig.*.json`: frontend layer-specific TypeScript boundaries
 - `packages/ui/styles/globals.css`: design token and global style baseline used by the current app
 
 ## Contract enforcement
 
-- `packages/typespec/package.json`: TypeSpec format, compile, and check commands
-- `packages/typespec/tspconfig.yaml`: OpenAPI emitter output path
-- `packages/typespec/README.md`: API contract package layout and outputs
-- `packages/frontend/orval.config.ts`: generated SDK input and output path
-- `packages/typespec/main.tsp`: API contract source of truth
+- `apps/main/package.json` and `packages/core/package.json`: TypeSpec format, compile, generation, and check commands
+- `apps/main/typespec/tspconfig.yaml`: OpenAPI emitter output path
+- `apps/main/typespec/README.md`: API contract package layout and outputs
+- main/core Orval configurations: generated server and SDK inputs and outputs
+- `apps/main/typespec/main.tsp` and `packages/core/typespec/main.tsp`: public and internal contract sources of truth
+- `packages/core-sdk`: generated server-only client used by app backends
 
 ## Backend enforcement
 
-- `packages/backend/package.json`: Workers, Hono, Drizzle, Resource generation, the current package exports, and backend typecheck scripts
-- `packages/backend/vitest.config.ts`: pure deterministic same-Resource backend rule tests
-- `packages/backend/tsconfig.json`: the single backend TypeScript project, private generated/Platform paths, public Module entry paths, and the app-only `@cfreact-template/backend/composition/modules/*` path
-- `packages/backend/orval.config.ts`: TypeSpec OpenAPI input and Orval Hono Resource/smart-handler outputs
+- `apps/main/package.json`: public system Worker, React assets, public Resource generation, and frontend/backend checks
+- `packages/core/package.json`: private core Worker, shared business implementation, D1/email, and internal Resource generation
+- `packages/core/vitest.config.ts`: pure deterministic same-Resource backend rule tests
+- `apps/main/tsconfig.backend.json`, `packages/core/tsconfig.json`, and `packages/core-sdk/tsconfig.json`: independent Worker and SDK boundaries
 - `scripts/codegen/verify-codegen-roots.mjs`: pre-write real-path containment and symbolic-link rejection for every generated root
 - `scripts/codegen/normalize-backend-handler-imports.mjs`: validates each generated Handler Context import shape and normalizes it to a type-only import before formatting
 - `scripts/codegen/verify-backend-handlers.mjs`: OpenAPI Resource tag/operation ID to smart-Handler manifest check used by `pnpm check:codegen`
 - `scripts/codegen/verify-generated-artifacts.mjs`: dynamically enumerates generated roots and Handler directories, accepts indexed additions from `git ls-files --cached -z`, and rejects untracked artifacts
-- `packages/backend/src/entry/**`: Workers public entry; imports `app` only
-- `packages/backend/src/app/**`: Composition Root that composes generated Resources, Module entries/internals, Platform adapters, and shared Types
-- `packages/backend/src/generated/api/**`: fully generator-owned `openapi-typescript` and Orval API files; handwritten comment/TSDoc/style exceptions apply while dependency boundaries remain active
-- `packages/backend/src/modules/**`: `users`, `hello`, and `health` Resource ownership; smart Handlers mix Orval-owned preambles with developer-owned bodies, and Service/Repository/Domain/schema/support are added only where needed
-- `packages/backend/src/platform/**`: Cloudflare/Drizzle/email/observability adapters; may depend only on Platform and shared Types
-- `packages/backend/src/types/**`: shared backend Types, including `Result` and the failure logger contract
-- `packages/backend/src/modules/users/users.schema.ts`: `users` table ownership; `drizzle.config.ts` points here while the existing migration stream remains under `drizzle/migrations/**`
-- `packages/backend/src/platform/http/responseValidation.ts`, generated-response Handler middleware, and `packages/backend/src/app/server.ts`: unsafe response-validator details become logged fixed 500 responses; unsafe request-validator details become fixed `INVALID_REQUEST` responses
-- `packages/backend/src/modules/users/users.responses.ts` and `packages/backend/src/modules/users/users.repository.ts`: safe `{ code, message }` responses and database-uniqueness duplicate handling without error-string parsing
+- `apps/main/src/backend/entry/**`: Workers public entry; imports `app` only
+- `apps/main/src/backend/app/**`: public Composition Root that injects only the core SDK into users routes
+- `packages/core/src/app/**`: private Composition Root that constructs Service, Repository, D1, and email dependencies
+- `apps/main/src/backend/generated/api/**`: fully generator-owned `openapi-typescript` and Orval API files; handwritten comment/TSDoc/style exceptions apply while dependency boundaries remain active
+- `apps/main/src/backend/modules/**`: public users mapping plus local hello and health Resources
+- `packages/core/src/modules/**`: core users Service, Repository, schema, support, and smart Handlers
+- main/core Platform and Types directories: Worker-specific bindings and adapters
+- `packages/core/src/modules/users/users.schema.ts`: `users` table ownership; `packages/core/drizzle.config.ts` points here while the existing migration stream remains under `packages/core/drizzle/migrations/**`
+- `apps/main/src/backend/platform/http/responseValidation.ts`, generated-response Handler middleware, and `apps/main/src/backend/app/server.ts`: unsafe response-validator details become logged fixed 500 responses; unsafe request-validator details become fixed `INVALID_REQUEST` responses
+- `apps/main/src/backend/modules/users/users.responses.ts` and `packages/core/src/modules/users/users.repository.ts`: public response mapping and database-uniqueness handling without error-string parsing
 - `eslint.config.js`: `boundaries/elements` capture the Resource name and mechanically enforce the entry/app/generated/module/type directions plus distinct HTTP/database/email/observability Platform elements; `boundaries/external` default-denies packages per element; `no-restricted-imports`, global restrictions, and `env` restrictions preserve declared boundaries
-- `packages/backend/package.json#exports`: public package surface; generated files, Platform adapters, composition-only aliases, Handlers, Repositories, schemas, and other Module internals are not exported
+- `apps/main/package.json#exports`: public package surface; generated files, Platform adapters, composition-only aliases, Handlers, Repositories, schemas, and other Module internals are not exported
 
 ## OpenSpec enforcement
 
@@ -81,8 +83,8 @@ Read these files before applying `coding-guardian` in this repository.
 
 ## Important reality checks
 
-- There is no `packages/frontend/web`
-- There is no `packages/backend/internal`
+- There is no `apps/main/web`
+- There is no `apps/main/internal`
 - There is no Go backend in this repository
 - There is no `openapi.gen.go`
 - There is no `docs/brand/**` baseline today

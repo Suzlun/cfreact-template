@@ -5,13 +5,13 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "outDir": "./dist/ui",
     "paths": {
-      "@cfreact-template/frontend": ["./__forbidden__/frontend.ts"],
-      "@cfreact-template/frontend/app": ["./__forbidden__/app.ts"],
-      "@cfreact-template/frontend/app/*": ["./__forbidden__/app/*"],
-      "@cfreact-template/frontend/api": ["./__forbidden__/api.ts"],
-      "@cfreact-template/frontend/api/*": ["./__forbidden__/api/*"],
-      "@cfreact-template/frontend/domain": ["./__forbidden__/domain.ts"],
-      "@cfreact-template/frontend/domain/*": ["./__forbidden__/domain/*"],
+      "@cfreact-template/main/frontend": ["./__forbidden__/frontend.ts"],
+      "@cfreact-template/main/frontend/app": ["./__forbidden__/app.ts"],
+      "@cfreact-template/main/frontend/app/*": ["./__forbidden__/app/*"],
+      "@cfreact-template/main/frontend/api": ["./__forbidden__/api.ts"],
+      "@cfreact-template/main/frontend/api/*": ["./__forbidden__/api/*"],
+      "@cfreact-template/main/frontend/domain": ["./__forbidden__/domain.ts"],
+      "@cfreact-template/main/frontend/domain/*": ["./__forbidden__/domain/*"],
       "@cfreact-template/ui": ["./index.ts"],
       "@cfreact-template/ui/*": ["./*"]
     }

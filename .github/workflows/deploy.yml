@@ -7,6 +7,15 @@ on:
         description: Deployする既存のvX.Y.Zタグ
         required: true
         type: string
+      targets:
+        description: 配備対象
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - core
+          - main
 
 permissions:
   contents: read
@@ -24,17 +33,19 @@ jobs:
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_TOKEN_app_terraform_io: ${{ secrets.HCP_TERRAFORM_TOKEN }}
+      TERRAFORM_BACKEND_CONFIG: ${{ secrets.TERRAFORM_BACKEND_CONFIG }}
       WRANGLER_ENVIRONMENT: ${{ vars.WRANGLER_ENVIRONMENT || 'production' }}
     steps:
       - name: Detect Cloudflare credentials
         id: credentials
         run: |
           # リリースとdeployを独立させ、credentials未設定の生成先では安全にdeployだけを省略します。
-          if [ -n "${CLOUDFLARE_API_TOKEN}" ] && [ -n "${CLOUDFLARE_ACCOUNT_ID}" ]; then
+          if [ -n "${CLOUDFLARE_API_TOKEN}" ] && [ -n "${CLOUDFLARE_ACCOUNT_ID}" ] && [ -n "${TF_TOKEN_app_terraform_io}" ] && [ -n "${TERRAFORM_BACKEND_CONFIG}" ]; then
             printf '%s\n' 'configured=true' >> "${GITHUB_OUTPUT}"
           else
             printf '%s\n' 'configured=false' >> "${GITHUB_OUTPUT}"
-            printf '%s\n' 'Deploy skipped: configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in the production environment.'
+            printf '%s\n' 'Deploy skipped: configure Cloudflare and HCP Terraform credentials in the production environment.'
           fi
 
       - name: Checkout release tag
@@ -58,6 +69,12 @@ jobs:
           # release commitのpackage managerを再現し、tagごとのbuild結果を安定させます。
           corepack enable
           corepack prepare pnpm@11.16.0 --activate
+
+      - name: Setup Terraform
+        if: ${{ steps.credentials.outputs.configured == 'true' }}
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: 1.16.0
 
       - name: Install dependencies
         if: ${{ steps.credentials.outputs.configured == 'true' }}
@@ -85,15 +102,29 @@ jobs:
         if: ${{ steps.credentials.outputs.configured == 'true' }}
         run: pnpm build
 
-      - name: Provision Cloudflare resources
-        id: provision
+      - name: Read Terraform outputs
         if: ${{ steps.credentials.outputs.configured == 'true' }}
         run: |
-          # 生成先repositoryのD1、KV、R2を名前から冪等に準備します。
-          pnpm release:provision-cloudflare
+          # 長期資源はTerraformだけが所有し、配備処理は確定済みstateを読み取ります。
+          mkdir -p .wrangler
+          printf '%s' "${TERRAFORM_BACKEND_CONFIG}" > .wrangler/production.tfbackend
+          terraform -chdir=infra/terraform/production init -backend-config="${GITHUB_WORKSPACE}/.wrangler/production.tfbackend"
+          terraform -chdir=infra/terraform/production output -json > .wrangler/terraform-outputs.json
 
-      - name: Deploy with Wrangler
+      - name: Render Wrangler configurations
+        if: ${{ steps.credentials.outputs.configured == 'true' }}
+        run: pnpm release:render-wrangler -- --terraform-outputs .wrangler/terraform-outputs.json
+
+      - name: Apply core database migrations
         if: ${{ steps.credentials.outputs.configured == 'true' }}
         run: |
-          # account固有IDをrepositoryへ保存せず、workflow内で生成した一時configだけをdeployに使用します。
-          pnpm exec wrangler deploy --config "${{ steps.provision.outputs.wrangler_config }}" --env "${WRANGLER_ENVIRONMENT}"
+          # migration台帳を持つWrangler D1 migrationsで未適用分だけをcore配備前に適用します。
+          pnpm --filter @cfreact-template/core exec wrangler d1 migrations apply DB --config "${GITHUB_WORKSPACE}/packages/core/wrangler.release.toml" --env "${WRANGLER_ENVIRONMENT}" --remote
+
+      - name: Deploy selected targets
+        if: ${{ steps.credentials.outputs.configured == 'true' }}
+        env:
+          DEPLOY_TARGETS: ${{ inputs.targets }}
+        run: |
+          # coreを依存appより先に配備し、台帳外の入力を受理しません。
+          pnpm release:deploy-targets -- --targets "${DEPLOY_TARGETS}" --environment "${WRANGLER_ENVIRONMENT}"

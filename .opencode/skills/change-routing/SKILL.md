@@ -53,8 +53,8 @@ independent; a behavior or architecture Change can use any UX mode.
 List only domains that require implementation or domain-specific review, in
 this order:
 
-1. `frontend`: `packages/frontend/**`, `packages/ui/**`, browser behavior
-2. `backend`: `packages/backend/**`, server contract implementation,
+1. `frontend`: `apps/*/src/frontend/**`, `packages/ui/**`, browser behavior
+2. `backend`: `apps/*/src/backend/**`, `packages/core/**`, `packages/core-sdk/**`, server contract implementation,
    persistence, runtime
 3. `build`: repository configuration, generation, tests, tooling, and CI that do
    not belong to frontend or backend

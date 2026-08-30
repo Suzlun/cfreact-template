@@ -53,6 +53,11 @@ jobs:
           corepack enable
           corepack prepare pnpm@11.16.0 --activate
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: 1.16.0
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -72,6 +77,12 @@ jobs:
 
       - name: Check formatting
         run: pnpm format:check
+
+      - name: Validate Terraform
+        run: |
+          terraform fmt -check -recursive infra/terraform
+          terraform -chdir=infra/terraform/production init -backend=false
+          terraform -chdir=infra/terraform/production validate
 
       - name: Lint
         env:

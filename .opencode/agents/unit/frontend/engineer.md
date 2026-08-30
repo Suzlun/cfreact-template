@@ -8,37 +8,37 @@ temperature: 0.1
 permission:
   edit:
     '*': deny
-    'packages/frontend/package.json': allow
-    'packages/frontend/orval.config.ts': allow
-    'packages/frontend/tsconfig*.json': allow
-    'packages/frontend/vite.config.ts': allow
-    'packages/frontend/vitest.app.config.ts': allow
-    'packages/frontend/tailwind.config.ts': allow
-    'packages/frontend/postcss.config.js': allow
-    'packages/frontend/index.html': allow
-    'packages/frontend/src/api/**': allow
-    'packages/frontend/src/api/generated/**': deny
-    'packages/frontend/src/app/**': allow
-    'packages/frontend/src/domain/**': allow
+    'apps/main/package.json': allow
+    'apps/main/orval.frontend.config.ts': allow
+    'apps/main/tsconfig*.json': allow
+    'apps/main/vite.config.ts': allow
+    'apps/main/vitest.frontend.config.ts': allow
+    'apps/main/tailwind.config.ts': allow
+    'apps/main/postcss.config.js': allow
+    'apps/main/index.html': allow
+    'apps/main/src/frontend/api/**': allow
+    'apps/main/src/frontend/api/generated/**': deny
+    'apps/main/src/frontend/app/**': allow
+    'apps/main/src/frontend/domain/**': allow
     'packages/ui/**': deny
-    'packages/typespec/**': allow
+    'apps/main/typespec/**': allow
     'pnpm-lock.yaml': allow
     'pnpm-workspace.yaml': allow
-    '*/packages/frontend/package.json': allow
-    '*/packages/frontend/orval.config.ts': allow
-    '*/packages/frontend/tsconfig*.json': allow
-    '*/packages/frontend/vite.config.ts': allow
-    '*/packages/frontend/vitest.app.config.ts': allow
-    '*/packages/frontend/tailwind.config.ts': allow
-    '*/packages/frontend/postcss.config.js': allow
-    '*/packages/frontend/index.html': allow
-    '*/packages/frontend/src/api/**': allow
-    '*/packages/frontend/src/app/**': allow
-    '*/packages/frontend/src/domain/**': allow
-    '*/packages/typespec/**': allow
+    '*/apps/main/package.json': allow
+    '*/apps/main/orval.frontend.config.ts': allow
+    '*/apps/main/tsconfig*.json': allow
+    '*/apps/main/vite.config.ts': allow
+    '*/apps/main/vitest.frontend.config.ts': allow
+    '*/apps/main/tailwind.config.ts': allow
+    '*/apps/main/postcss.config.js': allow
+    '*/apps/main/index.html': allow
+    '*/apps/main/src/frontend/api/**': allow
+    '*/apps/main/src/frontend/app/**': allow
+    '*/apps/main/src/frontend/domain/**': allow
+    '*/apps/main/typespec/**': allow
     '*/pnpm-lock.yaml': allow
     '*/pnpm-workspace.yaml': allow
-    '*/packages/frontend/src/api/generated/**': deny
+    '*/apps/main/src/frontend/api/generated/**': deny
     '*/packages/ui/**': deny
   'github_*': deny
   'github_get_*': allow

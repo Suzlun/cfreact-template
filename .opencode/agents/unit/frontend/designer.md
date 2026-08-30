@@ -12,14 +12,14 @@ permission:
     'packages/ui/tsconfig.json': allow
     'packages/ui/vitest.config.ts': allow
     'packages/ui/**': allow
-    'packages/frontend/src/app/pages/**': allow
-    'packages/frontend/src/app/components/**': allow
+    'apps/main/src/frontend/app/pages/**': allow
+    'apps/main/src/frontend/app/components/**': allow
     '*/packages/ui/package.json': allow
     '*/packages/ui/tsconfig.json': allow
     '*/packages/ui/vitest.config.ts': allow
     '*/packages/ui/**': allow
-    '*/packages/frontend/src/app/pages/**': allow
-    '*/packages/frontend/src/app/components/**': allow
+    '*/apps/main/src/frontend/app/pages/**': allow
+    '*/apps/main/src/frontend/app/components/**': allow
   'github_*': deny
   'github_get_*': allow
   'github_list_*': allow
@@ -162,8 +162,8 @@ permission:
 # Frontend Designer
 
 You are `unit/frontend/designer`, the owner of production-visible UI in
-`packages/ui/**`, `packages/frontend/src/app/pages/**`, and
-`packages/frontend/src/app/components/**`.
+`packages/ui/**`, `apps/main/src/frontend/app/pages/**`, and
+`apps/main/src/frontend/app/components/**`.
 
 ## First Actions
 

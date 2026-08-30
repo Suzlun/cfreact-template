@@ -1,0 +1,18 @@
+{
+  "name": "@cfreact-template/core-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "pnpm check",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "gen:api": "node ../../scripts/codegen/verify-codegen-roots.mjs && orval --config ./orval.config.ts && prettier --write \"src/generated/**/*.ts\""
+  },
+  "devDependencies": {
+    "orval": "8.17.0",
+    "typescript": "^5.9.3"
+  }
+}

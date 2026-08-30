@@ -29,7 +29,7 @@ export default defineConfig({
   /* テスト前にサーバーを起動 */
   webServer: [
     {
-      command: 'pnpm --filter @cfreact-template/frontend dev',
+      command: 'pnpm --filter @cfreact-template/main dev:frontend',
       url: 'http://localhost:5173',
       reuseExistingServer: process.env.CI === undefined,
       timeout: 120 * 1000,

@@ -194,10 +194,10 @@ a correction.
 1. No violations of `AGENTS.md`, `CODING_STANDARDS.md`, or `coding-guardian`
 2. No bespoke implementation where reusable components or functions should have been used
 3. Resource boundaries match `entry -> app` composition, Module public entries, and the current `users` / `hello` / `health` responsibilities without cross-Module deep imports
-4. `packages/backend/src/generated/api/**` and smart-handler preambles remain generator-owned, while developer-owned Handler bodies satisfy applicable concise comment and TSDoc constraints
+4. `apps/main/src/backend/generated/api/**` and smart-handler preambles remain generator-owned, while developer-owned Handler bodies satisfy applicable concise comment and TSDoc constraints
 5. Backend external imports remain inside the element-specific allowlist, with Vitest limited to pure same-Resource tests; Handlers and Services avoid HTTP globals, and Handlers avoid direct `env` access
 6. Expected failures use `Result` and safe `{ code, message }` responses; generated response validators use `guardResponseValidation`, unsafe details reach the logged fixed-500 path, create-user success uses its generated schema, and duplicate-email 409 handling comes from the database uniqueness outcome
-7. The single backend `tsconfig.json`, package exports, generated Context-import normalization, Handler manifest, dynamically tracked generated outputs, and codegen drift checks remain coherent
+7. The independent main/core/core-sdk TypeScript projects, package exports, generated Context-import normalization, both Handler manifests, dynamically tracked generated outputs, and codegen drift checks remain coherent
 
 ## Rules
 

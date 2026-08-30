@@ -66,8 +66,10 @@ Apply the Credo as a decision standard without reciting it or making ceremonial 
 
 ## API Contract (TypeSpec)
 
-- Source of truth: `packages/typespec/main.tsp`
-- Generated OpenAPI: `packages/typespec/openapi/openapi.json`
+- Public main API source of truth: `apps/main/typespec/main.tsp`
+- Internal core API source of truth: `packages/core/typespec/main.tsp`
+- Generated OpenAPI documents: `apps/main/typespec/openapi/openapi.json` and `packages/core/typespec/openapi/openapi.json`
+- `packages/core-sdk` is generated only from the core OpenAPI document and is imported only by app backends.
 - Regenerate OpenAPI + backend API + frontend SDK: `pnpm gen:api-sdk`
 - Codegen drift and backend Handler manifest check (CI-style): `pnpm check:codegen`
 
@@ -111,6 +113,7 @@ Apply the Credo as a decision standard without reciting it or making ceremonial 
 - GitHub Release creation is independent from deployment; the Release workflow explicitly dispatches Cloudflare deployment for a verified `vX.Y.Z` tag when production credentials are configured.
 - Raise the minimum release bump by editing only `.release/plan.json` on `release`; do not manually edit generated package versions or changelogs.
 - Release automation uses only the repository-scoped `GITHUB_TOKEN`; configure the Actions pull-request permission, branch rulesets, and production environment as documented in `docs/release-operations.md`.
+- Terraform owns long-lived D1, KV, and R2 resources. Wrangler owns Worker bundles, versions, and runtime bindings; Drizzle/Wrangler D1 migrations own schema changes. Deployment reads Terraform outputs and never creates missing resources as a fallback.
 
 ## Supply Chain
 
@@ -122,24 +125,29 @@ Apply the Credo as a decision standard without reciting it or making ceremonial 
 ## Architecture Notes
 
 - The architecture and dependency-direction rules below are binding constraints on every in-scope implementation. They may reject a nonconforming implementation, but they never expand scope or authorize adjacent work.
-- Client dependency direction: `frontend/src/app -> frontend/src/domain -> frontend/src/api`; shared UI lives in `packages/ui` and is imported as `@cfreact-template/ui`
+- Each React/Hono/TypeSpec system is one `apps/*` workspace package and one Worker. The current system is `apps/main`.
+- Client dependency direction: `apps/*/src/frontend/app -> domain -> api`; shared UI lives in `packages/ui` and is imported as `@cfreact-template/ui`.
 - Frontend domain is the feature-facing React Hook boundary: each `use*` hook returns the complete `{ data, actions }` contract and hides API, cache, loading, error, and workflow details from app/UI code.
 - React Compiler is mandatory for handwritten frontend/domain/UI code and is configured only through `@cfreact-template/build-config/react-compiler`; runtime source must never import build tooling.
 - App pages may use `useState` only; app components must not use React built-in Hooks. Domain/UI effects are limited to external-system synchronization.
 - Ordinary performance-only `useMemo`, `useCallback`, and `memo` are prohibited in domain and handwritten UI code; upstream registry files listed in `scripts/eslint/disable-policy.mjs` retain their external reference contracts.
 - One-off ESLint exceptions use a single structured `eslint-disable-next-line`; recurring incompatible APIs must be isolated behind a reusable boundary declared in `scripts/eslint/disable-policy.mjs`.
-- Server dependency direction: `backend/src/entry -> backend/src/app`; `app` composes generated Resource routes, Module public entries or Repositories reached only through `@cfreact-template/backend/composition/modules/*`, Platform adapters, and shared Types. Generated Resource routes may reference shared generated API types, their same-Resource generated files, and smart Handlers. A Handler may use shared generated API types and Types plus its same-Resource generated files, public entry, Service, or support; a Service may use shared Types, its same-Resource Repository, Domain, or support, plus another Resource's public entry; a Repository may use its same-Resource schema or support plus Platform and shared Types; a Domain may use same-Resource Domain or support plus shared Types. Module-internal relative imports are allowed, but cross-Module relatives and parent escapes are not, except for generator-owned smart-handler preambles that reach the same Resource's generated files.
-- Current server Resources are `users`, `hello`, and `health`. `users` uses Handler -> Service -> Repository and owns its Drizzle schema; `hello` and `health` stop at their Handlers because they need no Service or Repository.
+- App server dependency direction is `entry -> app -> generated Resource routes -> Handler -> @cfreact-template/core-sdk`. App backends never import core implementation, Repository, schema, or D1 bindings.
+- Core server dependency direction is `entry -> app -> generated Resource routes -> Handler -> Service -> Repository -> schema/Platform`. Module-internal relative imports are allowed, but cross-Module relatives and parent escapes are not, except for generator-owned smart-handler preambles that reach the same Resource's generated files.
+- Current public Resources are `users`, `hello`, and `health`. Public `users` maps the core SDK contract to the public app contract. `packages/core` owns the users Service, Repository, Drizzle schema, D1 binding, email binding, and migration stream. `hello` and `health` remain in `apps/main`.
 - Backend external-package imports are denied by default. The allowlist is limited to Hono in app/Handlers/HTTP Platform, generated Hono validation dependencies, ULID in Services, Drizzle in Repositories/schemas/database Platform, `cloudflare:email` in email Platform, Workers types in shared Types, and Vitest in pure same-Resource test files. Handler and Service code must not bypass declared dependencies through HTTP globals; Handlers must not read `env` directly.
-- `packages/backend/src/generated/api/**` is fully owned by `openapi-typescript` and Orval, so generated files are exempt from handwritten comment, TSDoc, type-safety, and formatting rules while dependency boundaries remain enforced. Smart Handlers are mixed-ownership files: Orval owns the preamble and developers own the body, which remains subject to the applicable concise comment and TSDoc rules.
-- Backend package exports expose only the Worker entry, app entry, shared Types entry, and each Resource's `index.ts`; they never expose generated files, Platform adapters, composition aliases, Handlers, Repositories, or schemas.
+- `apps/main/src/backend/generated/api/**`, `packages/core/src/generated/api/**`, and `packages/core-sdk/src/generated/**` are generator-owned. Smart Handlers are mixed-ownership files: Orval owns the preamble and developers own the body.
+- Third-party-owned HTTP subtrees are mounted explicitly at the owning Worker's top-level Hono app. They stay outside TypeSpec product routes and product-specific CORS/400/response-normalization middleware, and their base path must be listed in the Worker's `run_worker_first` configuration when it is outside an existing Worker-first prefix. Do not add a plugin registry or discovery mechanism.
+- App and core package exports never expose generated server files, Platform adapters, composition aliases, Handlers, Repositories, or schemas. `packages/core-sdk` exposes only its server-safe generated client boundary.
 - Expected failures cross backend boundaries as `Result` values and become safe `{ code, message }` responses. Generated response validators are wrapped by `guardResponseValidation`; unsafe validation details become exceptions that `app.onError` logs before returning the fixed 500 response. The create-user success payload is parsed with its generated schema. Duplicate user email is detected by the database uniqueness outcome and becomes 409 without parsing database error text.
-- The backend uses only `packages/backend/tsconfig.json`; `pnpm check` reaches its `tsc --noEmit` check. Every package-level API generator runs `scripts/codegen/verify-codegen-roots.mjs` first to resolve real paths and reject symbolic links throughout generated roots before any write. Backend generation normalizes Orval Context imports with `scripts/codegen/normalize-backend-handler-imports.mjs` before formatting. `pnpm check:codegen` regenerates all API artifacts, verifies the OpenAPI operation-to-Handler manifest, dynamically enumerates generated files and Handler directories, accepts staged additions reported by `git ls-files --cached -z`, rejects untracked artifacts, and rejects generated drift.
-- API contract direction: implementation follows `packages/typespec/main.tsp`; `pnpm gen:api-sdk` generates the OpenAPI document, backend `openapi-typescript` types, Orval Hono Resource routes and smart Handlers, and the frontend SDK. Never generate SDK input from server routes or hand-edit generated output.
+- The core Worker has no public route or preview URL and is reached through the `CORE_API` HTTP Service Binding. Main constructs the core SDK at the composition root, maps every declared core status to its public TypeSpec contract, and converts transport, parse, or unknown-status failures to its logged fixed 500 response without retries or fallback data access.
+- `apps/main/tsconfig.backend.json` and `packages/core/tsconfig.json` independently type-check the two Workers. Every package-level API generator runs the codegen root preflight. `pnpm check:codegen` regenerates both contracts, both Hono servers, the frontend SDK, and the core SDK; verifies both Handler manifests; rejects untracked output and drift.
+- Contract direction is TypeSpec -> OpenAPI -> generated server routes and SDKs. The browser consumes only the app SDK; app backends consume only `packages/core-sdk`; SDK input is never derived from server routes.
 
 ## Change Operation
 
 - The authoritative change-operation policy is `docs/change-operation.md`.
+- Repository-template maintenance that changes reusable scaffolding or tooling while preserving the current sample application's observable behavior is `DIRECT` and MUST NOT create an OpenSpec Change. This template-maintenance exception does not carry into repositories generated from the template.
 - Classify every change independently along three axes:
   - `Operation Lane`: `DIRECT`, `BEHAVIOR`, or `ARCHITECTURE`.
   - `UX Mode`: `NONE`, `CONTINUITY`, or `SHAPE`.

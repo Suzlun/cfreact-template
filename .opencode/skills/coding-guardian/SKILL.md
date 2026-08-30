@@ -11,10 +11,10 @@ repository.
 - Follow `AGENTS.md` for communication language.
 - Read `docs/change-operation.md`, `CODING_STANDARDS.md`, and the enforcement
   entrypoints before editing.
-- Treat `packages/typespec/main.tsp` as the API contract source of truth.
+- Treat `apps/main/typespec/main.tsp` and `packages/core/typespec/main.tsp` as the public and internal API contract sources of truth.
 - Never hand-edit generated artifacts.
 - Frontend is React, TSX, Vite, and React Router. Do not introduce assumptions
-  about `packages/frontend/web` or SvelteKit.
+  about `apps/main/web` or SvelteKit.
 - Backend is TypeScript, Hono, Cloudflare Workers, and Drizzle. Do not introduce
   Go, Gin, or GORM assumptions.
 
@@ -35,18 +35,15 @@ Important enforcement entrypoints:
 - Root: `package.json`, `.github/workflows/ci.yml`, `.husky/pre-commit`,
   `.husky/commit-msg`, `.lintstagedrc.json`, `commitlint.config.js`,
   `eslint.config.js`
-- TypeSpec/codegen: `packages/typespec/package.json`,
-  `packages/typespec/tspconfig.yaml`, `packages/typespec/README.md`,
-  `packages/frontend/orval.config.ts`
-- Frontend: `packages/frontend/package.json`, frontend TypeScript configs,
-  `packages/frontend/src/app/**`, `packages/frontend/src/domain/**`,
-  `packages/frontend/src/api/**`, `packages/ui/**`
+- TypeSpec/codegen: both TypeSpec roots, main/core Orval configurations,
+  `packages/core-sdk`, and the verification scripts under `scripts/codegen/**`
+- Frontend: `apps/main/package.json`, frontend TypeScript configs,
+  `apps/main/src/frontend/app/**`, `apps/main/src/frontend/domain/**`,
+  `apps/main/src/frontend/api/**`, `packages/ui/**`
 - React Compiler: `packages/build-config/react-compiler.js`, frontend/UI
   Vite/Vitest configs, `scripts/eslint/**`
-- Backend: backend package and its single `packages/backend/tsconfig.json`, the
-  Resource-first `entry/app/generated/modules/platform/types` elements, Orval
-  configuration, the normalization and verification scripts under
-  `scripts/codegen/**`, and Drizzle
+- Backend: `apps/main` and `packages/core`, their independent TypeScript and
+  Wrangler configurations, `packages/core-sdk`, and core-owned Drizzle migrations
 - OpenSpec: generated core commands and skills, both custom schemas, and the
   proposal, Scenario validation, and task scope validators under
   `scripts/openspec/**`
@@ -59,22 +56,23 @@ Important enforcement entrypoints:
 - Select `UX Mode` independently from `NONE | CONTINUITY | SHAPE`.
 - Select `Review Depth` independently from `STANDARD | DEEP`.
 - `DIRECT` changes neither observable behavior nor material architecture.
+- Repository-template maintenance that preserves the sample application's observable behavior is the documented `DIRECT` exception and creates no OpenSpec Change.
 - `BEHAVIOR` uses `behavior-change`.
 - `ARCHITECTURE` uses `architecture-change`.
-- Use `DEEP` for material security, data, external-contract, migration,
-  cross-domain architecture, or active-Change interaction risk.
+- Use `STANDARD` by default and `DEEP` only under the repository's exact escalation rule.
 
 Area mapping:
 
-- Contract/codegen: `packages/typespec/**`, frontend API, Orval config
+- Contract/codegen: both TypeSpec roots, both generated servers, frontend API, and core SDK
 - Frontend: frontend app/domain and shared UI
-- Backend: `packages/backend/**`
+- Backend: `apps/main/src/backend/**`, `packages/core/**`, `packages/core-sdk/**`
 - Tooling/workflow: root config, scripts, hooks, CI, `.opencode/**`
 
 Dependency directions:
 
 - Client: `app -> domain -> api` and `app -> ui`
-- Server: `entry -> app`; `app -> generated API/Resources | Module entries/Repositories | platform | types`; generated Resource routes -> generated API plus same-Resource generated files and smart Handlers; Handler -> generated API/Types plus same-Resource generated/entry/Service/support; Service -> Types plus same-Resource Repository/Domain/support and other Module public entries; Repository -> same-Resource schema/support plus Platform/Types; Domain -> same-Resource Domain/support plus Types
+- App server: `entry -> app -> generated Resource -> Handler -> core-sdk`
+- Core server: `entry -> app -> generated Resource -> Handler -> Service -> Repository -> schema/Platform`
 - Platform is four distinct elements: HTTP, database, email, and observability. Do not treat them as one aggregate dependency target.
 - Module-internal relative imports are allowed. Cross-Module relatives, parent escapes, and Module deep imports are prohibited.
 
@@ -104,13 +102,13 @@ Dependency directions:
 - Keep generated Resource routes, app composition, Module responsibilities,
   Platform adapters, and shared Types in their declared backend elements.
 - `entry` imports `app` only; `app` owns Binding-to-service composition.
-- Current Resources are `users`, `hello`, and `health`. Use Handler -> Service -> Repository only where the Resource needs those responsibilities; `hello` and `health` currently stop at the Handler.
+- Public Resources are `users`, `hello`, and `health`. Public users maps core SDK results; core owns the users Service, Repository, schema, D1, email, and migrations.
 - Module public entries are the only cross-Module implementation surface.
-- Only `app` may use `@cfreact-template/backend/composition/modules/*`; package exports and shared TypeScript paths never expose that alias or Module internals.
-- `packages/backend/src/generated/api/**` is fully generator-owned and exempt from handwritten comment/TSDoc/style rules while boundaries still apply. Orval owns smart-handler preambles; smart-handler bodies remain under normal handwritten implementation, detailed-comment, and TSDoc rules.
+- Only core `app` may use `@cfreact-template/core/composition/modules/*`; app backends use only `@cfreact-template/core-sdk` and never core implementation.
+- Main/core generated servers and `packages/core-sdk/src/generated/**` are generator-owned. Orval owns smart-handler preambles; smart-handler bodies remain handwritten.
 - Keep backend external imports within the `boundaries/external` allowlist. Vitest is limited to pure same-Resource test files. Handler and Service code never uses HTTP globals, and Handlers never access `env` directly.
 - Keep expected failures in `Result` values and map them to safe `{ code, message }` responses. Wrap generated response validators with `guardResponseValidation`, route unsafe validation details through the logged fixed-500 path, and parse create-user success with the generated schema. Derive duplicate-email 409 responses from the database uniqueness result rather than error-string parsing.
-- Keep backend checks in `packages/backend/tsconfig.json`, and keep package exports limited to the Worker, `app`, shared Types, and Resource `index.ts` entries.
+- Keep Worker checks in `apps/main/tsconfig.backend.json` and `packages/core/tsconfig.json`; keep `packages/core-sdk` server-safe and React-free.
 - Keep `scripts/codegen/verify-codegen-roots.mjs` before every package generator so real paths remain inside the repository and symbolic links are rejected before writes. Keep `scripts/codegen/normalize-backend-handler-imports.mjs` in the backend generation path. Generated-artifact tracking must use dynamic filesystem enumeration and `git ls-files --cached -z`, accepting staged additions while rejecting untracked artifacts before the drift check.
 - Add required Japanese TSDoc to public package exports, except generated and
   test code.

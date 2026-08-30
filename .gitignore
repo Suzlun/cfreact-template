@@ -8,6 +8,12 @@ node_modules/
 dist/
 build/
 .wrangler/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfbackend
+**/wrangler.release.toml
 .cache/
 *.tsbuildinfo
 .vite/

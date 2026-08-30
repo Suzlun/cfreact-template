@@ -9,16 +9,27 @@ import {
 } from './openapi-operations.mjs';
 
 const repositoryRoot = path.resolve(import.meta.dirname, '../..');
-const openApiRoot = resolvePathWithinRoot(repositoryRoot, 'packages/typespec/openapi');
-const backendGeneratedRoot = resolvePathWithinRoot(
-  repositoryRoot,
-  'packages/backend/src/generated/api'
-);
-const modulesRoot = resolvePathWithinRoot(repositoryRoot, 'packages/backend/src/modules');
-const frontendGeneratedRoot = resolvePathWithinRoot(
-  repositoryRoot,
-  'packages/frontend/src/api/generated'
-);
+const generationTargets = [
+  {
+    openApiRoot: 'apps/main/typespec/openapi',
+    backendGeneratedRoot: 'apps/main/src/backend/generated/api',
+    modulesRoot: 'apps/main/src/backend/modules',
+    clientGeneratedRoots: ['apps/main/src/frontend/api/generated'],
+  },
+  {
+    openApiRoot: 'packages/core/typespec/openapi',
+    backendGeneratedRoot: 'packages/core/src/generated/api',
+    modulesRoot: 'packages/core/src/modules',
+    clientGeneratedRoots: ['packages/core-sdk/src/generated'],
+  },
+].map((target) => ({
+  openApiRoot: resolvePathWithinRoot(repositoryRoot, target.openApiRoot),
+  backendGeneratedRoot: resolvePathWithinRoot(repositoryRoot, target.backendGeneratedRoot),
+  modulesRoot: resolvePathWithinRoot(repositoryRoot, target.modulesRoot),
+  clientGeneratedRoots: target.clientGeneratedRoots.map((root) =>
+    resolvePathWithinRoot(repositoryRoot, root)
+  ),
+}));
 
 /**
  * 生成物ルート配下の現在のファイルを再帰的に列挙する。
@@ -82,45 +93,52 @@ const requireFile = async (intendedRoot, relativeFile) => {
   return path.relative(repositoryRoot, absoluteFile).split(path.sep).join('/');
 };
 
-// OpenAPI 操作から必須ハンドラーとリソースディレクトリを決め、生成物名そのものは実ファイルから取得する。
-const operations = await readOpenApiOperations(
-  await resolveExistingPathWithinRoot(repositoryRoot, openApiRoot, 'openapi.json')
-);
-const resourceTags = [...new Set(operations.map(({ tag }) => tag))].sort();
-const requiredFileLocations = [
-  { root: openApiRoot, file: 'openapi.json' },
-  { root: backendGeneratedRoot, file: 'openapi.ts' },
-  { root: frontendGeneratedRoot, file: 'client.ts' },
-  ...operations.map(({ tag, operationId }) => ({
-    root: modulesRoot,
-    file: path.join(tag, 'handlers', `${operationId}.ts`),
-  })),
-];
-const requiredFiles = [];
-for (const { root, file } of requiredFileLocations) {
-  requiredFiles.push(await requireFile(root, file));
-}
-
-// すべての期待リソースに生成結果があることを確認し、現在の生成物を漏れなく Git 管理確認へ渡す。
-const artifactFiles = new Set(requiredFiles);
-for (const tag of resourceTags) {
-  for (const file of await collectFiles(backendGeneratedRoot, tag, true)) {
-    artifactFiles.add(file);
+// 契約ごとに必須ハンドラーと生成ルートを検査し、全成果物を一つのGit管理確認へ集約する。
+const artifactFiles = new Set();
+for (const target of generationTargets) {
+  const operations = await readOpenApiOperations(
+    await resolveExistingPathWithinRoot(repositoryRoot, target.openApiRoot, 'openapi.json')
+  );
+  const resourceTags = [...new Set(operations.map(({ tag }) => tag))].sort();
+  const requiredFileLocations = [
+    { root: target.openApiRoot, file: 'openapi.json' },
+    { root: target.backendGeneratedRoot, file: 'openapi.ts' },
+    ...target.clientGeneratedRoots.map((root) => ({ root, file: 'client.ts' })),
+    ...operations.map(({ tag, operationId }) => ({
+      root: target.modulesRoot,
+      file: path.join(tag, 'handlers', `${operationId}.ts`),
+    })),
+  ];
+  for (const { root, file } of requiredFileLocations) {
+    artifactFiles.add(await requireFile(root, file));
   }
-}
-for (const root of [openApiRoot, backendGeneratedRoot, frontendGeneratedRoot]) {
-  for (const file of await collectFiles(root, '.', true)) {
-    artifactFiles.add(file);
-  }
-}
 
-// OpenAPI に存在しないリソースのハンドラーも含め、実在する全ハンドラールートのファイルを検査する。
-const verifiedModulesRoot = await resolveExistingPathWithinRoot(repositoryRoot, modulesRoot, '.');
-const modules = await readdir(verifiedModulesRoot, { withFileTypes: true });
-for (const moduleEntry of modules.filter((entry) => entry.isDirectory())) {
-  const handlersRoot = path.join(moduleEntry.name, 'handlers');
-  for (const file of await collectFiles(modulesRoot, handlersRoot, false)) {
-    artifactFiles.add(file);
+  for (const tag of resourceTags) {
+    for (const file of await collectFiles(target.backendGeneratedRoot, tag, true)) {
+      artifactFiles.add(file);
+    }
+  }
+  for (const root of [
+    target.openApiRoot,
+    target.backendGeneratedRoot,
+    ...target.clientGeneratedRoots,
+  ]) {
+    for (const file of await collectFiles(root, '.', true)) {
+      artifactFiles.add(file);
+    }
+  }
+
+  const verifiedModulesRoot = await resolveExistingPathWithinRoot(
+    repositoryRoot,
+    target.modulesRoot,
+    '.'
+  );
+  const modules = await readdir(verifiedModulesRoot, { withFileTypes: true });
+  for (const moduleEntry of modules.filter((entry) => entry.isDirectory())) {
+    const handlersRoot = path.join(moduleEntry.name, 'handlers');
+    for (const file of await collectFiles(target.modulesRoot, handlersRoot, false)) {
+      artifactFiles.add(file);
+    }
   }
 }
 

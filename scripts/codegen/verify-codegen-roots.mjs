@@ -5,10 +5,14 @@ import { resolveExistingPathWithinRoot, resolvePathWithinRoot } from './openapi-
 
 const repositoryRoot = path.resolve(import.meta.dirname, '../..');
 const codegenRoots = [
-  resolvePathWithinRoot(repositoryRoot, 'packages/typespec/openapi'),
-  resolvePathWithinRoot(repositoryRoot, 'packages/backend/src/generated/api'),
-  resolvePathWithinRoot(repositoryRoot, 'packages/backend/src/modules'),
-  resolvePathWithinRoot(repositoryRoot, 'packages/frontend/src/api/generated'),
+  resolvePathWithinRoot(repositoryRoot, 'apps/main/typespec/openapi'),
+  resolvePathWithinRoot(repositoryRoot, 'apps/main/src/backend/generated/api'),
+  resolvePathWithinRoot(repositoryRoot, 'apps/main/src/backend/modules'),
+  resolvePathWithinRoot(repositoryRoot, 'apps/main/src/frontend/api/generated'),
+  resolvePathWithinRoot(repositoryRoot, 'packages/core/typespec/openapi'),
+  resolvePathWithinRoot(repositoryRoot, 'packages/core/src/generated/api'),
+  resolvePathWithinRoot(repositoryRoot, 'packages/core/src/modules'),
+  resolvePathWithinRoot(repositoryRoot, 'packages/core-sdk/src/generated'),
 ];
 
 // 各生成ルートの実体がリポジトリ内にあることを生成前に確認し、ルートごとの所有境界を固定する。

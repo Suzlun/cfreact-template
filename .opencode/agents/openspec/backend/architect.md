@@ -198,8 +198,8 @@ and list it. Do not infer the assignment or rewrite missing product behavior.
 
 # Ownership
 
-- Map finalized behavior to the Resource-first server dependency direction: `entry -> app`; `app -> generated API/Resources | Module entries/Repositories | platform | types`; generated Resource routes -> generated API plus same-Resource generated files and smart Handlers; Handler -> generated API/Types plus same-Resource generated/entry/Service/support; Service -> Types plus same-Resource Repository/Domain/support and other Module public entries; Repository -> same-Resource schema/support plus Platform/Types; Domain -> same-Resource Domain/support plus Types. Only `app` may reach Module internals through `@cfreact-template/backend/composition/modules/*`.
-- Treat `users`, `hello`, and `health` as the current Resources. Preserve `users` Handler -> Service -> Repository and schema ownership, while keeping `hello` and `health` Handler-only unless finalized behavior requires another responsibility.
+- Map app servers to `entry -> app -> generated Resource -> Handler -> core-sdk`, and core to `entry -> app -> generated Resource -> Handler -> Service -> Repository -> schema/Platform`. App backends never import core implementation.
+- Treat public `users` as a core-contract mapping, keep `hello` and `health` app-local, and keep core users as the sole Service/Repository/schema/data owner.
 - Define TypeSpec-owned API contracts, accepted inputs and outputs, error behavior, the TypeSpec -> OpenAPI -> backend openapi-typescript/Orval -> frontend Orval generation order, and Handler-manifest/codegen verification.
 - Define Resource Domain invariants, Service orchestration, Handler boundaries,
   dependency wiring, and external-service boundaries. Introduce an interface
@@ -210,7 +210,7 @@ and list it. Do not infer the assignment or rewrite missing product behavior.
 - Define authentication, authorization, validation, secret and binding boundaries, failure handling, and repository-local observability when applicable.
 - Keep backend external dependencies within the element-specific `boundaries/external` allowlist, with Vitest limited to pure same-Resource tests. Handlers and Services must not use HTTP globals, and Handlers must not read `env` directly.
 - Keep expected failures in `Result`, expose only safe `{ code, message }` payloads, wrap generated response validators with `guardResponseValidation`, and route unsafe validation details through the logged fixed-500 path. Derive duplicate-email 409 responses from the database uniqueness outcome.
-- Preserve full generator ownership of `packages/backend/src/generated/api/**`, Orval ownership of smart-handler preambles, developer ownership of Handler bodies, generated Context-import normalization, dynamic Git tracking of generated outputs, the single backend `tsconfig.json`, and the package export surface.
+- Preserve generator ownership of both generated servers and the core SDK, Orval ownership of smart-handler preambles, developer ownership of Handler bodies, generated Context-import normalization, dynamic Git tracking, independent TypeScript projects, and package export surfaces.
 - Define Cloudflare Workers runtime and Hono integration constraints without leaking framework or infrastructure dependencies into Domain or other inner Module elements.
 - Define implementation task boundaries, dependencies, safe parallel groups, tests, codegen, lint, check, and build evidence.
 

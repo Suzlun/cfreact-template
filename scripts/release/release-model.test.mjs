@@ -12,19 +12,43 @@ import {
   isTrustedSyncPullRequest,
   parseChangesetSummary,
   parseReleasePlan,
+  resolveDeployTargets,
   requiresApplicationChangeset,
   validateChangesetMarkdown,
 } from './release-model.mjs';
 
 test('Changesetはアプリケーション版へ影響するfile変更だけに要求する', () => {
   // template workflowや文書の保守を生成先の初回releaseへ混入させず、実行物とmanifestを対象にします。
-  assert.equal(requiresApplicationChangeset('packages/frontend/src/app.tsx'), true);
-  assert.equal(requiresApplicationChangeset('drizzle/migrations/0001.sql'), true);
+  assert.equal(requiresApplicationChangeset('apps/main/src/frontend/app.tsx'), true);
+  assert.equal(requiresApplicationChangeset('packages/core/drizzle/migrations/0001.sql'), true);
   assert.equal(requiresApplicationChangeset('package.json'), true);
   assert.equal(requiresApplicationChangeset('pnpm-lock.yaml'), true);
   assert.equal(requiresApplicationChangeset('.github/workflows/release.yml'), false);
   assert.equal(requiresApplicationChangeset('scripts/release/github-automation.mjs'), false);
   assert.equal(requiresApplicationChangeset('docs/release-operations.md'), false);
+});
+
+test('配備対象は依存先を先に一度だけ返す', () => {
+  const manifest = {
+    core: {
+      workspace: '@example/core',
+      wranglerConfig: 'packages/core/wrangler.toml',
+      renderedConfig: 'packages/core/wrangler.release.toml',
+      dependsOn: [],
+    },
+    main: {
+      workspace: '@example/main',
+      wranglerConfig: 'apps/main/wrangler.toml',
+      renderedConfig: 'apps/main/wrangler.release.toml',
+      dependsOn: ['core'],
+    },
+  };
+
+  assert.deepEqual(
+    resolveDeployTargets(manifest, 'main').map(({ name }) => name),
+    ['core', 'main']
+  );
+  assert.throws(() => resolveDeployTargets(manifest, 'unknown'), /Unknown deploy target/u);
 });
 
 test('develop向けPRでは新規Changesetだけを受け付ける', () => {
