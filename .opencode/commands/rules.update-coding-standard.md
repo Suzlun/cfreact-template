@@ -105,7 +105,7 @@ If a section has no enforceable rules beyond a short scope note, keep it brief.
 3. Extract only rules that actually fail in this repo, including repo-specific ones such as:
    - TypeSpec is the source of truth; generated OpenAPI, backend API files, smart-Handler preambles, and the frontend SDK are not hand-edited; codegen drift fails.
    - Frontend boundaries such as `app -> domain -> api`, no direct API import from app, no direct `fetch` or `axios`, exported declarations require TSDoc, and hooks must return `{ data, actions }`.
-   - Backend boundaries across `entry/app/generated/modules/platform/types`, same-Resource restrictions, Module public entries, the app-only composition alias, and the distinct Platform element types.
+   - Backend boundaries across `entry/app/generated/modules/platform/types`, app-owned use cases versus the core domain boundary, direct Handler-to-core-SDK mappings, app Service composition, core Handler-to-Service-to-Repository-to-schema/Platform direction, same-Resource restrictions, Module public entries, the app-only composition alias, and the distinct Platform element types.
    - Backend external-package allowlists, Handler and Service HTTP-global restrictions, and direct Handler `env` access restrictions.
    - Full generator ownership, mixed smart-Handler ownership, package exports, and the independent main/core/core-sdk TypeScript projects wherever a mechanically enforced rule exists. Do not present implementation-only conventions as lint rules without a failing enforcement point.
    - Handler import normalization, dynamic generated-artifact discovery, staged-file acceptance, untracked-artifact rejection, and final generated drift detection.

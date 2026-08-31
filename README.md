@@ -86,7 +86,7 @@ cfreact-template/
 | `apps/main/src/frontend/api/`       | main OpenAPI生成SDKとAPIラッパー                |
 | `apps/main/src/backend/`            | main WorkerのHono入口と公開API                  |
 | `apps/main/typespec/`               | main公開API契約の正                             |
-| `packages/core/`                    | 非公開core Worker、共有業務、Repository、D1     |
+| `packages/core/`                    | 非公開core Worker、共有ドメイン、Repository、D1 |
 | `packages/core/typespec/`           | core内部API契約の正                             |
 | `packages/core-sdk/`                | core OpenAPIから生成するサーバー専用SDK         |
 | `packages/core/drizzle/migrations/` | coreが所有するD1マイグレーション                |
@@ -95,7 +95,7 @@ cfreact-template/
 
 ### システムの追加
 
-React + Hono + TypeSpecのシステムは`apps/<name>`へ一つのworkspace packageとして追加し、`dev`、`build`、`check`、`gen:api`、`deploy:dry-run`を実装します。TypeSpecからそのシステムのHono経路とfrontend SDKを生成し、共有業務が必要なHandlerだけが`@cfreact-template/core-sdk`を利用します。配備対象は`.release/deploy-targets.json`へ明示登録します。
+React + Hono + TypeSpecのシステムは`apps/<name>`へ一つのworkspace packageとして追加し、`dev`、`build`、`check`、`gen:api`、`deploy:dry-run`を実装します。TypeSpecからそのシステムのHono経路とfrontend SDKを生成し、共有ドメインの操作や問い合わせが必要なHandlerまたはServiceだけが`@cfreact-template/core-sdk`を利用します。配備対象は`.release/deploy-targets.json`へ明示登録します。
 
 Next.jsなどの一体型システムも`apps/<name>`へ置き、ルートから見える同じscript契約だけを揃えます。内部構造をReact + Honoへ無理に合わせず、外部APIを所有する場合だけTypeSpecを追加します。
 
@@ -107,7 +107,30 @@ Next.jsなどの一体型システムも`apps/<name>`へ置き、ルートから
 React -> main SDK -> main Hono -> core SDK -> core Hono -> Service -> Repository -> D1
 ```
 
-`apps/main`は公開契約、画面固有の応答写像、`hello`、`health`を所有します。`packages/core`は共有業務、`users`のService、Repository、Drizzleスキーマ、D1、メール、マイグレーションを所有します。main backendはcore実装を直接インポートせず、`packages/core-sdk`だけを利用します。
+`apps/main`は公開契約、画面固有の応答写像、`hello`、`health`を所有します。`packages/core`は共有ドメイン、`users`のService、Repository、Drizzleスキーマ、D1、メール、マイグレーションを所有します。mainバックエンドはcore実装を直接インポートせず、`packages/core-sdk`だけを利用します。
+
+#### アプリのユースケースとcoreドメイン
+
+各`apps/*`は、そのアプリのユースケースを所有します。ユースケースは、想定利用者、その利用者が置かれた状況、目的、得られる成果によって識別します。想定利用者が異なる場合は、利用するドメイン操作や処理順序が同じでも別のユースケースです。
+
+想定利用者、状況、目的、成果まで同じユースケースが複数の`apps/*`に存在する場合は、本当に別アプリとして分ける必要があるかを確認します。別アプリとして提供することが確認済みの要望であれば、その境界を維持します。実装の重複だけを理由にアプリを統合したり、ユースケースをcoreへ移したりしません。
+
+core APIは、各アプリのユースケースから利用されるドメイン境界です。アプリ固有の利用者作業やワークフローではなく、ドメインの概念、状態、操作、問い合わせ、不変条件、状態遷移、整合性を提供します。異なるユースケースが同じcoreドメイン操作を利用することは、ドメインを共有する自然な結果です。
+
+core APIは現在の`createUser`、`getUser`、`listUsers`のようにドメインの語彙で定義します。`insertUserRow`、`updateUserFields`、汎用的な`save`や`find`のように永続化操作をそのまま公開しません。`Repository`を遠隔公開しないことはcore APIの目的ではなく、ドメイン境界を維持した結果です。core APIのDTOはデータベース行やDrizzleスキーマではなく、ドメイン契約を表します。
+
+coreの`Service`がドメイン操作、不変条件、状態遷移、副作用調整を所有します。純粋な補助処理は、同じリソースの`Service`内または既存の`backend-module-support`へ置きます。
+
+main固有の判断、複数のcore操作、外部サービスを組み合わせるユースケースは、mainの`backend-module-service`へ置きます。mainの`Service`はcore SDKや外部クライアントを構成起点から受け取り、HTTPに依存しない結果を`Handler`へ返します。main固有の判断がなく、一つのcore操作を公開契約へ変換するだけなら、現在の`users`と同様に`Handler`からcore SDKを直接呼び、不要な`Service`を追加しません。
+
+```text
+単純な公開変換: route -> main Handler -> core SDK
+main固有ユースケース: route -> main Handler -> main Service -> core SDK / 外部クライアント
+coreドメイン処理: route -> core Handler -> core Service
+core永続化: core Service -> Repository -> Schema / Platform
+```
+
+複数のドメイン操作や外部サービスを組み合わせる順序は、原則としてアプリのユースケースが所有します。ただし、一連の変更がcoreドメインの不変条件を守るために原子的でなければならない場合は、mainから複数回呼び出さず、一つのcoreドメイン操作として提供します。coreはアプリ固有のフローを知らず、mainはcore内部のトランザクションを再現しません。
 
 core SDKは実行時に基底URL、Bearerトークン、Web標準`fetch`を受け取ります。現在のCloudflare構成では`CORE_API` Service Bindingの`fetch`を渡しますが、通信契約自体はCloudflareへ依存しません。片側または両側を別の実行基盤へ置く場合も、同じTypeSpec契約を証明書検証済みHTTPSとBearer認証で実装します。
 
@@ -675,7 +698,7 @@ Story は製品コードへ import せず、`@cfreact-template/ui/*` の公開 s
 
 リソースのパス、HTTP メソッド、スキーマ、検証処理は `TypeSpec` と生成器が所有します。手書きの `Hono` 経路を別に作ったり、生成された経路ファイルを直接編集したりしません。
 
-共有業務を追加する場合は`packages/core/typespec`とcore Handler/Serviceを先に変更し、生成された`core-sdk`をmain Handlerから利用します。外部パッケージが経路全体を所有する場合だけTypeSpecの対象外とし、最上位Honoへ明示的にマウントします。
+共有ドメインの操作や問い合わせを追加する場合は`packages/core/typespec`とcoreの`Handler`、`Service`を先に変更し、生成された`core-sdk`をmainの`Handler`または`Service`から利用します。main固有の複合ユースケースはmainの`Service`へ置きます。外部パッケージが経路全体を所有する場合だけTypeSpecの対象外とし、最上位Honoへ明示的にマウントします。
 
 ## コード品質
 

@@ -18,15 +18,28 @@
 
 この構造は `eslint-plugin-boundaries` の要素定義と依存方向検査の入力として使われます。
 
-公開mainのリソースは`users`、`hello`、`health`です。mainの`users` Handlerは`core-sdk`を利用し、coreの`users`がService、Repository、Drizzleスキーマを所有します。`hello`と`health`はmain Handlerだけで完結します。
+公開mainのリソースは`users`、`hello`、`health`です。mainの`users`の`Handler`は`core-sdk`を利用し、coreの`users`がドメイン`Service`、`Repository`、Drizzleスキーマを所有します。`hello`と`health`はmainの`Handler`だけで完結します。
 
 ### サーバー要素
 
 - `backend-*`: `apps/main/src/backend/**`と`packages/core/src/**`の同じ責務ディレクトリ
 - `backend-platform-database`、`backend-platform-email`: `packages/core/src/platform/**`
-- `backend-module-service`、`backend-module-repository`、`backend-module-schema`: `packages/core/src/modules/<module>/**`
+- `backend-module-service`: `apps/main/src/backend/modules/<module>/*.service.ts`と`packages/core/src/modules/<module>/*.service.ts`
+- `backend-module-repository`、`backend-module-schema`: `packages/core/src/modules/<module>/**`
 - `core-sdk-test`: `packages/core-sdk/src/**/*.test.ts`
 - `core-sdk`: `packages/core-sdk/src/**/*`
+
+### ユースケースとドメインの所有
+
+- 各`apps/*`は、想定利用者、その利用者が置かれた状況、目的、得られる成果で識別されるユースケースを所有します。
+- 想定利用者が異なる場合は、利用するドメイン操作や処理順序が同じでも別のユースケースです。
+- 想定利用者、状況、目的、成果まで同じユースケースが複数アプリに存在する場合は、別アプリとして分ける必要を確認します。別アプリとしての提供が確認済み要望なら分割を維持し、重複だけを理由に統合またはcoreへの移動を行いません。
+- core APIは各アプリのユースケースが利用するドメイン境界であり、ドメイン概念、状態、操作、問い合わせ、不変条件、状態遷移、整合性をドメインの語彙で提供します。
+- core APIは`Repository`操作やデータベース行を遠隔公開しません。これはcore APIの目的ではなく、ドメイン境界を維持した結果です。
+- coreの`Service`がドメイン操作、不変条件、状態遷移、副作用調整を所有します。純粋な補助処理は、同じリソースの`Service`内または`backend-module-support`へ置きます。
+- main固有の判断、複数のcore操作、外部サービスの組み合わせはmainの`backend-module-service`が所有します。mainの`Service`はcore SDKと宣言済み外部クライアントを構成起点から受け取り、HTTP非依存の結果を`Handler`へ返します。
+- main固有の判断や組み合わせがない一対一の公開変換では、`Handler`からcore SDKを直接呼び、通過するだけの`Service`を追加しません。
+- 複数操作がcoreドメインの不変条件を守るために原子的でなければならない場合は、一つのcore操作として提供します。mainはcore内部のトランザクションを再現しません。
 
 ### クライアント・共通要素
 
@@ -52,12 +65,11 @@
 - `backend-platform-email` → `backend-platform-email | backend-types`
 - `backend-platform-observability` → `backend-platform-observability | backend-types`
 - `backend-module-handler` → `core-sdk | backend-generated-api | backend-platform-http | backend-types`、同じリソースの `backend-generated-resource | backend-module-entry | backend-module-service | backend-module-support`
-- `backend-module-test` → `backend-types`、同じリソースの`backend-module-domain | backend-module-repository | backend-module-service | backend-module-support`
-- `backend-module-service` → `backend-types`、同じリソースの `backend-module-repository | backend-module-domain | backend-module-support`、各リソースの `backend-module-entry`
+- `backend-module-test` → `backend-types`、同じリソースの`backend-module-repository | backend-module-service | backend-module-support`
+- `backend-module-service` → `core-sdk | backend-types`、同じリソースの `backend-module-repository | backend-module-support`、各リソースの `backend-module-entry`
 - `backend-module-repository` → `backend-platform-database | backend-types`、同じリソースの `backend-module-schema | backend-module-support`
 - `backend-module-schema` → 同じリソースの `backend-module-schema`
-- `backend-module-domain` → `backend-types`、同じリソースの `backend-module-domain | backend-module-support`
-- `backend-module-entry` → 同じリソースの `backend-module-service | backend-module-domain | backend-module-support`
+- `backend-module-entry` → 同じリソースの `backend-module-service | backend-module-support`
 - `backend-module-support` → `backend-generated-api | backend-types`、同じリソースの `backend-generated-resource | backend-module-support`
 - `backend-types` → `backend-types`
 - `frontend-api` → `frontend-api`
@@ -67,6 +79,8 @@
 - `ui-storybook` → `ui-storybook | ui`
 
 リソース名は `eslint-plugin-boundaries` の `capture` で取得します。同じ要素でも `captured.module` が異なるリソースは許可されません。要素外ファイルへの依存は `boundaries/no-unknown`、親ディレクトリへの逃避はバックエンド用の `no-restricted-imports` でも失敗します。
+
+`core-sdk`への依存はmainの`backend-module-service`だけに許可します。`packages/core/src/**`は`no-restricted-imports`により自身のHTTP SDKへ依存できません。coreは`Handler -> Service -> Repository -> Schema | Platform`の内部方向を維持し、ドメイン能力は`Service`が所有します。
 
 ## 5. import / export
 
@@ -754,27 +768,26 @@
 
 ### 9.1 ソース要素
 
-| 要素                             | 対象                                                        | 所有する責務                                     |
-| -------------------------------- | ----------------------------------------------------------- | ------------------------------------------------ |
-| `backend-entry`                  | mainとcoreの`src/entry/index.ts`                            | 各`Cloudflare Workers`の入口                     |
-| `backend-app`                    | mainとcoreの`src/app/**/*`                                  | 各Workerの構成起点                               |
-| `backend-generated-api`          | mainとcoreの`src/generated/api/openapi.ts`                  | `openapi-typescript`が生成するOpenAPI型          |
-| `backend-generated-resource`     | mainとcoreの`src/generated/api/<module>/**/*`               | `Orval`生成のHono経路、検証処理、スキーマ        |
-| `backend-platform-http`          | `apps/main/src/backend/platform/http/**/*`                  | HTTP 応答検証などの基盤処理                      |
-| `backend-platform-database`      | `packages/core/src/platform/database/**/*`                  | `D1`と`Drizzle`の接続処理                        |
-| `backend-platform-email`         | `packages/core/src/platform/email/**/*`                     | `Cloudflare Email Workers`の送信処理             |
-| `backend-platform-observability` | `apps/main/src/backend/platform/observability/**/*`         | 内部失敗の記録                                   |
-| `backend-module-handler`         | `apps/main/src/backend/modules/<module>/handlers/**/*`      | 契約済み入力とサービス結果を HTTP 応答へ変換する |
-| `backend-module-test`            | `apps/main/src/backend/modules/<module>/*.test.ts`          | 同じリソースの純粋で決定的な業務規則を検証する   |
-| `backend-module-service`         | `packages/core/src/modules/<module>/*.service.ts`           | 共有業務処理と副作用を調整する                   |
-| `backend-module-repository`      | `packages/core/src/modules/<module>/*.repository.ts`        | core所有データを永続化する                       |
-| `backend-module-schema`          | `packages/core/src/modules/<module>/*.schema.ts`            | core所有の`Drizzle`スキーマ                      |
-| `backend-module-domain`          | `apps/main/src/backend/modules/<module>/domain/**/*`        | リソース固有の純粋なドメイン規則                 |
-| `backend-module-entry`           | `apps/main/src/backend/modules/<module>/index.ts`           | リソースの唯一の公開入口                         |
-| `backend-module-support`         | `apps/main/src/backend/modules/<module>/*.ts`（上記を除く） | リソース内で共有する補助型、応答、補助処理       |
-| `backend-types`                  | `apps/main/src/backend/types/**/*`                          | 複数リソースで共有する型                         |
-| `core-sdk-test`                  | `packages/core-sdk/src/**/*.test.ts`                        | SDKの純粋で決定的な通信規則を検証する            |
-| `core-sdk`                       | `packages/core-sdk/src/**/*`                                | app backendからcoreを呼ぶ生成SDK境界             |
+| 要素                             | 対象                                                        | 所有する責務                                         |
+| -------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------- |
+| `backend-entry`                  | mainとcoreの`src/entry/index.ts`                            | 各`Cloudflare Workers`の入口                         |
+| `backend-app`                    | mainとcoreの`src/app/**/*`                                  | 各Workerの構成起点                                   |
+| `backend-generated-api`          | mainとcoreの`src/generated/api/openapi.ts`                  | `openapi-typescript`が生成するOpenAPI型              |
+| `backend-generated-resource`     | mainとcoreの`src/generated/api/<module>/**/*`               | `Orval`生成のHono経路、検証処理、スキーマ            |
+| `backend-platform-http`          | `apps/main/src/backend/platform/http/**/*`                  | HTTP 応答検証などの基盤処理                          |
+| `backend-platform-database`      | `packages/core/src/platform/database/**/*`                  | `D1`と`Drizzle`の接続処理                            |
+| `backend-platform-email`         | `packages/core/src/platform/email/**/*`                     | `Cloudflare Email Workers`の送信処理                 |
+| `backend-platform-observability` | `apps/main/src/backend/platform/observability/**/*`         | 内部失敗の記録                                       |
+| `backend-module-handler`         | `apps/main/src/backend/modules/<module>/handlers/**/*`      | 契約済み入力とサービス結果を HTTP 応答へ変換する     |
+| `backend-module-test`            | `apps/main/src/backend/modules/<module>/*.test.ts`          | 同じリソースの純粋で決定的な業務規則を検証する       |
+| `backend-module-service`         | mainとcoreの`src/modules/<module>/*.service.ts`             | main固有ユースケースまたはcoreドメイン操作を調整する |
+| `backend-module-repository`      | `packages/core/src/modules/<module>/*.repository.ts`        | core所有データを永続化する                           |
+| `backend-module-schema`          | `packages/core/src/modules/<module>/*.schema.ts`            | core所有の`Drizzle`スキーマ                          |
+| `backend-module-entry`           | `apps/main/src/backend/modules/<module>/index.ts`           | リソースの唯一の公開入口                             |
+| `backend-module-support`         | `apps/main/src/backend/modules/<module>/*.ts`（上記を除く） | リソース内で共有する補助型、応答、補助処理           |
+| `backend-types`                  | `apps/main/src/backend/types/**/*`                          | 複数リソースで共有する型                             |
+| `core-sdk-test`                  | `packages/core-sdk/src/**/*.test.ts`                        | SDKの純粋で決定的な通信規則を検証する                |
+| `core-sdk`                       | `packages/core-sdk/src/**/*`                                | アプリのバックエンドからcoreを呼ぶ生成SDK境界        |
 
 要素外のバックエンド `TypeScript` ファイルは `boundaries/no-unknown-files`、要素外へのインポートは `boundaries/no-unknown` と `boundaries/element-types` で失敗します。
 
@@ -790,16 +803,17 @@
 - `backend-platform-email` → `backend-platform-email | backend-types`
 - `backend-platform-observability` → `backend-platform-observability | backend-types`
 - `backend-module-handler` → `core-sdk | backend-generated-api | backend-platform-http | backend-types`、同じリソースの`backend-generated-resource | backend-module-entry | backend-module-service | backend-module-support`
-- `backend-module-test` → `backend-types`、同じリソースの`backend-module-domain | backend-module-repository | backend-module-service | backend-module-support`
-- `backend-module-service` → `backend-types`、同じリソースの `backend-module-repository | backend-module-domain | backend-module-support`、各リソースの `backend-module-entry`
+- `backend-module-test` → `backend-types`、同じリソースの`backend-module-repository | backend-module-service | backend-module-support`
+- `backend-module-service` → `core-sdk | backend-types`、同じリソースの `backend-module-repository | backend-module-support`、各リソースの `backend-module-entry`
 - `backend-module-repository` → `backend-platform-database | backend-types`、同じリソースの `backend-module-schema | backend-module-support`
 - `backend-module-schema` → 同じリソースの `backend-module-schema`
-- `backend-module-domain` → `backend-types`、同じリソースの `backend-module-domain | backend-module-support`
-- `backend-module-entry` → 同じリソースの `backend-module-service | backend-module-domain | backend-module-support`
+- `backend-module-entry` → 同じリソースの `backend-module-service | backend-module-support`
 - `backend-module-support` → `backend-generated-api | backend-types`、同じリソースの `backend-generated-resource | backend-module-support`
 - `backend-types` → `backend-types`
 
-main backendからcore実装への直接依存は`no-restricted-imports`で拒否し、`@cfreact-template/core-sdk`だけを許可します。coreからmainへの依存も拒否します。
+`core-sdk`への依存はmainの`backend-module-service`だけに許可します。coreの`Service`がドメイン能力を所有して同じリソースの`Repository`を利用し、`Repository`は`Schema`と`Platform`を利用します。
+
+mainバックエンドからcore実装への直接依存は`no-restricted-imports`で拒否し、`@cfreact-template/core-sdk`だけを許可します。coreからmainへの依存も拒否します。
 
 ### 9.3 外部パッケージ
 
@@ -818,7 +832,7 @@ main backendからcore実装への直接依存は`no-restricted-imports`で拒�
 - `backend-platform-email` → `cloudflare:email`
 - `backend-types` → `@cloudflare/workers-types`
 
-`backend-entry`、`backend-generated-api`、`backend-platform-observability`、`backend-module-domain`、`backend-module-entry`、`backend-module-support` には外部パッケージの許可がありません。`backend-module-test`と`core-sdk-test`の`vitest`許可は純粋試験だけに適用し、製品要素の外部依存を広げません。
+`backend-entry`、`backend-generated-api`、`backend-platform-observability`、`backend-module-entry`、`backend-module-support` には外部パッケージの許可がありません。`backend-module-test`と`core-sdk-test`の`vitest`許可は純粋試験だけに適用し、製品要素の外部依存を広げません。
 
 ### 9.4 HTTP 実行環境への直接到達
 
@@ -833,7 +847,7 @@ main backendからcore実装への直接依存は`no-restricted-imports`で拒�
 - リソースをまたぐ相対インポート、モジュールの親へ逃げる相対インポート、要素外ファイルへの相対インポートは `boundaries/element-types`、`boundaries/no-unknown`、または `no-restricted-imports` で禁止します。
 - `@cfreact-template/core/modules/<module>/<internal-file>`のようなモジュール深部のパッケージインポートは禁止します。別リソースのサービスは公開`index.ts`だけを使います。
 - モジュール要素の `capture` と既定拒否の `boundaries/element-types` により、別リソースの内部ファイルを拒否します。パッケージ形式の深いモジュールインポートは `no-restricted-imports` でも拒否します。
-- mainとcoreは生成物、Platform、Handler、Repository、Schemaをpackage exportへ公開しません。`packages/core-sdk`だけがapp backend向けのcore通信面を公開します。
+- mainとcoreは生成物、`Platform`、`Handler`、`Repository`、Schemaをpackage exportへ公開しません。`packages/core-sdk`だけがアプリのバックエンド向けのcore通信面を公開します。
 
 ### 9.6 生成コードとスマートハンドラー
 

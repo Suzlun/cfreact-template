@@ -193,11 +193,12 @@ a correction.
 
 1. No violations of `AGENTS.md`, `CODING_STANDARDS.md`, or `coding-guardian`
 2. No bespoke implementation where reusable components or functions should have been used
-3. Resource boundaries match `entry -> app` composition, Module public entries, and the current `users` / `hello` / `health` responsibilities without cross-Module deep imports
+3. App use cases remain owned by their intended-user/situation/purpose/outcome boundary; the core Service exposes domain operations and queries, while app workflows remain in apps and Repository operations remain internal. Owner-confirmed app splits are preserved even when implementations resemble one another
 4. `apps/main/src/backend/generated/api/**` and smart-handler preambles remain generator-owned, while developer-owned Handler bodies satisfy applicable concise comment and TSDoc constraints
-5. Backend external imports remain inside the element-specific allowlist, with Vitest limited to pure same-Resource or core SDK transport tests; Handlers and Services avoid HTTP globals, and Handlers avoid direct `env` access
-6. Expected failures use `Result` and safe `{ code, message }` responses; generated response validators use `guardResponseValidation`, unsafe details reach the logged fixed-500 path, create-user success uses its generated schema, and duplicate-email 409 handling comes from the database uniqueness outcome
-7. The independent main/core/core-sdk TypeScript projects, package exports, generated Context-import normalization, both Handler manifests, dynamically tracked generated outputs, and codegen drift checks remain coherent
+5. Resource boundaries match direct Handler-to-core-SDK mappings or app-specific Handler-to-Service-to-core-SDK/external-client composition. Main Services may use core SDK, core Services may not, cross-Module deep imports remain absent, and core-invariant transactions are not reconstructed in apps
+6. Backend external imports remain inside the element-specific allowlist, with Vitest limited to pure same-Resource or core SDK transport tests; Handlers and Services avoid HTTP globals, and Handlers avoid direct `env` access
+7. Expected failures use `Result` and safe `{ code, message }` responses; generated response validators use `guardResponseValidation`, unsafe details reach the logged fixed-500 path, create-user success uses its generated schema, and duplicate-email 409 handling comes from the database uniqueness outcome
+8. The independent main/core/core-sdk TypeScript projects, package exports, generated Context-import normalization, both Handler manifests, dynamically tracked generated outputs, and codegen drift checks remain coherent
 
 ## Rules
 

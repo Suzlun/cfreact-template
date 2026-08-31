@@ -71,8 +71,8 @@ Area mapping:
 Dependency directions:
 
 - Client: `app -> domain -> api` and `app -> ui`
-- App server: `entry -> app -> generated Resource -> Handler -> core-sdk`
-- Core server: `entry -> app -> generated Resource -> Handler -> Service -> Repository -> schema/Platform`
+- App server: `entry -> app -> generated Resource -> Handler -> core-sdk` for direct mappings, or `entry -> app -> generated Resource -> Handler -> Service -> core-sdk / declared external client` for app-specific use cases
+- Core server: `entry -> app -> generated Resource -> Handler -> Service -> Repository -> schema/Platform`; Service owns domain operations, invariants, transitions, and effect coordination
 - Platform is four distinct elements: HTTP, database, email, and observability. Do not treat them as one aggregate dependency target.
 - Module-internal relative imports are allowed. Cross-Module relatives, parent escapes, and Module deep imports are prohibited.
 
@@ -102,11 +102,15 @@ Dependency directions:
 - Keep generated Resource routes, app composition, Module responsibilities,
   Platform adapters, and shared Types in their declared backend elements.
 - `entry` imports `app` only; `app` owns Binding-to-service composition.
-- Public Resources are `users`, `hello`, and `health`. Public users maps core SDK results; core owns the users Service, Repository, schema, D1, email, and migrations.
+- Apps own use cases identified by intended user, situation, purpose, and outcome. Different intended users define different use cases. When all four match across apps, confirm the app split and preserve it when owner-confirmed; duplication alone never moves a use case into core.
+- Core API is the shared domain boundary: expose domain concepts, state, operations, queries, invariants, transitions, and consistency, never app workflows, remote Repository methods, or persistence-shaped DTOs.
+- Put app-specific decisions and core/external-service composition in the app Resource Service. Main Services may depend on core SDK; core Services may not. Keep direct Handler-to-core-SDK mappings when no app-specific decision exists.
+- App Services may sequence independent domain operations and external services. If a core invariant requires atomic changes, expose one core operation; never reconstruct the transaction in an app.
+- Public Resources are `users`, `hello`, and `health`. Public users directly maps core domain operations and queries; core owns the users Service, Repository, schema, D1, email effect, and migrations.
 - Module public entries are the only cross-Module implementation surface.
 - Only core `app` may use `@cfreact-template/core/composition/modules/*`; app backends use only `@cfreact-template/core-sdk` and never core implementation.
 - Main/core generated servers and `packages/core-sdk/src/generated/**` are generator-owned. Orval owns smart-handler preambles; smart-handler bodies remain handwritten.
-- Keep backend external imports within the `boundaries/external` allowlist. Vitest is limited to pure same-Resource and core SDK transport test files. Handler and Service code never uses HTTP globals, and Handlers never access `env` directly.
+- Keep backend external imports within the `boundaries/external` allowlist. Vitest is limited to pure same-Resource and core SDK transport test files. Handler and Service code never uses HTTP globals, Handlers never access `env` directly, and core source never imports core SDK.
 - Keep the core HTTP contract host-independent and Bearer-authenticated. Construct the core SDK from a runtime base URL, token, and standard `fetch`; Cloudflare Service Binding is only the current transport adapter. Never place the shared token in Wrangler vars, Terraform state, URLs, logs, or caller-controlled headers.
 - Keep expected failures in `Result` values and map them to safe `{ code, message }` responses. Wrap generated response validators with `guardResponseValidation`, route unsafe validation details through the logged fixed-500 path, and parse create-user success with the generated schema. Derive duplicate-email 409 responses from the database uniqueness result rather than error-string parsing.
 - Keep Worker checks in `apps/main/tsconfig.backend.json` and `packages/core/tsconfig.json`; keep `packages/core-sdk` server-safe and React-free.

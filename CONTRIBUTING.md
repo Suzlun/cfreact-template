@@ -172,9 +172,20 @@ pnpm gen:core
 
 生成後は `pnpm check:codegen` を実行してください。このコマンドは OpenAPI のリソース `tag` と `operationId` に対応するハンドラーの不足、余分、生成リソースの残骸を検出します。続いて現在の生成物と全ハンドラーディレクトリを動的に列挙し、`git ls-files --cached -z` でステージ済み追加を受理しながら未追跡ファイルを拒否した後、生成差分を検出します。
 
-main backendは`entry -> app -> generated route -> Handler -> core-sdk`、coreは`entry -> app -> generated route -> Handler -> Service -> Repository`です。mainはcore実装、Repository、Schema、D1へ直接依存しません。`apps/main/tsconfig.backend.json`と`packages/core/tsconfig.json`を個別に型検査します。
+mainとcoreの依存方向は次のとおりです。
 
-main backendが共有業務を呼ぶ場合は`@cfreact-template/core-sdk`だけを使います。core内の別リソースを利用する場合は公開`index.ts`を使い、Repository構築用のcomposition別名はcoreの`app`だけが利用します。ハンドラーは`env`を直接参照しません。
+```text
+mainの単純な公開変換: entry -> app -> generated route -> Handler -> core-sdk
+main固有ユースケース: entry -> app -> generated route -> Handler -> Service -> core-sdk / 外部クライアント
+core HTTP境界: entry -> app -> generated route -> Handler -> Service
+core永続化: Service -> Repository -> Schema / Platform
+```
+
+coreの`Service`がドメイン操作、不変条件、状態遷移、副作用調整を所有します。mainはcore実装、`Repository`、Schema、D1へ直接依存しません。`apps/main/tsconfig.backend.json`と`packages/core/tsconfig.json`を個別に型検査します。
+
+各`apps/*`は想定利用者、状況、目的、成果で識別されるユースケースを所有し、core APIはそれらが利用するドメイン操作と問い合わせを提供します。想定利用者が異なれば別ユースケースです。すべてが同じユースケースを複数アプリへ置く場合はアプリ分割の必要を確認しますが、分割が確認済み要望なら維持します。重複だけを理由にユースケースをcoreへ移しません。
+
+main固有の複合ユースケースはmainの`Service`へ置き、`@cfreact-template/core-sdk`または宣言済み外部クライアントだけを利用します。単純な公開変換は`Handler`からcore SDKを直接呼びます。core内の別リソースを利用する場合は公開`index.ts`を使い、`Repository`構築用のcomposition別名はcoreの`app`だけが利用します。ハンドラーは`env`を直接参照しません。
 
 予測して処理する失敗は `Result` で返し、ハンドラーでは内部原因を含まない `{ code, message }` へ変換します。生成された応答検証処理には `guardResponseValidation` を先行させ、不安全な検証詳細は `app.onError` が記録して固定の 500 応答へ変換します。ユーザー作成の成功応答は生成スキーマで解析し、メールアドレス重複はデータベースの一意制約の結果で判定して 409 応答へ変換します。データベースのエラー文は解析しません。
 

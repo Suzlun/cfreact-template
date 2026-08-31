@@ -622,6 +622,7 @@ export default tseslint.config(
             {
               from: ['backend-module-service'],
               allow: [
+                'core-sdk',
                 'backend-module-entry',
                 'backend-types',
                 ...sameBackendModule([
@@ -1669,6 +1670,11 @@ export default tseslint.config(
         'error',
         {
           patterns: [
+            {
+              group: ['@cfreact-template/core-sdk', '@cfreact-template/core-sdk/**'],
+              message:
+                'coreは自身のHTTP SDKへ依存せず、Handler -> Service -> Repositoryの内部方向を維持してください。',
+            },
             {
               group: ['@cfreact-template/main', '@cfreact-template/main/**'],
               message: 'coreは個別appの実装へ依存できません。',

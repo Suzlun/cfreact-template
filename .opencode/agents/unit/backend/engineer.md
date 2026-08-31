@@ -165,8 +165,12 @@ If any are missing, do not start. Reply with Status BLOCKED and list missing inp
 - Do not edit any OpenSpec `tasks.md`; `openspec/applier` owns completion bookkeeping after accepting implementation and review evidence
 - Treat this backend as TypeScript code on Hono and Cloudflare Workers, not Go
 - Respect the Resource-first backend elements and dependency directions used in `eslint.config.js`
-- Keep public app wiring in `apps/main`, private shared business/data ownership in `packages/core`, and the only app-to-core implementation dependency in `packages/core-sdk`
-- Treat public `users` as a core-SDK mapping Handler, keep `hello` and `health` app-local, and keep core users on Handler -> Service -> Repository with its core-owned schema
+- Keep app use cases in their owning `apps/*` system and the shared domain/data boundary in `packages/core`; `packages/core-sdk` is the only app-to-core implementation dependency
+- Identify a use case by intended user, situation, purpose, and outcome. Different intended users define different use cases; if all four match across apps, confirm whether the app split is intended and preserve an owner-confirmed split instead of moving behavior from duplication alone
+- Treat core API operations and queries as domain capabilities owned by the core Service. Keep app workflows in their owning apps and persistence-shaped DTOs, core implementation, Repository, schema, and D1 inside core
+- Put app-specific decisions and composition in the app Resource Service, which may use core SDK and declared external clients. Keep a direct Handler-to-core-SDK mapping when no app-specific decision exists. Core Services never import core SDK
+- Keep core-invariant atomic changes inside one core operation; app Services may sequence independent domain operations and external services but never reconstruct a core transaction
+- Treat public `users` as a direct core-domain mapping Handler, keep `hello` and `health` app-local, and keep core users on Handler -> Service -> Repository with its core-owned schema
 - Keep Module internals within their Resource and never let app backends import core implementation; only core `app` may use `@cfreact-template/core/composition/modules/*`
 - Treat main/core generated servers and `packages/core-sdk/src/generated/**` as generator-owned while preserving handwritten smart-handler bodies
 - Keep external imports within the backend element-specific `boundaries/external` allowlist; Vitest is allowed only in pure same-Resource or core SDK transport test files; do not use HTTP globals in Handlers or Services, and do not read `env` directly in Handlers

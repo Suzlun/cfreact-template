@@ -44,7 +44,7 @@ Read these files before applying `coding-guardian` in this repository.
 ## Backend enforcement
 
 - `apps/main/package.json`: public system Worker, React assets, public Resource generation, and frontend/backend checks
-- `packages/core/package.json`: private core Worker, shared business implementation, D1/email, and internal Resource generation
+- `packages/core/package.json`: private core Worker, shared domain implementation, D1/email, and internal Resource generation
 - `packages/core/vitest.config.ts`: pure deterministic same-Resource backend rule tests
 - `packages/core-sdk/src/client.ts` and `client.test.ts`: host-independent URL resolution, authorization overwrite, redirect refusal, and pure transport checks
 - `apps/main/tsconfig.backend.json`, `packages/core/tsconfig.json`, and `packages/core-sdk/tsconfig.json`: independent Worker and SDK boundaries
@@ -56,13 +56,13 @@ Read these files before applying `coding-guardian` in this repository.
 - `apps/main/src/backend/app/**`: public Composition Root that injects the runtime core SDK transport and token into users routes
 - `packages/core/src/app/**`: private Composition Root that constructs Service, Repository, D1, and email dependencies
 - `apps/main/src/backend/generated/api/**`: fully generator-owned `openapi-typescript` and Orval API files; handwritten comment/TSDoc/style exceptions apply while dependency boundaries remain active
-- `apps/main/src/backend/modules/**`: public users mapping plus local hello and health Resources
-- `packages/core/src/modules/**`: core users Service, Repository, schema, support, and smart Handlers
+- `apps/main/src/backend/modules/**`: app-owned use cases, direct public users mapping, and local hello/health Resources; app-specific composition belongs in Resource Services
+- `packages/core/src/modules/**`: shared-domain operations and queries through core users Service, Repository, schema, support, and smart Handlers; never app workflows or core SDK consumers
 - main/core Platform and Types directories: Worker-specific bindings and adapters
 - `packages/core/src/modules/users/users.schema.ts`: `users` table ownership; `packages/core/drizzle.config.ts` points here while the existing migration stream remains under `packages/core/drizzle/migrations/**`
 - `apps/main/src/backend/platform/http/responseValidation.ts`, generated-response Handler middleware, and `apps/main/src/backend/app/server.ts`: unsafe response-validator details become logged fixed 500 responses; unsafe request-validator details become fixed `INVALID_REQUEST` responses
 - `apps/main/src/backend/modules/users/users.responses.ts` and `packages/core/src/modules/users/users.repository.ts`: public response mapping and database-uniqueness handling without error-string parsing
-- `eslint.config.js`: `boundaries/elements` capture the Resource name and mechanically enforce the entry/app/generated/module/type directions plus distinct HTTP/database/email/observability Platform elements; `boundaries/external` default-denies packages per element; `no-restricted-imports`, global restrictions, and `env` restrictions preserve declared boundaries
+- `eslint.config.js`: `boundaries/elements` capture the Resource name and mechanically enforce direct app mappings, app Service-to-core-SDK composition, core Handler-to-Service-to-Repository-to-schema/Platform direction, same-Resource rules, and distinct HTTP/database/email/observability Platform elements; `no-restricted-imports` prevents core from importing its SDK or apps
 - `apps/main/package.json#exports`: public package surface; generated files, Platform adapters, composition-only aliases, Handlers, Repositories, schemas, and other Module internals are not exported
 
 ## OpenSpec enforcement

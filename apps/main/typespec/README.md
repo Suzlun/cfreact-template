@@ -2,6 +2,9 @@
 
 This package is the single source of truth for the API contract.
 
+- The public contract represents app-owned use cases and outcomes.
+- App handlers map core domain operations and queries without exposing the internal core contract directly.
+
 ## Routes
 
 - Versioned application routes use the `/api/v1` namespace. The current routes are `/api/v1/hello`, `/api/v1/users`, and `/api/v1/users/{id}`.

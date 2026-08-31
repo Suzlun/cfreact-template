@@ -198,10 +198,13 @@ and list it. Do not infer the assignment or rewrite missing product behavior.
 
 # Ownership
 
-- Map app servers to `entry -> app -> generated Resource -> Handler -> core-sdk`, and core to `entry -> app -> generated Resource -> Handler -> Service -> Repository -> schema/Platform`. App backends never import core implementation.
-- Treat public `users` as a core-contract mapping, keep `hello` and `health` app-local, and keep core users as the sole Service/Repository/schema/data owner.
+- Map direct app domain-operation mappings to `entry -> app -> generated Resource -> Handler -> core-sdk` and app-specific use cases to `entry -> app -> generated Resource -> Handler -> Service -> core-sdk / declared external client`. Map core to `entry -> app -> generated Resource -> Handler -> Service -> Repository -> schema/Platform`; the core Service owns domain operations, invariants, transitions, and effect coordination. App backends never import core implementation.
+- Treat use cases as app-owned behavior identified by intended user, situation, purpose, and outcome. Different intended users define different use cases even when the invoked domain operations match. When all four are identical across apps, require confirmation that separate apps are intended, then preserve an owner-confirmed split rather than centralizing from duplication alone.
+- Treat the core API as a domain boundary, not a shared-use-case layer. Expose domain concepts, state, operations, queries, invariants, transitions, and consistency in domain language; persistence-shaped DTOs and remote Repository methods are prohibited consequences of that boundary.
+- Put app-specific decisions, core-operation composition, and external-service sequencing in the app Resource Service. Keep direct Handler-to-core-SDK mapping when there is no app-specific decision or composition. Main Services may depend on core SDK; core Services may not.
+- Keep changes atomic inside one core domain operation when required by a core invariant; app use cases never reconstruct core transactions. Treat public `users` as a direct core-domain mapping, keep `hello` and `health` app-local, and keep core users as the Service/Repository/schema/data owner.
 - Define TypeSpec-owned API contracts, accepted inputs and outputs, error behavior, the TypeSpec -> OpenAPI -> backend openapi-typescript/Orval -> frontend Orval generation order, and Handler-manifest/codegen verification.
-- Define Resource Domain invariants, Service orchestration, Handler boundaries,
+- Define Resource invariants and transitions inside the Service, Service orchestration, Handler boundaries,
   dependency wiring, and external-service boundaries. Introduce an interface
   only when it is indispensable to confirmed scope and placing a current stable
   common rule behind it demonstrably reduces total complexity; one implementation
@@ -211,7 +214,7 @@ and list it. Do not infer the assignment or rewrite missing product behavior.
 - Keep backend external dependencies within the element-specific `boundaries/external` allowlist, with Vitest limited to pure same-Resource or core SDK transport tests. Handlers and Services must not use HTTP globals, and Handlers must not read `env` directly.
 - Keep expected failures in `Result`, expose only safe `{ code, message }` payloads, wrap generated response validators with `guardResponseValidation`, and route unsafe validation details through the logged fixed-500 path. Derive duplicate-email 409 responses from the database uniqueness outcome.
 - Preserve generator ownership of both generated servers and the core SDK, Orval ownership of smart-handler preambles, developer ownership of Handler bodies, generated Context-import normalization, dynamic Git tracking, independent TypeScript projects, and package export surfaces.
-- Define Cloudflare Workers runtime and Hono integration constraints without leaking framework or infrastructure dependencies into Domain or other inner Module elements.
+- Define Cloudflare Workers runtime and Hono integration constraints without leaking framework or infrastructure dependencies into Service-owned domain rules or other inner Module elements.
 - Define implementation task boundaries, dependencies, safe parallel groups, tests, codegen, lint, check, and build evidence.
 
 In `DECISION_SUPPORT`, use these ownership areas only to answer the supplied
