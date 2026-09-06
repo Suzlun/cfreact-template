@@ -1,6 +1,6 @@
 # コーディング規則
 
-本書は lint、CI、git hooks が機械的に強制するルールだけを、人が一目で分かる形にまとめたものです。設定ファイルに書かれていないルールは、このリポジトリでは強制されません。
+本書は lint、CI、Git フックが機械的に強制する規則をまとめたものです。変更運用や計画の意味内容に関する規則とレビュー判断は `AGENTS.md` と `docs/change-operation.md` を参照してください。機械検査の成功が保証するのは、各検査が実際に判定する条件だけです。
 
 ## 1. 本書の位置付け
 
@@ -48,8 +48,10 @@
 - `frontend-app`: `apps/main/src/frontend/app/**/*`
 - `ui`: `packages/ui/index.ts`、`packages/ui/SafeHTML.tsx`、`packages/ui/components/**/*`、`packages/ui/hooks/**/*`、`packages/ui/lib/**/*`、`packages/ui/styles/**/*`、`packages/ui/tests/**/*`
 - `ui-storybook`: `packages/ui/stories/**/*`
+- `mockup-entry`: `mockups/src/main.tsx`
+- `mockup`: `mockups/src/**/*` のうち起動処理以外
 
-要素に属さないTS/TSXファイルは`boundaries/no-unknown-files`で失敗します。対象はmain、core、core-sdk、UIのソースです。
+要素に属さないTS/TSXファイルは`boundaries/no-unknown-files`で失敗します。対象はmain、core、core-sdk、UI、統合モックのソースです。
 
 ## 4. 依存方向
 
@@ -77,6 +79,10 @@
 - `frontend-app` → `frontend-app | frontend-domain | ui`
 - `ui` → `ui`
 - `ui-storybook` → `ui-storybook | ui`
+- `mockup` → `mockup | ui`
+- `mockup-entry` → `mockup | ui`
+
+統合モックは React と `@cfreact-template/ui` の公開サブパスを利用し、`mockup-entry` だけが `react-dom/client` を利用できます。`boundaries/external` と通信グローバル制限で API・DB・外部通信への依存を拒否し、`import/no-restricted-paths` で製品コードから `mockups/` への参照を拒否します。`mockups/tsconfig.json` が `mockups/src/**` を型検査し、`mockups/vite.config.ts` は共通 UI の Vite 設定を再利用して Tailwind CSS 4 と React Compiler を適用します。ビルドと静的成果物の運用は `mockups/AGENTS.md` を参照してください。
 
 リソース名は `eslint-plugin-boundaries` の `capture` で取得します。同じ要素でも `captured.module` が異なるリソースは許可されません。要素外ファイルへの依存は `boundaries/no-unknown`、親ディレクトリへの逃避はバックエンド用の `no-restricted-imports` でも失敗します。
 
@@ -932,15 +938,6 @@ mainバックエンドからcore実装への直接依存は`no-restricted-import
   - ファイル群が同じ由来と理由を共有する例外
     - 生成コード、registry由来コード、テストのようなカテゴリ単位で設定する
 
-- vendored OpenCode skill script は upstream tool として ESLint 対象から除外する
-  - 強制: `pnpm lint` → `eslint .` → `ignores: ['.opencode/skills/impeccable/scripts/**']` → `eslint.config.js`
-  - 対象
-    - `npx impeccable install --providers=opencode --scope=project --no-hooks` で導入した upstream script 群
-  - 補足
-    - skill の agent 向け Markdown は通常どおりリポジトリ内でレビューする
-  - OK例
-    - upstream script は直接 lint 修正せず、必要な場合は upstream 更新または wrapper 側で対応する
-
 - Reactと共通UIの試験は制約を一部緩和する
   - 強制: `pnpm lint` → `eslint .` → `files: ['**/*.test.*', '**/*.spec.*']` のルール上書き → `eslint.config.js`
   - NG例
@@ -1064,7 +1061,7 @@ fail 条件
     feat: add login
     ```
 
-## 13. OpenSpec: 永続的な振る舞い契約を自動試験で担保する
+## 13. OpenSpec の成果物検査
 
 ルール
 
@@ -1078,59 +1075,27 @@ fail 条件
     pnpm lint:openspec
     ```
 
-- 後続成果物は所有者確認済みの `request.md` から作成する
-  - 強制: OpenSpecの成果物依存、`openspec/proposer`、両スキーマの成果物指示
-  - NG例
-    - `openspec/proposer`が所有者確認前に`request.md`を作成する
-    - 背景や変更動機を確認せず、提示された解決手段からRequirementを推測する
-    - 成果物の意味に関わる自明でない内容を、所有者へ質問せず補完または推測する
-    - リポジトリの事実、一般的な慣行、セキュリティ上の推奨、実装上の必要性から製品Requirementを追加する
-    - 明確な所有者回答を`request.md`へ反映せず、下流成果物だけへ追加する
-    - `UX-Mode: CONTINUITY` で `### Continuity Source` を記載しない
-    - `UX-Mode: SHAPE` で `### Primary User Task` または `### UX Direction` を記載しない
-  - OK例
-    - `openspec/proposer`が利用者、現状、変更動機、期待価値、望む成果を確認してRequest候補を提示し、所有者の明示確認後だけ`Request-Status: CONFIRMED`を作成する
-    - `request.md`には確認済みBackground、Motivation、Request、成果制約、必須手段、確認証拠だけを記載する
-    - `openspec/proposer`が自明でない意味判断を逐次確認し、背景、変更動機、期待価値を含む明確な回答を確認証拠とともにRequestへ即時反映する
-    - Requestを意味境界に従って提案、Specs、設計、作業パッケージへ分配する
+- 提案の構造と UX モード別の記録を検査する
+- 強制: `pnpm lint:openspec` → `scripts/openspec/verify-change-proposal.mjs`
+- `UX-Mode` は `NONE`、`CONTINUITY`、`SHAPE` のいずれか一つとし、所定の見出し順、必須節の本文、未確定の記入記号を検査します。
+- `CONTINUITY` では `## UI / UX Impact` 内に `### Continuity Source` が必要です。
+- `SHAPE` では同じ節内に `### Primary User Task`、`### UX Direction`、`### Design Source` が必要です。`Design Source` は本文が空欄でないことも検査します。
 
-- OpenSpecの契約成果物は確認済みの肯定的成果だけを記録する
-  - 強制: `openspec/config.yaml`、両スキーマの成果物指示、`openspec-review`
-  - NG例
-    - 非目標、対象外、却下案、旧実装の不在、追加しない技術または機能をRequirementにする
-    - 削除した未要求の振る舞いを「その振る舞いを提供してはならない」という反対向きのRequirementへ置換する
-  - OK例
-    - 所有者が求める利用可能な終端状態を肯定形で記載する
-    - 不要なRequirementを`REMOVED Requirements`で除去し、主仕様から消す
-    - 認可された主体だけが変更できる保証を定義し、未認可要求が状態を変えないScenarioで確認する
+`Design Source` の参照先を OpenCode が読めること、所有者がモックを受け入れたこと、要求とモックの相互対応・採用理由・整合性は、`docs/change-operation.md` に従う計画レビューで確認します。
 
-- OpenSpec は観測可能な振る舞いの契約とし、詳細な実装計画にしない
-  - 強制: `pnpm lint` → `node scripts/openspec/verify-change-task-scope.mjs` → `scripts/openspec/verify-change-task-scope.mjs`
-  - NG例
-    - 顧客が母語で利用できる成果ではなく、i18nのRFC準拠または使用パッケージをRequirementにする
-    - 非目標または実装しない機能をRequirementにする
-    - `tasks.md` をファイル、補助処理、試験階層ごとの計画へ分解する
-    - `design.md` に物質的な設計判断以外の見出しを追加する
-    - `design.md`で既存コード、導入済みパッケージ、実績のある外部パッケージの候補または採否を記載しない
-  - OK例
-    - 顧客が求める言語で利用できる終端状態をRequirementにし、規格やパッケージは設計上の手段として扱う
-    - 希望体験そのものを表す可視のUI構成または配置を成果の制約として記載する
-    - `Reuse Assessment`で再利用候補と採用対象を示し、独自実装時だけ全候補で成果を満たせない根拠を記載する
-    - `tasks.md` を `- [ ] WP<number>: <成果>`、`Covers`、`Completion Evidence` を持つ粗い作業パッケージ台帳にする
-    - ファイル、補助処理、試験の詳細は現在の作業パッケージと検証結果から実装時に段階的に決める
+- 作業パッケージと設計の形式を検査する
+- 強制: `pnpm lint:openspec` → `scripts/openspec/verify-change-task-scope.mjs`
+- `tasks.md` のチェック項目は `- [ ] WP<number>: <成果>` 形式で、本文を持つ `Covers` と `Completion Evidence` が必要です。
+- 計画文中のファイル、補助処理、試験階層に該当する記述をパターンで検出します。`Completion Evidence` の行は粒度検査から除きます。
+- `design.md` の見出し順と、作業パッケージ・設計に含まれる外部操作の記述パターンを検査します。
 
-- Architecture Changeは全delta Spec Unitの再利用判断を能力単位で記録する
-  - 強制: `pnpm lint:openspec` → `scripts/openspec/verify-change-reuse-decisions.mjs`
-  - NG例
-    - Requirement対応表があることを、外部パッケージ候補の調査完了と扱う
-    - 認証だけを調査した報告からi18n、フォーム、検証等の採否を決める
-    - 他packageの直接依存またはlockfileの推移依存を、対象packageで採用済みと扱う
-    - 一つのパッケージがSpec Unit全体を満たさないことを理由に、パッケージで代替可能な下位能力まで独自実装する
-  - OK例
-    - 各Spec Unitを翻訳、言語照合、入力検証、永続状態等の汎用能力へ分ける
-    - 再利用元分類、採用判断、対象と版、対象能力を調査範囲に含む報告を記録する
-    - 同じ調査報告が複数能力を明示的に扱う場合は複数行から参照する
-    - `LIMITED_COMPLEMENT`には既存資産と外部候補で代替できない証拠を記載する
+- 再利用判断表の構造と参照を検査する
+- 強制: `pnpm lint:openspec` → `scripts/openspec/verify-change-reuse-decisions.mjs`
+- 差分仕様がある設計では `Reuse Assessment` の列名と順序、仕様単位の網羅、能力名・採用対象の空欄、分類値と判断の組み合わせ、仕様単位と能力の重複を検査します。
+- `Research Evidence` は `docs/report/research/` 配下の報告パスと、その実在を検査します。`LIMITED_COMPLEMENT` では根拠欄の空欄と `N/A` を拒否します。
+- `skip_specs: true` で差分仕様がない構造変更には、仕様単位に対応する表の行を要求しません。
+
+調査内容の鮮度、能力の調査範囲、採用判断の妥当性は計画レビューで確認します。
 
 - Scenario検査は仕様構造とPlaywright E2E試験からの一方向参照を検証する
   - 強制: `pnpm lint` → `node scripts/openspec/verify-scenario-coverage.mjs` → `scripts/openspec/verify-scenario-coverage.mjs`

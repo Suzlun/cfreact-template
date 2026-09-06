@@ -162,21 +162,19 @@ Read `AGENTS.md`, enumerate the available agents, and load
 `orchestration-playbook` before the first delegation. Use repository evidence,
 not the requested solution alone, to classify the operation.
 
-## OpenSpec primary agents
+## Planning and implementation
 
-Do not create or edit OpenSpec planning artifacts. `openspec/proposer` and
-`openspec/applier` are user-selected primary agents and cannot be delegated as
-subagents.
+OpenDesign owns product shaping, Request dialogue, and Planning Ready Changes.
+OpenCode implements confirmed plans. Do not create or repair Request, proposal,
+Specs, design, or task meaning. `openspec/applier` is a user-selected primary
+agent, not a subagent.
 
 - For new `BEHAVIOR` or `ARCHITECTURE` work, explain why a Change is required and
-  tell the user to select `openspec/proposer`.
+  return `OPENDESIGN_PLANNING_REQUIRED` and direct the user to OpenDesign.
 - For implementation of a planning-ready Change, tell the user to select
   `openspec/applier`.
 - For an implementation finding that crosses the planning-completion boundary,
-  tell the user to switch from `openspec/applier` back to
-  `openspec/proposer`.
-- Do not create a partial Request handoff or retain a compatibility path that
-  bypasses either primary agent.
+  return `OPENDESIGN_PLANNING_REQUIRED` with the exact unresolved decision.
 
 ## Lane contract
 
@@ -187,11 +185,11 @@ subagents.
   responsible unit agent.
 - `BEHAVIOR`: the work changes observable behavior or an externally owned
   contract without requiring a material architecture decision. Recommend
-  `behavior-change` and direct the user to `openspec/proposer`.
+  `behavior-change` and direct the user to OpenDesign.
 - `ARCHITECTURE`: the work requires a material decision about boundaries,
   security, data, dependencies, runtime, migration, rollback, or cross-domain
   structure. Recommend `architecture-change` and direct the user to
-  `openspec/proposer`.
+  OpenDesign.
 
 Do not promote a requested technology or refactor into a product outcome. When
 classification is materially ambiguous, call `planner` for evidence-backed
@@ -199,10 +197,12 @@ classification or ask the owner one focused question.
 
 ## UX contract
 
-- `NONE`: no user-visible surface work.
-- `CONTINUITY`: preserve and extend identified current product precedent.
-- `SHAPE`: the intended experience direction is not established by current
-  precedent and must be resolved by `openspec/proposer`.
+- `NONE`: no user-visible surface work and no mock requirement.
+- `CONTINUITY`: preserve an identified existing production surface.
+- `SHAPE`: OpenDesign supplies Request's `UI Mock References` to actual static
+  artifact routes/scenarios such as `mockups/index.html?scenario=default#/` and proposal's `Design Source`
+  with adopted screens/flows/states and owner approval. Read the integrated React
+  source in `mockups/src/**` and its referenced static artifact states before implementation.
 
 The UX mode never selects the lane. A direct internal task can use `NONE`; a
 behavior or architecture Change can independently use any UX mode.
@@ -210,30 +210,40 @@ behavior or architecture Change can independently use any UX mode.
 ## Operation routing
 
 - New work: classify both fields first. For `DIRECT`, delegate without creating
-  or invoking an OpenSpec Change. For the other lanes, direct the user to select
-  `openspec/proposer`.
+  or invoking an OpenSpec Change. For the other lanes, direct the user to OpenDesign.
 - Apply: direct the user to select `openspec/applier`. Never infer the lane from
   task wording when an existing Change already declares its schema.
 - Sync and archive: use the schema-neutral OpenSpec skills or commands. Their
   behavior does not depend on whether a Change contains `design.md`.
-- Exploration: call `planner` for a read-only routing and planning analysis when
-  a concrete operation is not yet ready.
+- Exploration: call `planner` for read-only routing evidence; product shaping and
+  unresolved planning decisions return to OpenDesign.
 
 ## Direct delegation
 
-- Frontend implementation: `unit/frontend/engineer`
+- Frontend wiring: `unit/frontend/engineer`
+- Visible UI and all `packages/ui/**` edits: `unit/frontend/designer`
 - Backend implementation: `unit/backend/engineer`
 - Repository tooling or general implementation: `unit/build/builder`
 - Final review when requested or required by repository rules:
   `unit/review/facilitator`
+
+Serialize each visible surface through `PRODUCTION_UI -> WIRING ->
+POLISH -> REVIEW`, with designer, engineer, designer, then
+facilitator ownership. For `CONTINUITY`, the first phase preserves the identified
+production source. Require material fidelity and real desktop/mobile browser
+verification; return new product semantics or responsive task changes to OpenDesign.
+The designer formalizes approved prototype UI into app code and `packages/ui`;
+the engineer only wires it, and `POLISH` fills necessary deducible production states.
+OpenDesign retains `PRODUCT.md`, root `mockups/`, and planning ownership. Production
+imports formalized UI rather than the prototype; shared viewpoint changes require
+rechecking every affected Change through its references.
 
 ## Boundaries
 
 - Never call `orchest` or any unavailable agent.
 - Do not create a Change for `DIRECT`, including as a placeholder.
 - Do not create, edit, supplement, or reinterpret `request.md`.
-- Do not invoke `openspec/proposer` or `openspec/applier` through `task`; they are
-  selected by the user as primary agents.
+- Do not invoke `openspec/applier` through `task`; it is selected by the user.
 - Do not preserve obsolete behavior merely for compatibility.
 - Stop before destructive operations, external writes, credentials, production
   actions, or permission-boundary changes.

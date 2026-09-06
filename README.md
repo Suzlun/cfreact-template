@@ -40,6 +40,15 @@
 
 ```text
 cfreact-template/
+├── PRODUCT.md
+├── mockups/
+│   ├── src/
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   ├── index.html
+│   └── dist/
+│       ├── prototype.js
+│       └── prototype.css
 ├── apps/
 │   └── main/
 │       ├── src/
@@ -80,6 +89,8 @@ cfreact-template/
 
 | パス                                | 役割                                            |
 | ----------------------------------- | ----------------------------------------------- |
+| `PRODUCT.md`                        | プロダクト全体の概要                            |
+| `mockups/`                          | 統合 React プロトタイプのソースと静的成果物     |
 | `apps/main/`                        | React、Hono、TypeSpecを一体配備する公開システム |
 | `apps/main/src/frontend/app/`       | Reactのアプリ起動、ルーター、画面               |
 | `apps/main/src/frontend/domain/`    | TanStack Query hooksとprovider                  |
@@ -188,6 +199,8 @@ main TypeSpec生成経路とcore TypeSpec生成経路は別の契約です。mai
    - コンテナのビルドと依存関係のインストールを待つ
 
    **注意:** Git 設定（`.gitconfig`）と認証情報は VS Code によって自動的に共有されます。
+
+   OpenDesign と OpenCode を同居させた `ai` サービスも起動します。対象リポジトリは `/workspaces/project` として共有・自動登録し、VS Code のポート一覧から `AI / OpenDesign`（7456）を開いて、ホームの登録済みプロジェクトを選びます。会話・設定は Git 管理外の `.devcontainer/.volumes/` へ保存します。初回の OpenCode ログインと利用方法は [CONTRIBUTING.md](CONTRIBUTING.md#dev-container-の-opendesign) を参照してください。
 
 4. **productionのCloudflareリソースをTerraformでセットアップ:**
 
@@ -306,9 +319,11 @@ pnpm gen:core
 
 **注意:** Dev Container には、これらすべてのツールがプリインストールされています（Node.js 24、Python 3、pnpm、Wrangler、uv、OpenCode CLI、OpenSpec CLI、agent-browser CLI、Chrome for Testing または OS Chromium）。
 
-### OpenCode + OpenSpec セットアップ
+### OpenDesign・OpenCode・OpenSpec
 
-AI 支援開発に OpenCode と OpenSpec を使用する場合：
+プロダクトの方向付けと計画は OpenDesign、計画完了後の実装は OpenCode で進めます。OpenSpec の仕様は振る舞いの正であり、確認済み要求を意味の根拠とします。
+
+共有プロジェクトスキルは `.agents/skills/` に置き、OpenCode のプロジェクト向け Agent Skills 互換検出で読み込みます。OpenDesign 内の OpenCode も同じリポジトリルートのスキルを使用します。エージェント定義は `.opencode/agents/`、コマンド定義は `.opencode/commands/` に置きます。
 
 1. **OpenCode を設定:**
 
@@ -322,15 +337,7 @@ AI 支援開発に OpenCode と OpenSpec を使用する場合：
    pnpm exec openspec list
    ```
 
-3. **OpenCode 内でスラッシュコマンドを使用:**
-   - `openspec/proposer` - 背景と変更動機から逐次確認し、Requestと必要な成果物を作成するプライマリエージェント
-   - `openspec/applier` - 作業パッケージ、実装委任、進捗、検証を統括するプライマリエージェント
-   - `/opsx-propose <name-or-description>` - OpenSpec公式の汎用提案コマンド
-   - `/opsx-apply <name>` - OpenSpec公式の汎用適用コマンド
-   - `/opsx-sync <name>` - 差分仕様を主仕様に同期
-   - `/opsx-archive <name>` - 完了した Change を履歴へ移動
-   - `/opsx-explore <topic>` - 実装せずに調査・検討
-   - `/change-builder <brief>` - 仕様設計を複数 change に分割して提案
+3. **計画を実装へ引き渡す:** OpenDesign で要求と必要なモックを具体化し、計画完了後に OpenCode またはプライマリエージェント `openspec/applier` へ変更識別子を伝えます。詳細は [`docs/change-operation.md`](docs/change-operation.md) を参照してください。
 
 ## 開発ワークフロー
 
@@ -540,7 +547,7 @@ GitHub Actionsからリリースする場合は、Cloudflare認証情報と256�
 
 ### 永続的な振る舞い契約
 
-OpenSpec は、利用者または外部契約から観測できる振る舞いの永続的な契約であり、実装全体の基本計画ではありません。
+OpenSpec の仕様は、確認済み要求を意味の根拠とする、利用者または外部契約から観測できる振る舞いの正です。OpenDesign が要求、提案、仕様、設計、作業パッケージの範囲を管理します。
 
 - 主仕様は `openspec/specs/**/spec.md` に置きます。
 - 活動中の差分仕様は `openspec/changes/*/specs/**/spec.md` に置きます。
@@ -567,7 +574,7 @@ node scripts/openspec/verify-scenario-coverage.mjs
 
 ### プロジェクトの初期化
 
-このリポジトリは`@fission-ai/openspec` `1.8.0`、`openspec/config.yaml`、二つの変更スキーマを使用します。`pnpm gen:openspec`はOpenSpec公式のコマンドとスキルを同時に再生成し、生成物は手編集しません。Changeディレクトリも手作成せず、運用区分に対応する`--schema`を付けた`openspec new change`で作成します。OpenSpec `1.8.0`は`openspec/config.yaml#schema`をChange作成時の既定値として参照しないため、`--schema`を省略しません。
+このリポジトリは `@fission-ai/openspec` `1.11.0`、`openspec/config.yaml`、二つの変更スキーマを使用します。`pnpm gen:openspec` は `new`、`continue`、`update`、`apply`、`verify`、`sync`、`archive` のカスタムプロファイルで、公式の `--tools agents` により `.agents/skills/openspec-*/SKILL.md` を、`--tools opencode` により `.opencode/commands/opsx-*.md` のコマンドだけを再生成します。生成物は手編集しません。手書きの補足スキルは `.agents/skills/openspec/**` の入れ子構造を維持します。変更は運用区分に対応する `--schema` を付けた `openspec new change` で作成します。
 
 ```bash
 pnpm gen:openspec
@@ -576,23 +583,15 @@ pnpm exec openspec list
 pnpm lint:openspec
 ```
 
-### OpenSpec操作
+### 計画と実装
 
-OpenCodeでは次のプライマリエージェントと公式コマンドを利用できます。
+OpenDesign で所有者に確認できた内容を随時 `request.md` へ保存します。`Request-Status: CONFIRMED` は現在の保存内容がすべて確認済みであることを示し、明確な所有者の発言自体が即時更新の確認証拠になります。
 
-- **`openspec/proposer`** - 背景、変更動機、Request、全計画成果物を所有するプライマリエージェント
-- **`openspec/applier`** - 作業パッケージ、実装委任、進捗、検証を所有するプライマリエージェント
-- **`/opsx-propose <name-or-description>`** - OpenSpec公式の汎用提案コマンド
-- **`/opsx-apply <name>`** - OpenSpec公式の汎用適用コマンド
-- **`/opsx-sync <name>`** - 差分仕様を主仕様へ同期
-- **`/opsx-archive <name>`** - 完了した Change を履歴へ移動
-- **`/opsx-explore <topic>`** - 実装せずに調査・検討
-- **`/opsx-update <name>`** - 既存の計画成果物を整合させる
+`NONE` はモック不要、`CONTINUITY` は既存製品の証拠を参照します。`SHAPE` は要求とモックを同時に具体化し、確認済み要求と所有者が受け入れたモックの相互対応、採用理由、整合性を確認して提案を収束させます。`proposal.md` の `Design Source` には OpenCode が読めるパスまたは安定した識別子、対象画面・操作の流れ・状態、受け入れと採用理由を記録します。
 
-### 使用例
+OpenCode と `openspec/applier` は計画完了した変更を実装し、計画ファイルでは `tasks.md` の進捗だけを更新します。要求の `UI Mock References` と提案の `Design Source` から、採用済みの `mockups/index.html?scenario=default#/` などの画面・状態と `mockups/src/**` の React ソースを照合します。UI は `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW` の順に忠実に正式実装します。製品判断の不足や計画の矛盾があれば `OPENDESIGN_PLANNING_REQUIRED` を返し、OpenDesign で解決します。
 
-1. OpenCodeのエージェント選択で`openspec/proposer`を選び、実現したい成果や現在の関心を伝える。
-2. `Planning Ready: YES`の報告後、`openspec/applier`へ切り替えてChange識別子を伝える。
+新規プロダクトでは利用の流れ全体とモックを形にし、成果ごとの複数の変更へ分けます。共有判断が変われば影響する変更を再評価し、独立して計画完了したまとまりから実装へ引き渡します。
 
 ## Serena MCP - セマンティックコード検索
 
@@ -675,6 +674,14 @@ agent-browser の state ファイルや認証情報を含むエクスポート�
 Story は製品コードへ import せず、`@cfreact-template/ui/*` の公開 subpath から対象を直接 import してください。Storybook 固有の依存境界と公式推奨 ESLint ルールは `eslint.config.js` で強制されます。
 
 `pnpm lint:ui-reuse` は UI source、package export、root barrel、Story の対応を検査し、Storybook catalog を再実装検知にも利用します。frontend から Base UI などの内部 primitive を直接利用すること、app で公開 UI と同名の値を宣言・再 export すること、`packages/ui` の実装を app へコピーすることは `pnpm lint` で失敗します。
+
+### 統合プロトタイプ
+
+OpenDesign は `PRODUCT.md` の概要と、ルートの `mockups/` にある一つの React プロトタイプを育てます。正となるソースは `mockups/src/**` で、`App.tsx` が画面構成、`main.tsx` が起動処理です。`@cfreact-template/ui` の公開サブパスから共通実装を直接使い、固定データとローカル状態で操作を表します。
+
+エージェントが `pnpm build:mockup` を実行すると、Vite が共通 UI の Tailwind CSS 4 と React Compiler 設定で単一の IIFE `mockups/dist/prototype.js` と `mockups/dist/prototype.css` を生成します。`dist` は Git 管理し、ソース変更時に再生成します。手編集はしません。安定した入口 `mockups/index.html` は `./dist` の両ファイルを相対参照し、OpenDesign の組み込みの `Prototype Preview` で通常の静的成果物として開きます。Node.js と依存関係はエージェントのビルド環境が提供します。
+
+ホームは `mockups/index.html?scenario=default#/`、ユーザー管理は `mockups/index.html?scenario=default#/users` です。`scenario` に `empty-users`、`users-loading`、`users-error`、`create-error` を指定して各状態を選び、デスクトップとモバイルの表示幅で確認します。OpenDesign はソースと所有者確認済みの `request.md` を一緒に更新し、`UI Mock References` と提案の `Design Source` に対象の画面・状態の参照と採用範囲を記録します。複数の画面・状態は複数の変更と対応し、変更のアーカイブ後も `mockups/` を保持します。製品実装はモックのソースや生成物をインポートしません。開始手順は [CONTRIBUTING.md](CONTRIBUTING.md#opendesign-で始める)、編集規則は [mockups/AGENTS.md](mockups/AGENTS.md) を参照してください。
 
 ### shadcn/ui / Base UI / Tailwind テーマ
 

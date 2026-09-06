@@ -5,6 +5,12 @@ packages:
 # Wait 72 hours after npm publish before resolving new dependency versions.
 minimumReleaseAge: 4320
 
+# 開発環境とAlpineのAIコンテナから同じ依存ツリーでモックをビルドする。
+supportedArchitectures:
+  libc:
+    - glibc
+    - musl
+
 allowBuilds:
   '@fission-ai/openspec': true
   esbuild: true

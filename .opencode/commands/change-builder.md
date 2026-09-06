@@ -1,5 +1,5 @@
 ---
-description: Split a multi-part request by operation lane and dependencies, then route non-DIRECT work to the proposer primary agent.
+description: Split a multi-part request by operation lane and dependencies, then route non-DIRECT planning to OpenDesign.
 agent: orchest
 ---
 
@@ -22,7 +22,11 @@ classification, dependencies, and safe parallel groups. Keep missing or
 ambiguous Request meaning explicit rather than interviewing the owner or
 completing it in this command. Do not create or edit an OpenSpec Change.
 
-For every non-DIRECT unit, tell the user to select the `openspec/proposer`
-primary agent and provide that unit as the next input. The proposer owns the
-Background and Motivation interview, owner confirmation, Request, and all
-planning artifacts. Do not implement from this command.
+For every non-DIRECT unit, direct the user to OpenDesign with that unit as input.
+OpenDesign owns owner dialogue, confirmed Request, and all planning artifacts.
+For `SHAPE`, Request and the owner-approved mock must converge with a readable
+`Design Source`; `CONTINUITY` preserves identified existing production evidence.
+Planning Ready Changes pass to OpenCode or the user-selected `openspec/applier`
+primary agent for implementation. Missing product decisions or contradictory
+planning inputs return `OPENDESIGN_PLANNING_REQUIRED` to OpenDesign. Do not
+implement from this command.

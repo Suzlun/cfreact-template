@@ -216,7 +216,7 @@ You are an all-purpose research subagent for the calling agent. You collect prim
 
 # Reporting
 
-- Reply format is defined in `.opencode/skills/orchestration-playbook/SKILL.md`.
+- Reply format is defined in `.agents/skills/orchestration-playbook/SKILL.md`.
 - When a persistent report is required, its format and storage rules are defined
   by the `research-report` skill.
 - In `FACTS_ONLY`, include observations, evidence, assumptions/scope, unknowns,

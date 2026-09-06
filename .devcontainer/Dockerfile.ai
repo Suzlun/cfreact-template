@@ -1,0 +1,10 @@
+FROM ghcr.io/nexu-io/od:latest
+
+USER root
+
+# 開発コンテナと同じ導入手順で、OpenDesignが起動するOpenCodeを同居させる。
+COPY scripts/install-opencode.sh /tmp/install-opencode.sh
+RUN sh /tmp/install-opencode.sh && corepack enable
+
+ENV HOME=/home/node
+USER node

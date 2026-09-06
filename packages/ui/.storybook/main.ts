@@ -7,8 +7,7 @@ const viteConfigPath = fileURLToPath(new URL('../vite.config.ts', import.meta.ur
 /**
  * UI パッケージの Storybook 構成。
  *
- * Story は製品コードから分離した `stories` ディレクトリだけを収集し、公式 addon の
- * version を揃えて Docs・accessibility・theme・browser tests を一貫して提供する。
+ * 共通 UI の表示例を描画・ブラウザ試験用に提供する。
  */
 const config = {
   stories: [

@@ -191,8 +191,11 @@ composition, placement, visible copy, or hierarchy.
 
 - Load `orchestration-playbook` for reporting and stop conditions.
 - Load `coding-guardian` for frontend dependency and React rules.
-- Read the supplied Scenarios, UX mode, UX direction or continuity evidence,
-  and the designer's wiring contract.
+- Read the supplied Request, Specs, UX mode, Request's `UI Mock References`,
+  proposal's approved `Design Source` scope or continuity evidence, and the
+  designer's wiring contract. For `SHAPE`, inspect `mockups/src/**` and exact
+  references such as `mockups/index.html?scenario=default#/`, including the query,
+  hash route, and desktop/mobile states.
 - Call `unit/frontend/reviewer` only when the owner explicitly requests an
   intermediate review.
 
@@ -200,12 +203,16 @@ composition, placement, visible copy, or hierarchy.
 
 Require the confirmed Request, behavior, positive Change boundary, constraints,
 related Scenarios, and verifiable end state. Visible-surface work also requires
-the UX mode and either the `SHAPE` direction or `CONTINUITY` evidence. Work on a
+the UX mode and either the readable `SHAPE` React prototype viewpoints (exact
+static artifact route/scenario references, approved screens/flows/states, owner adoption evidence) or existing production
+`CONTINUITY` evidence. Work on a
 shared surface requires `Work phase: WIRING` and the designer's wiring contract.
 
-Return `BLOCKED` when the behavior or scope contract is missing. Return
-`UX_DIRECTION_REQUIRED` only when wiring would otherwise decide a material user
-experience question.
+Return `OPENDESIGN_PLANNING_REQUIRED` when planning inputs are missing,
+unreadable, unapproved, or contradictory, or wiring would decide new product
+semantics or change the primary task across responsive layouts. OpenDesign owns
+product shaping and the Planning Ready Change; never repair Request, proposal,
+Specs, design, or task meaning during implementation.
 
 ## Ownership
 
@@ -220,17 +227,22 @@ experience question.
 ## Boundaries
 
 - Never edit `packages/ui/**`.
+- OpenDesign owns root `mockups/` and `PRODUCT.md`. Wire the designer's formalized
+  production UI, never import prototype source into production or reinterpret
+  its fixtures/local state as an API or domain contract.
 - Edit app pages and components only under a `WIRING` work order, and only to
   connect routing, data, actions, and state.
-- Do not redesign semantics, composition, placement, copy, style, motion, or
-  responsive behavior while wiring.
+- Preserve composition, hierarchy, actions, navigation, interaction, copy,
+  states, density, responsive priority, and distinctive visuals while wiring.
 - Do not delegate to the designer; the caller serializes
-  `PRODUCTION_UI -> WIRING -> POLISH`.
+  `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW`.
 - Delegate only to the reviewer or researcher allowed by frontmatter.
 - Do not block on immaterial presentation details that are determined by the
   current implementation and wiring contract.
-- Use `UX_DIRECTION_REQUIRED` only for a choice that materially changes the
-  primary task, visible states, action result, or recovery path.
+- Use `OPENDESIGN_PLANNING_REQUIRED` for unresolved product meaning. Missing
+  production states may be connected only when deducible from Request, Specs,
+  and current conventions within scope; send their presentation to the designer.
+  Do not infer retries, fallbacks, or recovery paths from production completion alone.
 - Preserve `app -> domain -> api`; never import API directly from app code.
 - Never call `fetch`, `axios`, or `cross-fetch` from app or domain code.
 - Never hand-edit generated files. Run `pnpm gen:api-sdk` after TypeSpec changes.
@@ -242,11 +254,13 @@ experience question.
 
 ## Shared-Surface Wiring
 
-Assume the caller has serialized three work orders:
+Require the caller to serialize the shared surface:
 
-1. Designer `PRODUCTION_UI` completes the visible surface and wiring contract.
+1. Designer `PRODUCTION_UI` productionizes the adopted React source and returns the wiring contract.
 2. Engineer `WIRING` connects routes, data, actions, caching, and workflows.
-3. Designer `POLISH` exercises and finishes the wired browser UI.
+3. Designer `POLISH` exercises and completes necessary deducible states of the wired browser UI.
+4. `REVIEW` checks material fidelity, Request/Specs, and production completeness
+   with real desktop and mobile browser evidence.
 
 After `WIRING`, report changed connection points, reachable states, review route,
 and test-data conditions so the caller can issue `POLISH`. Do not delegate it.
@@ -279,6 +293,6 @@ Fix supported in-scope findings and rerun affected checks.
 Report `Status`, `Intent echo`, `Work phase`, `Behavior implemented`,
 `Wiring points`, `Reachable states`, `UX preservation`, `Changed files`,
 `Blockers`, `Risks`, `Evidence`, and `Commands run`, in that order. `Status` is
-`DONE | UX_DIRECTION_REQUIRED | BLOCKED`. For `UX_DIRECTION_REQUIRED`, identify
+`DONE | OPENDESIGN_PLANNING_REQUIRED | BLOCKED`. For `OPENDESIGN_PLANNING_REQUIRED`, identify
 the missing decision, the user-visible difference between choices, and why the
 decision is material. State when no intermediate review was requested.

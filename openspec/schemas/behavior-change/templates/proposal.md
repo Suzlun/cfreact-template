@@ -2,7 +2,7 @@ UX-Mode: NONE
 
 ## Outcome
 
-<!-- TODO: 確認済みRequestが求める成果を、意味を追加せず記載する。 -->
+<!-- TODO: 確認済み要求が求める成果を、意味を追加せず記載する。 -->
 
 ## Why
 
@@ -24,13 +24,29 @@ UX-Mode: NONE
 
 ## UI / UX Impact
 
-<!-- UX-Mode が NONE の場合は、利用者に見える変更がない理由を記載する。 -->
-<!-- UX-Mode が CONTINUITY の場合は `### Continuity Source` を追加し、維持する既存体験の根拠を記載する。 -->
-<!-- UX-Mode が SHAPE の場合は `### Primary User Task` と `### UX Direction` を追加する。 -->
+<!-- UX-Mode が NONE の場合は、利用者に見える変更がない理由を記載する。モックは不要。 -->
+<!-- UX-Mode が CONTINUITY の場合は `### Continuity Source` を追加し、維持する既存体験を確認できる実装済み製品の証拠を記載する。 -->
+<!-- SHAPEの提案は、所有者が対象の方向性を採用し、確認済み成果と承認済みモックの重要な内容を双方向に照合して整合を確認した後に作成する。以下の節をコメント外へ出し、各項目を記載する。 -->
+<!--
+### Primary User Task
+
+利用者が完了したい中心作業。
+
+### UX Direction
+
+所有者が採用した体験の方向性と重要な判断の理由。理由または所有者確認が不足する判断は、OpenDesignで確認してから記載する。
+
+### Design Source
+
+- 採用済み観点: 要求の`UI Mock References`と同じ画面・状態の正確な参照（例: `mockups/index.html?scenario=default#/`）。`mockups/src/**`と参照先の静的成果物で内容を確認する。
+- 対象範囲: 関連する画面、操作の流れ、状態。
+- 採用の証跡: 所有者が対象の観点と範囲を採用したことを示す短い記録。設計承認の証拠はこの節に記載する。
+-->
+<!-- 設計の詳細は参照先の設計成果物で扱う。 -->
 
 ## Material Constraints
 
-- <!-- TODO: 成果を制約するセキュリティ、契約、データ、依存関係、Required Means を記載する。 -->
+- <!-- TODO: 成果を制約するセキュリティ、契約、データ、依存関係、必須手段を記載する。 -->
 
 ## Repository Evidence
 

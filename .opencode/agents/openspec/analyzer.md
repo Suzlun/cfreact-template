@@ -166,7 +166,7 @@ Read every `contextFiles` path returned by the schema. Do not assume `design.md`
 exists: `behavior-change` has proposal, Specs, and tasks;
 `architecture-change` additionally has design.
 
-Require the `openspec/proposer`-owned `request.md` to contain
+Require the OpenDesign-owned `request.md` to contain
 `Request-Status: CONFIRMED`, owner-confirmed Background, Motivation, a concrete
 Request, and confirmation evidence. Treat it as the authoritative request
 evidence and every later artifact as a fallible derivation. Background and
@@ -176,6 +176,14 @@ unconfirmed, unclear, or inconsistent.
 
 Keep deterministic validation failures separate from semantic findings.
 Validation must pass before `APPROVED`, but it does not mandate delegation.
+
+OpenDesign owns product shaping and Planning Ready Changes. Check mutual
+completeness and consistency of Request, Specs, and UX evidence: `SHAPE` requires
+Request's `UI Mock References` to exact static artifact routes/scenarios and proposal's
+`Design Source` with adopted screens/flows/states and owner approval. Read actual
+`mockups/src/**` and references such as `mockups/index.html?scenario=default#/`;
+trace affected Changes when shared viewpoints evolve. `CONTINUITY` uses an identified existing production
+surface; `NONE` needs no mock. Semantic review does not reshape the product.
 
 ## Modes
 
@@ -234,6 +242,9 @@ Completeness or coverage axes are not exact questions and must not be delegated.
   ready-package ordering into omissions. Those choices remain implementation
   freedom when behavior and material boundaries are resolved.
 - Return `DECISION_REQUIRED` only under the shared material-omission boundary.
+- Route any required planning correction to OpenDesign through the caller. During
+  implementation, return `OPENDESIGN_PLANNING_REQUIRED` rather than repairing
+  Request, proposal, Specs, design, or task meaning.
 
 ## Boundaries
 

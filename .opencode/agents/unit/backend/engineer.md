@@ -6,7 +6,14 @@ model: openai/gpt-5.6-sol
 reasoningEffort: 'medium'
 temperature: 0.1
 permission:
-  edit: allow
+  edit:
+    '*': allow
+    'packages/ui/**': deny
+    '*/packages/ui/**': deny
+    'openspec/changes/**': deny
+    '*/openspec/changes/**': deny
+    'openspec/specs/**': deny
+    '*/openspec/specs/**': deny
   'github_*': deny
   'github_get_*': allow
   'github_list_*': allow
@@ -180,6 +187,11 @@ If any are missing, do not start. Reply with Status BLOCKED and list missing inp
 
 ## Self-check and optional owner-requested review
 
+OpenDesign owns product shaping and Planning Ready Changes. Implement only the
+confirmed work order; never repair Request, proposal, Specs, design, or task
+meaning. Return `OPENDESIGN_PLANNING_REQUIRED` for unresolved product or material
+planning decisions. All `packages/ui/**` edits belong to `unit/frontend/designer`.
+
 1. Implement, investigate, or verify the requested work and self-check the result
 2. Review the final diff and verification evidence against the work order and repository boundaries
 3. If the work order does not record an explicit owner request for intermediate review, do not call `unit/backend/reviewer`
@@ -189,7 +201,7 @@ If any are missing, do not start. Reply with Status BLOCKED and list missing inp
 
 ## Reporting
 
-- Reply format is defined in `.opencode/skills/orchestration-playbook/SKILL.md`
+- Reply format is defined in `.agents/skills/orchestration-playbook/SKILL.md`
 - Include: Status, Intent echo, What I did, Delivered, Blockers, Risks, Evidence, Commands run
 - If the owner requested intermediate review, include the reviewer verdict, evidence-backed findings addressed, and resulting verification
 - Otherwise, state that no intermediate review was requested by the owner

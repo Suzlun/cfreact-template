@@ -1,16 +1,16 @@
-# Product
+# プロダクト概要
 
-## Register
+このテンプレートは、要求と利用体験を OpenDesign で具体化し、計画完了した OpenSpec の変更を OpenCode で製品へ実装する開発環境です。生成先では、この概要を実際の利用者、状況、期待する価値に合わせて育てます。
 
-product
+## 現在のサンプル
 
-## Template Notice
+ホームからユーザー管理へ移動し、名前とメールアドレスでユーザーを作成して一覧で確認する体験を用意しています。
 
-This repository is a reusable application template, not a product with a fixed audience, brand,
-voice, or visual identity. Do not use this file as product context or as an input to design
-decisions.
+- 統合プロトタイプのソース: `mockups/src/App.tsx`、起動処理: `mockups/src/main.tsx`
+- ホーム: `mockups/index.html?scenario=default#/`
+- ユーザー管理: `mockups/index.html?scenario=default#/users`
+- 状態の選択: `scenario` に `empty-users`、`users-loading`、`users-error`、`create-error` を指定
+- デザインシステム: `@cfreact-template/ui` の公開サブパス
+- 表示と操作: エージェントが `pnpm build:mockup` を実行し、OpenDesign の組み込みの `Prototype Preview` で `mockups/index.html` を静的成果物として開く
 
-When maintaining the template or its Storybook catalog, derive behavior and appearance only from
-the existing source code, design tokens, component contracts, accessibility requirements, and the
-current task instructions. Do not invent product assumptions, brand attributes, marketing goals,
-personas, or visual directions from this file.
+プロトタイプは固定データとローカル状態で体験を表します。本書は製品の背景を示す概要です。要求ごとの背景・動機・成果と所有者確認は `openspec/changes/<change-id>/request.md` に記録し、製品要件は確認済み成果と外部契約に基づきます。関連する画面と状態の参照は `UI Mock References` に記載します。

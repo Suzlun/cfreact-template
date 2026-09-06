@@ -158,22 +158,29 @@ supported by repository or runtime evidence.
 ## First Actions
 
 - Read `AGENTS.md`, applicable rules, the confirmed Request, Scenarios, material
-  decisions, and UX direction supplied by the caller.
+  decisions, and Design Source or continuity evidence supplied by the caller.
 - Load `orchestration-playbook` and `coding-guardian`.
 - Verify that the requested depth is justified by the change evidence.
 
 ## Required Input
 
-Require the `openspec/proposer`-owned `Request-Status: CONFIRMED` `request.md` with
-confirmed Background, Motivation, and Request, plus Scenarios, change identifier,
-applicable Specs and material decisions, UX mode and direction or continuity evidence,
+Require the confirmed Request, applicable Scenarios, Specs and material decisions,
+UX mode and Design Source or continuity evidence,
 implementation summary and diff boundary, verification results,
 `affected_domains: frontend | backend | build`, review mode, and the cycle plus
 previously accepted findings for a re-review.
 
-When an OpenSpec Change is in scope, also require its selected schema.
+When an OpenSpec Change is in scope, also require its identifier, selected schema,
+and OpenDesign-owned `Request-Status: CONFIRMED` `request.md` with confirmed
+Background, Motivation, Request, and confirmation evidence. `SHAPE` requires a
+Request's `UI Mock References` to exact static artifact routes/scenarios and proposal's
+`Design Source` with adopted screens/flows/states and owner approval. Supply actual
+`mockups/src/**` and references such as `mockups/index.html?scenario=default#/` to reviewers;
+trace affected Changes when shared viewpoints evolve. `CONTINUITY` uses the identified existing production
+surface; `NONE` needs no mock.
 
-Return `BLOCKED` rather than guessing when required evidence is unavailable.
+Return `OPENDESIGN_PLANNING_REQUIRED` for unresolved planning evidence and
+`BLOCKED` for unavailable implementation or verification evidence rather than guessing.
 If only the `DEEP` justification is unsupported, reduce to `STANDARD` and report
 why.
 
@@ -209,15 +216,26 @@ Architects, simplification review, and cross-critique are prohibited outside
 ## Common Review Contract
 
 - Give every participant the confirmed Request, Scenarios, decisions, UX
-  direction, diff, and verification evidence. Treat Specs and decisions as
+  source, diff, and verification evidence. Treat Specs and decisions as
   fallible derivations.
 - Do not reinterpret the Request as different behavior or add apparently useful
   behavior absent from it.
 - Participants never call each other; only the facilitator distributes the
   candidate bundle.
 - Never add unaffected reviewers for ceremony.
-- For visible UI, use real browser behavior, the primary task, UX direction,
-  states, responsiveness, and accessibility rather than static fidelity.
+- For visible UI, require material fidelity to the adopted source, Request/Specs
+  conformance, and production completeness, not pixel-perfect matching. Preserve
+  composition, hierarchy, actions, navigation, interaction, copy, states, density,
+  responsive priority, and distinctive visuals. Require real desktop and mobile
+  browser verification; unavailable required browser evidence means `BLOCKED`.
+- Route presentation corrections and all `packages/ui/**` edits to the designer,
+  wiring corrections to the engineer. The caller serializes corrections on the
+  same surface through `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW` and reruns
+  `POLISH` before review. Production uses formalized app/package UI, while
+  OpenDesign retains ownership of `PRODUCT.md` and root `mockups/`.
+- Complete missing production states only when deducible from Request, Specs,
+  and current conventions within scope. New product semantics or responsive task
+  changes return to OpenDesign. Never repair planning artifacts during review.
 
 ## Finding Filter
 
@@ -245,8 +263,9 @@ one root cause into one final finding.
 - `APPROVE`: no actionable finding remains.
 - `REQUEST_CHANGES`: supported findings can be corrected without changing
   approved meaning.
-- `PROPOSER_REVIEW_REQUIRED`: correction requires a decision that crosses the
-  planning-completion boundary in `docs/change-operation.md`.
+- `OPENDESIGN_PLANNING_REQUIRED`: planning evidence is missing, unreadable,
+  unapproved, or contradictory, or correction crosses the planning-completion
+  boundary. OpenDesign owns product shaping and planning corrections.
 - `BLOCKED`: required evidence or a required review wave is unavailable.
 
 Every finding includes a stable ID, severity, implementation owner, observed
@@ -258,7 +277,7 @@ approval return `Findings: none`.
 ## Report
 
 ```text
-Verdict: APPROVE | REQUEST_CHANGES | PROPOSER_REVIEW_REQUIRED | BLOCKED
+Verdict: APPROVE | REQUEST_CHANGES | OPENDESIGN_PLANNING_REQUIRED | BLOCKED
 Mode: STANDARD | DEEP
 Mode reason: <evidence supporting the selected mode>
 Cycle: <number>

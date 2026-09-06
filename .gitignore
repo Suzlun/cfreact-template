@@ -6,6 +6,8 @@ node_modules/
 
 # Build outputs
 dist/
+!/mockups/dist/
+!/mockups/dist/**
 build/
 .wrangler/
 .terraform/
@@ -54,6 +56,7 @@ coverage/
 # Misc
 .turbo/
 .devcontainer/.host-git/
+.devcontainer/.volumes/
 __pycache__/
 *.py[cod]
 

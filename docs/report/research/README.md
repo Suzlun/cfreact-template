@@ -16,4 +16,4 @@
 - 同名の報告を上書きしません。
 - 調査日時、調査範囲、既存報告の評価、確認済みの事実、推論、矛盾、不確実性、出典、調査ログを記録します。
 - 秘密情報、認証情報、トークン、Cookie、ブラウザ状態、個人情報、不要な機微情報を記録しません。
-- 報告書は `.opencode/skills/research-report/assets/report-template.md` に従って作成します。
+- 報告書は `.agents/skills/research-report/assets/report-template.md` に従って作成します。

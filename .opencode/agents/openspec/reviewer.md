@@ -157,11 +157,20 @@ semantic contract against the supplied Change.
 Require a `change-id` and preserve caller-provided planning roots and store
 flags. Run status, apply instructions, delta display, and strict validation.
 Read every schema-returned `contextFiles` path. Require and read the
-`openspec/proposer`-owned `Request-Status: CONFIRMED` `request.md` with confirmed
+OpenDesign-owned `Request-Status: CONFIRMED` `request.md` with confirmed
 Background, Motivation, Request, and confirmation evidence as the authoritative
 request evidence. Background and Motivation explain the Request but never create
 Requirements by themselves. Treat `proposal.md` and downstream artifacts as
 fallible derivations and require only artifacts defined by the selected schema.
+
+OpenDesign owns product shaping and Planning Ready Changes. For `SHAPE`, review
+Request/Specs consistency with Request's `UI Mock References` and proposal's
+`Design Source` approval scope. Read actual `mockups/src/**` source and exact
+static artifact references such as `mockups/index.html?scenario=default#/`; verify adopted screens/flows/states
+and owner approval. Trace references across affected Changes when shared viewpoints evolve.
+`CONTINUITY` relies on the identified existing production surface; `NONE` needs
+no mock. Return planning corrections to OpenDesign, never author them. During
+implementation, use `OPENDESIGN_PLANNING_REQUIRED` for such corrections.
 
 Keep deterministic failures separate from semantic findings. Do not replace an
 architecture, perform generic feasibility review, or treat files, private APIs,

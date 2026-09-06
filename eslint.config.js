@@ -170,12 +170,7 @@ const exportTsdocPlugin = {
 export default tseslint.config(
   // 除外対象
   {
-    ignores: [
-      '**/coverage/**',
-      '**/playwright-report/**',
-      '**/test-results/**',
-      '.opencode/skills/impeccable/scripts/**',
-    ],
+    ignores: ['**/coverage/**', '**/playwright-report/**', '**/test-results/**'],
   },
 
   // ベース設定
@@ -220,6 +215,7 @@ export default tseslint.config(
             './tsconfig.base.json',
             './apps/*/tsconfig*.json',
             './packages/*/tsconfig*.json',
+            './mockups/tsconfig.json',
           ],
         },
       },
@@ -401,6 +397,8 @@ export default tseslint.config(
         { type: 'ui', pattern: 'packages/ui/styles/**/*', mode: 'full' },
         { type: 'ui', pattern: 'packages/ui/tests/**/*', mode: 'full' },
         { type: 'ui-storybook', pattern: 'packages/ui/stories/**/*', mode: 'full' },
+        { type: 'mockup-entry', pattern: 'mockups/src/main.tsx', mode: 'full' },
+        { type: 'mockup', pattern: 'mockups/src/**/*', mode: 'full' },
       ],
     },
     rules: {
@@ -689,6 +687,14 @@ export default tseslint.config(
               from: ['ui-storybook'],
               allow: ['ui-storybook', 'ui'],
             },
+            {
+              from: ['mockup'],
+              allow: ['mockup', 'ui'],
+            },
+            {
+              from: ['mockup-entry'],
+              allow: ['mockup', 'ui'],
+            },
           ],
         },
       ],
@@ -697,6 +703,24 @@ export default tseslint.config(
         {
           basePath: import.meta.dirname,
           zones: [
+            {
+              target: ['./apps', './packages/ui'],
+              from: './mockups',
+              message: '製品コードは統合モックへ依存できません。',
+            },
+            {
+              target: './mockups/src',
+              from: './packages/ui',
+              except: [
+                './index.ts',
+                './SafeHTML.tsx',
+                './components',
+                './hooks/use-mobile.ts',
+                './lib/utils.ts',
+                './styles/globals.css',
+              ],
+              message: '統合モックは共通 UI の公開入口だけを利用してください。',
+            },
             {
               target: './apps/main/src/backend',
               from: './packages/core/src',
@@ -761,6 +785,7 @@ export default tseslint.config(
       'packages/ui/lib/**/*.{ts,tsx}',
       'packages/ui/tests/**/*.{ts,tsx}',
       'packages/ui/stories/**/*.{ts,tsx}',
+      'mockups/src/**/*.{ts,tsx}',
     ],
     rules: {
       'boundaries/no-unknown-files': 'error',
@@ -964,6 +989,7 @@ export default tseslint.config(
       'apps/main/src/frontend/**/*.{ts,tsx}',
       'apps/main/vite.config.ts',
       'apps/main/vitest.frontend.config.ts',
+      'mockups/src/**/*.{ts,tsx}',
     ],
     plugins: {
       react: react,
@@ -1032,7 +1058,11 @@ export default tseslint.config(
 
   // 頻出するCompiler非互換APIは専用境界へ集約し、利用側からの直接importを禁止する
   {
-    files: ['apps/main/src/frontend/**/*.{ts,tsx}', 'packages/ui/**/*.{ts,tsx}'],
+    files: [
+      'apps/main/src/frontend/**/*.{ts,tsx}',
+      'packages/ui/**/*.{ts,tsx}',
+      'mockups/src/**/*.{ts,tsx}',
+    ],
     rules: {
       'project/enforce-library-boundaries': [
         'error',
@@ -1057,6 +1087,7 @@ export default tseslint.config(
   {
     files: [
       'apps/main/src/frontend/domain/**/*.{ts,tsx}',
+      'mockups/src/**/*.{ts,tsx}',
       'packages/ui/index.ts',
       'packages/ui/SafeHTML.tsx',
       'packages/ui/components/**/*.{ts,tsx}',
@@ -2165,6 +2196,43 @@ export default tseslint.config(
           cjs: 'always',
           ts: 'never',
           tsx: 'never',
+        },
+      ],
+    },
+  },
+
+  // 統合モックは専用の型検査を使い、ローカル状態だけで動作する。
+  {
+    files: ['mockups/src/**/*.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        window: 'readonly',
+        self: 'readonly',
+      },
+      parserOptions: {
+        projectService: false,
+        project: './mockups/tsconfig.json',
+      },
+    },
+    rules: {
+      'boundaries/external': [
+        'error',
+        {
+          default: 'disallow',
+          rules: [
+            { from: ['mockup'], allow: ['react', '@cfreact-template/ui'] },
+            {
+              from: ['mockup-entry'],
+              allow: ['react', '@cfreact-template/ui', 'react-dom'],
+            },
+          ],
+        },
+      ],
+      'no-restricted-globals': [
+        'error',
+        {
+          globals: ['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'],
+          checkGlobalObject: true,
         },
       ],
     },

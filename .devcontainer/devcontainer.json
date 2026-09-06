@@ -1,8 +1,10 @@
 {
   "name": "cfreact-template",
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
+  "dockerComposeFile": "compose.yaml",
+  "service": "dev",
+  "runServices": ["dev", "ai"],
+  "workspaceFolder": "/workspaces/project",
+  "shutdownAction": "stopCompose",
   "features": {
     "ghcr.io/devcontainers/features/terraform:1": {
       "version": "1.16.0"
@@ -41,7 +43,7 @@
       }
     }
   },
-  "forwardPorts": [5173, 8787, 24282],
+  "forwardPorts": [5173, 6006, 7456, 8787, 24282],
   "portsAttributes": {
     "5173": {
       "label": "Vite Dev Server",
@@ -51,13 +53,21 @@
       "label": "Cloudflare Workers Dev",
       "onAutoForward": "notify"
     },
+    "6006": {
+      "label": "Storybook / React Mock",
+      "onAutoForward": "notify"
+    },
+    "7456": {
+      "label": "AI / OpenDesign",
+      "onAutoForward": "notify"
+    },
     "24282": {
       "label": "Serena Dashboard",
       "onAutoForward": "notify"
     }
   },
-  "initializeCommand": "sh .devcontainer/scripts/sync-git-user.sh capture",
+  "initializeCommand": "umask 077 && mkdir -p .devcontainer/.volumes/open-design .devcontainer/.volumes/dev-config/opencode .devcontainer/.volumes/opencode-config .devcontainer/.volumes/opencode-data .devcontainer/.volumes/opencode-state && sh .devcontainer/scripts/sync-git-user.sh capture",
   "postCreateCommand": "sh .devcontainer/scripts/install-applications.sh && pnpm install && pnpm exec playwright install",
-  "postStartCommand": "sh .devcontainer/scripts/sync-git-user.sh apply && git config --global --add safe.directory ${containerWorkspaceFolder}",
+  "postStartCommand": "sh .devcontainer/scripts/sync-git-user.sh apply && git config --global --add safe.directory ${containerWorkspaceFolder} && node .devcontainer/scripts/register-opendesign.mjs \"${localWorkspaceFolderBasename}\"",
   "remoteUser": "node"
 }

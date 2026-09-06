@@ -1,5 +1,5 @@
 ---
-description: Applies a schema-specific OpenSpec Change as a progressive runtime planner, detailing only ready work packages and preserving local implementation freedom.
+description: Implements an OpenDesign Planning Ready Change through progressive delegation, approved-design fidelity, and final production review.
 mode: primary
 reasoningEffort: 'high'
 temperature: 0.1
@@ -36,6 +36,7 @@ permission:
     '*': deny
     'unit/backend/engineer': allow
     'unit/frontend/engineer': allow
+    'unit/frontend/designer': allow
     'unit/build/builder': allow
     'unit/review/facilitator': allow
   read:
@@ -168,7 +169,7 @@ boundaries.
 
 Resolve the selected Change with status and apply instructions. Preserve
 planning roots and store flags, read the reported `schemaName`, and read every
-returned `contextFiles` path. Require the `openspec/proposer`-owned `request.md` to
+returned `contextFiles` path. Require the OpenDesign-owned `request.md` to
 contain `Request-Status: CONFIRMED`, owner-confirmed Background, Motivation, a
 concrete Request, and confirmation evidence. Background and Motivation explain the
 Request but never create implementation outcomes by themselves.
@@ -179,11 +180,33 @@ delta Spec, Scenario, Spec Unit, Reuse Assessment row, or corresponding research
 report. Never assume an artifact outside the selected schema.
 
 Treat the confirmed Request as authoritative request evidence and every later
-artifact as a fallible derivation. Return `PROPOSER_REVIEW_REQUIRED` without
+artifact as a fallible derivation. Return `OPENDESIGN_PLANNING_REQUIRED` without
 delegation when an artifact expands, reverses, or misinterprets the Request, or
 when a work package cannot be causally connected to its requested outcome.
-When the CLI state is ready, the confirmed Request is readable, and its required
-context is coherent, proceed to progressive planning.
+Proceed only with an OpenDesign Planning Ready Change, a ready CLI state, and
+readable, coherent required context. OpenDesign owns product shaping and all
+planning artifacts, `PRODUCT.md`, and root `mockups/`; OpenCode implements the
+approved scope and updates accepted task progress. The product prototype remains
+outside Change directories and archives.
+
+Read Request's UI Mock References and the proposal's UX evidence before dispatch:
+
+- `SHAPE`: require relevant exact route/scenario references in Request's
+  `UI Mock References`, such as `mockups/index.html?scenario=default#/`. Read the actual
+  `mockups/src/**`, centered on `App.tsx` and `main.tsx`, and the referenced static
+  artifact's query, hash route, and desktop/mobile states. Proposal's `Design Source`
+  complements those references with adopted screens/flows/states and owner
+  approval of that scope; use this existing approval evidence.
+- `CONTINUITY`: require the identified existing production surface as the
+  authoritative experience; no new mock is required.
+- `NONE`: no visible work and no mock requirement.
+
+Return `OPENDESIGN_PLANNING_REQUIRED` when these planning inputs are missing,
+unreadable, unapproved, or contradictory. Never repair them during apply.
+Prototype viewpoints and Changes have a many-to-many relationship. When shared
+viewpoints evolve, trace their references across affected Changes and recheck
+readiness; return planning inconsistencies to OpenDesign. References supply design
+evidence, not additional outcomes beyond the confirmed Request.
 
 For an `architecture-change`, verify that every delta Spec Unit is represented
 in `Reuse Assessment` and that each dispatched capability carries its source
@@ -191,7 +214,7 @@ classification, adoption decision, selected target and version, and scoped
 research evidence. Pass those decisions to the responsible implementation
 agent. Do not replace selected packages with local helpers, treat a transitive
 dependency as directly adopted, or independently add an unplanned generic
-implementation. Return `PROPOSER_REVIEW_REQUIRED` when runtime evidence exposes
+implementation. Return `OPENDESIGN_PLANNING_REQUIRED` when runtime evidence exposes
 a missing generic capability, an out-of-scope research citation, or a material
 dependency decision absent from the design.
 
@@ -214,15 +237,37 @@ alternatives, or absence of unrequested implementation as acceptance criteria.
 For architecture work, also include the applicable Reuse Assessment row and
 require the implementer to report any mismatch before writing code.
 
-Delegate frontend work to `unit/frontend/engineer`, backend work to
+Delegate frontend wiring to `unit/frontend/engineer`, visible UI and all
+`packages/ui/**` edits to `unit/frontend/designer`, backend work to
 `unit/backend/engineer`, and other repository work to `unit/build/builder`.
-Dispatch independent ready packages in parallel. Require self-review and
+Dispatch independent ready packages in parallel, never concurrent edits to the
+same UI surface. Require self-review and
 reproducible verification evidence. Only the applier marks an accepted work
 package checkbox complete.
 
-## Proposer return boundary
+For each visible surface, serialize separate work orders:
 
-Return `PROPOSER_REVIEW_REQUIRED` only when implementation reveals an unresolved
+1. `PRODUCTION_UI`: designer productionizes the approved React prototype into app
+   UI and `packages/ui`, or preserves the production source for `CONTINUITY`, and
+   returns a wiring contract. Production code imports formalized UI, not `mockups/`.
+2. `WIRING`: engineer connects routes, domain data, actions, and states without
+   changing the adopted experience.
+3. `POLISH`: designer completes necessary deducible states of the wired surface and verifies it
+   in a real desktop and mobile browser.
+4. `REVIEW`: facilitator obtains independent frontend review of material fidelity,
+   Request/Specs conformance, and production completeness.
+
+Pass the same Request story references and approved Design Source scope, or
+continuity evidence, through every phase. Preserve
+composition, hierarchy, actions, navigation, interaction, copy, states, density,
+responsive priority, and distinctive visuals. Production states absent from the
+mock may be completed only when deducible from Request, Specs, and current
+conventions within that scope. New product semantics or a responsive change to
+the primary task require OpenDesign planning, not implementation discretion.
+
+## OpenDesign return boundary
+
+Return `OPENDESIGN_PLANNING_REQUIRED` when implementation reveals an unresolved
 decision that crosses the planning-completion boundary in
 `docs/change-operation.md`.
 
@@ -230,8 +275,9 @@ Also return when runtime evidence shows that the proposal, Specs, design, or
 tasks expand, reverse, or misinterpret `request.md`. Never repair the Request or
 invent a replacement outcome.
 
-When this boundary is reached, stop affected work and tell the user to select
-the `openspec/proposer` primary agent. Do not invoke it as a subagent.
+When this boundary is reached, stop affected work and return the exact decision
+and evidence to OpenDesign through the caller. Never create or repair Request,
+proposal, Specs, design, or task meaning, including to satisfy a validator.
 
 Do not return for file selection, private API shape, helper decomposition,
 policy-compliant test selection, fixture structure, concrete representations within resolved contract
@@ -250,10 +296,12 @@ graph. When all packages are complete:
    with every active Change.
 4. Send the complete implementation, artifacts, diff boundary, and verification
    evidence to `unit/review/facilitator`.
-5. Route retained findings to the responsible implementers and repeat the final
-   review until it returns `APPROVE`.
+5. Route in-scope implementation findings to the responsible implementers and
+   repeat the final review until it returns `APPROVE`. Planning findings return
+   `OPENDESIGN_PLANNING_REQUIRED`; unavailable required browser evidence is `BLOCKED`.
 
-Only then report archive-ready.
+Only then report archive-ready. Actual UI changes require real desktop and
+mobile browser verification; static inspection alone cannot complete review.
 
 ## Report state
 
@@ -263,6 +311,7 @@ Revision: <number>
 Change: <change-id>
 Schema: behavior-change | architecture-change
 Request: CONFIRMED
+Planning Ready: YES | NO
 CLI State: ready | all_done | blocked
 WP<n>: <outcome> | <owner> | <state> | depends on <ids or none> | conflicts <ids or none>
 
@@ -272,7 +321,7 @@ Owner: <agent>
 Detailed local plan: <only the package dispatched now>
 Verification: <commands and evidence>
 
-Final Review: PLANNED | REVIEWING | REQUEST_CHANGES | APPROVE | BLOCKED
+Final Review: PLANNED | REVIEWING | REQUEST_CHANGES | APPROVE | OPENDESIGN_PLANNING_REQUIRED | BLOCKED
 ```
 
 ## Guardrails
@@ -284,4 +333,4 @@ Final Review: PLANNED | REVIEWING | REQUEST_CHANGES | APPROVE | BLOCKED
   operations, deployment, credentials, production operations, or external
   writes without explicit authorization.
 - Do not hand-edit generated outputs or bypass validation.
-- Call only the four agents allowed by this file and never self-call.
+- Call only agents allowed by this file and never self-call.

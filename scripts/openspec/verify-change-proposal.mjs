@@ -210,14 +210,23 @@ for (const changeDirectory of collectActiveChangeDirectories(process.cwd())) {
     );
   }
   if (uxMode === 'SHAPE') {
-    for (const heading of ['Primary User Task', 'UX Direction']) {
-      if (!h3Names.has(heading))
+    for (const heading of ['Primary User Task', 'UX Direction', 'Design Source']) {
+      const entry = h3Headings.find(({ name }) => name === heading);
+      if (!entry) {
         addError(errors, proposalPath, 1, `UX-Mode が SHAPE の場合は ### ${heading} が必要です。`);
+      } else if (!hasMeaningfulContent(getSectionBody(source, entry, 3))) {
+        addError(errors, proposalPath, entry.line, `### ${heading} に内容がありません。`);
+      }
     }
   }
   const uxSection = h2Headings.find(({ name }) => name === 'UI / UX Impact');
   const nextH2 = h2Headings.find(({ index }) => uxSection && index > uxSection.index);
-  for (const heading of ['Continuity Source', 'Primary User Task', 'UX Direction']) {
+  for (const heading of [
+    'Continuity Source',
+    'Primary User Task',
+    'UX Direction',
+    'Design Source',
+  ]) {
     const entry = h3Headings.find(({ name }) => name === heading);
     if (
       entry &&

@@ -1,0 +1,44 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sleep infinity
+    network_mode: service:ai
+    depends_on:
+      ai:
+        condition: service_healthy
+    volumes:
+      - ..:/workspaces/project
+      - ./.volumes/dev-config:/home/node/.config
+      - ./.volumes/opencode-config:/home/node/.config/opencode
+      - ./.volumes/opencode-data:/home/node/.local/share/opencode
+      - ./.volumes/opencode-state:/home/node/.local/state/opencode
+
+  ai:
+    build:
+      context: .
+      dockerfile: Dockerfile.ai
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NODE_OPTIONS: --max-old-space-size=512
+      OD_BIND_HOST: 127.0.0.1
+      OD_PORT: '7456'
+      OD_WEB_PORT: '7456'
+      OD_DATA_DIR: /home/node/.od
+      HOME: /home/node
+    volumes:
+      - ..:/workspaces/project
+      - ./.volumes/open-design:/home/node/.od
+      - ./.volumes/opencode-config:/home/node/.config/opencode
+      - ./.volumes/opencode-data:/home/node/.local/share/opencode
+      - ./.volumes/opencode-state:/home/node/.local/state/opencode
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:7456/api/health']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s

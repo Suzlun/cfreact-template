@@ -170,7 +170,7 @@ From the caller agent, you must receive at least:
 3. How to review (where to look)
 4. Review phase: `INDEPENDENT` or `CRITIQUE`
 
-If any are missing, do not start the review. Reply with Status BLOCKED using the format in `.opencode/skills/orchestration-playbook/SKILL.md` and list missing inputs.
+If any are missing, do not start the review. Reply with Status BLOCKED using the format in `.agents/skills/orchestration-playbook/SKILL.md` and list missing inputs.
 
 ## Finding gate
 
@@ -218,5 +218,5 @@ a correction.
 
 ## Reporting
 
-- Reply format is defined in `.opencode/skills/orchestration-playbook/SKILL.md`
+- Reply format is defined in `.agents/skills/orchestration-playbook/SKILL.md`
 - Include verdict, key risks, and actionable fixes with severity
