@@ -69,6 +69,7 @@ Apply the Credo as a decision standard without reciting it or making ceremonial 
 - Dev (server): `pnpm dev:backend` (Wrangler on `http://localhost:8787`)
 - Dev (client): `pnpm dev:frontend` (Vite on `http://localhost:5173`)
 - Browser automation: `agent-browser open http://localhost:5173` and `agent-browser snapshot` (Dev Container installs CLI and Chrome/Chromium)
+- After browser use, MUST close every browser session you opened, including on failure or interruption. Use `agent-browser --session <name> close` for named sessions or the corresponding browser close tool, and verify that your sessions have ended. Leave user-owned sessions and application services running.
 - Prototype: `pnpm build:mockup` builds all existing app prototypes; `pnpm build:mockup main` selects `main`. Open the applicable `mockups/<app>/index.html` in OpenDesign's built-in Prototype Preview. `pnpm check:mockup` checks all app outputs; `pnpm check:mockup main` selects `main`.
 - Shared UI: `pnpm storybook` (`http://localhost:6006`), for the `UI` component catalog.
 
