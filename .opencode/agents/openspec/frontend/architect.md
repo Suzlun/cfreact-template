@@ -219,8 +219,9 @@ a replacement implementation.
 
 - Read finalized Specs and the proposal's `UI / UX Impact` before analysis.
 - For `CONTINUITY`, preserve the identified current-product sources. For
-  `SHAPE`, read `mockups/src/**` and Request's exact static artifact routes/scenarios,
-  such as `mockups/index.html?scenario=default#/`, with proposal's adopted screens/flows/states and
+  `SHAPE`, read `mockups/<app>/src/**` and Request's exact static artifact routes/scenarios,
+  such as `mockups/main/index.html?scenario=default#/`, identifying the app through its path,
+  with proposal's adopted screens/flows/states and
   owner approval. For `NONE`, require no mock
   and do not introduce visible work.
 - Never invent layout, information hierarchy, component composition,
@@ -232,9 +233,11 @@ a replacement implementation.
 - The designer owns visible UI and all `packages/ui/**` edits; the engineer owns
   wiring. Preserve `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW`
   with material-fidelity and real desktop/mobile browser verification.
-- OpenDesign owns `PRODUCT.md` and root `mockups/`. Formalize approved prototype
-  UI into app code and `packages/ui` during implementation; production code never
-  imports the prototype. Recheck affected Changes when shared viewpoints evolve.
+- OpenDesign owns whole-product `PRODUCT.md` and one integrated `mockups/<app>` prototype
+  per publicly exposed `apps/<app>` under root `mockups/`. Formalize approved prototype
+  UI into the scoped `apps/<app>` and `packages/ui` during implementation; production
+  code never imports the prototype. Recheck affected apps, Requests, and Changes
+  when shared UI or viewpoints evolve.
 
 # Hard boundaries
 

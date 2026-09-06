@@ -50,13 +50,13 @@ OpenDesign は、プロダクトの方向付けを始める正式な入口であ
 
 ### 統合プロトタイプ
 
-同じリポジトリの `PRODUCT.md` にプロダクト全体の背景を示し、一つの統合 React プロトタイプをルートの `mockups/` に置きます。正となる React TypeScript ソースは `mockups/src/**`、中心となる画面構成は `mockups/src/App.tsx`、起動処理は `mockups/src/main.tsx` です。製品要件の根拠となる確認済み意図は各変更の `request.md`、実装契約は提案・仕様・設計・作業パッケージ、製品実装は `apps/main` と `packages/ui` が担います。
+同じリポジトリの `PRODUCT.md` にプロダクト全体の背景と各アプリの異なる目的を示し、公開アプリ `apps/<app>` ごとに一つの統合 React プロトタイプを `mockups/<app>` に置きます。正となる React TypeScript ソースは `mockups/<app>/src/**` で、`App.tsx` が画面構成、`main.tsx` が起動処理です。現在の例は `mockups/main/src/App.tsx` です。製品要件の根拠となる確認済み意図は各変更の `request.md`、実装契約は提案・仕様・設計・作業パッケージ、製品実装は対象の `apps/<app>` と `packages/ui` が担います。
 
-プロトタイプは `@cfreact-template/ui` の公開サブパスから共通実装を直接利用し、固定データとローカル状態で動作します。実際の API やデータベースには接続しません。OpenDesign は所有者に確認できた要求とソースを一緒に更新し、エージェントがリポジトリで `pnpm build:mockup` を実行します。Vite は既存の共通 UI の Tailwind CSS 4 と React Compiler 設定を使い、単一の IIFE `mockups/dist/prototype.js` と `mockups/dist/prototype.css` を生成します。`dist` は Git 管理し、ソース変更時に再生成します。生成物は手編集しません。
+プロトタイプは `@cfreact-template/ui` の公開サブパスから共通実装を直接利用し、固定データとローカル状態で動作します。実際の API やデータベースには接続しません。OpenDesign は所有者に確認できた要求とソースを一緒に更新し、エージェントが `pnpm build:mockup` で既存の全アプリのモックを、または `pnpm build:mockup main` で `main` だけをビルドします。ルート共通の `mockups/vite.config.ts` と `mockups/tsconfig.json` を使い、Vite は既存の共通 UI の Tailwind CSS 4 と React Compiler 設定で、アプリごとに一つの IIFE `mockups/<app>/dist/prototype.js` と `mockups/<app>/dist/prototype.css` を生成します。各アプリのソースと再生成した Git 管理対象の `dist` は同じコミットで整合させ、生成物を手編集しません。`pnpm check:mockup` は全アプリの生成物を、`pnpm check:mockup main` は `main` だけを検査します。
 
-安定した入口 `mockups/index.html` は `./dist/prototype.js` と `./dist/prototype.css` を相対参照し、OpenDesign の組み込みの `Prototype Preview` で通常の静的成果物として開きます。Node.js とリポジトリの依存関係はエージェントのビルド環境が提供し、プレビューは生成済みファイルを表示します。既存 Storybook は共通 UI のカタログとして維持します。
+アプリごとの安定した入口 `mockups/<app>/index.html` は `./dist/prototype.js` と `./dist/prototype.css` を相対参照し、OpenDesign の組み込みの `Prototype Preview` で通常の静的成果物として開きます。Node.js とリポジトリの依存関係はエージェントのビルド環境が提供し、プレビューは生成済みファイルを表示します。既存 Storybook は共通 UI のカタログとして維持します。共通規則はルートの `mockups/AGENTS.md` に置きます。
 
-現在のサンプルでは `#/` がホーム、`#/users` がユーザー管理です。クエリの `scenario` に `default`、`empty-users`、`users-loading`、`users-error`、`create-error` を指定して状態を選び、デスクトップとモバイルの表示幅で確認します。要求の `UI Mock References` には `mockups/index.html?scenario=default#/` や `mockups/index.html?scenario=users-error#/users` のように実在する画面と状態を記載します。複数の画面・状態と複数の変更は多対多で対応し、共有部分の変更では関係する要求を再評価します。`mockups/` は変更のアーカイブ後もリポジトリ直下に保持します。ソースの分割はこの一つのプロトタイプ内で必要な場合だけ行います。
+現在の `main` のサンプルでは `#/` がホーム、`#/users` がユーザー管理です。クエリの `scenario` に `default`、`empty-users`、`users-loading`、`users-error`、`create-error` を指定して状態を選び、デスクトップとモバイルの表示幅で確認します。要求の `UI Mock References` には `mockups/main/index.html?scenario=default#/` や `mockups/main/index.html?scenario=users-error#/users` のように、対象アプリをパスで識別できる実在の画面と状態を記載します。各アプリの複数の画面・状態と複数の変更は多対多で対応します。一つの変更が複数アプリのモックを参照するのは、確認済み成果に必要な場合だけです。共有 UI や観点の変更では影響するアプリと要求を再評価します。ルートの `mockups/` と各アプリのモックは変更のアーカイブ後も保持します。ソースの分割は各アプリの統合プロトタイプ内で必要な場合だけ行います。
 
 UX モードは運用区分とは別に判定します。ただし、`SHAPE` は利用者に見える体験を実質的に変えるため、観測可能な振る舞いを変更しない `DIRECT` とは組み合わせません。
 
@@ -78,13 +78,13 @@ OpenDesign で利用者に見える体験を形にします。要求とモック
 
 - `### Primary User Task`: 利用者が完了したい中心作業。
 - `### UX Direction`: 採用する体験の方向性。
-- `### Design Source`: 要求の `UI Mock References` と同じ形式の採用済み画面・状態の参照、対応する画面・操作の流れ・状態の範囲、所有者による採用の短い証跡。実装側は対象の静的成果物と `mockups/src/**` の React ソースを照合します。
+- `### Design Source`: 要求の `UI Mock References` と同じ、対象アプリをパスで識別できる採用済み画面・状態の参照、対応する画面・操作の流れ・状態の範囲、所有者による採用の短い証跡。実装側は対象の静的成果物と `mockups/<app>/src/**` の React ソースを照合します。
 
 ## UI の実装と実証
 
 実際の UI 変更にはプロダクトデザイナーが関与します。実装は `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW` の順で進めます。
 
-1. `PRODUCTION_UI`: 承認済み React モック、または `CONTINUITY` の既存製品の証拠に従い、画面構成、情報階層、操作、画面遷移、文言、状態、画面幅への対応、視覚表現を忠実に実装します。モックの部品は `apps/main` と `packages/ui` へ正式に実装し、製品コードは `mockups/` をインポートしません。
+1. `PRODUCTION_UI`: 承認済み React モック、または `CONTINUITY` の既存製品の証拠に従い、画面構成、情報階層、操作、画面遷移、文言、状態、画面幅への対応、視覚表現を忠実に実装します。モックの部品は対象の `apps/<app>` と `packages/ui` へ正式に実装し、製品コードは `mockups/` をインポートしません。
 2. `WIRING`: 確認済み契約に従ってデータと処理を接続します。
 3. `POLISH`: 接続済み画面をブラウザで確認し、確認済み契約と採用済みデザインから導ける、本番利用に必要な状態だけを補完します。
 4. `REVIEW`: 採用済みデザインとの一致を確認し、実ブラウザでデスクトップとモバイルの操作、表示、アクセシビリティを検証します。
@@ -128,7 +128,7 @@ OpenDesign は、利用者、現在の状況、変更動機、期待価値、望
 
 新規プロダクトでは、OpenDesign が利用の流れ全体とモックを一体として具体化し、顧客成果ごとの複数の変更へ分けます。共有判断を更新した場合は影響する変更を再評価し、独立して計画完了したまとまりから実装へ引き渡します。
 
-企画書は対話の入力として扱い、独立した成果を説明できる段階で変更のひな形を作成します。複数の `request.md` が一つの統合モックを参照できます。共有する識別、画面遷移、所有権、セキュリティ境界の未解決判断に依存する変更は、その解決後に引き渡します。
+企画書は対話の入力として扱い、独立した成果を説明できる段階で変更のひな形を作成します。複数の `request.md` が同じアプリの統合モックを参照できます。共有する識別、画面遷移、所有権、セキュリティ境界の未解決判断に依存する変更は、その解決後に引き渡します。
 
 `IDEA -> CHANGE_SCAFFOLDED -> SHAPING -> PLANNING_READY -> IMPLEMENTING -> VERIFIED -> ARCHIVED` は、既存成果物と進捗で表す概念上の段階です。
 

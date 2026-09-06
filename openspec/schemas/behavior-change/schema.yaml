@@ -9,9 +9,9 @@ artifacts:
     template: request.md
     instruction: |
       OpenDesignが、リポジトリ内のOpenSpec公式スキルによる新規作成、継続、更新、検証を通じて製品の方向付けと計画を担う。
-      OpenDesignは同じリポジトリの製品概要`PRODUCT.md`、ルートの単一プロトタイプ`mockups/`、計画成果物を所有する。正となるReact TypeScriptソースは`mockups/src/**`で、`App.tsx`と`main.tsx`を中心に構成する。`@cfreact-template/ui`の公開サブパスから共通実装を直接使い、仮データとローカル状態で動作させる。製品要件の根拠は確認済み要求に置く。
-      OpenDesignはソースと所有者確認済みの要求を一緒に更新し、エージェントがNode.jsとリポジトリの依存関係を使って`pnpm build:mockup`を実行する。Viteは既存の共通UIのTailwind CSS 4とReact Compiler設定で単一のIIFE `mockups/dist/prototype.js`と`mockups/dist/prototype.css`を生成する。`dist`はGit管理し、ソース変更時に再生成して手編集しない。
-      安定した`mockups/index.html`は`./dist/prototype.js`と`./dist/prototype.css`を相対参照し、組み込みの`Prototype Preview`で通常の静的成果物として開く。画面と状態はクエリとハッシュで選び、複数の画面・状態と複数の変更は多対多で対応する。`mockups/`は変更ディレクトリとそのアーカイブの外に維持する。編集と表示の規則は`mockups/AGENTS.md`に従う。
+      OpenDesignは同じリポジトリの製品概要`PRODUCT.md`、ルートの`mockups/`配下にあるアプリごとの統合プロトタイプ、計画成果物を所有する。`PRODUCT.md`はプロダクト全体の背景と各アプリの異なる目的を示す。公開アプリ`apps/<app>`ごとに一つの統合プロトタイプを`mockups/<app>`に置く。正となるReact TypeScriptソースは`mockups/<app>/src/**`で、`App.tsx`と`main.tsx`を中心に構成する。現在の例は`mockups/main/src/App.tsx`。`@cfreact-template/ui`の公開サブパスから共通実装を直接使い、実際のAPIやデータベースに接続せず、仮データとローカル状態で動作させる。製品要件の根拠は確認済み要求に置く。
+      OpenDesignはソースと所有者確認済みの要求を一緒に更新する。エージェントはNode.jsとリポジトリの依存関係を使い、`pnpm build:mockup`で既存の全アプリのモックを、`pnpm build:mockup main`で`main`だけをビルドする。共通設定`mockups/vite.config.ts`と`mockups/tsconfig.json`はルートに置く。Viteは既存の共通UIのTailwind CSS 4とReact Compiler設定で、アプリごとに一つのIIFE `mockups/<app>/dist/prototype.js`と`mockups/<app>/dist/prototype.css`を生成する。各アプリのソースと再生成したGit管理対象の`dist`を同じコミットで整合させ、生成物を手編集しない。`pnpm check:mockup`は全アプリの生成物を、`pnpm check:mockup main`は`main`だけを検査する。
+      各アプリの安定した`mockups/<app>/index.html`は`./dist/prototype.js`と`./dist/prototype.css`を相対参照し、組み込みの`Prototype Preview`で通常の静的成果物として開く。画面と状態はクエリとハッシュで選び、各アプリの複数の画面・状態と複数の変更は多対多で対応する。一つの変更が複数アプリのモックを参照するのは確認済み成果に必要な場合だけとする。共有UIや観点の変更時は影響するアプリと要求を再評価する。ルートの`mockups/`と各アプリのモックは変更ディレクトリとそのアーカイブの外に維持する。編集と表示の規則はルート共通の`mockups/AGENTS.md`に従う。
       `request.md`は確認済み内容を随時更新する要求の集合とし、保存する各項目が所有者確認済みであることを守る。
       具体的な解決手段より先に、利用者、現在の状況、変更動機、期待価値、希望成果を確認する。成果や範囲を左右する未確認事項だけを質問する。
       変更動機には、困りごとや制約などの否定的な要因だけでなく、期待、機会、好奇心、未探索の可能性などの肯定的な要因も含める。
@@ -19,7 +19,7 @@ artifacts:
       背景と変更動機は要求の理由を示す証拠として扱い、製品要件と成果制約は所有者が求めた成果から導く。
       解決手段を示す入力では、その手段が必要となる背景、変更動機、希望成果を先に確認し、所有者が明示的に拘束した場合だけ必須手段として記載する。
       成果制約または必須手段がない場合は、対応する任意の節を作成しない。
-      関連する観点がある場合は任意の`## UI Mock References`に`mockups/index.html?scenario=default#/`や`mockups/index.html?scenario=users-error#/users`のような画面・状態の参照を記載する。`SHAPE`では対象となる実際の観点参照を必須とする。参照は設計の証拠として扱い、目的や成果は所有者が確認した要求本文に記載する。
+      関連する観点がある場合は任意の`## UI Mock References`に`mockups/main/index.html?scenario=default#/`や`mockups/main/index.html?scenario=users-error#/users`のように、対象アプリをパスで識別できる画面・状態の参照を記載する。`SHAPE`では対象となる実際の観点参照を必須とする。参照は設計の証拠として扱い、目的や成果は所有者が確認した要求本文に記載する。
       `Request-Status: CONFIRMED`を使用し、`Owner Confirmation`に保存した内容と所有者の明示発言との対応を記録する。
       所有者の明確な明示発言は、初回作成でも更新でも確認証拠として十分である。その内容を即時反映し、同じ内容の再承認を求めない。
       発言の意味または拘束力が不明な場合だけ、OpenDesignが一つの焦点に絞って確認してから保存する。
@@ -43,7 +43,7 @@ artifacts:
       `NONE`ではモックを必要としない。`CONTINUITY`では維持する既存の製品体験を特定し、参照して内容を確認できる実装済み製品の証拠を`Continuity Source`に記録する。
       `SHAPE`のproposal.mdは、所有者が対象の方向性を採用し、確認済み成果と承認済みモックの重要な内容が双方向に整合してから作成する。
       `SHAPE`では`UI / UX Impact`内に、中心作業を`Primary User Task`、採用した体験の方向性と重要な判断の理由を`UX Direction`、承認済みモックの参照を`Design Source`として記録する。
-      `Design Source`には、要求の`UI Mock References`と同じ形式の採用済み画面・状態の正確な参照、関連する画面・操作の流れ・状態の範囲、その範囲を所有者が採用した短い証跡を記載する。承認の証拠はこの既存の節で扱い、設計の詳細は`mockups/src/**`と参照先の静的成果物で確認する。
+      `Design Source`には、要求の`UI Mock References`と同じ、対象アプリをパスで識別できる採用済み画面・状態の正確な参照、関連する画面・操作の流れ・状態の範囲、その範囲を所有者が採用した短い証跡を記載する。承認の証拠はこの既存の節で扱い、設計の詳細は`mockups/<app>/src/**`と参照先の静的成果物で確認する。
       重要なUX判断の理由または所有者確認が不足する場合はOpenDesignが所有者へ確認し、内容の意味に応じて要求または設計へ反映してから提案を作成する。
       Thesaurus は業務用語の統一が必要な場合だけ追加する。
       `Confirmed Change Boundary`は実現する肯定的な成果と外部契約の境界だけを記載する。
@@ -90,7 +90,7 @@ apply:
   tracks: tasks.md
   instruction: |
     OpenDesignから、計画上の重要な判断が解決済みの成果物を受け取る。所有者確認済みの要求、提案、差分仕様、該当する承認済み設計、作業パッケージを読み、要求が求める成果へ因果的につながる作業だけを実装、検証する。
-    `SHAPE`では要求の`UI Mock References`、提案の`Design Source`が示す承認範囲、実際の`mockups/src/**`と対象の静的成果物の画面・状態を照合し、要求との双方向の整合性を確認する。共有観点の更新時は影響する各変更を再確認する。`CONTINUITY`では既存製品の証拠を読み、`NONE`ではモックを必要としない。
-    UIは`PRODUCTION_UI -> WIRING -> POLISH -> REVIEW`の順で進める。デザイナーが承認済みReactプロトタイプをアプリUIと`packages/ui`へ正式実装し、エンジニアは接続だけを担当する。デザイナーが確認済み契約から導ける必要な製品状態を補完し、独立レビューで忠実性と実ブラウザのデスクトップ・モバイル操作を確認する。製品コードは正式実装したUIを参照し、`mockups/`をインポートしない。プロトタイプの編集はOpenDesignが担当する。
+    `SHAPE`では要求の`UI Mock References`、提案の`Design Source`が示す対象アプリと承認範囲、実際の`mockups/<app>/src/**`と対象の静的成果物の画面・状態を照合し、要求との双方向の整合性を確認する。共有UIや観点の更新時は影響するアプリ、要求、変更を再確認する。`CONTINUITY`では既存製品の証拠を読み、`NONE`ではモックを必要としない。
+    UIは`PRODUCTION_UI -> WIRING -> POLISH -> REVIEW`の順で進める。デザイナーが承認済みReactプロトタイプを対象の`apps/<app>`と`packages/ui`へ忠実に正式実装し、エンジニアは接続だけを担当する。デザイナーが確認済み契約から導ける必要な製品状態を補完し、独立レビューで忠実性と実ブラウザのデスクトップ・モバイル操作を確認する。製品コードは正式実装したUIを参照し、`mockups/`をインポートしない。プロトタイプの編集はOpenDesignが担当する。
     計画入力の不足、`SHAPE`の承認済みモックを読めない状態、要求と成果物の重要な矛盾、未解決の重要判断がある場合は、`OPENDESIGN_PLANNING_REQUIRED`を返してOpenDesignへ戻す。実装側では計画成果物の修復や要求の再解釈を行わない。
     全作業パッケージ完了時は `node scripts/openspec/verify-scenario-coverage.mjs --change <change-id>` を実行し、選択Changeの仕様構造とPlaywright E2E試験からScenarioへの参照を検証する。

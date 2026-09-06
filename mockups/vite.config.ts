@@ -5,7 +5,6 @@ import uiConfig from '../packages/ui/vite.config';
 export default mergeConfig(
   uiConfig,
   defineConfig({
-    root: import.meta.dirname,
     define: {
       'process.env.NODE_ENV': JSON.stringify('production'),
     },

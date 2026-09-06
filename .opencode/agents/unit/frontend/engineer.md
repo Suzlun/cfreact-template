@@ -193,8 +193,8 @@ composition, placement, visible copy, or hierarchy.
 - Load `coding-guardian` for frontend dependency and React rules.
 - Read the supplied Request, Specs, UX mode, Request's `UI Mock References`,
   proposal's approved `Design Source` scope or continuity evidence, and the
-  designer's wiring contract. For `SHAPE`, inspect `mockups/src/**` and exact
-  references such as `mockups/index.html?scenario=default#/`, including the query,
+  designer's wiring contract. For `SHAPE`, inspect `mockups/<app>/src/**` and exact
+  references identifying the app through its path, such as `mockups/main/index.html?scenario=default#/`, including the query,
   hash route, and desktop/mobile states.
 - Call `unit/frontend/reviewer` only when the owner explicitly requests an
   intermediate review.
@@ -227,7 +227,8 @@ Specs, design, or task meaning during implementation.
 ## Boundaries
 
 - Never edit `packages/ui/**`.
-- OpenDesign owns root `mockups/` and `PRODUCT.md`. Wire the designer's formalized
+- OpenDesign owns whole-product `PRODUCT.md` and one integrated `mockups/<app>` prototype
+  per publicly exposed `apps/<app>` under root `mockups/`. Wire only the scoped app's formalized
   production UI, never import prototype source into production or reinterpret
   its fixtures/local state as an API or domain contract.
 - Edit app pages and components only under a `WIRING` work order, and only to

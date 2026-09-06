@@ -181,8 +181,9 @@ OpenDesign owns product shaping and Planning Ready Changes. Check mutual
 completeness and consistency of Request, Specs, and UX evidence: `SHAPE` requires
 Request's `UI Mock References` to exact static artifact routes/scenarios and proposal's
 `Design Source` with adopted screens/flows/states and owner approval. Read actual
-`mockups/src/**` and references such as `mockups/index.html?scenario=default#/`;
-trace affected Changes when shared viewpoints evolve. `CONTINUITY` uses an identified existing production
+`mockups/<app>/src/**` and references identifying the app through its path, such as
+`mockups/main/index.html?scenario=default#/`; trace affected apps, Requests, and Changes
+when shared UI or viewpoints evolve. `CONTINUITY` uses an identified existing production
 surface; `NONE` needs no mock. Semantic review does not reshape the product.
 
 ## Modes

@@ -165,9 +165,10 @@ fallible derivations and require only artifacts defined by the selected schema.
 
 OpenDesign owns product shaping and Planning Ready Changes. For `SHAPE`, review
 Request/Specs consistency with Request's `UI Mock References` and proposal's
-`Design Source` approval scope. Read actual `mockups/src/**` source and exact
-static artifact references such as `mockups/index.html?scenario=default#/`; verify adopted screens/flows/states
-and owner approval. Trace references across affected Changes when shared viewpoints evolve.
+`Design Source` approval scope. Read actual `mockups/<app>/src/**` source and exact
+static artifact references such as `mockups/main/index.html?scenario=default#/`; verify the
+app identified by each path, adopted screens/flows/states, and owner approval. Trace references
+across affected apps, Requests, and Changes when shared UI or viewpoints evolve.
 `CONTINUITY` relies on the identified existing production surface; `NONE` needs
 no mock. Return planning corrections to OpenDesign, never author them. During
 implementation, use `OPENDESIGN_PLANNING_REQUIRED` for such corrections.

@@ -329,17 +329,22 @@ Operations are the sequence.
   Ready Changes; the user selects `openspec/applier` as a primary agent for that
   route. Its planning-file edits are limited to `tasks.md` progress.
 - Bind `SHAPE` work orders to Request's `UI Mock References` (exact static artifact
-  routes/scenarios such as `mockups/index.html?scenario=default#/`) and proposal's
-  `Design Source` approval scope. Pass actual `mockups/src/**` and referenced
+  routes/scenarios such as `mockups/main/index.html?scenario=default#/`) and proposal's
+  `Design Source` approval scope, both identifying the applicable app through its path.
+  Pass actual `mockups/<app>/src/**` and referenced
   artifact states, including the query, hash route, and desktop/mobile widths. Bind
   `CONTINUITY` to existing production evidence in `Continuity Source`. Follow
   `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW` for UI work: designer formalizes
   approved UI, engineer only wires, designer completes necessary deducible states,
   then independent review. Production imports app/package UI, not `mockups/`.
-- OpenDesign owns same-repository `PRODUCT.md`, integrated root `mockups/`, and
-  planning. Viewpoints and Changes relate many-to-many; trace affected references
-  when shared viewpoints evolve. Keep the prototype outside Change directories
-  and archives, and its fixtures/local state within design evidence.
+- OpenDesign owns same-repository whole-product `PRODUCT.md`, app prototypes under
+  root `mockups/`, and planning. Each publicly exposed `apps/<app>` pairs with one
+  integrated `mockups/<app>` prototype. Each app's N viewpoints and M Changes relate
+  many-to-many; a Change references multiple app prototypes only when its confirmed
+  outcomes require them. Re-evaluate affected apps and Requests when shared UI or
+  viewpoints evolve. Keep app prototypes outside Change directories and archives,
+  and their fixtures/local state within design evidence. Formalize only the scoped
+  `apps/<app>` UI and shared UI during implementation.
 - Return missing product decisions or contradictory planning inputs as
   `OPENDESIGN_PLANNING_REQUIRED` to OpenDesign.
 - Pin Ask-first boundaries

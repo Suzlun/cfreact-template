@@ -185,15 +185,20 @@ delegation when an artifact expands, reverses, or misinterprets the Request, or
 when a work package cannot be causally connected to its requested outcome.
 Proceed only with an OpenDesign Planning Ready Change, a ready CLI state, and
 readable, coherent required context. OpenDesign owns product shaping and all
-planning artifacts, `PRODUCT.md`, and root `mockups/`; OpenCode implements the
-approved scope and updates accepted task progress. The product prototype remains
-outside Change directories and archives.
+planning artifacts, whole-product `PRODUCT.md`, and app prototypes under root `mockups/`.
+Each publicly exposed `apps/<app>` pairs with one integrated `mockups/<app>` prototype.
+OpenCode implements the approved scope in the applicable apps and shared UI and
+updates accepted task progress. Each app's N routes/scenarios may serve M Changes;
+a Change references multiple app prototypes only when its confirmed outcomes require them.
+App prototypes remain outside Change directories and archives. Re-evaluate affected
+apps, Requests, and Changes when shared UI or viewpoint decisions change.
 
 Read Request's UI Mock References and the proposal's UX evidence before dispatch:
 
 - `SHAPE`: require relevant exact route/scenario references in Request's
-  `UI Mock References`, such as `mockups/index.html?scenario=default#/`. Read the actual
-  `mockups/src/**`, centered on `App.tsx` and `main.tsx`, and the referenced static
+  `UI Mock References`, such as `mockups/main/index.html?scenario=default#/`, identifying
+  the applicable app through its path. Read the actual `mockups/<app>/src/**`,
+  centered on `App.tsx` and `main.tsx`, and the referenced static
   artifact's query, hash route, and desktop/mobile states. Proposal's `Design Source`
   complements those references with adopted screens/flows/states and owner
   approval of that scope; use this existing approval evidence.

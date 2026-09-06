@@ -38,7 +38,7 @@ UX-Mode: NONE
 
 ### Design Source
 
-- 採用済み観点: 要求の`UI Mock References`と同じ画面・状態の正確な参照（例: `mockups/index.html?scenario=default#/`）。`mockups/src/**`と参照先の静的成果物で内容を確認する。
+- 採用済み観点: 要求の`UI Mock References`と同じ、対象アプリをパスで識別できる画面・状態の正確な参照（例: `mockups/main/index.html?scenario=default#/`）。対象の`mockups/<app>/src/**`と参照先の静的成果物で内容を確認する。
 - 対象範囲: 関連する画面、操作の流れ、状態。
 - 採用の証跡: 所有者が対象の観点と範囲を採用したことを示す短い記録。設計承認の証拠はこの節に記載する。
 -->

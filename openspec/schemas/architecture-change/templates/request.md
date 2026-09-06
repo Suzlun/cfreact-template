@@ -32,7 +32,7 @@ Request-Status: CONFIRMED
 <!--
 ## UI Mock References
 
-- `mockups/index.html?scenario=default#/`: 関連する画面、操作の流れ、状態を示す実在の参照に置き換える。同じ統合Reactプロトタイプのクエリで状態、ハッシュで画面を選び、デスクトップとモバイルの表示幅で確認する。例: `mockups/index.html?scenario=users-error#/users`。
+- `mockups/main/index.html?scenario=default#/`: 対象の公開アプリをパスで識別でき、関連する画面、操作の流れ、状態を示す実在の参照に置き換える。各アプリの統合Reactプロトタイプのクエリで状態、ハッシュで画面を選び、デスクトップとモバイルの表示幅で確認する。例: `mockups/main/index.html?scenario=users-error#/users`。複数アプリの参照は確認済み成果に必要な場合だけ記載する。
 -->
 
 ## Owner Confirmation

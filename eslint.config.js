@@ -397,8 +397,13 @@ export default tseslint.config(
         { type: 'ui', pattern: 'packages/ui/styles/**/*', mode: 'full' },
         { type: 'ui', pattern: 'packages/ui/tests/**/*', mode: 'full' },
         { type: 'ui-storybook', pattern: 'packages/ui/stories/**/*', mode: 'full' },
-        { type: 'mockup-entry', pattern: 'mockups/src/main.tsx', mode: 'full' },
-        { type: 'mockup', pattern: 'mockups/src/**/*', mode: 'full' },
+        {
+          type: 'mockup-entry',
+          pattern: 'mockups/*/src/main.tsx',
+          mode: 'full',
+          capture: ['app'],
+        },
+        { type: 'mockup', pattern: 'mockups/*/src/**/*', mode: 'full', capture: ['app'] },
       ],
     },
     rules: {
@@ -688,12 +693,8 @@ export default tseslint.config(
               allow: ['ui-storybook', 'ui'],
             },
             {
-              from: ['mockup'],
-              allow: ['mockup', 'ui'],
-            },
-            {
-              from: ['mockup-entry'],
-              allow: ['mockup', 'ui'],
+              from: ['mockup', 'mockup-entry'],
+              allow: [['mockup', { app: '{{ from.captured.app }}' }], 'ui'],
             },
           ],
         },
@@ -709,7 +710,7 @@ export default tseslint.config(
               message: '製品コードは統合モックへ依存できません。',
             },
             {
-              target: './mockups/src',
+              target: './mockups/*/src/**',
               from: './packages/ui',
               except: [
                 './index.ts',
@@ -785,7 +786,7 @@ export default tseslint.config(
       'packages/ui/lib/**/*.{ts,tsx}',
       'packages/ui/tests/**/*.{ts,tsx}',
       'packages/ui/stories/**/*.{ts,tsx}',
-      'mockups/src/**/*.{ts,tsx}',
+      'mockups/*/src/**/*.{ts,tsx}',
     ],
     rules: {
       'boundaries/no-unknown-files': 'error',
@@ -989,7 +990,7 @@ export default tseslint.config(
       'apps/main/src/frontend/**/*.{ts,tsx}',
       'apps/main/vite.config.ts',
       'apps/main/vitest.frontend.config.ts',
-      'mockups/src/**/*.{ts,tsx}',
+      'mockups/*/src/**/*.{ts,tsx}',
     ],
     plugins: {
       react: react,
@@ -1061,7 +1062,7 @@ export default tseslint.config(
     files: [
       'apps/main/src/frontend/**/*.{ts,tsx}',
       'packages/ui/**/*.{ts,tsx}',
-      'mockups/src/**/*.{ts,tsx}',
+      'mockups/*/src/**/*.{ts,tsx}',
     ],
     rules: {
       'project/enforce-library-boundaries': [
@@ -1087,7 +1088,7 @@ export default tseslint.config(
   {
     files: [
       'apps/main/src/frontend/domain/**/*.{ts,tsx}',
-      'mockups/src/**/*.{ts,tsx}',
+      'mockups/*/src/**/*.{ts,tsx}',
       'packages/ui/index.ts',
       'packages/ui/SafeHTML.tsx',
       'packages/ui/components/**/*.{ts,tsx}',
@@ -2203,7 +2204,7 @@ export default tseslint.config(
 
   // 統合モックは専用の型検査を使い、ローカル状態だけで動作する。
   {
-    files: ['mockups/src/**/*.{ts,tsx}'],
+    files: ['mockups/*/src/**/*.{ts,tsx}'],
     languageOptions: {
       globals: {
         window: 'readonly',

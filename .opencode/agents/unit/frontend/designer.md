@@ -175,8 +175,8 @@ production; OpenDesign owns product shaping and the Planning Ready Change.
   shared components, and Storybook before external research.
 - For `UX-Mode: SHAPE`, read Request's `UI Mock References` and proposal's
   `Design Source`: exact static artifact route/scenario references such as
-  `mockups/index.html?scenario=default#/`, adopted screens/flows/states, and owner approval
-  of that scope. Inspect `mockups/src/**`, centered on `App.tsx` and `main.tsx`,
+  `mockups/main/index.html?scenario=default#/`, adopted screens/flows/states, and owner approval
+  of that scope. Identify the app through each reference path. Inspect `mockups/<app>/src/**`, centered on `App.tsx` and `main.tsx`,
   and the referenced artifact's query, hash route, and desktop/mobile states.
 - For `UX-Mode: CONTINUITY`, treat the named current surface and continuity
   evidence as binding precedent.
@@ -213,9 +213,10 @@ under `UX-Mode: NONE`, or a material product decision is unresolved.
 ## Boundaries
 
 - Edit only the paths allowed by frontmatter.
-- OpenDesign owns `PRODUCT.md`, the integrated prototype in root `mockups/`, and
-  planning artifacts. Read the prototype as design evidence and formalize the
-  approved UI into app code and `packages/ui`; production code never imports
+- OpenDesign owns whole-product `PRODUCT.md`, one integrated `mockups/<app>` prototype
+  per publicly exposed `apps/<app>` under root `mockups/`, and planning artifacts.
+  Read the applicable prototype as design evidence and formalize the
+  approved UI into the scoped `apps/<app>` and `packages/ui`; production code never imports
   `mockups/`. Prototype fixtures and local state illustrate the approved experience,
   not production integration contracts or new requested outcomes.
 - Do not edit API, domain, router/app infrastructure, TypeSpec, or backend code.

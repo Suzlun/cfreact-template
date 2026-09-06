@@ -2,7 +2,7 @@
 pnpm-lock.yaml
 
 # 静的プロトタイプは Vite の生成結果を保持する。
-mockups/dist/
+mockups/*/dist/
 
 # Serena MCP のローカル状態はリポジトリ整形の対象外にする。
 .serena/

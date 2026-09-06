@@ -48,8 +48,8 @@
 - `frontend-app`: `apps/main/src/frontend/app/**/*`
 - `ui`: `packages/ui/index.ts`、`packages/ui/SafeHTML.tsx`、`packages/ui/components/**/*`、`packages/ui/hooks/**/*`、`packages/ui/lib/**/*`、`packages/ui/styles/**/*`、`packages/ui/tests/**/*`
 - `ui-storybook`: `packages/ui/stories/**/*`
-- `mockup-entry`: `mockups/src/main.tsx`
-- `mockup`: `mockups/src/**/*` のうち起動処理以外
+- `mockup-entry`: `mockups/*/src/main.tsx`
+- `mockup`: `mockups/*/src/**/*` のうち起動処理以外
 
 要素に属さないTS/TSXファイルは`boundaries/no-unknown-files`で失敗します。対象はmain、core、core-sdk、UI、統合モックのソースです。
 
@@ -82,7 +82,7 @@
 - `mockup` → `mockup | ui`
 - `mockup-entry` → `mockup | ui`
 
-統合モックは React と `@cfreact-template/ui` の公開サブパスを利用し、`mockup-entry` だけが `react-dom/client` を利用できます。`boundaries/external` と通信グローバル制限で API・DB・外部通信への依存を拒否し、`import/no-restricted-paths` で製品コードから `mockups/` への参照を拒否します。`mockups/tsconfig.json` が `mockups/src/**` を型検査し、`mockups/vite.config.ts` は共通 UI の Vite 設定を再利用して Tailwind CSS 4 と React Compiler を適用します。ビルドと静的成果物の運用は `mockups/AGENTS.md` を参照してください。
+公開アプリ `apps/<app>` ごとの統合モック `mockups/<app>/src/**` は React と `@cfreact-template/ui` の公開サブパスを利用し、`mockup-entry` だけが `react-dom/client` を利用できます。`boundaries/external` と通信グローバル制限で API・DB・外部通信への依存を拒否し、`import/no-restricted-paths` で製品コードから `mockups/` への参照を拒否します。ルート共通の `mockups/tsconfig.json` が `mockups/*/src/**` を型検査し、`mockups/vite.config.ts` は共通 UI の Vite 設定を再利用して Tailwind CSS 4 と React Compiler を適用します。アプリごとのビルド、ソースと生成物の整合、静的成果物の運用は `mockups/AGENTS.md` を参照してください。
 
 リソース名は `eslint-plugin-boundaries` の `capture` で取得します。同じ要素でも `captured.module` が異なるリソースは許可されません。要素外ファイルへの依存は `boundaries/no-unknown`、親ディレクトリへの逃避はバックエンド用の `no-restricted-imports` でも失敗します。
 

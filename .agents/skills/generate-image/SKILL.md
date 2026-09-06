@@ -36,8 +36,9 @@ generated-artifact recovery, output placement, and existence checks.
   cutout-ready assets
 - Multi-image composition with explicit roles for each reference
 
-OpenDesign owns the integrated React prototype in `mockups/src/**` and its
-static artifact at `mockups/index.html`. For `SHAPE`, Request's
+OpenDesign owns one integrated React prototype per publicly exposed `apps/<app>`,
+with source in `mockups/<app>/src/**` and its static artifact at
+`mockups/<app>/index.html`, currently `mockups/main/index.html`. For `SHAPE`, Request's
 `UI Mock References` identifies exact routes/scenarios and proposal's
 `Design Source` records their approved scope. Raster images are supporting assets
 for that React design; confirmed Request and Specs authorize product outcomes.

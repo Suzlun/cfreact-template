@@ -188,11 +188,14 @@ select `ARCHITECTURE`, but it never becomes an observable Requirement.
 A plan is `PLANNING_READY` when it satisfies the planning-completion boundary in
 `docs/change-operation.md` and was supplied by OpenDesign. For `SHAPE`, require a
 Request's `UI Mock References` to actual static artifact routes/scenarios such as
-`mockups/index.html?scenario=default#/`, plus proposal's `Design Source` with adopted
-screens/flows/states and owner approval. Read `mockups/src/**` and those static artifact states
-for consistency with Request and Specs. Shared viewpoints can serve multiple
-Changes; trace affected references when viewpoints evolve. OpenDesign owns the
-product overview in `PRODUCT.md`, root prototype, and planning. `CONTINUITY`
+`mockups/main/index.html?scenario=default#/`, plus proposal's `Design Source` with adopted
+screens/flows/states and owner approval. Both identify the applicable app through its path.
+Read `mockups/<app>/src/**` and those static artifact states for consistency with Request
+and Specs. Each app's N viewpoints may serve M Changes; a Change references multiple
+app prototypes only when its confirmed outcomes require them. Re-evaluate affected
+apps and Requests when shared UI or viewpoints evolve. OpenDesign owns the whole-product
+overview in `PRODUCT.md`, one integrated `mockups/<app>` prototype per publicly exposed
+`apps/<app>` under root `mockups/`, and planning. `CONTINUITY`
 requires identified existing production evidence; `NONE` needs no mock.
 It must leave choices that preserve the resolved
 meaning local to the implementation agent, including:

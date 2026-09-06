@@ -189,7 +189,7 @@ The caller must always provide:
 5. The proposal's `UX-Mode` and applicable existing production continuity source
    or Request's exact `UI Mock References` static artifact routes/scenarios and proposal's
    approved `Design Source` scope when the backend serves a visible flow. Read
-   the relevant React source in `mockups/src/**` and referenced `mockups/index.html` query/hash states;
+   the relevant React source in `mockups/<app>/src/**` and app-specific `mockups/<app>/index.html` query/hash states, such as `mockups/main/index.html?scenario=default#/`;
    fixtures/local state are design evidence, not backend contracts. `NONE` needs no mock.
 
 For `DECISION_SUPPORT`, the caller must provide one exact material decision and

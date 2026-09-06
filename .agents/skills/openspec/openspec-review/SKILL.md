@@ -122,8 +122,9 @@ material boundary.
 - `CONTINUITY`: read the existing production evidence identified by
   `Continuity Source` and verify preservation of that experience.
 - `SHAPE`: follow Request's `UI Mock References`, such as
-  `mockups/index.html?scenario=default#/`, and proposal's `Design Source` approval scope.
-  Read actual `mockups/src/**` and referenced static artifact states, including
+  `mockups/main/index.html?scenario=default#/`, and proposal's `Design Source` approval scope.
+  Both references must identify the applicable app through its path.
+  Read actual `mockups/<app>/src/**` and referenced static artifact states, including
   the query, hash route, and desktop/mobile widths.
   Verify the adopted screen, flow, and state scope and owner approval. Verify mutual
   completeness, rationale, and consistency between confirmed Request and the
@@ -132,14 +133,16 @@ material boundary.
   accepted composition, hierarchy, actions, navigation, copy, states,
   responsiveness, and visual direction.
 
-OpenDesign owns the same-repository overview in `PRODUCT.md`, integrated root
-prototype, and planning artifacts. Routes/scenarios are viewpoints of that one prototype;
-N viewpoints may relate to M Changes. On shared viewpoint changes, trace affected
-Request references and proposal scopes and recheck their rationale and consistency.
+OpenDesign owns the same-repository whole-product overview in `PRODUCT.md`, app
+prototypes under root `mockups/`, and planning artifacts. Each publicly exposed
+`apps/<app>` pairs with one integrated `mockups/<app>` prototype. Each app's N
+routes/scenarios may relate to M Changes. A Change references multiple app prototypes
+only when its confirmed outcomes require them. On shared UI or viewpoint changes,
+trace affected apps, Request references, and proposal scopes and recheck their rationale and consistency.
 After user-visible Request changes, re-evaluate the related viewpoints. The prototype
 uses public UI, fixtures, and local state as design evidence and remains outside
 Change directories and archives. Production implementation formalizes approved UI
-into apps and `packages/ui` rather than importing `mockups/`.
+into the scoped `apps/<app>` and `packages/ui` rather than importing `mockups/`.
 
 Do not run a second shaping pass during semantic review. Report only a material
 contradiction, excess, misinterpretation, or omission.

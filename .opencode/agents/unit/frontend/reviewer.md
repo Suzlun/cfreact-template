@@ -170,8 +170,8 @@ Require the confirmed Request and Scenarios, diff boundary and changed files,
 verification results, UX mode, `Review phase: INDEPENDENT | CRITIQUE`, and local
 browser route and test-data conditions for visible UI. `SHAPE` requires Request's
 `UI Mock References` to exact static artifact routes/scenarios and proposal's `Design Source`
-with adopted screens/flows/states and owner approval. Read `mockups/src/**` and
-references such as `mockups/index.html?scenario=default#/`, including the query,
+with adopted screens/flows/states and owner approval. Read `mockups/<app>/src/**` and
+references identifying the app through its path, such as `mockups/main/index.html?scenario=default#/`, including the query,
 hash route, and desktop/mobile states. `CONTINUITY` uses the identified existing production surface;
 `NONE` requires no mock.
 
@@ -213,9 +213,10 @@ or authorize adjacent work.
 12. `app -> domain -> api`, `app -> ui`, and `{ data, actions }` remain intact.
 13. The designer owns the visible surface and engineer wiring has not silently
     redesigned it.
-14. Approved prototype UI is formalized in app code and `packages/ui`; production
-    never imports OpenDesign-owned root `mockups/`. Shared viewpoint updates remain
-    consistent with the affected Changes' references and approved scope.
+14. Approved prototype UI is formalized in the scoped `apps/<app>` and `packages/ui`;
+    production never imports OpenDesign-owned app prototypes under root `mockups/`.
+    Shared UI or viewpoint updates remain consistent with affected apps, Requests,
+    and Changes' references and approved scope.
 
 ## Browser Evidence
 

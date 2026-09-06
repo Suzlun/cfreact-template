@@ -14,8 +14,9 @@ only within confirmed scope, never as independent authority to redesign a produc
 
 1. Confirmed Request and applicable Specs
 2. `SHAPE`: Request's `UI Mock References` to exact static artifact routes/scenarios such as
-   `mockups/index.html?scenario=default#/`, plus proposal's `Design Source` with adopted
-   screens, flows, states, and owner approval. Read actual `mockups/src/**` and
+   `mockups/main/index.html?scenario=default#/`, plus proposal's `Design Source` with adopted
+   screens, flows, states, and owner approval. Both identify the applicable app through its path.
+   Read actual `mockups/<app>/src/**` and
    the referenced artifact's query, hash route, and desktop/mobile states;
    `CONTINUITY`: identified
    existing production surface; `NONE`: no mock and no visible work
@@ -36,9 +37,10 @@ code and `packages/ui`, owning all `packages/ui/**` edits; the frontend engineer
 only wires data, actions, routes, and states. The designer then completes necessary
 deducible production states, followed by independent review.
 
-OpenDesign owns `PRODUCT.md`, root `mockups/`, and planning artifacts. Production
-imports formalized app/package UI rather than prototype source. Shared viewpoint
-updates require tracing affected Changes' references and rechecking their approved
+OpenDesign owns whole-product `PRODUCT.md`, one integrated `mockups/<app>` prototype
+per publicly exposed `apps/<app>` under root `mockups/`, and planning artifacts. Production
+imports formalized UI in the scoped `apps/<app>` and shared UI rather than prototype source.
+Shared UI or viewpoint updates require tracing affected apps, Requests, and Changes and rechecking their approved
 scope; prototype fixtures/local state do not authorize new outcomes.
 
 ## Quality Standard

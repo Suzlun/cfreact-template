@@ -175,8 +175,9 @@ and OpenDesign-owned `Request-Status: CONFIRMED` `request.md` with confirmed
 Background, Motivation, Request, and confirmation evidence. `SHAPE` requires a
 Request's `UI Mock References` to exact static artifact routes/scenarios and proposal's
 `Design Source` with adopted screens/flows/states and owner approval. Supply actual
-`mockups/src/**` and references such as `mockups/index.html?scenario=default#/` to reviewers;
-trace affected Changes when shared viewpoints evolve. `CONTINUITY` uses the identified existing production
+`mockups/<app>/src/**` and references identifying the app through its path, such as
+`mockups/main/index.html?scenario=default#/`, to reviewers; trace affected apps, Requests,
+and Changes when shared UI or viewpoints evolve. `CONTINUITY` uses the identified existing production
 surface; `NONE` needs no mock.
 
 Return `OPENDESIGN_PLANNING_REQUIRED` for unresolved planning evidence and
@@ -232,7 +233,8 @@ Architects, simplification review, and cross-critique are prohibited outside
   wiring corrections to the engineer. The caller serializes corrections on the
   same surface through `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW` and reruns
   `POLISH` before review. Production uses formalized app/package UI, while
-  OpenDesign retains ownership of `PRODUCT.md` and root `mockups/`.
+  OpenDesign retains ownership of whole-product `PRODUCT.md` and one integrated
+  `mockups/<app>` prototype per publicly exposed `apps/<app>` under root `mockups/`.
 - Complete missing production states only when deducible from Request, Specs,
   and current conventions within scope. New product semantics or responsive task
   changes return to OpenDesign. Never repair planning artifacts during review.

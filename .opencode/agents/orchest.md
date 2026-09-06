@@ -200,9 +200,10 @@ classification or ask the owner one focused question.
 - `NONE`: no user-visible surface work and no mock requirement.
 - `CONTINUITY`: preserve an identified existing production surface.
 - `SHAPE`: OpenDesign supplies Request's `UI Mock References` to actual static
-  artifact routes/scenarios such as `mockups/index.html?scenario=default#/` and proposal's `Design Source`
+  artifact routes/scenarios such as `mockups/main/index.html?scenario=default#/` and proposal's `Design Source`
   with adopted screens/flows/states and owner approval. Read the integrated React
-  source in `mockups/src/**` and its referenced static artifact states before implementation.
+  source in `mockups/<app>/src/**` and its referenced static artifact states before implementation.
+  Both references must identify the applicable app through its path.
 
 The UX mode never selects the lane. A direct internal task can use `NONE`; a
 behavior or architecture Change can independently use any UX mode.
@@ -232,11 +233,14 @@ POLISH -> REVIEW`, with designer, engineer, designer, then
 facilitator ownership. For `CONTINUITY`, the first phase preserves the identified
 production source. Require material fidelity and real desktop/mobile browser
 verification; return new product semantics or responsive task changes to OpenDesign.
-The designer formalizes approved prototype UI into app code and `packages/ui`;
+The designer formalizes approved prototype UI into the scoped `apps/<app>` and `packages/ui`;
 the engineer only wires it, and `POLISH` fills necessary deducible production states.
-OpenDesign retains `PRODUCT.md`, root `mockups/`, and planning ownership. Production
-imports formalized UI rather than the prototype; shared viewpoint changes require
-rechecking every affected Change through its references.
+OpenDesign retains whole-product `PRODUCT.md`, app prototypes under root `mockups/`,
+and planning ownership. Each publicly exposed `apps/<app>` pairs with one integrated
+`mockups/<app>` prototype. Each app's N viewpoints and M Changes relate many-to-many;
+a Change references multiple app prototypes only when its confirmed outcomes require them.
+Production imports formalized UI rather than prototype source; shared UI or viewpoint
+changes require rechecking every affected app, Request, and Change through its references.
 
 ## Boundaries
 

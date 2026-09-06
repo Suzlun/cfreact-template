@@ -87,17 +87,26 @@ Dependency directions:
   for `new`, `continue`, `update`, `apply`, `verify`, `sync`, and `archive`.
 - Treat generated skills as generic traversal. OpenDesign owns Request dialogue
   and planning artifacts under `openspec/config.yaml` and the selected schema.
-  It also owns same-repository `PRODUCT.md` as context and the single root `mockups/`
-  prototype, with canonical React TypeScript in `mockups/src/**`, centered on
-  `App.tsx` and `main.tsx`. Product requirements derive from confirmed Request.
+  It also owns same-repository `PRODUCT.md` as whole-product context with each app's
+  distinct purpose, and app prototypes under root `mockups/`. Each publicly exposed
+  `apps/<app>` pairs with one integrated `mockups/<app>` prototype, with canonical
+  React TypeScript in `mockups/<app>/src/**`, centered on `App.tsx` and `main.tsx`;
+  the current example is `mockups/main/src/App.tsx`. Product requirements derive from confirmed Request.
   The prototype directly consumes shared implementations through public
   `@cfreact-template/ui` subpaths with fixtures/local state and no actual API/DB access.
   OpenDesign updates source and owner-confirmed Request together. Its agent runs
-  `pnpm build:mockup` with Node.js and repository dependencies; OpenDesign's built-in
-  Prototype Preview opens `mockups/index.html` as a normal static artifact.
-  Follow `mockups/AGENTS.md` for Vite, shared Tailwind CSS 4/React Compiler, and
-  version-controlled `dist` rebuild rules. Routes/scenarios and Changes relate
-  many-to-many; root `mockups/` remains outside Change directories and archives.
+  `pnpm build:mockup` for all existing app prototypes or `pnpm build:mockup main`
+  for only `main`, with Node.js and repository dependencies. OpenDesign's built-in
+  Prototype Preview opens the applicable `mockups/<app>/index.html` as a normal static artifact.
+  Follow shared root `mockups/AGENTS.md`, `mockups/vite.config.ts`, and `mockups/tsconfig.json`
+  for shared Tailwind CSS 4/React Compiler and per-app output. Each entry loads
+  `./dist/prototype.js` and `./dist/prototype.css`; keep each app's source and rebuilt,
+  version-controlled outputs coherent in the same commit. Never edit output manually.
+  `pnpm check:mockup` checks all app outputs; `pnpm check:mockup main` selects `main`.
+  Each app's N routes/scenarios and M Changes relate many-to-many. A Change references
+  multiple app prototypes only when its confirmed outcomes require them. Re-evaluate
+  affected apps, Requests, and Changes after shared UI or viewpoint decisions.
+  Root `mockups/` and its app prototypes remain outside Change directories and archives.
   OpenCode and the user-selected `openspec/applier` implement only Planning Ready
   Changes; planning-file edits are limited to `tasks.md` progress. Return missing
   product decisions or contradictory planning inputs as
@@ -162,11 +171,11 @@ Dependency directions:
   run the global active-Change check.
 - Actual UI changes require a production designer and real desktop/mobile
   browser review. Request's optional `UI Mock References` identifies relevant
-  static artifact routes/scenarios, such as `mockups/index.html?scenario=default#/`;
-  `SHAPE` requires actual relevant viewpoints. Read `mockups/src/**` and those states together with
+  static artifact routes/scenarios identifying the app, such as `mockups/main/index.html?scenario=default#/`;
+  `SHAPE` requires actual relevant viewpoints. Read `mockups/<app>/src/**` and those states together with
   proposal's `Design Source`, which complements those references with adopted
   scope and owner approval. References are design evidence, not new outcomes.
-  Recheck affected Changes when shared viewpoints evolve. For
+  Recheck affected apps, Requests, and Changes when shared UI or viewpoints evolve. For
   `CONTINUITY`, preserve the existing production evidence in `Continuity Source`.
   Follow `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW`,
   preserving the accepted composition, hierarchy, actions, navigation, copy,
