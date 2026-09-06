@@ -9,6 +9,8 @@ dist/
 !/mockups/dist/
 !/mockups/dist/**
 build/
+!/.opencode/agents/unit/build/
+!/.opencode/agents/unit/build/**
 .wrangler/
 .terraform/
 *.tfstate
