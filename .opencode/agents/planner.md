@@ -2,8 +2,8 @@
 description: Classifies lane and UX mode from read-only evidence, routes product planning to OpenDesign, and identifies local execution boundaries for ready work.
 mode: subagent
 hidden: true
-model: openai/gpt-5.6-sol
-reasoningEffort: 'xhigh'
+model: openai/gpt-6-sol
+reasoningEffort: 'high'
 temperature: 0.1
 permission:
   edit: deny

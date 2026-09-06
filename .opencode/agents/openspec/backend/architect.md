@@ -2,8 +2,8 @@
 description: Provides backend architecture DECISION_SUPPORT or IMPLEMENTATION_REVIEW with evidence, explicit trade-offs, boundaries, revisit triggers, and implementation freedom.
 mode: subagent
 hidden: true
-model: openai/gpt-5.6-sol
-reasoningEffort: 'xhigh'
+model: openai/gpt-6-sol
+reasoningEffort: 'high'
 temperature: 0.1
 permission:
   edit: deny

@@ -2,7 +2,7 @@
 description: Faithfully implements approved OpenDesign mocks or existing production surfaces, completing scoped UI states, responsiveness, and accessibility without product redesign.
 mode: subagent
 hidden: true
-model: openai/gpt-5.6-sol
+model: openai/gpt-6-sol
 reasoningEffort: 'medium'
 temperature: 0.1
 permission:
