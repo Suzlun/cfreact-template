@@ -50,7 +50,7 @@ OpenDesign は、プロダクトの方向付けを始める正式な入口であ
 
 ### 統合プロトタイプ
 
-同じリポジトリの `PRODUCT.md` にプロダクト全体の背景と各アプリの異なる目的を示し、公開アプリ `apps/<app>` ごとに一つの統合 React プロトタイプを `mockups/<app>` に置きます。正となる React TypeScript ソースは `mockups/<app>/src/**` で、`App.tsx` が画面構成、`main.tsx` が起動処理です。現在の例は `mockups/main/src/App.tsx` です。製品要件の根拠となる確認済み意図は各変更の `request.md`、実装契約は提案・仕様・設計・作業パッケージ、製品実装は対象の `apps/<app>` と `packages/ui` が担います。
+公開アプリ `apps/<app>` ごとに一つの統合 React プロトタイプを同じリポジトリの `mockups/<app>` に置きます。正となる React TypeScript ソースは `mockups/<app>/src/**` で、`App.tsx` が画面構成、`main.tsx` が起動処理です。現在の例は `mockups/main/src/App.tsx` です。製品要件の根拠となる確認済み意図は各変更の `request.md`、実装契約は提案・仕様・設計・作業パッケージ、製品実装は対象の `apps/<app>` と `packages/ui` が担います。
 
 プロトタイプは `@cfreact-template/ui` の公開サブパスから共通実装を直接利用し、固定データとローカル状態で動作します。実際の API やデータベースには接続しません。OpenDesign は所有者に確認できた要求とソースを一緒に更新し、エージェントが `pnpm build:mockup` で既存の全アプリのモックを、または `pnpm build:mockup main` で `main` だけをビルドします。ルート共通の `mockups/vite.config.ts` と `mockups/tsconfig.json` を使い、Vite は既存の共通 UI の Tailwind CSS 4 と React Compiler 設定で、アプリごとに一つの IIFE `mockups/<app>/dist/prototype.js` と `mockups/<app>/dist/prototype.css` を生成します。各アプリのソースと再生成した Git 管理対象の `dist` は同じコミットで整合させ、生成物を手編集しません。`pnpm check:mockup` は全アプリの生成物を、`pnpm check:mockup main` は `main` だけを検査します。
 
@@ -110,7 +110,7 @@ pnpm exec openspec new change <change-id> --schema architecture-change
 
 `.agents/skills/` は OpenCode のプロジェクト向け Agent Skills 互換検出で読み込む共有スキルの配置先です。OpenDesign 内の OpenCode も同じリポジトリルートを使用します。エージェント定義は `.opencode/agents/`、コマンド定義は `.opencode/commands/` に置きます。
 
-OpenDesign はリポジトリを作業場所にし、`PRODUCT.md`、`mockups/**`、`request.md`、`proposal.md`、仕様、`design.md`、`tasks.md` の作業範囲を所有します。`packages/ui` はモックから利用するデザインシステムです。生成スキルによる OpenSpec 操作にもこの担当境界を適用します。「実装して」という指示は計画完了後に OpenCode で行い、`openspec/applier` を使う場合は利用者がプライマリエージェントとして選択します。
+OpenDesign はリポジトリを作業場所にし、`mockups/**`、`request.md`、`proposal.md`、仕様、`design.md`、`tasks.md` の作業範囲を所有します。`packages/ui` はモックから利用するデザインシステムです。生成スキルによる OpenSpec 操作にもこの担当境界を適用します。「実装して」という指示は計画完了後に OpenCode で行い、`openspec/applier` を使う場合は利用者がプライマリエージェントとして選択します。
 
 ### 要求確認と提案
 

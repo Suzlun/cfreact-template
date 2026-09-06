@@ -233,7 +233,7 @@ Architects, simplification review, and cross-critique are prohibited outside
   wiring corrections to the engineer. The caller serializes corrections on the
   same surface through `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW` and reruns
   `POLISH` before review. Production uses formalized app/package UI, while
-  OpenDesign retains ownership of whole-product `PRODUCT.md` and one integrated
+  OpenDesign retains ownership of one integrated
   `mockups/<app>` prototype per publicly exposed `apps/<app>` under root `mockups/`.
 - Complete missing production states only when deducible from Request, Specs,
   and current conventions within scope. New product semantics or responsive task

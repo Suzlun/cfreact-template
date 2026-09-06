@@ -193,9 +193,9 @@ screens/flows/states and owner approval. Both identify the applicable app throug
 Read `mockups/<app>/src/**` and those static artifact states for consistency with Request
 and Specs. Each app's N viewpoints may serve M Changes; a Change references multiple
 app prototypes only when its confirmed outcomes require them. Re-evaluate affected
-apps and Requests when shared UI or viewpoints evolve. OpenDesign owns the whole-product
-overview in `PRODUCT.md`, one integrated `mockups/<app>` prototype per publicly exposed
-`apps/<app>` under root `mockups/`, and planning. `CONTINUITY`
+apps and Requests when shared UI or viewpoints evolve. OpenDesign owns
+one integrated `mockups/<app>` prototype per publicly exposed
+`apps/<app>` under root `mockups/` and planning. `CONTINUITY`
 requires identified existing production evidence; `NONE` needs no mock.
 It must leave choices that preserve the resolved
 meaning local to the implementation agent, including:

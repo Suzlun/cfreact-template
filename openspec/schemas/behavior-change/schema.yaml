@@ -9,7 +9,7 @@ artifacts:
     template: request.md
     instruction: |
       OpenDesignが、リポジトリ内のOpenSpec公式スキルによる新規作成、継続、更新、検証を通じて製品の方向付けと計画を担う。
-      OpenDesignは同じリポジトリの製品概要`PRODUCT.md`、ルートの`mockups/`配下にあるアプリごとの統合プロトタイプ、計画成果物を所有する。`PRODUCT.md`はプロダクト全体の背景と各アプリの異なる目的を示す。公開アプリ`apps/<app>`ごとに一つの統合プロトタイプを`mockups/<app>`に置く。正となるReact TypeScriptソースは`mockups/<app>/src/**`で、`App.tsx`と`main.tsx`を中心に構成する。現在の例は`mockups/main/src/App.tsx`。`@cfreact-template/ui`の公開サブパスから共通実装を直接使い、実際のAPIやデータベースに接続せず、仮データとローカル状態で動作させる。製品要件の根拠は確認済み要求に置く。
+      OpenDesignは同じリポジトリのルートの`mockups/`配下にあるアプリごとの統合プロトタイプと計画成果物を所有する。公開アプリ`apps/<app>`ごとに一つの統合プロトタイプを`mockups/<app>`に置く。正となるReact TypeScriptソースは`mockups/<app>/src/**`で、`App.tsx`と`main.tsx`を中心に構成する。現在の例は`mockups/main/src/App.tsx`。`@cfreact-template/ui`の公開サブパスから共通実装を直接使い、実際のAPIやデータベースに接続せず、仮データとローカル状態で動作させる。製品要件の根拠は確認済み要求に置く。
       OpenDesignはソースと所有者確認済みの要求を一緒に更新する。エージェントはNode.jsとリポジトリの依存関係を使い、`pnpm build:mockup`で既存の全アプリのモックを、`pnpm build:mockup main`で`main`だけをビルドする。共通設定`mockups/vite.config.ts`と`mockups/tsconfig.json`はルートに置く。Viteは既存の共通UIのTailwind CSS 4とReact Compiler設定で、アプリごとに一つのIIFE `mockups/<app>/dist/prototype.js`と`mockups/<app>/dist/prototype.css`を生成する。各アプリのソースと再生成したGit管理対象の`dist`を同じコミットで整合させ、生成物を手編集しない。`pnpm check:mockup`は全アプリの生成物を、`pnpm check:mockup main`は`main`だけを検査する。
       各アプリの安定した`mockups/<app>/index.html`は`./dist/prototype.js`と`./dist/prototype.css`を相対参照し、組み込みの`Prototype Preview`で通常の静的成果物として開く。画面と状態はクエリとハッシュで選び、各アプリの複数の画面・状態と複数の変更は多対多で対応する。一つの変更が複数アプリのモックを参照するのは確認済み成果に必要な場合だけとする。共有UIや観点の変更時は影響するアプリと要求を再評価する。ルートの`mockups/`と各アプリのモックは変更ディレクトリとそのアーカイブの外に維持する。編集と表示の規則はルート共通の`mockups/AGENTS.md`に従う。
       `request.md`は確認済み内容を随時更新する要求の集合とし、保存する各項目が所有者確認済みであることを守る。

@@ -235,7 +235,7 @@ production source. Require material fidelity and real desktop/mobile browser
 verification; return new product semantics or responsive task changes to OpenDesign.
 The designer formalizes approved prototype UI into the scoped `apps/<app>` and `packages/ui`;
 the engineer only wires it, and `POLISH` fills necessary deducible production states.
-OpenDesign retains whole-product `PRODUCT.md`, app prototypes under root `mockups/`,
+OpenDesign retains app prototypes under root `mockups/`
 and planning ownership. Each publicly exposed `apps/<app>` pairs with one integrated
 `mockups/<app>` prototype. Each app's N viewpoints and M Changes relate many-to-many;
 a Change references multiple app prototypes only when its confirmed outcomes require them.

@@ -133,8 +133,8 @@ material boundary.
   accepted composition, hierarchy, actions, navigation, copy, states,
   responsiveness, and visual direction.
 
-OpenDesign owns the same-repository whole-product overview in `PRODUCT.md`, app
-prototypes under root `mockups/`, and planning artifacts. Each publicly exposed
+OpenDesign owns app prototypes under root `mockups/` and planning artifacts in the
+same repository. Each publicly exposed
 `apps/<app>` pairs with one integrated `mockups/<app>` prototype. Each app's N
 routes/scenarios may relate to M Changes. A Change references multiple app prototypes
 only when its confirmed outcomes require them. On shared UI or viewpoint changes,

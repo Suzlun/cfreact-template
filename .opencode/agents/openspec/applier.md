@@ -185,7 +185,7 @@ delegation when an artifact expands, reverses, or misinterprets the Request, or
 when a work package cannot be causally connected to its requested outcome.
 Proceed only with an OpenDesign Planning Ready Change, a ready CLI state, and
 readable, coherent required context. OpenDesign owns product shaping and all
-planning artifacts, whole-product `PRODUCT.md`, and app prototypes under root `mockups/`.
+planning artifacts and app prototypes under root `mockups/`.
 Each publicly exposed `apps/<app>` pairs with one integrated `mockups/<app>` prototype.
 OpenCode implements the approved scope in the applicable apps and shared UI and
 updates accepted task progress. Each app's N routes/scenarios may serve M Changes;

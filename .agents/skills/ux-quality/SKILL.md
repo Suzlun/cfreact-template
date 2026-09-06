@@ -37,8 +37,8 @@ code and `packages/ui`, owning all `packages/ui/**` edits; the frontend engineer
 only wires data, actions, routes, and states. The designer then completes necessary
 deducible production states, followed by independent review.
 
-OpenDesign owns whole-product `PRODUCT.md`, one integrated `mockups/<app>` prototype
-per publicly exposed `apps/<app>` under root `mockups/`, and planning artifacts. Production
+OpenDesign owns one integrated `mockups/<app>` prototype
+per publicly exposed `apps/<app>` under root `mockups/` and planning artifacts. Production
 imports formalized UI in the scoped `apps/<app>` and shared UI rather than prototype source.
 Shared UI or viewpoint updates require tracing affected apps, Requests, and Changes and rechecking their approved
 scope; prototype fixtures/local state do not authorize new outcomes.

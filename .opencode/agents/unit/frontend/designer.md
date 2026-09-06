@@ -213,8 +213,8 @@ under `UX-Mode: NONE`, or a material product decision is unresolved.
 ## Boundaries
 
 - Edit only the paths allowed by frontmatter.
-- OpenDesign owns whole-product `PRODUCT.md`, one integrated `mockups/<app>` prototype
-  per publicly exposed `apps/<app>` under root `mockups/`, and planning artifacts.
+- OpenDesign owns one integrated `mockups/<app>` prototype
+  per publicly exposed `apps/<app>` under root `mockups/` and planning artifacts.
   Read the applicable prototype as design evidence and formalize the
   approved UI into the scoped `apps/<app>` and `packages/ui`; production code never imports
   `mockups/`. Prototype fixtures and local state illustrate the approved experience,

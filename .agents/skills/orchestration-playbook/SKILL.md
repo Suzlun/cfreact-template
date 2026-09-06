@@ -337,8 +337,8 @@ Operations are the sequence.
   `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW` for UI work: designer formalizes
   approved UI, engineer only wires, designer completes necessary deducible states,
   then independent review. Production imports app/package UI, not `mockups/`.
-- OpenDesign owns same-repository whole-product `PRODUCT.md`, app prototypes under
-  root `mockups/`, and planning. Each publicly exposed `apps/<app>` pairs with one
+- OpenDesign owns same-repository app prototypes under
+  root `mockups/` and planning. Each publicly exposed `apps/<app>` pairs with one
   integrated `mockups/<app>` prototype. Each app's N viewpoints and M Changes relate
   many-to-many; a Change references multiple app prototypes only when its confirmed
   outcomes require them. Re-evaluate affected apps and Requests when shared UI or

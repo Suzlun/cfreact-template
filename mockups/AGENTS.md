@@ -1,7 +1,7 @@
 # App Prototypes
 
 - OpenDesign owns the app prototypes under this root and planning artifacts. Pair each publicly exposed `apps/<app>` with one integrated `mockups/<app>` prototype. Keep canonical React TypeScript source in `mockups/<app>/src/**`, centered on `App.tsx` and the `main.tsx` entry. The current example is `mockups/main/src/App.tsx`. Split files only when needed within the app prototype.
-- Update source and owner-confirmed `request.md` together. Root `PRODUCT.md` supplies whole-product context and each app's distinct purpose; confirmed Request supplies product intent. Recheck all affected apps, Requests, and Changes when shared UI decisions, routes, or scenarios change.
+- Update source and owner-confirmed `request.md` together. Confirmed Request supplies product intent. Recheck all affected apps, Requests, and Changes when shared UI decisions, routes, or scenarios change.
 - Import shared implementations directly through public `@cfreact-template/ui` subpaths. Use fixtures and local state, without actual API or database access. Apply the repository's React Compiler rules.
 - Keep shared `vite.config.ts`, `tsconfig.json`, and this `AGENTS.md` at the `mockups/` root. From the repository root, `pnpm build:mockup` builds all existing app prototypes; `pnpm build:mockup main` builds only `main`. `pnpm check:mockup` checks all app outputs; `pnpm check:mockup main` selects `main`.
 - Vite uses the existing shared UI Tailwind CSS 4 and React Compiler configuration to emit one IIFE `mockups/<app>/dist/prototype.js` and `mockups/<app>/dist/prototype.css` per app. Rebuild after source changes and keep each app's source and both version-controlled outputs coherent in the same commit. Never edit output manually.

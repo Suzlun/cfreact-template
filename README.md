@@ -40,7 +40,6 @@
 
 ```text
 cfreact-template/
-├── PRODUCT.md
 ├── mockups/
 │   ├── AGENTS.md
 │   ├── vite.config.ts
@@ -93,7 +92,6 @@ cfreact-template/
 
 | パス                                | 役割                                                |
 | ----------------------------------- | --------------------------------------------------- |
-| `PRODUCT.md`                        | プロダクト全体の概要                                |
 | `mockups/<app>/`                    | 公開アプリごとの統合 React プロトタイプと静的成果物 |
 | `apps/main/`                        | React、Hono、TypeSpecを一体配備する公開システム     |
 | `apps/main/src/frontend/app/`       | Reactのアプリ起動、ルーター、画面                   |
@@ -681,7 +679,7 @@ Story は製品コードへ import せず、`@cfreact-template/ui/*` の公開 s
 
 ### 統合プロトタイプ
 
-OpenDesign は `PRODUCT.md` にプロダクト全体の背景と各アプリの異なる目的を示し、公開アプリ `apps/<app>` ごとに一つの統合 React プロトタイプを `mockups/<app>` で育てます。正となるソースは `mockups/<app>/src/**` で、`App.tsx` が画面構成、`main.tsx` が起動処理です。現在の例は `mockups/main/src/App.tsx` です。`@cfreact-template/ui` の公開サブパスから共通実装を直接使い、実際の API やデータベースに接続せず、固定データとローカル状態で操作を表します。
+OpenDesign は公開アプリ `apps/<app>` ごとに一つの統合 React プロトタイプを `mockups/<app>` で育てます。正となるソースは `mockups/<app>/src/**` で、`App.tsx` が画面構成、`main.tsx` が起動処理です。現在の例は `mockups/main/src/App.tsx` です。`@cfreact-template/ui` の公開サブパスから共通実装を直接使い、実際の API やデータベースに接続せず、固定データとローカル状態で操作を表します。
 
 エージェントが `pnpm build:mockup` を実行すると既存の全アプリのモックを、`pnpm build:mockup main` なら `main` だけをビルドします。共通設定 `mockups/vite.config.ts` と `mockups/tsconfig.json`、共通規則 `mockups/AGENTS.md` はルートに置きます。Vite は共通 UI の Tailwind CSS 4 と React Compiler 設定で、アプリごとに一つの IIFE `mockups/<app>/dist/prototype.js` と `mockups/<app>/dist/prototype.css` を生成します。各アプリのソースと再生成した Git 管理対象の `dist` は同じコミットで整合させ、生成物を手編集しません。安定した入口 `mockups/<app>/index.html` は `./dist` の両ファイルを相対参照し、OpenDesign の組み込みの `Prototype Preview` で通常の静的成果物として開きます。Node.js と依存関係はエージェントのビルド環境が提供します。`pnpm check:mockup` は全アプリの生成物を、`pnpm check:mockup main` は `main` だけを検査します。
 

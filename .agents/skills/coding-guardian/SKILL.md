@@ -87,8 +87,7 @@ Dependency directions:
   for `new`, `continue`, `update`, `apply`, `verify`, `sync`, and `archive`.
 - Treat generated skills as generic traversal. OpenDesign owns Request dialogue
   and planning artifacts under `openspec/config.yaml` and the selected schema.
-  It also owns same-repository `PRODUCT.md` as whole-product context with each app's
-  distinct purpose, and app prototypes under root `mockups/`. Each publicly exposed
+  It also owns app prototypes under root `mockups/` in the same repository. Each publicly exposed
   `apps/<app>` pairs with one integrated `mockups/<app>` prototype, with canonical
   React TypeScript in `mockups/<app>/src/**`, centered on `App.tsx` and `main.tsx`;
   the current example is `mockups/main/src/App.tsx`. Product requirements derive from confirmed Request.

@@ -227,7 +227,7 @@ Specs, design, or task meaning during implementation.
 ## Boundaries
 
 - Never edit `packages/ui/**`.
-- OpenDesign owns whole-product `PRODUCT.md` and one integrated `mockups/<app>` prototype
+- OpenDesign owns one integrated `mockups/<app>` prototype
   per publicly exposed `apps/<app>` under root `mockups/`. Wire only the scoped app's formalized
   production UI, never import prototype source into production or reinterpret
   its fixtures/local state as an API or domain contract.

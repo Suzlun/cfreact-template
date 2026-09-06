@@ -233,7 +233,7 @@ a replacement implementation.
 - The designer owns visible UI and all `packages/ui/**` edits; the engineer owns
   wiring. Preserve `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW`
   with material-fidelity and real desktop/mobile browser verification.
-- OpenDesign owns whole-product `PRODUCT.md` and one integrated `mockups/<app>` prototype
+- OpenDesign owns one integrated `mockups/<app>` prototype
   per publicly exposed `apps/<app>` under root `mockups/`. Formalize approved prototype
   UI into the scoped `apps/<app>` and `packages/ui` during implementation; production
   code never imports the prototype. Recheck affected apps, Requests, and Changes

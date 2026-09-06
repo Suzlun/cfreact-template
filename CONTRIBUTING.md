@@ -167,7 +167,7 @@ OpenDesign が全計画成果物を担当し、OpenCode と利用者が選択し
 共通設定 `mockups/vite.config.ts` と `mockups/tsconfig.json`、共通規則 `mockups/AGENTS.md` はルートに維持します。Vite は既存の共通 UI の Tailwind CSS 4 と React Compiler 設定を使い、アプリごとに一つの IIFE `mockups/<app>/dist/prototype.js` と `mockups/<app>/dist/prototype.css` を生成します。安定した `mockups/<app>/index.html` は両ファイルを `./dist` から相対参照します。各アプリのソースと再生成した Git 管理対象の `dist` は同じコミットで整合させ、生成物を手編集しません。`pnpm check:mockup` は全アプリの生成物を、`pnpm check:mockup main` は `main` だけを検査します。詳しい編集規則は `mockups/AGENTS.md` を参照してください。
 
 1. [OpenDesign](https://github.com/nexu-io/open-design) で生成先リポジトリを作業場所にし、実行環境に OpenCode を選びます。最初に `AGENTS.md`、`openspec/config.yaml`、`.agents/skills/openspec-new-change/SKILL.md` を読めることと、実際の作業場所が対象リポジトリであることを確認します。
-2. OpenDesign では `PRODUCT.md`、`mockups/<app>/src/**`、`openspec/changes/**` を編集し、ビルドした静的成果物で体験を確認します。既存画面を変える場合はその画面を、新規プロダクトの場合は企画書と主な利用の流れを入力します。`PRODUCT.md` はプロダクト全体の背景と各アプリの異なる目的を示す概要であり、製品要件の根拠は確認済みの要求に置きます。
+2. OpenDesign では `mockups/<app>/src/**`、`openspec/changes/**` を編集し、ビルドした静的成果物で体験を確認します。既存画面を変える場合はその画面を、新規プロダクトの場合は企画書と主な利用の流れを入力します。製品要件の根拠は確認済みの要求に置きます。
 3. 次の入力ひな形で、要求確認とモック作成を同時に始めます。わかっている情報を伝え、未確定な点は対話で解決します。
 
 ```text
