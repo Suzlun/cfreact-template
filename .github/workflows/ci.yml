@@ -108,5 +108,5 @@ jobs:
       - name: Codegen drift check
         run: pnpm check:codegen
 
-      - name: Prototype drift check
-        run: pnpm check:mockup
+      - name: Build app mockups
+        run: pnpm build:mockup

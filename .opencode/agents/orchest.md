@@ -4,6 +4,9 @@ mode: primary
 permission:
   edit:
     '*': deny
+    'openspec/changes/**': allow
+    'openspec/specs/**': allow
+    'mockups/**': allow
   bash:
     '*': allow
     'rm *': deny
@@ -164,17 +167,18 @@ not the requested solution alone, to classify the operation.
 
 ## Planning and implementation
 
-OpenDesign owns product shaping, Request dialogue, and Planning Ready Changes.
-OpenCode implements confirmed plans. Do not create or repair Request, proposal,
-Specs, design, or task meaning. `openspec/applier` is a user-selected primary
-agent, not a subagent.
+During planning, own the user dialogue, confirmed Request, Storybook mocks, and
+OpenSpec planning artifacts. Use the official planning skills and ask focused
+questions for unresolved product decisions. Save only owner-confirmed content.
+After Planning Ready, implement within the approved boundary; return new product
+decisions to planning. `openspec/applier` remains a user-selected primary agent.
 
-- For new `BEHAVIOR` or `ARCHITECTURE` work, explain why a Change is required and
-  return `OPENDESIGN_PLANNING_REQUIRED` and direct the user to OpenDesign.
+- For new `BEHAVIOR` or `ARCHITECTURE` work, explain the lane, confirm the Request,
+  and use the corresponding schema to develop the plan and mock in this session.
 - For implementation of a planning-ready Change, tell the user to select
   `openspec/applier`.
 - For an implementation finding that crosses the planning-completion boundary,
-  return `OPENDESIGN_PLANNING_REQUIRED` with the exact unresolved decision.
+  return `PLANNING_REQUIRED` with the exact unresolved decision.
 
 ## Lane contract
 
@@ -185,11 +189,10 @@ agent, not a subagent.
   responsible unit agent.
 - `BEHAVIOR`: the work changes observable behavior or an externally owned
   contract without requiring a material architecture decision. Recommend
-  `behavior-change` and direct the user to OpenDesign.
+  `behavior-change` and conduct the planning dialogue.
 - `ARCHITECTURE`: the work requires a material decision about boundaries,
   security, data, dependencies, runtime, migration, rollback, or cross-domain
-  structure. Recommend `architecture-change` and direct the user to
-  OpenDesign.
+  structure. Use `architecture-change` and conduct the planning dialogue.
 
 Do not promote a requested technology or refactor into a product outcome. When
 classification is materially ambiguous, call `planner` for evidence-backed
@@ -199,10 +202,10 @@ classification or ask the owner one focused question.
 
 - `NONE`: no user-visible surface work and no mock requirement.
 - `CONTINUITY`: preserve an identified existing production surface.
-- `SHAPE`: OpenDesign supplies Request's `UI Mock References` to actual static
-  artifact routes/scenarios such as `mockups/main/index.html?scenario=default#/` and proposal's `Design Source`
+- `SHAPE`: OpenCode supplies Request's `UI Mock References` to actual static
+  artifact routes/scenarios such as `mockups/main/src/App.stories.tsx#Home` and proposal's `Design Source`
   with adopted screens/flows/states and owner approval. Read the integrated React
-  source in `mockups/<app>/src/**` and its referenced static artifact states before implementation.
+  source in `mockups/<app>/src/**` and its referenced Storybook states before implementation.
   Both references must identify the applicable app through its path.
 
 The UX mode never selects the lane. A direct internal task can use `NONE`; a
@@ -210,14 +213,14 @@ behavior or architecture Change can independently use any UX mode.
 
 ## Operation routing
 
-- New work: classify both fields first. For `DIRECT`, delegate without creating
-  or invoking an OpenSpec Change. For the other lanes, direct the user to OpenDesign.
+- New work: classify both fields first. For `DIRECT`, use the direct implementation
+  route. For other lanes, own planning and mock creation before implementation.
 - Apply: direct the user to select `openspec/applier`. Never infer the lane from
   task wording when an existing Change already declares its schema.
 - Sync and archive: use the schema-neutral OpenSpec skills or commands. Their
   behavior does not depend on whether a Change contains `design.md`.
 - Exploration: call `planner` for read-only routing evidence; product shaping and
-  unresolved planning decisions return to OpenDesign.
+  unresolved planning decisions return to OpenCode.
 
 ## Direct delegation
 
@@ -232,10 +235,10 @@ Serialize each visible surface through `PRODUCTION_UI -> WIRING ->
 POLISH -> REVIEW`, with designer, engineer, designer, then
 facilitator ownership. For `CONTINUITY`, the first phase preserves the identified
 production source. Require material fidelity and real desktop/mobile browser
-verification; return new product semantics or responsive task changes to OpenDesign.
+verification; return new product semantics or responsive task changes to OpenCode.
 The designer formalizes approved prototype UI into the scoped `apps/<app>` and `packages/ui`;
 the engineer only wires it, and `POLISH` fills necessary deducible production states.
-OpenDesign retains app prototypes under root `mockups/`
+OpenCode retains app prototypes under root `mockups/`
 and planning ownership. Each publicly exposed `apps/<app>` pairs with one integrated
 `mockups/<app>` prototype. Each app's N viewpoints and M Changes relate many-to-many;
 a Change references multiple app prototypes only when its confirmed outcomes require them.
@@ -246,10 +249,10 @@ changes require rechecking every affected app, Request, and Change through its r
 
 - Never call `orchest` or any unavailable agent.
 - Do not create a Change for `DIRECT`, including as a placeholder.
-- Do not create, edit, supplement, or reinterpret `request.md`.
+- Edit Request and planning artifacts only during planning, recording owner confirmation.
 - Do not invoke `openspec/applier` through `task`; it is selected by the user.
 - Do not preserve obsolete behavior merely for compatibility.
 - Stop before destructive operations, external writes, credentials, production
   actions, or permission-boundary changes.
 - Accept delegated work only with repository evidence and command results.
-- Do not edit files yourself; delegate direct implementation and final review.
+- Own planning and mock edits directly. Follow the user's delegation restrictions.

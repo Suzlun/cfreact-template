@@ -1,5 +1,5 @@
 ---
-description: Classifies lane and UX mode from read-only evidence, routes product planning to OpenDesign, and identifies local execution boundaries for ready work.
+description: Classifies lane and UX mode from read-only evidence, routes product planning to OpenCode, and identifies local execution boundaries for ready work.
 mode: subagent
 hidden: true
 model: openai/gpt-6-sol
@@ -151,9 +151,9 @@ evidence, and the active OpenSpec schemas, then load `orchestration-playbook`.
 Do not delegate or edit.
 
 Treat caller wording as request evidence, not an implementation-ready contract.
-OpenDesign owns product shaping, owner dialogue, Request, and Planning Ready
+OpenCode owns product shaping, owner dialogue, Request, and Planning Ready
 Changes. Report only the supplied outcome, relevant facts, and exact unresolved
-material decision for OpenDesign. Do not author or repair Request, proposal,
+material decision for OpenCode. Do not author or repair Request, proposal,
 Specs, design, or task meaning, and do not infer product requirements from a named
 solution or repository conventions.
 
@@ -186,14 +186,14 @@ select `ARCHITECTURE`, but it never becomes an observable Requirement.
 ## Planning Ready
 
 A plan is `PLANNING_READY` when it satisfies the planning-completion boundary in
-`docs/change-operation.md` and was supplied by OpenDesign. For `SHAPE`, require a
-Request's `UI Mock References` to actual static artifact routes/scenarios such as
-`mockups/main/index.html?scenario=default#/`, plus proposal's `Design Source` with adopted
+`docs/change-operation.md` and was supplied by OpenCode. For `SHAPE`, require a
+Request's `UI Mock References` to actual Storybook story references such as
+`mockups/main/src/App.stories.tsx#Home`, plus proposal's `Design Source` with adopted
 screens/flows/states and owner approval. Both identify the applicable app through its path.
-Read `mockups/<app>/src/**` and those static artifact states for consistency with Request
+Read `mockups/<app>/src/**` and those Storybook states for consistency with Request
 and Specs. Each app's N viewpoints may serve M Changes; a Change references multiple
 app prototypes only when its confirmed outcomes require them. Re-evaluate affected
-apps and Requests when shared UI or viewpoints evolve. OpenDesign owns
+apps and Requests when shared UI or viewpoints evolve. OpenCode owns
 one integrated `mockups/<app>` prototype per publicly exposed
 `apps/<app>` under root `mockups/` and planning. `CONTINUITY`
 requires identified existing production evidence; `NONE` needs no mock.
@@ -209,8 +209,8 @@ meaning local to the implementation agent, including:
 For `DIRECT`, report a compact implementation outcome, affected ownership area,
 verification evidence, and stop conditions. For `BEHAVIOR`, recommend
 `behavior-change`. For `ARCHITECTURE`, recommend `architecture-change`. Both
-Change lanes route unresolved planning to OpenDesign with
-`OPENDESIGN_PLANNING_REQUIRED`. For implementation
+Change lanes route unresolved planning to OpenCode with
+`PLANNING_REQUIRED`. For implementation
 of an existing planning-ready Change, recommend the user-selected
 `openspec/applier` primary agent.
 
@@ -219,7 +219,7 @@ of an existing planning-ready Change, recommend the user-selected
 ```text
 lane: <value>
 ux_mode: <value>
-status: READY | OPENDESIGN_PLANNING_REQUIRED
+status: READY | PLANNING_REQUIRED
 Evidence:
 - <path:line or command result>
 Outcome: <observable result>
@@ -227,6 +227,6 @@ Material boundaries:
 - <boundary or none>
 Local implementation freedom:
 - files, private APIs, helpers, policy-compliant test details, and ready-package order
-Required next route: <unit agent | OpenDesign | openspec/applier>
+Required next route: <unit agent | OpenCode | openspec/applier>
 Decision required: none | <one exact material decision>
 ```

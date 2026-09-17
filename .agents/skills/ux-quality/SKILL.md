@@ -6,18 +6,18 @@ description: Implement or review production UI for material fidelity to approved
 # UX Quality
 
 Evaluate the running production UI against Request/Specs and the adopted design.
-OpenDesign owns product shaping and Planning Ready Changes; OpenCode implements
+OpenCode owns product shaping and Planning Ready Changes; OpenCode implements
 and reviews without repairing Request, proposal, Specs, or design. Use this skill
 only within confirmed scope, never as independent authority to redesign a product.
 
 ## Evidence Order
 
 1. Confirmed Request and applicable Specs
-2. `SHAPE`: Request's `UI Mock References` to exact static artifact routes/scenarios such as
-   `mockups/main/index.html?scenario=default#/`, plus proposal's `Design Source` with adopted
+2. `SHAPE`: Request's `UI Mock References` to exact Storybook story references such as
+   `mockups/main/src/App.stories.tsx#Home`, plus proposal's `Design Source` with adopted
    screens, flows, states, and owner approval. Both identify the applicable app through its path.
    Read actual `mockups/<app>/src/**` and
-   the referenced artifact's query, hash route, and desktop/mobile states;
+   the referenced story's args and desktop/mobile states;
    `CONTINUITY`: identified
    existing production surface; `NONE`: no mock and no visible work
 3. Target route, relevant current conventions, tokens, shared UI, and Storybook
@@ -26,7 +26,7 @@ only within confirmed scope, never as independent authority to redesign a produc
 6. Findings grouped by user impact and root cause
 
 Missing, unreadable, unapproved, or contradictory planning evidence returns
-`OPENDESIGN_PLANNING_REQUIRED`. Direction prose alone does not replace an approved
+`PLANNING_REQUIRED`. Direction prose alone does not replace an approved
 mock for `SHAPE`.
 
 ## Implementation Sequence
@@ -37,7 +37,7 @@ code and `packages/ui`, owning all `packages/ui/**` edits; the frontend engineer
 only wires data, actions, routes, and states. The designer then completes necessary
 deducible production states, followed by independent review.
 
-OpenDesign owns one integrated `mockups/<app>` prototype
+OpenCode owns one integrated `mockups/<app>` prototype
 per publicly exposed `apps/<app>` under root `mockups/` and planning artifacts. Production
 imports formalized UI in the scoped `apps/<app>` and shared UI rather than prototype source.
 Shared UI or viewpoint updates require tracing affected apps, Requests, and Changes and rechecking their approved
@@ -78,7 +78,7 @@ checks below diagnose scoped defects; they do not authorize product changes.
 
 Product semantics, retries, fallbacks, or recovery paths not established by that
 evidence, and responsive changes to the primary task, return
-`OPENDESIGN_PLANNING_REQUIRED`; production completion is not blanket permission
+`PLANNING_REQUIRED`; production completion is not blanket permission
 to introduce them.
 
 ### Responsive Behavior

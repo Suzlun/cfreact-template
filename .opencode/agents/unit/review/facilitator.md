@@ -171,16 +171,16 @@ implementation summary and diff boundary, verification results,
 previously accepted findings for a re-review.
 
 When an OpenSpec Change is in scope, also require its identifier, selected schema,
-and OpenDesign-owned `Request-Status: CONFIRMED` `request.md` with confirmed
+and OpenCode-owned `Request-Status: CONFIRMED` `request.md` with confirmed
 Background, Motivation, Request, and confirmation evidence. `SHAPE` requires a
-Request's `UI Mock References` to exact static artifact routes/scenarios and proposal's
+Request's `UI Mock References` to exact Storybook story references and proposal's
 `Design Source` with adopted screens/flows/states and owner approval. Supply actual
 `mockups/<app>/src/**` and references identifying the app through its path, such as
-`mockups/main/index.html?scenario=default#/`, to reviewers; trace affected apps, Requests,
+`mockups/main/src/App.stories.tsx#Home`, to reviewers; trace affected apps, Requests,
 and Changes when shared UI or viewpoints evolve. `CONTINUITY` uses the identified existing production
 surface; `NONE` needs no mock.
 
-Return `OPENDESIGN_PLANNING_REQUIRED` for unresolved planning evidence and
+Return `PLANNING_REQUIRED` for unresolved planning evidence and
 `BLOCKED` for unavailable implementation or verification evidence rather than guessing.
 If only the `DEEP` justification is unsupported, reduce to `STANDARD` and report
 why.
@@ -233,11 +233,11 @@ Architects, simplification review, and cross-critique are prohibited outside
   wiring corrections to the engineer. The caller serializes corrections on the
   same surface through `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW` and reruns
   `POLISH` before review. Production uses formalized app/package UI, while
-  OpenDesign retains ownership of one integrated
+  OpenCode retains ownership of one integrated
   `mockups/<app>` prototype per publicly exposed `apps/<app>` under root `mockups/`.
 - Complete missing production states only when deducible from Request, Specs,
   and current conventions within scope. New product semantics or responsive task
-  changes return to OpenDesign. Never repair planning artifacts during review.
+  changes return to OpenCode. Never repair planning artifacts during review.
 
 ## Finding Filter
 
@@ -265,9 +265,9 @@ one root cause into one final finding.
 - `APPROVE`: no actionable finding remains.
 - `REQUEST_CHANGES`: supported findings can be corrected without changing
   approved meaning.
-- `OPENDESIGN_PLANNING_REQUIRED`: planning evidence is missing, unreadable,
+- `PLANNING_REQUIRED`: planning evidence is missing, unreadable,
   unapproved, or contradictory, or correction crosses the planning-completion
-  boundary. OpenDesign owns product shaping and planning corrections.
+  boundary. OpenCode owns product shaping and planning corrections.
 - `BLOCKED`: required evidence or a required review wave is unavailable.
 
 Every finding includes a stable ID, severity, implementation owner, observed
@@ -279,7 +279,7 @@ approval return `Findings: none`.
 ## Report
 
 ```text
-Verdict: APPROVE | REQUEST_CHANGES | OPENDESIGN_PLANNING_REQUIRED | BLOCKED
+Verdict: APPROVE | REQUEST_CHANGES | PLANNING_REQUIRED | BLOCKED
 Mode: STANDARD | DEEP
 Mode reason: <evidence supporting the selected mode>
 Cycle: <number>

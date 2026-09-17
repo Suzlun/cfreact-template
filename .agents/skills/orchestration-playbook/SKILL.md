@@ -324,20 +324,20 @@ Operations are the sequence.
 ### Preparation
 
 - Read project-specific rules
-- Route product shaping, Request dialogue, and planning artifacts to OpenDesign.
+- Route product shaping, Request dialogue, and planning artifacts to OpenCode.
   For `BEHAVIOR` and `ARCHITECTURE`, delegate implementation only within Planning
   Ready Changes; the user selects `openspec/applier` as a primary agent for that
   route. Its planning-file edits are limited to `tasks.md` progress.
-- Bind `SHAPE` work orders to Request's `UI Mock References` (exact static artifact
-  routes/scenarios such as `mockups/main/index.html?scenario=default#/`) and proposal's
+- Bind `SHAPE` work orders to Request's `UI Mock References` (exact Storybook
+  story references such as `mockups/main/src/App.stories.tsx#Home`) and proposal's
   `Design Source` approval scope, both identifying the applicable app through its path.
   Pass actual `mockups/<app>/src/**` and referenced
-  artifact states, including the query, hash route, and desktop/mobile widths. Bind
+  artifact states, including args and desktop/mobile widths. Bind
   `CONTINUITY` to existing production evidence in `Continuity Source`. Follow
   `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW` for UI work: designer formalizes
   approved UI, engineer only wires, designer completes necessary deducible states,
   then independent review. Production imports app/package UI, not `mockups/`.
-- OpenDesign owns same-repository app prototypes under
+- OpenCode owns same-repository app prototypes under
   root `mockups/` and planning. Each publicly exposed `apps/<app>` pairs with one
   integrated `mockups/<app>` prototype. Each app's N viewpoints and M Changes relate
   many-to-many; a Change references multiple app prototypes only when its confirmed
@@ -346,7 +346,7 @@ Operations are the sequence.
   and their fixtures/local state within design evidence. Formalize only the scoped
   `apps/<app>` UI and shared UI during implementation.
 - Return missing product decisions or contradictory planning inputs as
-  `OPENDESIGN_PLANNING_REQUIRED` to OpenDesign.
+  `PLANNING_REQUIRED` to OpenCode.
 - Pin Ask-first boundaries
 - Pin generated artifacts and required quality gates
 - Pin allowed and disallowed tools

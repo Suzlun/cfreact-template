@@ -34,11 +34,11 @@ UX-Mode: NONE
 
 ### UX Direction
 
-所有者が採用した体験の方向性と重要な判断の理由。理由または所有者確認が不足する判断は、OpenDesignで確認してから記載する。
+所有者が採用した体験の方向性と重要な判断の理由。理由または所有者確認が不足する判断は、OpenCodeで確認してから記載する。
 
 ### Design Source
 
-- 採用済み観点: 要求の`UI Mock References`と同じ、対象アプリをパスで識別できる画面・状態の正確な参照（例: `mockups/main/index.html?scenario=default#/`）。対象の`mockups/<app>/src/**`と参照先の静的成果物で内容を確認する。
+- 採用済み観点: 要求の`UI Mock References`と同じ、対象アプリをパスで識別できる画面・状態の正確な参照（例: `mockups/main/src/App.stories.tsx#Home`）。対象の`mockups/<app>/src/**`と参照先のStorybook表示例で内容を確認する。
 - 対象範囲: 関連する画面、操作の流れ、状態。
 - 採用の証跡: 所有者が対象の観点と範囲を採用したことを示す短い記録。設計承認の証拠はこの節に記載する。
 -->

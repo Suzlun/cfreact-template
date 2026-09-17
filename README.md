@@ -42,16 +42,12 @@
 cfreact-template/
 ├── mockups/
 │   ├── AGENTS.md
-│   ├── vite.config.ts
+│   ├── .storybook/
 │   ├── tsconfig.json
 │   └── main/
-│       ├── src/
-│       │   ├── App.tsx
-│       │   └── main.tsx
-│       ├── index.html
-│       └── dist/
-│           ├── prototype.js
-│           └── prototype.css
+│       └── src/
+│           ├── App.tsx
+│           └── App.stories.tsx
 ├── apps/
 │   └── main/
 │       ├── src/
@@ -90,21 +86,21 @@ cfreact-template/
 └── package.json
 ```
 
-| パス                                | 役割                                                |
-| ----------------------------------- | --------------------------------------------------- |
-| `mockups/<app>/`                    | 公開アプリごとの統合 React プロトタイプと静的成果物 |
-| `apps/main/`                        | React、Hono、TypeSpecを一体配備する公開システム     |
-| `apps/main/src/frontend/app/`       | Reactのアプリ起動、ルーター、画面                   |
-| `apps/main/src/frontend/domain/`    | TanStack Query hooksとprovider                      |
-| `apps/main/src/frontend/api/`       | main OpenAPI生成SDKとAPIラッパー                    |
-| `apps/main/src/backend/`            | main WorkerのHono入口と公開API                      |
-| `apps/main/typespec/`               | main公開API契約の正                                 |
-| `packages/core/`                    | 非公開core Worker、共有ドメイン、Repository、D1     |
-| `packages/core/typespec/`           | core内部API契約の正                                 |
-| `packages/core-sdk/`                | core OpenAPIから生成するサーバー専用SDK             |
-| `packages/core/drizzle/migrations/` | coreが所有するD1マイグレーション                    |
-| `packages/ui/`                      | Base UIベースの共通components/hooks                 |
-| `infra/terraform/production/`       | productionのD1、KV、R2を管理するTerraform設定       |
+| パス                                | 役割                                             |
+| ----------------------------------- | ------------------------------------------------ |
+| `mockups/<app>/`                    | 公開アプリごとの統合ReactモックとStorybook表示例 |
+| `apps/main/`                        | React、Hono、TypeSpecを一体配備する公開システム  |
+| `apps/main/src/frontend/app/`       | Reactのアプリ起動、ルーター、画面                |
+| `apps/main/src/frontend/domain/`    | TanStack Query hooksとprovider                   |
+| `apps/main/src/frontend/api/`       | main OpenAPI生成SDKとAPIラッパー                 |
+| `apps/main/src/backend/`            | main WorkerのHono入口と公開API                   |
+| `apps/main/typespec/`               | main公開API契約の正                              |
+| `packages/core/`                    | 非公開core Worker、共有ドメイン、Repository、D1  |
+| `packages/core/typespec/`           | core内部API契約の正                              |
+| `packages/core-sdk/`                | core OpenAPIから生成するサーバー専用SDK          |
+| `packages/core/drizzle/migrations/` | coreが所有するD1マイグレーション                 |
+| `packages/ui/`                      | Base UIベースの共通components/hooks              |
+| `infra/terraform/production/`       | productionのD1、KV、R2を管理するTerraform設定    |
 
 ### システムの追加
 
@@ -202,7 +198,7 @@ main TypeSpec生成経路とcore TypeSpec生成経路は別の契約です。mai
 
    **注意:** Git 設定（`.gitconfig`）と認証情報は VS Code によって自動的に共有されます。
 
-   OpenDesign と OpenCode を同居させた `ai` サービスも起動します。対象リポジトリは `/workspaces/project` として共有・自動登録し、VS Code のポート一覧から `AI / OpenDesign`（7456）を開いて、ホームの登録済みプロジェクトを選びます。会話・設定は Git 管理外の `.devcontainer/.volumes/` へ保存します。初回の OpenCode ログインと利用方法は [CONTRIBUTING.md](CONTRIBUTING.md#dev-container-の-opendesign) を参照してください。
+   `dev`と`storybook`を起動し、依存導入はComposeの初期化処理で一度だけ行います。VS Codeのポート一覧から`App Mock Storybook`を開きます。編集・計画はOpenCode、モックの確認はStorybookで行います。詳細は[モック確認環境](docs/storybook-host.md)を参照してください。
 
 4. **productionのCloudflareリソースをTerraformでセットアップ:**
 
@@ -321,11 +317,11 @@ pnpm gen:core
 
 **注意:** Dev Container には、これらすべてのツールがプリインストールされています（Node.js 24、Python 3、pnpm、Wrangler、uv、OpenCode CLI、OpenSpec CLI、agent-browser CLI、Chrome for Testing または OS Chromium）。
 
-### OpenDesign・OpenCode・OpenSpec
+### OpenCode・Storybook・OpenSpec
 
-プロダクトの方向付けと計画は OpenDesign、計画完了後の実装は OpenCode で進めます。OpenSpec の仕様は振る舞いの正であり、確認済み要求を意味の根拠とします。
+プロダクトの方向付けと計画は OpenCode、計画完了後の実装は OpenCode で進めます。OpenSpec の仕様は振る舞いの正であり、確認済み要求を意味の根拠とします。
 
-共有プロジェクトスキルは `.agents/skills/` に置き、OpenCode のプロジェクト向け Agent Skills 互換検出で読み込みます。OpenDesign 内の OpenCode も同じリポジトリルートのスキルを使用します。エージェント定義は `.opencode/agents/`、コマンド定義は `.opencode/commands/` に置きます。
+共有プロジェクトスキルは `.agents/skills/` に置き、OpenCode のプロジェクト向け Agent Skills 互換検出で読み込みます。OpenCodeは同じリポジトリルートのスキルを使用します。エージェント定義は `.opencode/agents/`、コマンド定義は `.opencode/commands/` に置きます。
 
 1. **OpenCode を設定:**
 
@@ -339,7 +335,7 @@ pnpm gen:core
    pnpm exec openspec list
    ```
 
-3. **計画を実装へ引き渡す:** OpenDesign で要求と必要なモックを具体化し、計画完了後に OpenCode またはプライマリエージェント `openspec/applier` へ変更識別子を伝えます。詳細は [`docs/change-operation.md`](docs/change-operation.md) を参照してください。
+3. **計画を実装へ引き渡す:** OpenCode で要求と必要なモックを具体化し、計画完了後に OpenCode またはプライマリエージェント `openspec/applier` へ変更識別子を伝えます。詳細は [`docs/change-operation.md`](docs/change-operation.md) を参照してください。
 
 ## 開発ワークフロー
 
@@ -549,7 +545,7 @@ GitHub Actionsからリリースする場合は、Cloudflare認証情報と256�
 
 ### 永続的な振る舞い契約
 
-OpenSpec の仕様は、確認済み要求を意味の根拠とする、利用者または外部契約から観測できる振る舞いの正です。OpenDesign が要求、提案、仕様、設計、作業パッケージの範囲を管理します。
+OpenSpec の仕様は、確認済み要求を意味の根拠とする、利用者または外部契約から観測できる振る舞いの正です。OpenCode が要求、提案、仕様、設計、作業パッケージの範囲を管理します。
 
 - 主仕様は `openspec/specs/**/spec.md` に置きます。
 - 活動中の差分仕様は `openspec/changes/*/specs/**/spec.md` に置きます。
@@ -587,11 +583,11 @@ pnpm lint:openspec
 
 ### 計画と実装
 
-OpenDesign で所有者に確認できた内容を随時 `request.md` へ保存します。`Request-Status: CONFIRMED` は現在の保存内容がすべて確認済みであることを示し、明確な所有者の発言自体が即時更新の確認証拠になります。
+OpenCode で所有者に確認できた内容を随時 `request.md` へ保存します。`Request-Status: CONFIRMED` は現在の保存内容がすべて確認済みであることを示し、明確な所有者の発言自体が即時更新の確認証拠になります。
 
 `NONE` はモック不要、`CONTINUITY` は既存製品の証拠を参照します。`SHAPE` は要求とモックを同時に具体化し、確認済み要求と所有者が受け入れたモックの相互対応、採用理由、整合性を確認して提案を収束させます。`proposal.md` の `Design Source` には OpenCode が読めるパスまたは安定した識別子、対象画面・操作の流れ・状態、受け入れと採用理由を記録します。
 
-OpenCode と `openspec/applier` は計画完了した変更を実装し、計画ファイルでは `tasks.md` の進捗だけを更新します。要求の `UI Mock References` と提案の `Design Source` から、採用済みの `mockups/main/index.html?scenario=default#/` などのアプリ・画面・状態と `mockups/<app>/src/**` の React ソースを照合します。UI は対象の `apps/<app>` と共通 UI に、`PRODUCTION_UI -> WIRING -> POLISH -> REVIEW` の順に忠実に正式実装します。製品判断の不足や計画の矛盾があれば `OPENDESIGN_PLANNING_REQUIRED` を返し、OpenDesign で解決します。
+OpenCode と `openspec/applier` は計画完了した変更を実装し、計画ファイルでは `tasks.md` の進捗だけを更新します。要求の `UI Mock References` と提案の `Design Source` から、採用済みの `mockups/main/src/App.stories.tsx#Home` などのアプリ・画面・状態と `mockups/<app>/src/**` の React ソースを照合します。UI は対象の `apps/<app>` と共通 UI に、`PRODUCTION_UI -> WIRING -> POLISH -> REVIEW` の順に忠実に正式実装します。製品判断の不足や計画の矛盾があれば `PLANNING_REQUIRED` を返し、OpenCode で解決します。
 
 新規プロダクトでは利用の流れ全体とモックを形にし、成果ごとの複数の変更へ分けます。共有判断が変われば影響する変更を再評価し、独立して計画完了したまとまりから実装へ引き渡します。
 
@@ -677,13 +673,15 @@ Story は製品コードへ import せず、`@cfreact-template/ui/*` の公開 s
 
 `pnpm lint:ui-reuse` は UI source、package export、root barrel、Story の対応を検査し、Storybook catalog を再実装検知にも利用します。frontend から Base UI などの内部 primitive を直接利用すること、app で公開 UI と同名の値を宣言・再 export すること、`packages/ui` の実装を app へコピーすることは `pnpm lint` で失敗します。
 
-### 統合プロトタイプ
+### 統合Reactモック
 
-OpenDesign は公開アプリ `apps/<app>` ごとに一つの統合 React プロトタイプを `mockups/<app>` で育てます。正となるソースは `mockups/<app>/src/**` で、`App.tsx` が画面構成、`main.tsx` が起動処理です。現在の例は `mockups/main/src/App.tsx` です。`@cfreact-template/ui` の公開サブパスから共通実装を直接使い、実際の API やデータベースに接続せず、固定データとローカル状態で操作を表します。
+OpenCodeは公開アプリごとの統合Reactモックを`mockups/<app>/src/`で作成します。`App.tsx`が操作の流れを持ち、`App.stories.tsx`の引数で初期画面と状態を選びます。共通UIの公開サブパス、固定データ、ローカル状態を使います。
 
-エージェントが `pnpm build:mockup` を実行すると既存の全アプリのモックを、`pnpm build:mockup main` なら `main` だけをビルドします。共通設定 `mockups/vite.config.ts` と `mockups/tsconfig.json`、共通規則 `mockups/AGENTS.md` はルートに置きます。Vite は共通 UI の Tailwind CSS 4 と React Compiler 設定で、アプリごとに一つの IIFE `mockups/<app>/dist/prototype.js` と `mockups/<app>/dist/prototype.css` を生成します。各アプリのソースと再生成した Git 管理対象の `dist` は同じコミットで整合させ、生成物を手編集しません。安定した入口 `mockups/<app>/index.html` は `./dist` の両ファイルを相対参照し、OpenDesign の組み込みの `Prototype Preview` で通常の静的成果物として開きます。Node.js と依存関係はエージェントのビルド環境が提供します。`pnpm check:mockup` は全アプリの生成物を、`pnpm check:mockup main` は `main` だけを検査します。
+標準の実行環境はDev Containerです。`pnpm storybook:host`がプロジェクト選択と開発プレビューを提供し、`pnpm storybook:mockup`はモック用Storybookを直接起動します。`pnpm build:mockup`でGit管理対象外の`mockups/dist`へビルドします。共通の`mockups/.storybook`と`mockups/tsconfig.json`は、共通UIのTailwind CSS 4とReact Compiler設定を再利用します。
 
-現在の `main` のホームは `mockups/main/index.html?scenario=default#/`、ユーザー管理は `mockups/main/index.html?scenario=default#/users` です。`scenario` に `empty-users`、`users-loading`、`users-error`、`create-error` を指定して各状態を選び、デスクトップとモバイルの表示幅で確認します。OpenDesign はソースと所有者確認済みの `request.md` を一緒に更新し、`UI Mock References` と提案の `Design Source` に対象アプリをパスで識別できる画面・状態の参照と採用範囲、所有者の採用証跡を記録します。各アプリの複数の画面・状態と複数の変更は多対多で対応し、一つの変更が複数アプリのモックを参照するのは確認済み成果に必要な場合だけです。共有 UI や観点の変更時は影響するアプリと要求を再評価し、変更のアーカイブ後もルートの `mockups/` と各アプリのモックを保持します。製品実装はモックのソースや生成物をインポートしません。開始手順は [CONTRIBUTING.md](CONTRIBUTING.md#opendesign-で始める)、編集規則は [mockups/AGENTS.md](mockups/AGENTS.md) を参照してください。
+要求の`UI Mock References`と提案の`Design Source`には、`mockups/main/src/App.stories.tsx#Home`や`mockups/main/src/App.stories.tsx#UsersError`のような定義ファイルと表示例の参照を記録します。OpenCodeは所有者確認済みの要求とモックを一緒に更新し、デスクトップとモバイルの実ブラウザで照合します。各アプリの画面・状態と変更は多対多で対応し、共有UIを更新した場合は影響する要求とモックを確認します。変更のアーカイブ後も`mockups/`を保持し、製品実装は正式なアプリと共通UIを利用します。
+
+起動・ホスト設定は[Storybookによるモック確認](docs/storybook-host.md)、編集規則は[mockups/AGENTS.md](mockups/AGENTS.md)を参照してください。
 
 ### shadcn/ui / Base UI / Tailwind テーマ
 

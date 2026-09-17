@@ -6,14 +6,14 @@ compatibility: Requires openspec CLI.
 
 # OpenSpec Change Review
 
-This is the shared semantic contract for OpenDesign planning review,
+This is the shared semantic contract for OpenCode planning review,
 `openspec/reviewer`, and `openspec/analyzer`.
 
 ## Source precedence
 
 1. `AGENTS.md` and enforced repository rules.
 2. `openspec/config.yaml` and the selected schema.
-3. OpenDesign-managed, owner-confirmed `Request-Status: CONFIRMED` in `request.md`.
+3. OpenCode-managed, owner-confirmed `Request-Status: CONFIRMED` in `request.md`.
 4. Repository evidence relevant to the confirmed Request.
 5. Proposal, Specs, architecture design when defined by the schema, and coarse
    tasks.
@@ -44,7 +44,7 @@ create, edit, supplement, or reinterpret it during review.
   decisions, not local implementation decomposition.
 - `tasks.md` is a coarse work-package ledger, not a file or test-layer plan.
 - Request's optional `UI Mock References` supplies design evidence through exact
-  static artifact route/scenario references, not product outcomes. `SHAPE` requires its actual
+  Storybook story references, not product outcomes. `SHAPE` requires its actual
   relevant viewpoints. Proposal's existing `Design Source` complements those
   references with adopted scope and owner approval; keep purpose and outcomes in
   owner-confirmed Request prose and required means at their design boundary.
@@ -122,10 +122,10 @@ material boundary.
 - `CONTINUITY`: read the existing production evidence identified by
   `Continuity Source` and verify preservation of that experience.
 - `SHAPE`: follow Request's `UI Mock References`, such as
-  `mockups/main/index.html?scenario=default#/`, and proposal's `Design Source` approval scope.
+  `mockups/main/src/App.stories.tsx#Home`, and proposal's `Design Source` approval scope.
   Both references must identify the applicable app through its path.
-  Read actual `mockups/<app>/src/**` and referenced static artifact states, including
-  the query, hash route, and desktop/mobile widths.
+  Read actual `mockups/<app>/src/**` and referenced Storybook states, including
+  the story args and desktop/mobile widths.
   Verify the adopted screen, flow, and state scope and owner approval. Verify mutual
   completeness, rationale, and consistency between confirmed Request and the
   approved mock. The mock realizes confirmed outcomes and constraints; its
@@ -133,7 +133,7 @@ material boundary.
   accepted composition, hierarchy, actions, navigation, copy, states,
   responsiveness, and visual direction.
 
-OpenDesign owns app prototypes under root `mockups/` and planning artifacts in the
+OpenCode owns app prototypes under root `mockups/` and planning artifacts in the
 same repository. Each publicly exposed
 `apps/<app>` pairs with one integrated `mockups/<app>` prototype. Each app's N
 routes/scenarios may relate to M Changes. A Change references multiple app prototypes
@@ -146,8 +146,8 @@ into the scoped `apps/<app>` and `packages/ui` rather than importing `mockups/`.
 
 Do not run a second shaping pass during semantic review. Report only a material
 contradiction, excess, misinterpretation, or omission.
-Return planning corrections to OpenDesign. During implementation, missing or
-contradictory planning inputs require `OPENDESIGN_PLANNING_REQUIRED`.
+Return planning corrections to OpenCode. During implementation, missing or
+contradictory planning inputs require `PLANNING_REQUIRED`.
 
 ## Procedure
 

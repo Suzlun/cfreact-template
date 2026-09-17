@@ -161,7 +161,7 @@ Copy logos or text from Image 2, redesign the product, or invent label text.
   reachable states, and current product language.
 - Avoid concept-art vocabulary, fake logos, decorative badges, unreadable
   microtext, and random analytics.
-- Follow OpenDesign's owner-approved `Design Source` for `SHAPE`; image
+- Follow OpenCode's owner-approved `Design Source` for `SHAPE`; image
   generation alone does not establish approval. Verify the implemented UI in a
   real browser against the approved source.
 

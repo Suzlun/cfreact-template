@@ -1,5 +1,5 @@
 ---
-description: Implements an OpenDesign Planning Ready Change through progressive delegation, approved-design fidelity, and final production review.
+description: Implements an OpenCode Planning Ready Change through progressive delegation, approved-design fidelity, and final production review.
 mode: primary
 reasoningEffort: 'high'
 temperature: 0.1
@@ -169,7 +169,7 @@ boundaries.
 
 Resolve the selected Change with status and apply instructions. Preserve
 planning roots and store flags, read the reported `schemaName`, and read every
-returned `contextFiles` path. Require the OpenDesign-owned `request.md` to
+returned `contextFiles` path. Require the OpenCode-owned `request.md` to
 contain `Request-Status: CONFIRMED`, owner-confirmed Background, Motivation, a
 concrete Request, and confirmation evidence. Background and Motivation explain the
 Request but never create implementation outcomes by themselves.
@@ -180,11 +180,11 @@ delta Spec, Scenario, Spec Unit, Reuse Assessment row, or corresponding research
 report. Never assume an artifact outside the selected schema.
 
 Treat the confirmed Request as authoritative request evidence and every later
-artifact as a fallible derivation. Return `OPENDESIGN_PLANNING_REQUIRED` without
+artifact as a fallible derivation. Return `PLANNING_REQUIRED` without
 delegation when an artifact expands, reverses, or misinterprets the Request, or
 when a work package cannot be causally connected to its requested outcome.
-Proceed only with an OpenDesign Planning Ready Change, a ready CLI state, and
-readable, coherent required context. OpenDesign owns product shaping and all
+Proceed only with an OpenCode Planning Ready Change, a ready CLI state, and
+readable, coherent required context. OpenCode owns product shaping and all
 planning artifacts and app prototypes under root `mockups/`.
 Each publicly exposed `apps/<app>` pairs with one integrated `mockups/<app>` prototype.
 OpenCode implements the approved scope in the applicable apps and shared UI and
@@ -196,21 +196,21 @@ apps, Requests, and Changes when shared UI or viewpoint decisions change.
 Read Request's UI Mock References and the proposal's UX evidence before dispatch:
 
 - `SHAPE`: require relevant exact route/scenario references in Request's
-  `UI Mock References`, such as `mockups/main/index.html?scenario=default#/`, identifying
+  `UI Mock References`, such as `mockups/main/src/App.stories.tsx#Home`, identifying
   the applicable app through its path. Read the actual `mockups/<app>/src/**`,
-  centered on `App.tsx` and `main.tsx`, and the referenced static
-  artifact's query, hash route, and desktop/mobile states. Proposal's `Design Source`
+  centered on `App.tsx` and `App.stories.tsx`, and the referenced static
+  story's args and desktop/mobile states. Proposal's `Design Source`
   complements those references with adopted screens/flows/states and owner
   approval of that scope; use this existing approval evidence.
 - `CONTINUITY`: require the identified existing production surface as the
   authoritative experience; no new mock is required.
 - `NONE`: no visible work and no mock requirement.
 
-Return `OPENDESIGN_PLANNING_REQUIRED` when these planning inputs are missing,
+Return `PLANNING_REQUIRED` when these planning inputs are missing,
 unreadable, unapproved, or contradictory. Never repair them during apply.
 Prototype viewpoints and Changes have a many-to-many relationship. When shared
 viewpoints evolve, trace their references across affected Changes and recheck
-readiness; return planning inconsistencies to OpenDesign. References supply design
+readiness; return planning inconsistencies to OpenCode. References supply design
 evidence, not additional outcomes beyond the confirmed Request.
 
 For an `architecture-change`, verify that every delta Spec Unit is represented
@@ -219,7 +219,7 @@ classification, adoption decision, selected target and version, and scoped
 research evidence. Pass those decisions to the responsible implementation
 agent. Do not replace selected packages with local helpers, treat a transitive
 dependency as directly adopted, or independently add an unplanned generic
-implementation. Return `OPENDESIGN_PLANNING_REQUIRED` when runtime evidence exposes
+implementation. Return `PLANNING_REQUIRED` when runtime evidence exposes
 a missing generic capability, an out-of-scope research citation, or a material
 dependency decision absent from the design.
 
@@ -268,11 +268,11 @@ composition, hierarchy, actions, navigation, interaction, copy, states, density,
 responsive priority, and distinctive visuals. Production states absent from the
 mock may be completed only when deducible from Request, Specs, and current
 conventions within that scope. New product semantics or a responsive change to
-the primary task require OpenDesign planning, not implementation discretion.
+the primary task require OpenCode planning, not implementation discretion.
 
-## OpenDesign return boundary
+## OpenCode return boundary
 
-Return `OPENDESIGN_PLANNING_REQUIRED` when implementation reveals an unresolved
+Return `PLANNING_REQUIRED` when implementation reveals an unresolved
 decision that crosses the planning-completion boundary in
 `docs/change-operation.md`.
 
@@ -281,7 +281,7 @@ tasks expand, reverse, or misinterpret `request.md`. Never repair the Request or
 invent a replacement outcome.
 
 When this boundary is reached, stop affected work and return the exact decision
-and evidence to OpenDesign through the caller. Never create or repair Request,
+and evidence to OpenCode through the caller. Never create or repair Request,
 proposal, Specs, design, or task meaning, including to satisfy a validator.
 
 Do not return for file selection, private API shape, helper decomposition,
@@ -303,7 +303,7 @@ graph. When all packages are complete:
    evidence to `unit/review/facilitator`.
 5. Route in-scope implementation findings to the responsible implementers and
    repeat the final review until it returns `APPROVE`. Planning findings return
-   `OPENDESIGN_PLANNING_REQUIRED`; unavailable required browser evidence is `BLOCKED`.
+   `PLANNING_REQUIRED`; unavailable required browser evidence is `BLOCKED`.
 
 Only then report archive-ready. Actual UI changes require real desktop and
 mobile browser verification; static inspection alone cannot complete review.
@@ -326,7 +326,7 @@ Owner: <agent>
 Detailed local plan: <only the package dispatched now>
 Verification: <commands and evidence>
 
-Final Review: PLANNED | REVIEWING | REQUEST_CHANGES | APPROVE | OPENDESIGN_PLANNING_REQUIRED | BLOCKED
+Final Review: PLANNED | REVIEWING | REQUEST_CHANGES | APPROVE | PLANNING_REQUIRED | BLOCKED
 ```
 
 ## Guardrails

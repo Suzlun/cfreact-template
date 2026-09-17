@@ -1,13 +1,23 @@
 services:
+  dependencies:
+    build:
+      context: .
+      dockerfile: Dockerfile.storybook
+    working_dir: /workspaces/project
+    command: pnpm install --frozen-lockfile
+    environment:
+      CI: 'true'
+    volumes:
+      - ..:/workspaces/project
+
   dev:
     build:
       context: .
       dockerfile: Dockerfile
     command: sleep infinity
-    network_mode: service:ai
     depends_on:
-      ai:
-        condition: service_healthy
+      dependencies:
+        condition: service_completed_successfully
     volumes:
       - ..:/workspaces/project
       - ./.volumes/dev-config:/home/node/.config
@@ -15,29 +25,33 @@ services:
       - ./.volumes/opencode-data:/home/node/.local/share/opencode
       - ./.volumes/opencode-state:/home/node/.local/state/opencode
 
-  ai:
+  storybook:
     build:
       context: .
-      dockerfile: Dockerfile.ai
+      dockerfile: Dockerfile.storybook
     restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      NODE_OPTIONS: --max-old-space-size=512
-      OD_BIND_HOST: 127.0.0.1
-      OD_PORT: '7456'
-      OD_WEB_PORT: '7456'
-      OD_DATA_DIR: /home/node/.od
-      HOME: /home/node
+    init: true
+    working_dir: /workspaces/project
+    command: node scripts/storybook/host.mjs --host 0.0.0.0
+    depends_on:
+      dependencies:
+        condition: service_completed_successfully
+    ports:
+      - '127.0.0.1:${STORYBOOK_HOST_PORT:-0}:7456'
     volumes:
       - ..:/workspaces/project
-      - ./.volumes/open-design:/home/node/.od
-      - ./.volumes/opencode-config:/home/node/.config/opencode
-      - ./.volumes/opencode-data:/home/node/.local/share/opencode
-      - ./.volumes/opencode-state:/home/node/.local/state/opencode
+    tmpfs:
+      - /workspaces/project/.devcontainer/.volumes:mode=0700,uid=1000,gid=1000
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:7456/api/health']
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          'fetch("http://127.0.0.1:7456/health").then(r => { if (!r.ok) process.exit(1); })',
+        ]
       interval: 30s
       timeout: 10s
       retries: 5

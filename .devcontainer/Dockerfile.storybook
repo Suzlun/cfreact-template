@@ -1,0 +1,5 @@
+FROM node:24-bookworm
+
+RUN corepack enable
+USER node
+WORKDIR /workspaces/project

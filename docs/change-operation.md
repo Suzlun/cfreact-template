@@ -4,9 +4,9 @@
 
 ## 基本原則
 
-OpenDesign は、プロダクトの方向付けを始める正式な入口であり、所有者との要求確認と計画成果物を担当します。OpenSpec の仕様は観測可能な振る舞いの正であり、確認済みの要求をその意味の根拠とします。変更範囲と判断には `AGENTS.md` の Credo を適用します。
+OpenCode は、プロダクトの方向付けを始める正式な入口であり、所有者との要求確認と計画成果物を担当します。OpenSpec の仕様は観測可能な振る舞いの正であり、確認済みの要求をその意味の根拠とします。変更範囲と判断には `AGENTS.md` の Credo を適用します。
 
-`request.md` は所有者が確認した要求の一次資料です。OpenDesign が確認済み内容を保存し、仕様、設計、作業パッケージへ意味に応じて分配します。OpenCode と利用者が選択する `openspec/applier` は、計画完了が確認された変更を実装します。
+`request.md` は所有者が確認した要求の一次資料です。OpenCode が確認済み内容を保存し、仕様、設計、作業パッケージへ意味に応じて分配します。OpenCode と利用者が選択する `openspec/applier` は、計画完了が確認された変更を実装します。
 
 変更では、次の三つを独立に決めます。
 
@@ -48,17 +48,17 @@ OpenDesign は、プロダクトの方向付けを始める正式な入口であ
 
 ## UX Mode
 
-### 統合プロトタイプ
+### 統合Reactモック
 
-公開アプリ `apps/<app>` ごとに一つの統合 React プロトタイプを同じリポジトリの `mockups/<app>` に置きます。正となる React TypeScript ソースは `mockups/<app>/src/**` で、`App.tsx` が画面構成、`main.tsx` が起動処理です。現在の例は `mockups/main/src/App.tsx` です。製品要件の根拠となる確認済み意図は各変更の `request.md`、実装契約は提案・仕様・設計・作業パッケージ、製品実装は対象の `apps/<app>` と `packages/ui` が担います。
+OpenCodeは公開アプリごとの統合Reactモックを`mockups/<app>/src/`で作成します。`App.tsx`が操作の流れを持ち、`App.stories.tsx`の引数で初期画面と状態を選びます。共通UIの公開サブパス、固定データ、ローカル状態を使います。
 
-プロトタイプは `@cfreact-template/ui` の公開サブパスから共通実装を直接利用し、固定データとローカル状態で動作します。実際の API やデータベースには接続しません。OpenDesign は所有者に確認できた要求とソースを一緒に更新し、エージェントが `pnpm build:mockup` で既存の全アプリのモックを、または `pnpm build:mockup main` で `main` だけをビルドします。ルート共通の `mockups/vite.config.ts` と `mockups/tsconfig.json` を使い、Vite は既存の共通 UI の Tailwind CSS 4 と React Compiler 設定で、アプリごとに一つの IIFE `mockups/<app>/dist/prototype.js` と `mockups/<app>/dist/prototype.css` を生成します。各アプリのソースと再生成した Git 管理対象の `dist` は同じコミットで整合させ、生成物を手編集しません。`pnpm check:mockup` は全アプリの生成物を、`pnpm check:mockup main` は `main` だけを検査します。
+標準の実行環境はDev Containerです。`pnpm storybook:host`がプロジェクト選択と開発プレビューを提供し、`pnpm storybook:mockup`はモック用Storybookを直接起動します。`pnpm build:mockup`でGit管理対象外の`mockups/dist`へビルドします。共通の`mockups/.storybook`と`mockups/tsconfig.json`は、共通UIのTailwind CSS 4とReact Compiler設定を再利用します。
 
-アプリごとの安定した入口 `mockups/<app>/index.html` は `./dist/prototype.js` と `./dist/prototype.css` を相対参照し、OpenDesign の組み込みの `Prototype Preview` で通常の静的成果物として開きます。Node.js とリポジトリの依存関係はエージェントのビルド環境が提供し、プレビューは生成済みファイルを表示します。既存 Storybook は共通 UI のカタログとして維持します。共通規則はルートの `mockups/AGENTS.md` に置きます。
+要求の`UI Mock References`と提案の`Design Source`には、`mockups/main/src/App.stories.tsx#Home`や`mockups/main/src/App.stories.tsx#UsersError`のような定義ファイルと表示例の参照を記録します。OpenCodeは所有者確認済みの要求とモックを一緒に更新し、デスクトップとモバイルの実ブラウザで照合します。各アプリの画面・状態と変更は多対多で対応し、共有UIを更新した場合は影響する要求とモックを確認します。変更のアーカイブ後も`mockups/`を保持し、製品実装は正式なアプリと共通UIを利用します。
 
-現在の `main` のサンプルでは `#/` がホーム、`#/users` がユーザー管理です。クエリの `scenario` に `default`、`empty-users`、`users-loading`、`users-error`、`create-error` を指定して状態を選び、デスクトップとモバイルの表示幅で確認します。要求の `UI Mock References` には `mockups/main/index.html?scenario=default#/` や `mockups/main/index.html?scenario=users-error#/users` のように、対象アプリをパスで識別できる実在の画面と状態を記載します。各アプリの複数の画面・状態と複数の変更は多対多で対応します。一つの変更が複数アプリのモックを参照するのは、確認済み成果に必要な場合だけです。共有 UI や観点の変更では影響するアプリと要求を再評価します。ルートの `mockups/` と各アプリのモックは変更のアーカイブ後も保持します。ソースの分割は各アプリの統合プロトタイプ内で必要な場合だけ行います。
+確認サービスは各プロジェクトの設定と依存を使い、実行環境側の設定から単体・複数プロジェクトを扱います。標準Dev Containerを先に整備し、ネイティブと共有ホストへ同じ実装を展開します。
 
-UX モードは運用区分とは別に判定します。ただし、`SHAPE` は利用者に見える体験を実質的に変えるため、観測可能な振る舞いを変更しない `DIRECT` とは組み合わせません。
+UXモードは運用区分と独立して判断します。
 
 ### `NONE`
 
@@ -70,7 +70,7 @@ UX モードは運用区分とは別に判定します。ただし、`SHAPE` は
 
 ### `SHAPE`
 
-OpenDesign で利用者に見える体験を形にします。要求とモックを相互に見直しながら同時に具体化し、所有者が確認した内容を随時保存します。提案の収束には、確認済みの要求と所有者が受け入れたモックが揃い、双方の内容が過不足なく対応し、採用理由を説明でき、矛盾がないことが必要です。
+OpenCode で利用者に見える体験を形にします。要求とモックを相互に見直しながら同時に具体化し、所有者が確認した内容を随時保存します。提案の収束には、確認済みの要求と所有者が受け入れたモックが揃い、双方の内容が過不足なく対応し、採用理由を説明でき、矛盾がないことが必要です。
 
 モックの中心作業、操作の優先順位、情報階層、画面遷移、初期動作、復旧方法、意味を持つ文言を変更するたびに、要求に理由があるかを確認します。新たな製品意図を所有者が明示した場合は、同時に `request.md` へ反映します。要求を利用者の体験に影響する形で更新した場合も、関連するモックを再評価し、必要な変更を反映してから進めます。余白や色などの表現上の詳細は、所有者が成果制約として拘束した場合を除き、デザインで扱います。
 
@@ -78,7 +78,7 @@ OpenDesign で利用者に見える体験を形にします。要求とモック
 
 - `### Primary User Task`: 利用者が完了したい中心作業。
 - `### UX Direction`: 採用する体験の方向性。
-- `### Design Source`: 要求の `UI Mock References` と同じ、対象アプリをパスで識別できる採用済み画面・状態の参照、対応する画面・操作の流れ・状態の範囲、所有者による採用の短い証跡。実装側は対象の静的成果物と `mockups/<app>/src/**` の React ソースを照合します。
+- `### Design Source`: 要求の `UI Mock References` と同じ、対象アプリをパスで識別できる採用済み画面・状態の参照、対応する画面・操作の流れ・状態の範囲、所有者による採用の短い証跡。実装側は対象のStorybook表示例と `mockups/<app>/src/**` の React ソースを照合します。
 
 ## UI の実装と実証
 
@@ -89,11 +89,11 @@ OpenDesign で利用者に見える体験を形にします。要求とモック
 3. `POLISH`: 接続済み画面をブラウザで確認し、確認済み契約と採用済みデザインから導ける、本番利用に必要な状態だけを補完します。
 4. `REVIEW`: 採用済みデザインとの一致を確認し、実ブラウザでデスクトップとモバイルの操作、表示、アクセシビリティを検証します。
 
-製品判断の不足や計画成果物間の矛盾が判明した場合、実装側は `OPENDESIGN_PLANNING_REQUIRED` を返し、OpenDesign で解決してから実装を再開します。
+製品判断の不足や計画成果物間の矛盾が判明した場合、実装側は `PLANNING_REQUIRED` を返し、OpenCode で解決してから実装を再開します。
 
 仕様にある状態がモックに描かれていない場合は、確認済み契約の範囲で補完します。モックに明示された操作が仕様に明記されていなくても、要求に根拠があれば採用済みの操作を実装します。モックと要求・仕様が明示的に矛盾する場合、または採用済み体験がアーキテクチャやセキュリティの拘束条件と両立しない場合は、影響する作業を止めて差し戻します。
 
-共通 UI は `packages/ui` を再利用し、採用済み体験を満たすために必要な拡張は `unit/frontend/designer` が担当します。画面幅に応じた補完は中心作業と情報階層を保存する範囲とし、操作の優先順位や画面遷移方式を変える判断は OpenDesign で解決します。レビューはピクセル単位の一致ではなく、構成、操作、文言、状態、優先順位、特徴的な視覚表現の保持を評価します。
+共通 UI は `packages/ui` を再利用し、採用済み体験を満たすために必要な拡張は `unit/frontend/designer` が担当します。画面幅に応じた補完は中心作業と情報階層を保存する範囲とし、操作の優先順位や画面遷移方式を変える判断は OpenCode で解決します。レビューはピクセル単位の一致ではなく、構成、操作、文言、状態、優先順位、特徴的な視覚表現の保持を評価します。
 
 プルリクエストでは、実際の UI / UX 変更がある場合に `Desktop Before`、`Desktop After`、`Mobile Before`、`Mobile After` の画像をすべて添付します。この要件は UX モードの選択とは別に、実際の変更内容から判定します。
 
@@ -108,13 +108,13 @@ pnpm exec openspec new change <change-id> --schema architecture-change
 
 `pnpm gen:openspec` は、`new`、`continue`、`update`、`apply`、`verify`、`sync`、`archive` を選んだカスタムプロファイルで、公式の `--tools agents` により共有スキル `.agents/skills/openspec-*/SKILL.md` を、`--tools opencode` によりコマンド `.opencode/commands/opsx-*.md` だけを生成します。生成物は再生成で更新します。手書きのリポジトリ固有の補足スキルは `.agents/skills/openspec/**` の入れ子構造を維持します。
 
-`.agents/skills/` は OpenCode のプロジェクト向け Agent Skills 互換検出で読み込む共有スキルの配置先です。OpenDesign 内の OpenCode も同じリポジトリルートを使用します。エージェント定義は `.opencode/agents/`、コマンド定義は `.opencode/commands/` に置きます。
+`.agents/skills/` は OpenCode のプロジェクト向け Agent Skills 互換検出で読み込む共有スキルの配置先です。OpenCodeは同じリポジトリルートを使用します。エージェント定義は `.opencode/agents/`、コマンド定義は `.opencode/commands/` に置きます。
 
-OpenDesign はリポジトリを作業場所にし、`mockups/**`、`request.md`、`proposal.md`、仕様、`design.md`、`tasks.md` の作業範囲を所有します。`packages/ui` はモックから利用するデザインシステムです。生成スキルによる OpenSpec 操作にもこの担当境界を適用します。「実装して」という指示は計画完了後に OpenCode で行い、`openspec/applier` を使う場合は利用者がプライマリエージェントとして選択します。
+OpenCode はリポジトリを作業場所にし、`mockups/**`、`request.md`、`proposal.md`、仕様、`design.md`、`tasks.md` の作業範囲を所有します。`packages/ui` はモックから利用するデザインシステムです。生成スキルによる OpenSpec 操作にもこの担当境界を適用します。「実装して」という指示は計画完了後に OpenCode で行い、`openspec/applier` を使う場合は利用者がプライマリエージェントとして選択します。
 
 ### 要求確認と提案
 
-OpenDesign は、利用者、現在の状況、変更動機、期待価値、望む成果のうち、判断に必要な未確認事項を一つずつ確認します。変更動機には困りごとや制約のほか、期待、機会、好奇心も含まれます。
+OpenCode は、利用者、現在の状況、変更動機、期待価値、望む成果のうち、判断に必要な未確認事項を一つずつ確認します。変更動機には困りごとや制約のほか、期待、機会、好奇心も含まれます。
 
 `request.md` には `Request-Status: CONFIRMED` と、所有者が確認した背景、動機、要求、必要な成果制約や必須手段、確認証跡を保存します。この状態は「現在保存されている内容がすべて確認済み」を意味し、対話の進行に応じて更新できます。明確で明示的な所有者の発言自体が確認証拠となるため、その内容は即時反映します。意味または拘束力が曖昧な場合だけ再確認します。
 
@@ -126,13 +126,13 @@ OpenDesign は、利用者、現在の状況、変更動機、期待価値、望
 
 `Planning Ready` は、製品判断、外部契約、重要な設計判断が解決済みで、計画成果物が整合し、UX モードに応じた証拠が揃った状態です。`SHAPE` では前述の要求とモックの収束条件も満たします。具体的なコード表現は、確認済み成果や外部契約がその表現を拘束する場合を除き、実装時に決めます。
 
-新規プロダクトでは、OpenDesign が利用の流れ全体とモックを一体として具体化し、顧客成果ごとの複数の変更へ分けます。共有判断を更新した場合は影響する変更を再評価し、独立して計画完了したまとまりから実装へ引き渡します。
+新規プロダクトでは、OpenCode が利用の流れ全体とモックを一体として具体化し、顧客成果ごとの複数の変更へ分けます。共有判断を更新した場合は影響する変更を再評価し、独立して計画完了したまとまりから実装へ引き渡します。
 
 企画書は対話の入力として扱い、独立した成果を説明できる段階で変更のひな形を作成します。複数の `request.md` が同じアプリの統合モックを参照できます。共有する識別、画面遷移、所有権、セキュリティ境界の未解決判断に依存する変更は、その解決後に引き渡します。
 
 `IDEA -> CHANGE_SCAFFOLDED -> SHAPING -> PLANNING_READY -> IMPLEMENTING -> VERIFIED -> ARCHIVED` は、既存成果物と進捗で表す概念上の段階です。
 
-OpenCode と `openspec/applier` は計画完了した変更だけを実装し、計画ファイルの編集は `tasks.md` の進捗に限定します。製品判断の不足や計画の矛盾は `OPENDESIGN_PLANNING_REQUIRED` として OpenDesign へ戻します。
+OpenCode と `openspec/applier` は計画完了した変更だけを実装し、計画ファイルの編集は `tasks.md` の進捗に限定します。製品判断の不足や計画の矛盾は `PLANNING_REQUIRED` として OpenCode へ戻します。
 
 ### 永続的な振る舞い契約
 
@@ -146,7 +146,7 @@ OpenCode と `openspec/applier` は計画完了した変更だけを実装し、
 
 ### 再利用を優先する設計
 
-OpenDesign は `architecture-change` の各差分仕様単位について、パッケージで代替可能な汎用能力ごとに再利用を判断します。既存コード、標準ライブラリ、実行基盤の標準機能、実績ある外部パッケージを優先し、セキュリティ、サプライチェーン、アーキテクチャの規則を適用します。
+OpenCode は `architecture-change` の各差分仕様単位について、パッケージで代替可能な汎用能力ごとに再利用を判断します。既存コード、標準ライブラリ、実行基盤の標準機能、実績ある外部パッケージを優先し、セキュリティ、サプライチェーン、アーキテクチャの規則を適用します。
 
 `skip_specs: true` の場合は、重要な設計判断と、その判断に必要な再利用根拠を `design.md` へ記載します。
 

@@ -168,10 +168,10 @@ You are an implementation support subagent that helps this repository pass build
 - Do not call `unit/build/reviewer` unless the work order explicitly records an owner request for intermediate review
 - Use `lsp` as needed to confirm types/references/error locations and reduce rework
 - Do not hand-edit generated outputs. Regenerate with the repo's codegen commands when needed.
-- OpenDesign owns product shaping and Planning Ready Changes. Implement from
+- OpenCode owns product shaping and Planning Ready Changes. Implement from
   confirmed OpenSpec contracts through TypeSpec, generation, and code; never
   repair Request, proposal, Specs, design, or task meaning to pass a check.
-- Return `OPENDESIGN_PLANNING_REQUIRED` for unresolved product or material
+- Return `PLANNING_REQUIRED` for unresolved product or material
   planning decisions. All `packages/ui/**` edits belong to `unit/frontend/designer`.
 - Apply dependency and version changes when the confirmed scope and Credo permit
   them, following the repository supply-chain constraints. Ask first only for an

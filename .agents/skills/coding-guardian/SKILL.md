@@ -85,23 +85,20 @@ Dependency directions:
   `.opencode/commands/opsx-*.md` files manually.
   `pnpm gen:openspec` uses OpenSpec `1.11.0` with the custom profile and both delivery formats
   for `new`, `continue`, `update`, `apply`, `verify`, `sync`, and `archive`.
-- Treat generated skills as generic traversal. OpenDesign owns Request dialogue
+- Treat generated skills as generic traversal. OpenCode owns Request dialogue
   and planning artifacts under `openspec/config.yaml` and the selected schema.
   It also owns app prototypes under root `mockups/` in the same repository. Each publicly exposed
   `apps/<app>` pairs with one integrated `mockups/<app>` prototype, with canonical
-  React TypeScript in `mockups/<app>/src/**`, centered on `App.tsx` and `main.tsx`;
+  React TypeScript in `mockups/<app>/src/**`, centered on `App.tsx` and `App.stories.tsx`;
   the current example is `mockups/main/src/App.tsx`. Product requirements derive from confirmed Request.
   The prototype directly consumes shared implementations through public
   `@cfreact-template/ui` subpaths with fixtures/local state and no actual API/DB access.
-  OpenDesign updates source and owner-confirmed Request together. Its agent runs
-  `pnpm build:mockup` for all existing app prototypes or `pnpm build:mockup main`
-  for only `main`, with Node.js and repository dependencies. OpenDesign's built-in
-  Prototype Preview opens the applicable `mockups/<app>/index.html` as a normal static artifact.
-  Follow shared root `mockups/AGENTS.md`, `mockups/vite.config.ts`, and `mockups/tsconfig.json`
-  for shared Tailwind CSS 4/React Compiler and per-app output. Each entry loads
-  `./dist/prototype.js` and `./dist/prototype.css`; keep each app's source and rebuilt,
-  version-controlled outputs coherent in the same commit. Never edit output manually.
-  `pnpm check:mockup` checks all app outputs; `pnpm check:mockup main` selects `main`.
+  OpenCode updates source and owner-confirmed Request together. Dev Container is
+  the standard runtime. `pnpm storybook:host` serves registered projects through
+  one origin; `pnpm storybook:mockup` serves the project's mock catalog directly.
+  Follow `mockups/AGENTS.md`, `mockups/.storybook`, and `mockups/tsconfig.json`.
+  Reuse the existing UI Tailwind CSS 4 and React Compiler settings.
+  `pnpm build:mockup` builds the mock catalog to ignored `mockups/dist`.
   Each app's N routes/scenarios and M Changes relate many-to-many. A Change references
   multiple app prototypes only when its confirmed outcomes require them. Re-evaluate
   affected apps, Requests, and Changes after shared UI or viewpoint decisions.
@@ -109,17 +106,11 @@ Dependency directions:
   OpenCode and the user-selected `openspec/applier` implement only Planning Ready
   Changes; planning-file edits are limited to `tasks.md` progress. Return missing
   product decisions or contradictory planning inputs as
-  `OPENDESIGN_PLANNING_REQUIRED` to OpenDesign.
-- For OpenDesign workspace setup, follow the setup section in `CONTRIBUTING.md`.
-  Establish whether the user uses the repository's Dev Container or a shared
-  OpenDesign deployment. The former registers its workspace on startup; the latter
-  needs an accessible checkout, an OpenCode runtime with model authentication,
-  persistent storage, and project registration through the official CLI. Check
-  existing registrations before adding one, then open that project and verify
-  repository instructions, skills, model connectivity, the agent's build command,
-  and static artifact display in the built-in Prototype Preview.
-  Resolve deployment paths, service names, and URLs from the selected environment.
-  An OpenDesign project is the workspace, not an OpenSpec Change.
+  `PLANNING_REQUIRED` to OpenCode.
+- For setup, follow `CONTRIBUTING.md` and `docs/storybook-host.md`. Verify the
+  standard Dev Container first. Shared deployments reuse the same host service,
+  supplying project paths, ports, and allowed public hosts outside the projects.
+  OpenCode owns authoring; Storybook renders the React mocks and their stories.
 - Never call `fetch`, `axios`, or `cross-fetch` from frontend app/domain code.
 - App pages/components import domain hooks, never the API package directly.
 - Use the shared React Compiler configuration; runtime source never imports
@@ -170,7 +161,7 @@ Dependency directions:
   run the global active-Change check.
 - Actual UI changes require a production designer and real desktop/mobile
   browser review. Request's optional `UI Mock References` identifies relevant
-  static artifact routes/scenarios identifying the app, such as `mockups/main/index.html?scenario=default#/`;
+  Storybook story references identifying the app, such as `mockups/main/src/App.stories.tsx#Home`;
   `SHAPE` requires actual relevant viewpoints. Read `mockups/<app>/src/**` and those states together with
   proposal's `Design Source`, which complements those references with adopted
   scope and owner approval. References are design evidence, not new outcomes.
@@ -181,7 +172,7 @@ Dependency directions:
   states, responsiveness, and visual direction. The designer formalizes approved
   UI into app code and `packages/ui`; the engineer only wires it. Production never
   imports `mockups/`. `POLISH` completes necessary states deducible from confirmed
-  contracts; unresolved product decisions return to OpenDesign.
+  contracts; unresolved product decisions return to OpenCode.
 - PRs record Operation Lane, UX Mode, Review Depth, OpenSpec Change, and
   Scenario IDs. BEHAVIOR and ARCHITECTURE require a Change. BEHAVIOR and
   ARCHITECTURE Changes with delta specs require Scenario IDs; an ARCHITECTURE

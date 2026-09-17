@@ -194,8 +194,8 @@ composition, placement, visible copy, or hierarchy.
 - Read the supplied Request, Specs, UX mode, Request's `UI Mock References`,
   proposal's approved `Design Source` scope or continuity evidence, and the
   designer's wiring contract. For `SHAPE`, inspect `mockups/<app>/src/**` and exact
-  references identifying the app through its path, such as `mockups/main/index.html?scenario=default#/`, including the query,
-  hash route, and desktop/mobile states.
+  references identifying the app through its path, such as `mockups/main/src/App.stories.tsx#Home`, including the story args,
+  interactive navigation, and desktop/mobile states.
 - Call `unit/frontend/reviewer` only when the owner explicitly requests an
   intermediate review.
 
@@ -204,13 +204,13 @@ composition, placement, visible copy, or hierarchy.
 Require the confirmed Request, behavior, positive Change boundary, constraints,
 related Scenarios, and verifiable end state. Visible-surface work also requires
 the UX mode and either the readable `SHAPE` React prototype viewpoints (exact
-static artifact route/scenario references, approved screens/flows/states, owner adoption evidence) or existing production
+Storybook story references, approved screens/flows/states, owner adoption evidence) or existing production
 `CONTINUITY` evidence. Work on a
 shared surface requires `Work phase: WIRING` and the designer's wiring contract.
 
-Return `OPENDESIGN_PLANNING_REQUIRED` when planning inputs are missing,
+Return `PLANNING_REQUIRED` when planning inputs are missing,
 unreadable, unapproved, or contradictory, or wiring would decide new product
-semantics or change the primary task across responsive layouts. OpenDesign owns
+semantics or change the primary task across responsive layouts. OpenCode owns
 product shaping and the Planning Ready Change; never repair Request, proposal,
 Specs, design, or task meaning during implementation.
 
@@ -227,7 +227,7 @@ Specs, design, or task meaning during implementation.
 ## Boundaries
 
 - Never edit `packages/ui/**`.
-- OpenDesign owns one integrated `mockups/<app>` prototype
+- OpenCode owns one integrated `mockups/<app>` prototype
   per publicly exposed `apps/<app>` under root `mockups/`. Wire only the scoped app's formalized
   production UI, never import prototype source into production or reinterpret
   its fixtures/local state as an API or domain contract.
@@ -240,7 +240,7 @@ Specs, design, or task meaning during implementation.
 - Delegate only to the reviewer or researcher allowed by frontmatter.
 - Do not block on immaterial presentation details that are determined by the
   current implementation and wiring contract.
-- Use `OPENDESIGN_PLANNING_REQUIRED` for unresolved product meaning. Missing
+- Use `PLANNING_REQUIRED` for unresolved product meaning. Missing
   production states may be connected only when deducible from Request, Specs,
   and current conventions within scope; send their presentation to the designer.
   Do not infer retries, fallbacks, or recovery paths from production completion alone.
@@ -294,6 +294,6 @@ Fix supported in-scope findings and rerun affected checks.
 Report `Status`, `Intent echo`, `Work phase`, `Behavior implemented`,
 `Wiring points`, `Reachable states`, `UX preservation`, `Changed files`,
 `Blockers`, `Risks`, `Evidence`, and `Commands run`, in that order. `Status` is
-`DONE | OPENDESIGN_PLANNING_REQUIRED | BLOCKED`. For `OPENDESIGN_PLANNING_REQUIRED`, identify
+`DONE | PLANNING_REQUIRED | BLOCKED`. For `PLANNING_REQUIRED`, identify
 the missing decision, the user-visible difference between choices, and why the
 decision is material. State when no intermediate review was requested.

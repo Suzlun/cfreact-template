@@ -1,6 +1,6 @@
 Request-Status: CONFIRMED
 
-<!-- OpenDesignが所有者確認済みの項目を随時保存する。CONFIRMEDは保存済み内容の確認状態を表す。初回も更新時も、所有者の明確な明示発言を確認証拠として即時反映する。 -->
+<!-- OpenCodeが所有者確認済みの項目を随時保存する。CONFIRMEDは保存済み内容の確認状態を表す。初回も更新時も、所有者の明確な明示発言を確認証拠として即時反映する。 -->
 
 ## Background
 
@@ -32,7 +32,7 @@ Request-Status: CONFIRMED
 <!--
 ## UI Mock References
 
-- `mockups/main/index.html?scenario=default#/`: 対象の公開アプリをパスで識別でき、関連する画面、操作の流れ、状態を示す実在の参照に置き換える。各アプリの統合Reactプロトタイプのクエリで状態、ハッシュで画面を選び、デスクトップとモバイルの表示幅で確認する。例: `mockups/main/index.html?scenario=users-error#/users`。複数アプリの参照は確認済み成果に必要な場合だけ記載する。
+- `mockups/main/src/App.stories.tsx#Home`: 対象アプリの表示例、操作の流れ、状態を示す実在の参照へ置き換える。例: `mockups/main/src/App.stories.tsx#UsersError`。初期状態はStorybookの引数で指定し、デスクトップとモバイルで確認する。
 -->
 
 ## Owner Confirmation

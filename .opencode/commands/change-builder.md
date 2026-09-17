@@ -1,5 +1,5 @@
 ---
-description: Split a multi-part request by operation lane and dependencies, then route non-DIRECT planning to OpenDesign.
+description: Split a multi-part request by operation lane and dependencies, then route non-DIRECT planning to OpenCode.
 agent: orchest
 ---
 
@@ -18,15 +18,15 @@ Classify each work unit independently from repository evidence as
 - `ARCHITECTURE`: use `architecture-change`.
 
 Present each unit's caller-provided Background, Motivation, requested outcome,
-classification, dependencies, and safe parallel groups. Keep missing or
-ambiguous Request meaning explicit rather than interviewing the owner or
-completing it in this command. Do not create or edit an OpenSpec Change.
+classification and dependencies. Ask focused questions for missing or ambiguous
+Request meaning. Use the official OpenSpec planning skills after confirming the
+scope, and record owner-confirmed content as the dialogue progresses.
 
-For every non-DIRECT unit, direct the user to OpenDesign with that unit as input.
-OpenDesign owns owner dialogue, confirmed Request, and all planning artifacts.
+For every non-DIRECT unit, conduct planning in this OpenCode session.
+The primary agent owns dialogue, confirmed Request, mocks, and planning artifacts.
 For `SHAPE`, Request and the owner-approved mock must converge with a readable
 `Design Source`; `CONTINUITY` preserves identified existing production evidence.
 Planning Ready Changes pass to OpenCode or the user-selected `openspec/applier`
 primary agent for implementation. Missing product decisions or contradictory
-planning inputs return `OPENDESIGN_PLANNING_REQUIRED` to OpenDesign. Do not
+planning inputs return `PLANNING_REQUIRED` to OpenCode. Do not
 implement from this command.

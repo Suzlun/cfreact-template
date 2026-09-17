@@ -398,8 +398,8 @@ export default tseslint.config(
         { type: 'ui', pattern: 'packages/ui/tests/**/*', mode: 'full' },
         { type: 'ui-storybook', pattern: 'packages/ui/stories/**/*', mode: 'full' },
         {
-          type: 'mockup-entry',
-          pattern: 'mockups/*/src/main.tsx',
+          type: 'mockup-story',
+          pattern: 'mockups/*/src/**/*.stories.{ts,tsx}',
           mode: 'full',
           capture: ['app'],
         },
@@ -693,7 +693,7 @@ export default tseslint.config(
               allow: ['ui-storybook', 'ui'],
             },
             {
-              from: ['mockup', 'mockup-entry'],
+              from: ['mockup', 'mockup-story'],
               allow: [['mockup', { app: '{{ from.captured.app }}' }], 'ui'],
             },
           ],
@@ -2223,8 +2223,8 @@ export default tseslint.config(
           rules: [
             { from: ['mockup'], allow: ['react', '@cfreact-template/ui'] },
             {
-              from: ['mockup-entry'],
-              allow: ['react', '@cfreact-template/ui', 'react-dom'],
+              from: ['mockup-story'],
+              allow: ['react', '@cfreact-template/ui', '@storybook/react-vite'],
             },
           ],
         },

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Storybook</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        max-width: 52rem;
+        margin: 0 auto;
+        padding: 4rem 1.5rem;
+      }
+      h1 {
+        font-size: 2rem;
+        letter-spacing: -0.04em;
+      }
+      p {
+        line-height: 1.7;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+        margin-top: 2rem;
+      }
+      li {
+        border-top: 1px solid #8886;
+        padding: 1.2rem 0;
+        display: flex;
+        gap: 1rem;
+        align-items: baseline;
+        flex-wrap: wrap;
+      }
+      a {
+        font-size: 1.2rem;
+        color: inherit;
+        text-underline-offset: 0.25em;
+      }
+      span {
+        font-size: 0.85rem;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Storybook</h1>
+      <p>
+        確認するプロジェクトを選んでください。表示例の選択と画面幅の変更は、各Storybookで行えます。
+      </p>
+      <ul id="projects" aria-label="プロジェクト一覧"></ul>
+      <p id="status" role="status"></p>
+    </main>
+    <script type="module">
+      try {
+        const response = await fetch('./projects.json');
+        if (!response.ok) throw new Error('プロジェクト一覧を取得できませんでした。');
+        for (const project of await response.json()) {
+          const item = document.createElement('li');
+          const link = document.createElement('a');
+          link.href = project.url;
+          link.textContent = project.title;
+          const status = document.createElement('span');
+          status.textContent = project.running
+            ? 'プロセス起動済み'
+            : '停止中：サービスのログを確認してください';
+          item.append(link, status);
+          document.getElementById('projects').append(item);
+        }
+      } catch (error) {
+        document.getElementById('status').textContent = error.message;
+      }
+    </script>
+  </body>
+</html>

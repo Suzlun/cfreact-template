@@ -22,7 +22,7 @@ Create and maintain OpenCode skills as small, reusable "bundles": a `SKILL.md` p
 
 ## When to use me
 
-- You want to add a shared skill under `.agents/skills/<name>/SKILL.md` for OpenCode and OpenDesign.
+- You want to add a shared skill under `.agents/skills/<name>/SKILL.md` for OpenCode and OpenCode.
 - A skill does not appear in the available skills list.
 - You want to standardize skill metadata and structure across many repos.
 

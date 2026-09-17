@@ -187,9 +187,9 @@ If any are missing, do not start. Reply with Status BLOCKED and list missing inp
 
 ## Self-check and optional owner-requested review
 
-OpenDesign owns product shaping and Planning Ready Changes. Implement only the
+OpenCode owns product shaping and Planning Ready Changes. Implement only the
 confirmed work order; never repair Request, proposal, Specs, design, or task
-meaning. Return `OPENDESIGN_PLANNING_REQUIRED` for unresolved product or material
+meaning. Return `PLANNING_REQUIRED` for unresolved product or material
 planning decisions. All `packages/ui/**` edits belong to `unit/frontend/designer`.
 
 1. Implement, investigate, or verify the requested work and self-check the result

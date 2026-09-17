@@ -39,47 +39,11 @@
    sh .devcontainer/scripts/install-agent-browser.sh
    ```
 
-## OpenDesign の利用準備
+## OpenCodeとStorybookの利用準備
 
-企画を始めるには、OpenDesign の実行環境、そこから実行できる OpenCode とモデル認証、対象リポジトリへの読み書き権限、会話・設定の永続保存先が必要です。次のいずれかを利用します。
+Dev Containerを標準とします。VS Codeでコンテナを開くと、依存の初期化後に開発環境とStorybook確認サービスが起動します。OpenCodeで要求とモックを編集し、ポート一覧の`App Mock Storybook`から結果を確認します。必要なモデル認証は開発コンテナのOpenCodeで行います。
 
-- **Dev Container:** このテンプレートの `ai` サービスを使い、対象リポジトリを起動時に自動登録します。
-- **共通環境:** 複数リポジトリで使う OpenDesign を別途用意し、それぞれのリポジトリを登録します。構成ファイル、データ保存先、接続 URL、認証の共有範囲は利用環境ごとに決めます。
-
-新規プロダクトは GitHub の `Use this template` からリポジトリを作成し、利用する環境へクローンします。既存リポジトリなら、そのチェックアウトを使用します。OpenDesign への登録後、ホームのプロジェクト一覧から開き、下記「OpenDesign で始める」の手順で要求と React モックを育てます。
-
-OpenDesign のプロジェクトはリポジトリを扱う作業場所です。企画の中で成果ごとに作成する OpenSpec Change とは別の単位です。
-
-共有プロジェクトスキルは `.agents/skills/` に置きます。OpenCode のプロジェクト向け Agent Skills 互換検出を使い、OpenDesign 内の OpenCode も同じリポジトリルートから読み込みます。エージェント定義は `.opencode/agents/`、コマンド定義は `.opencode/commands/` に置きます。
-
-### 共通の OpenDesign 環境
-
-Docker で共通環境を構築する場合は、[公式の Docker 導入手順](https://github.com/nexu-io/open-design/blob/open-design-v0.21.1/deploy/README.md)に従い、OpenDesign が OpenCode を実行できるようにします。対象リポジトリをマウントし、コンテナ側で見える絶対パスと読み書き権限を確認します。永続データはプロダクトのリポジトリとは別の管理領域に置きます。
-
-まず登録済みプロジェクトを確認し、対象パスが未登録の場合だけフォルダーを登録します。以下の値は、その環境の構成に置き換えます。
-
-```bash
-docker compose -f "<共通環境のComposeファイル>" exec -T "<AIサービス名>" \
-  node apps/daemon/dist/cli.js project list --json
-
-docker compose -f "<共通環境のComposeファイル>" exec -T "<AIサービス名>" \
-  node apps/daemon/dist/cli.js project import-folder \
-  "<コンテナ側のリポジトリ絶対パス>" --name "<プロジェクト名>"
-```
-
-登録後は OpenDesign のホームからプロジェクトを開き、実際の作業場所と `AGENTS.md`、リポジトリ内スキル、現在の例 `mockups/main/src/App.tsx` の参照を確認します。モデルの接続テストを行い、エージェントがリポジトリで `pnpm build:mockup` を実行できることを確認します。Node.js と依存関係はこのビルド環境に用意します。生成後、OpenDesign の組み込みの `Prototype Preview` で `mockups/main/index.html` を通常の静的成果物として開いてから企画を始めます。
-
-### Dev Container の OpenDesign
-
-VS Code の「Dev Containers: Rebuild and Reopen in Container」で、`.devcontainer/compose.yaml` の `ai` と `dev` が起動します。`ai` には OpenDesign と、それが実行する OpenCode を同居させています。どちらも対象リポジトリを `/workspaces/project` として使用します。コンテナ名は Compose のプロジェクト名を含む `<project>-ai-1` になり、複数リポジトリを同時に開けます。
-
-`ai` の正常起動後に `dev` を起動し、開始処理で対象ワークスペースを OpenDesign へ登録します。再起動時は登録済みのものを使います。VS Code のポート一覧から `AI / OpenDesign`（7456）を開き、ホームのプロジェクト一覧から対象リポジトリを選択してください。初回は開発コンテナのターミナルで `opencode auth login` を実行し、モデル提供元へのログインを済ませ、OpenDesign の `Local Agent` で `OpenCode` を選びます。コンテナ専用の OpenCode 設定・認証・実行状態は、同じ Compose プロジェクト内の両コンテナで共有されます。
-
-保存先は `.devcontainer/.volumes/` です。`open-design/` に会話・プロジェクト情報、`opencode-config/`、`opencode-data/`、`opencode-state/` に両コンテナで共有する OpenCode の設定・認証・実行状態を保存します。起動前にホスト側で作成し、Compose からマウントします。Git 管理と Docker のビルド対象から除外しており、コンテナ再作成後も保持されます。共通の OpenDesign 環境とは独立しています。ワークスペースの登録先は `/workspaces/project` です。React モックはエージェントが同じリポジトリでビルドし、対象の `mockups/<app>/index.html` を OpenDesign の組み込みの `Prototype Preview` で開きます。
-
-ホストですでに7456を使用している場合や複数の Dev Container を開く場合、VS Code が別のローカルポートへ転送します。ポート一覧に表示される実際のアドレスを使用してください。
-
-開発コンテナ固有の設定は `.devcontainer/.volumes/dev-config/` に保存し、その中の OpenCode 設定だけを共有先へマウントします。
+ネイティブ実行と共有ホストも同じ確認サービスを使用します。プロジェクトの登録、公開パス、ポートは実行環境側の設定です。詳細は[Storybookによるモック確認](docs/storybook-host.md)を参照してください。
 
 ## 依存関係とサプライチェーン対策
 
@@ -129,7 +93,7 @@ Husky によりコミット時に検証されます。
   - Reactの顧客向けUI試験では、利用者に見える描画と操作を保全する目的でjsdom、MSW、Testing Libraryを利用できる
   - Workerd固有、実データベース、接続、バックエンドHTTP・OpenAPI契約、ファイルシステム・子プロセスを使うツール自己試験を作らない
   - 試験専用の製品側API、公開要素、生成処理、分岐、Binding、設定を作らない
-- プロダクトの方向付けは OpenDesign から始め、要求確認と計画成果物の作成を進める
+- プロダクトの方向付けは OpenCode から始め、要求確認と計画成果物の作成を進める
 - `Request-Status: CONFIRMED` は `request.md` の現在の保存内容がすべて確認済みであることを示す。明確で明示的な所有者の発言は確認証拠として即時反映し、意味や拘束力が曖昧な場合だけ再確認する
 - OpenSpec の仕様を観測可能な振る舞いの正とし、確認済み要求を意味の根拠にする。重要な手段は設計へ、実装成果は粗い作業パッケージへ記録する
 
@@ -147,72 +111,52 @@ Husky によりコミット時に検証されます。
 - `BEHAVIOR`: 観測可能な振る舞いを変更する作業です。`behavior-change` の変更が必要です。
 - `ARCHITECTURE`: 重要な内部構造を変更する作業です。`architecture-change` の変更が必要です。
 - `architecture-change` で観測可能な振る舞いを維持する場合は `.openspec.yaml` に `skip_specs: true` を設定します。
-- `NONE` はモック不要、`CONTINUITY` は既存製品の証拠に従い、`SHAPE` は OpenDesign で要求とモックを同時に具体化します。
+- `NONE` はモック不要、`CONTINUITY` は既存製品の証拠に従い、`SHAPE` は OpenCode で要求とモックを同時に具体化します。
 - `SHAPE` の提案は、確認済み要求と所有者が受け入れたモックが揃い、相互に過不足なく対応し、採用理由が説明でき、矛盾がない状態で収束させます。`proposal.md` の `Design Source` に OpenCode が読めるパスまたは安定した識別子、画面・操作の流れ・状態の範囲、受け入れと採用理由を記録します。
 - 実際の UI 変更にはプロダクトデザイナーの関与と、デスクトップ・モバイル双方の実ブラウザ確認が必要です。
 - `STANDARD` を既定とします。`DEEP` は所有者の明示要求、または確認済み成果や外部契約に不可欠な一つの未解決の問いを通常レビューで解消できない場合に選びます。
 
 OpenSpec `1.11.0` を使用します。変更は `BEHAVIOR` なら `pnpm exec openspec new change <change-id> --schema behavior-change`、`ARCHITECTURE` なら `pnpm exec openspec new change <change-id> --schema architecture-change` で作成します。`pnpm gen:openspec` は `new`、`continue`、`update`、`apply`、`verify`、`sync`、`archive` のカスタムプロファイルでスキルとコマンドを再生成し、生成物は手編集しません。
 
-OpenDesign が全計画成果物を担当し、OpenCode と利用者が選択した `openspec/applier` は計画完了した変更だけを実装します。実装側が編集できる計画ファイルは `tasks.md` の進捗だけです。製品判断の不足や計画間の矛盾があれば `OPENDESIGN_PLANNING_REQUIRED` を返し、OpenDesign で解決します。
+OpenCode が全計画成果物を担当し、OpenCode と利用者が選択した `openspec/applier` は計画完了した変更だけを実装します。実装側が編集できる計画ファイルは `tasks.md` の進捗だけです。製品判断の不足や計画間の矛盾があれば `PLANNING_REQUIRED` を返し、OpenCode で解決します。
 
-### OpenDesign で始める
+### OpenCodeで企画とモックを作る
 
-公開アプリ `apps/<app>` ごとに一つの統合 React プロトタイプを `mockups/<app>` に置きます。正となるソースは `mockups/<app>/src/**` で、`App.tsx` が画面構成、`main.tsx` が起動処理です。`pnpm build:mockup` は既存の全アプリのモックを、`pnpm build:mockup main` は `main` だけをビルドします。OpenDesign の組み込みの `Prototype Preview` で対象の `mockups/<app>/index.html` を静的成果物として開きます。
+OpenCodeは公開アプリごとの統合Reactモックを`mockups/<app>/src/`で作成します。`App.tsx`が操作の流れを持ち、`App.stories.tsx`の引数で初期画面と状態を選びます。共通UIの公開サブパス、固定データ、ローカル状態を使います。
 
-現在の `main` の例では、OpenDesign でプロジェクトを開き、`Design Files` の `Pages` にある `mockups/main/index.html` をダブルクリックして `Preview` を表示します。表示幅は `Preview viewport` で切り替えます。ソースを編集して再ビルドした後は `Reload Preview` で確認します。
+標準の実行環境はDev Containerです。`pnpm storybook:host`がプロジェクト選択と開発プレビューを提供し、`pnpm storybook:mockup`はモック用Storybookを直接起動します。`pnpm build:mockup`でGit管理対象外の`mockups/dist`へビルドします。共通の`mockups/.storybook`と`mockups/tsconfig.json`は、共通UIのTailwind CSS 4とReact Compiler設定を再利用します。
 
-ホームは `mockups/main/index.html?scenario=default#/`、ユーザー管理は `mockups/main/index.html?scenario=default#/users` です。`scenario` に `empty-users`、`users-loading`、`users-error`、`create-error` を指定すると対象の状態を確認できます。デスクトップとモバイルの表示幅で、実際の API やデータベースに接続せず、固定データとローカル状態による作成・重複メールの修正・一覧取得失敗からの復旧を操作します。共通実装は `@cfreact-template/ui` の公開サブパスから直接利用します。共通 UI のカタログは `pnpm storybook` の `UI` です。
+1. OpenCodeで利用者、状況、動機、期待する成果を確認します。
+2. 確認済みの要求とReactモックを一緒に更新します。
+3. Storybookの表示例を使い、画面、状態、操作の流れをデスクトップとモバイルで確認します。
+4. 所有者の採用と要求の整合を確認したら、提案・仕様・設計・作業パッケージを完成させます。
+5. 計画が完了した変更をOpenCodeの実装段階、または利用者が選択する`openspec/applier`へ引き渡します。
 
-共通設定 `mockups/vite.config.ts` と `mockups/tsconfig.json`、共通規則 `mockups/AGENTS.md` はルートに維持します。Vite は既存の共通 UI の Tailwind CSS 4 と React Compiler 設定を使い、アプリごとに一つの IIFE `mockups/<app>/dist/prototype.js` と `mockups/<app>/dist/prototype.css` を生成します。安定した `mockups/<app>/index.html` は両ファイルを `./dist` から相対参照します。各アプリのソースと再生成した Git 管理対象の `dist` は同じコミットで整合させ、生成物を手編集しません。`pnpm check:mockup` は全アプリの生成物を、`pnpm check:mockup main` は `main` だけを検査します。詳しい編集規則は `mockups/AGENTS.md` を参照してください。
-
-1. [OpenDesign](https://github.com/nexu-io/open-design) で生成先リポジトリを作業場所にし、実行環境に OpenCode を選びます。最初に `AGENTS.md`、`openspec/config.yaml`、`.agents/skills/openspec-new-change/SKILL.md` を読めることと、実際の作業場所が対象リポジトリであることを確認します。
-2. OpenDesign では `mockups/<app>/src/**`、`openspec/changes/**` を編集し、ビルドした静的成果物で体験を確認します。既存画面を変える場合はその画面を、新規プロダクトの場合は企画書と主な利用の流れを入力します。製品要件の根拠は確認済みの要求に置きます。
-3. 次の入力ひな形で、要求確認とモック作成を同時に始めます。わかっている情報を伝え、未確定な点は対話で解決します。
-
-```text
-このリポジトリの開発運用に従い、OpenDesign で企画を進めてください。
-AGENTS.md、docs/change-operation.md、openspec/config.yaml を読んでください。
-
-利用者と現在の状況: <わかっている内容>
-変更したい理由と期待する成果: <わかっている内容>
-既存画面または企画書: <参照先または説明>
-
-要求確認と対象アプリの mockups/<app>/src/App.tsx を中心とした統合Reactモック作成を同時に進めてください。現在の例は mockups/main/src/App.tsx です。
-共通UIの公開サブパスから実装を直接利用し、固定データとローカル状態で体験を表してください。
-エージェントが pnpm build:mockup で全アプリを、または pnpm build:mockup main で main だけをビルドし、対象の mockups/<app>/index.html を組み込みの Prototype Preview で静的成果物として開いてください。
-所有者が確認した内容は request.md へ随時保存し、モックとの対応を見直してください。
-関連するアプリと画面、状態を mockups/main/index.html?scenario=default#/ などの形式で UI Mock References に記録してください。
-独立した成果を説明できた段階で、該当スキーマを指定して変更のひな形を作成してください。
-所有者がモックを採用し、要求との整合が取れたら計画成果物を完成させてください。
-計画完了した変更を OpenCode に引き渡すところまでを担当してください。
-```
-
-OpenDesign 内の OpenCode は企画を進める実行環境です。企画中は `openspec-new-change` と `openspec-continue-change` を使い、下流成果物を伴う計画修正には `openspec-update-change` を使います。モックを変更するたびに理由と要求を、要求を変更するたびにモックを照合します。
+企画中は公式のOpenSpec作成・継続・更新スキルを使用します。製品判断が不足した場合は`PLANNING_REQUIRED`としてOpenCode内の計画段階へ戻します。
 
 ### モックを引き渡す
 
-要求の `UI Mock References` から、`mockups/main/index.html?scenario=default#/` や `mockups/main/index.html?scenario=users-error#/users` など、対象アプリをパスで識別できる実在の画面・状態へ参照を張ります。各アプリの複数の画面・状態と複数の変更は多対多で対応します。一つの変更が複数アプリのモックを参照するのは、確認済み成果に必要な場合だけです。共有 UI や観点の更新時は影響するアプリと要求を再評価し、変更のアーカイブ後もルートの `mockups/` と各アプリのモックを保持します。OpenCode は同じリポジトリの `mockups/<app>/src/**` と対象の静的成果物を照合します。
+要求の `UI Mock References` から、`mockups/main/src/App.stories.tsx#Home` や `mockups/main/src/App.stories.tsx#UsersError` など、対象アプリをパスで識別できる実在の画面・状態へ参照を張ります。各アプリの複数の画面・状態と複数の変更は多対多で対応します。一つの変更が複数アプリのモックを参照するのは、確認済み成果に必要な場合だけです。共有 UI や観点の更新時は影響するアプリと要求を再評価し、変更のアーカイブ後もルートの `mockups/` と各アプリのモックを保持します。OpenCode は同じリポジトリの `mockups/<app>/src/**` と対象のStorybook表示例を照合します。
 
 両スキーマの提案ひな形にある `Design Source` へ、実際の情報を記入します。
 
 ```markdown
 ### Design Source
 
-- 採用済み観点: <要求と同じ mockups/main/index.html?scenario=default#/ などのアプリ・画面・状態の参照>
+- 採用済み観点: <要求と同じ mockups/main/src/App.stories.tsx#Home などのアプリ・画面・状態の参照>
 - 対象範囲: <この変更に関係する画面、操作の流れ、状態>
 - 採用の証跡: <実際の所有者発言と、その発言が対象とするモック>
 ```
 
 `pnpm lint:openspec` で構造を検証し、要求・仕様・モックの意味と所有者の採用を照合して計画完了を判断します。その後、同じリポジトリで OpenCode の `openspec/applier` を選び、「`<change-id>` を実装して」と依頼します。`/opsx-apply <change-id>` でも開始できます。
 
-参照できないモックや計画間の矛盾が見つかった場合は、OpenDesign で対象の要求・モック・下流成果物を更新し、再び計画完了を確認してから同じ変更の実装を再開します。
+参照できないモックや計画間の矛盾が見つかった場合は、OpenCode で対象の要求・モック・下流成果物を更新し、再び計画完了を確認してから同じ変更の実装を再開します。
 
 ### 実装と確認
 
 UI は `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW` の順に進めます。承認済み React モックの構成、階層、操作、画面遷移、文言、状態、画面幅への対応、視覚表現を、対象の `apps/<app>` と `packages/ui` へ忠実に正式実装します。製品コードは `mockups/` をインポートせず、本番状態の補完は確認済み契約から導ける必要なものに限定します。
 
-新規プロダクトは OpenDesign で利用の流れ全体とモックを形にし、顧客成果ごとの複数の変更へ分けます。共有判断の更新時は影響する変更を再評価し、独立して計画完了したまとまりから引き渡します。概念上の段階と引き渡し条件は `docs/change-operation.md` を参照してください。
+新規プロダクトは OpenCode で利用の流れ全体とモックを形にし、顧客成果ごとの複数の変更へ分けます。共有判断の更新時は影響する変更を再評価し、独立して計画完了したまとまりから引き渡します。概念上の段階と引き渡し条件は `docs/change-operation.md` を参照してください。
 
 OpenSpec の `tasks.md` は粗い作業パッケージ台帳です。ファイル、補助処理、試験階層の詳細は、現在の作業パッケージと検証結果に基づき実装時に段階的に決めます。
 

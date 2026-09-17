@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from 'react';
+import { useState } from 'react';
 
 import { Alert, AlertDescription, AlertTitle } from '@cfreact-template/ui/components/alert';
 import { Badge } from '@cfreact-template/ui/components/badge';
@@ -23,17 +23,6 @@ import {
   TableHeader,
   TableRow,
 } from '@cfreact-template/ui/components/table';
-
-function subscribeToRoute(onChange: () => void) {
-  window.addEventListener('hashchange', onChange);
-  return () => {
-    window.removeEventListener('hashchange', onChange);
-  };
-}
-
-function getRoute() {
-  return window.location.hash === '#/users' ? '/users' : '/';
-}
 
 const initialTimestamp = Date.UTC(2025, 0, 1, 9);
 const initialUsers = [
@@ -62,7 +51,15 @@ const techStackItems = [
   'Cloudflare Workers',
 ];
 
-function Home({ onRefresh, timestamp }: { onRefresh: () => void; timestamp: number }) {
+function Home({
+  onRefresh,
+  onUsers,
+  timestamp,
+}: {
+  onRefresh: () => void;
+  onUsers: () => void;
+  timestamp: number;
+}) {
   return (
     <div className="space-y-8">
       <div className="grid items-stretch gap-6 lg:grid-cols-[1.4fr_1fr]">
@@ -79,15 +76,7 @@ function Home({ onRefresh, timestamp }: { onRefresh: () => void; timestamp: numb
               Drizzle をすぐに試せます。
             </p>
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button
-                render={<a href="#/users" />}
-                nativeButton={false}
-                size="lg"
-                onClick={(event) => {
-                  event.preventDefault();
-                  window.location.hash = '/users';
-                }}
-              >
+              <Button size="lg" onClick={onUsers}>
                 View Users
               </Button>
               <Button variant="outline" size="lg" onClick={onRefresh}>
@@ -173,13 +162,15 @@ function UsersTable({ users }: { users: typeof initialUsers }) {
   );
 }
 
-/**
- * 固定データとローカル状態だけでホームとユーザー管理の操作を再現する。
- * URLのハッシュで画面を切り替え、クエリのscenarioを初期状態として適用する。
- */
-export function App() {
-  const route = useSyncExternalStore(subscribeToRoute, getRoute);
-  const scenario = new URLSearchParams(window.location.search).get('scenario') ?? 'default';
+/** 初期状態を選び、実際の通信なしでアプリ全体の操作を確認する。 */
+export function App({
+  initialPage = 'home',
+  scenario = 'default',
+}: {
+  initialPage?: 'home' | 'users';
+  scenario?: 'default' | 'empty-users' | 'users-loading' | 'users-error' | 'create-error';
+}) {
+  const [page, setPage] = useState(initialPage);
   const [users, setUsers] = useState(scenario === 'empty-users' ? [] : initialUsers);
   const [listState, setListState] = useState(
     scenario === 'users-loading' || scenario === 'users-error' ? scenario : 'ready'
@@ -194,35 +185,28 @@ export function App() {
     <div className="min-h-screen bg-background pb-10 text-foreground">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between gap-4">
-          <a
-            href="#/"
+          <button
+            type="button"
             className="text-lg font-semibold tracking-tight"
-            onClick={(event) => {
-              event.preventDefault();
-              window.location.hash = '/';
+            onClick={() => {
+              setPage('home');
             }}
           >
             cfreact-template
-          </a>
+          </button>
           <nav className="flex items-center gap-1" aria-label="Main navigation">
             <Button
-              render={<a href="#/" />}
-              nativeButton={false}
               variant="ghost"
-              onClick={(event) => {
-                event.preventDefault();
-                window.location.hash = '/';
+              onClick={() => {
+                setPage('home');
               }}
             >
               Home
             </Button>
             <Button
-              render={<a href="#/users" />}
-              nativeButton={false}
               variant="ghost"
-              onClick={(event) => {
-                event.preventDefault();
-                window.location.hash = '/users';
+              onClick={() => {
+                setPage('users');
               }}
             >
               Users
@@ -232,8 +216,11 @@ export function App() {
       </header>
       <main className="container py-6 sm:py-8">
         <div className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm sm:p-6 lg:p-8">
-          {route === '/' ? (
+          {page === 'home' ? (
             <Home
+              onUsers={() => {
+                setPage('users');
+              }}
               onRefresh={() => {
                 setTimestamp((previous) => previous + 60_000);
               }}
@@ -261,6 +248,24 @@ export function App() {
                   <form
                     onSubmit={(event) => {
                       event.preventDefault();
+                      if (!isValid) return;
+                      if (users.some((user) => user.email === email)) {
+                        setCreateError(true);
+                        return;
+                      }
+                      setUsers((previous) => [
+                        ...previous,
+                        {
+                          id: `01JGFJJZ00${String(previous.length + 1).padStart(16, '0')}`,
+                          name,
+                          email,
+                          createdAt: initialTimestamp + previous.length * 60_000,
+                        },
+                      ]);
+                      setName('');
+                      setEmail('');
+                      setCreateError(false);
+                      setListState('ready');
                     }}
                   >
                     <div className="space-y-6">
@@ -300,34 +305,7 @@ export function App() {
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 sm:flex-row">
-                        <Button
-                          type="submit"
-                          disabled={!isValid}
-                          data-loading="false"
-                          onClick={(event) => {
-                            // 静的プレビューのsandbox内でも、フォーム送信なしで入力検証とローカル操作を行う。
-                            event.preventDefault();
-                            if (!isValid || event.currentTarget.form?.reportValidity() !== true)
-                              return;
-                            if (users.some((user) => user.email === email)) {
-                              setCreateError(true);
-                              return;
-                            }
-                            setUsers((previous) => [
-                              ...previous,
-                              {
-                                id: `01JGFJJZ00${String(previous.length + 1).padStart(16, '0')}`,
-                                name,
-                                email,
-                                createdAt: initialTimestamp + previous.length * 60_000,
-                              },
-                            ]);
-                            setName('');
-                            setEmail('');
-                            setCreateError(false);
-                            setListState('ready');
-                          }}
-                        >
+                        <Button type="submit" disabled={!isValid} data-loading="false">
                           Create User
                         </Button>
                         <Button
