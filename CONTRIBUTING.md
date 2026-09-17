@@ -256,12 +256,11 @@ pnpm check:codegen
 ```bash
 pnpm test:run        # React/UI試験と純粋なSDK・業務・リリース規則試験
 pnpm test:frontend   # Reactの顧客向けUI試験
-pnpm test:ui-package # 共通UIのjsdom試験
 pnpm test:storybook  # Storybookの実ブラウザ試験
 pnpm test:e2e        # migration 済み E2E 専用 D1 を使う Playwright
 ```
 
-CIはPlaywrightのChromium、Firefox、WebKitを導入し、`pnpm test:run`、`pnpm test:storybook`、`pnpm test:e2e`、`pnpm build:storybook`を必須検証として実行します。`pnpm test:run`にはReactの顧客向けUI試験と共通UI試験が含まれるため、CIでは`pnpm test:frontend`と`pnpm test:ui-package`を重複実行しません。
+CIはPlaywrightのChromium、Firefox、WebKitを導入し、`pnpm test:run`、`pnpm test:storybook`、`pnpm test:e2e`、`pnpm build:storybook`を必須検証として実行します。`pnpm test:run`はアプリのReact UI試験と、各パッケージが`packages/*/vitest.unit.config.ts`で定義する試験を含みます。CIではこれらを個別に重複実行しません。
 
 ## プルリクエストの流れ
 

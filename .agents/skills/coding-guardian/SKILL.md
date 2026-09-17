@@ -184,8 +184,8 @@ Dependency directions:
 - TypeSpec: `pnpm format:check`, `pnpm check`
 - JS/TS/TSX: `pnpm lint`, `pnpm test:run`
 - Frontend: `pnpm test:frontend`
-- Shared UI: `pnpm test:ui-package`
-- Storybook browser: `pnpm test:storybook`
+- Package-owned React/UI tests: `pnpm test:run`
+- Storybook: `pnpm build:storybook`, `pnpm test:storybook`
 - Customer journeys: `pnpm test:e2e`
 - Cross-cutting/release-ready: `pnpm build`
 - Skill changes: skill validator under `opencode-skills-devkit`
@@ -193,8 +193,7 @@ Dependency directions:
 - Pure release rules: `pnpm test:release`
 - CI gate: install configured Playwright browsers, run `pnpm test:run`,
   `pnpm test:storybook`, and `pnpm test:e2e`, then build Storybook. Do not run
-  frontend or shared UI tests separately in CI because `pnpm test:run` already
-  contains them.
+  the React/UI suites included by `pnpm test:run` separately in CI.
 
 Changed-file helper:
 

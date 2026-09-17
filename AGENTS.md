@@ -95,10 +95,10 @@ Apply the Credo as a decision standard without reciting it or making ceremonial 
 - Use the fewest tests that preserve the highest-value outcomes. Do not duplicate the same customer assurance across layers or files.
 - Retained React/UI and pure rule tests: `pnpm test:run`
 - Client UI tests: `pnpm test:frontend`
-- Shared UI tests: `pnpm test:ui-package`
+- Package-owned React/UI tests are included from `packages/*/vitest.unit.config.ts` by `pnpm test:run`.
 - Storybook browser tests: `pnpm test:storybook`
 - E2E: `pnpm test:e2e`
-- CI installs the configured Playwright browsers, runs `pnpm test:run`, `pnpm test:storybook`, and `pnpm test:e2e`, and builds Storybook. Do not duplicate the frontend or shared UI suites with separate CI invocations because `pnpm test:run` already includes both.
+- CI installs the configured Playwright browsers, runs `pnpm test:run`, `pnpm test:storybook`, and `pnpm test:e2e`, and builds Storybook. Do not separately repeat the React/UI suites included by `pnpm test:run`.
 
 ## Pull Requests
 

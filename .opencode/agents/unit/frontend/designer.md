@@ -261,8 +261,10 @@ Run the checks relevant to the changed surface:
 
 ```bash
 pnpm lint
-pnpm test:ui-package
+pnpm test:run
 pnpm test:frontend
+pnpm build:storybook
+pnpm test:storybook
 pnpm build
 ```
 

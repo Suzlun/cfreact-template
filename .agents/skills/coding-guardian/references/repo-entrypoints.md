@@ -10,8 +10,8 @@ Read these files before applying `coding-guardian` in this repository.
 - `CONTRIBUTING.md`: contributor workflow and required checks
 - `package.json`: root command graph for dev, build, lint, check, codegen, and tests
 - `.github/workflows/ci.yml`: default CI order, Playwright browser installation,
-  React/shared UI and pure-rule tests, Storybook browser tests, E2E customer
-  journeys, and Storybook build
+  React/UI and pure-rule tests, Storybook browser tests, E2E customer journeys,
+  and Storybook build
 
 ## Git hooks
 
@@ -26,7 +26,7 @@ Read these files before applying `coding-guardian` in this repository.
 - `apps/main/package.json`: Vite React app, API SDK, domain hook, and shared UI scripts
 - `packages/build-config/react-compiler.js`: shared React Compiler plugins used by frontend and UI Vitest/Vite configs
 - `apps/main/vitest.frontend.config.ts`: customer-facing React UI rendering and interaction tests
-- `packages/ui/vitest.unit.config.ts`: customer-facing shared UI rendering and interaction tests
+- `packages/*/vitest.unit.config.ts`: package-owned React/UI test projects included by the root Vitest configuration
 - `packages/ui/vitest.config.ts`: Storybook browser test projects
 - `scripts/eslint/**`: structured inline-disable policy, manual memoization checks, and recurring incompatible-library boundaries
 - `apps/main/tsconfig.*.json`: frontend layer-specific TypeScript boundaries

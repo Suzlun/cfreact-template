@@ -998,10 +998,10 @@ fail 条件
     - `git diff --exit-code -- apps/main/typespec/openapi/openapi.json apps/main/src/backend/generated/api apps/main/src/backend/modules/*/handlers apps/main/src/frontend/api/generated/client.ts`
 - CI は整形、lint、型、顧客価値を守る全試験、Storybookビルド、生成差分を検証する
   - 強制: `.github/workflows/ci.yml`
-  - `pnpm test:run` はReactの顧客向けUI試験、共通UIのjsdom試験、純粋で決定的なcore SDK通信・バックエンド業務・リリース規則試験だけを実行する
+  - `pnpm test:run` はアプリのReact UI試験、`packages/*/vitest.unit.config.ts`で定義する各パッケージのReact/UI試験、純粋で決定的なcore SDK通信・バックエンド業務・リリース規則試験を実行する
   - CIは設定済みのPlaywrightブラウザを導入し、Storybookブラウザ試験を`pnpm test:storybook`、価値の高い顧客作業を`pnpm test:e2e`で実行する
   - CIは`pnpm build:storybook`でStorybookの静的ビルドも検証する
-  - frontendと共通UIの試験は`pnpm test:run`に含まれるため、CIで`pnpm test:frontend`または`pnpm test:ui-package`を重複実行しない
+  - `pnpm test:run`に含まれるReact/UI試験をCIで個別に重複実行しない
   - Workerd固有、実データベース、接続、バックエンドHTTP・OpenAPI契約、ファイルシステム・子プロセスを使うツール自己試験の実行入口は設けない
 
 フォーマット

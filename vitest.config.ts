@@ -31,13 +31,7 @@ export default defineConfig({
           name: 'frontend-app',
         },
       },
-      {
-        extends: './packages/ui/vitest.unit.config.ts',
-        root: './packages/ui',
-        test: {
-          name: 'ui',
-        },
-      },
+      './packages/*/vitest.unit.config.ts',
     ],
   },
 });

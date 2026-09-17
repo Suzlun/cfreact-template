@@ -401,7 +401,6 @@ pnpm dev:all
 | `pnpm format:check`                                  | CSS/YAML を含むフォーマット差分を検証                 |
 | `pnpm test:run`                                      | React/UI試験と純粋なSDK・業務・リリース規則試験を実行 |
 | `pnpm test:frontend`                                 | Reactの顧客向けUI試験を実行                           |
-| `pnpm test:ui-package`                               | 共通UIのjsdom試験を実行                               |
 | `pnpm test:storybook`                                | 全 Story を desktop/mobile・Light/Dark で検証         |
 | `pnpm test:e2e`                                      | migration 済み E2E 専用 D1 を使う Playwright を実行   |
 | `pnpm check:codegen`                                 | API 生成差分とバックエンドのハンドラー一覧を検証      |
@@ -411,7 +410,7 @@ pnpm dev:all
 | `pnpm changeset`                                     | リリース内容とSemVer影響を記録                        |
 | `pnpm test:release`                                  | 純粋で決定的なリリース規則試験を実行                  |
 
-CIは設定済みのPlaywrightブラウザを導入し、`pnpm test:run`でReactの顧客向けUI、共通UI、純粋なcore SDK通信規則、バックエンド業務・リリース規則を一度だけ検証します。続けて`pnpm test:storybook`、`pnpm test:e2e`、`pnpm build:storybook`を実行し、共通UIの実ブラウザ状態、高価値の顧客作業、Storybookの静的ビルドを必須検証にします。
+CIは設定済みのPlaywrightブラウザを導入し、`pnpm test:run`でアプリのReact UI、`packages/*/vitest.unit.config.ts`で定義する各パッケージのReact/UI、純粋なcore SDK通信規則、バックエンド業務・リリース規則を一度だけ検証します。続けて`pnpm test:storybook`、`pnpm test:e2e`、`pnpm build:storybook`を実行し、共通UIの実ブラウザ状態、高価値の顧客作業、Storybookの静的ビルドを必須検証にします。
 
 ### データベースマイグレーション
 

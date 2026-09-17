@@ -99,7 +99,7 @@ If a section has no enforceable rules beyond a short scope note, keep it brief.
    - `.github/workflows/validate-pr-template.yml`
    - `vitest.config.ts`
    - `apps/main/vitest.frontend.config.ts`
-   - `packages/ui/vitest.unit.config.ts`
+   - Package-owned `packages/*/vitest.unit.config.ts` configurations matched by root Vitest
    - `packages/ui/vitest.config.ts`
    - `scripts/release/release-model.test.mjs`
 3. Extract only rules that actually fail in this repo, including repo-specific ones such as:

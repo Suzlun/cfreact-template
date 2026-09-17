@@ -8,6 +8,7 @@ minimumReleaseAge: 4320
 allowBuilds:
   '@fission-ai/openspec': true
   esbuild: true
+  msgpackr-extract: false
   msw: true
   sharp: true
   unrs-resolver: true
