@@ -8,7 +8,7 @@ artifacts:
     description: OpenCodeが所有者確認済みの内容を随時反映する要求
     template: request.md
     instruction: |
-      OpenCodeが、リポジトリ内のOpenSpec公式スキルによる新規作成、継続、更新、検証を通じて製品の方向付けと計画を担う。
+      OpenCodeのプライマリエージェントが所有者との対話、request.md、統合モックと計画の委任を担当する。公式スキルと入口コマンドは汎用的な進行手順であり、委任先の計画成果物は担当者が作成する。
       OpenCodeは公開アプリごとの統合Reactモックを`mockups/<app>/src/`で作成します。`App.tsx`が操作の流れを持ち、`App.stories.tsx`の引数で初期画面と状態を選びます。共通UIの公開サブパス、固定データ、ローカル状態を使います。製品要件の根拠は所有者確認済みの要求に置く。
       標準の実行環境はDev Containerです。`pnpm storybook:host`がプロジェクト選択と開発プレビューを提供し、`pnpm storybook:mockup`はモック用Storybookを直接起動します。`pnpm build:mockup`でGit管理対象外の`mockups/dist`へビルドします。共通の`mockups/.storybook`と`mockups/tsconfig.json`は、共通UIのTailwind CSS 4とReact Compiler設定を再利用します。
       表示例の引数で初期画面と状態を選び、Reactモック内で操作の流れを確認する。共有UIや要求の変更時は影響するモックを再確認する。モックは変更のアーカイブ後も保持し、編集規則はmockups/AGENTS.mdに従う。
@@ -19,8 +19,8 @@ artifacts:
       背景と変更動機は要求の理由を示す証拠として扱い、製品要件と成果制約は所有者が求めた成果から導く。
       解決手段を示す入力では、その手段が必要となる背景、変更動機、希望成果を先に確認し、所有者が明示的に拘束した場合だけ必須手段として記載する。
       成果制約または必須手段がない場合は、対応する任意の節を作成しない。
-      関連するUI Mock Referencesにはmockups/main/src/App.stories.tsx#Homeやmockups/main/src/App.stories.tsx#UsersErrorのような参照を記載する。SHAPEでは実際に採用された表示例を特定する。参照は設計の証拠であり、製品の目的と成果は所有者確認済みの要求を根拠にする。
-      `Request-Status: CONFIRMED`を使用し、`Owner Confirmation`に保存した内容と所有者の明示発言との対応を記録する。
+      関連する`UIモック参照`にはmockups/main/src/App.stories.tsx#Homeやmockups/main/src/App.stories.tsx#UsersErrorのような参照を記載する。SHAPEでは実際に採用された表示例を特定する。参照は設計の証拠であり、製品の目的と成果は所有者確認済みの要求を根拠にする。
+      `Request-Status: CONFIRMED`を使用し、`所有者の確認`に保存した内容と所有者の明示発言との対応を記録する。
       所有者の明確な明示発言は、初回作成でも更新でも確認証拠として十分である。その内容を即時反映し、同じ内容の再承認を求めない。
       発言の意味または拘束力が不明な場合だけ、OpenCodeが一つの焦点に絞って確認してから保存する。
       `SHAPE`では要求と承認済みモックを双方向に照合し、モックが確認済み成果と制約を満たすこと、およびモックに含まれる製品の意味が要求に根拠を持つことを確認する。
@@ -33,6 +33,7 @@ artifacts:
     description: 所有者確認済みの要求を実現する変更提案
     template: proposal.md
     instruction: |
+      `openspec/planner`がproposal.mdを作成・更新する。製品の意味が不足する場合はプライマリエージェントを通じて所有者へ確認する。
       `Request-Status: CONFIRMED`のrequest.mdを読み、記載された要求の範囲だけを提案する。
       request.mdが存在しない、確認済みでない、または意味が不明な場合は成果物を作成せず、OpenCodeが所有者へ確認する。
       関連するリポジトリの事実を確認する。成果物の意味に関わる内容が確認済み要求または権威ある証拠から自明でない場合は、OpenCodeが所有者へ一つの焦点に絞って確認する。
@@ -43,7 +44,7 @@ artifacts:
       `NONE`ではモックを必要としない。`CONTINUITY`では維持する既存の製品体験を特定し、参照して内容を確認できる実装済み製品の証拠を`Continuity Source`に記録する。
       `SHAPE`のproposal.mdは、所有者が対象の方向性を採用し、確認済み成果と承認済みモックの重要な内容が双方向に整合してから作成する。
       `SHAPE`では`UI / UX Impact`内に、中心作業を`Primary User Task`、採用した体験の方向性と重要な判断の理由を`UX Direction`、承認済みモックの参照を`Design Source`として記録する。
-      `Design Source`には、要求の`UI Mock References`と同じ、対象アプリをパスで識別できる採用済み画面・状態の正確な参照、関連する画面・操作の流れ・状態の範囲、その範囲を所有者が採用した短い証跡を記載する。承認の証拠はこの既存の節で扱い、設計の詳細は`mockups/<app>/src/**`と参照先のStorybook表示例で確認する。
+      `Design Source`には、要求の`UIモック参照`と同じ、対象アプリをパスで識別できる採用済み画面・状態の正確な参照、関連する画面・操作の流れ・状態の範囲、その範囲を所有者が採用した短い証跡を記載する。承認の証拠はこの既存の節で扱い、設計の詳細は`mockups/<app>/src/**`と参照先のStorybook表示例で確認する。
       重要なUX判断の理由または所有者確認が不足する場合はOpenCodeが所有者へ確認し、内容の意味に応じて要求または設計へ反映してから提案を作成する。
       Thesaurus は業務用語の統一が必要な場合だけ追加する。
       `Confirmed Change Boundary`は実現する肯定的な成果と外部契約の境界だけを記載する。
@@ -53,11 +54,12 @@ artifacts:
 
   - id: specs
     generates: 'specs/*/spec.md'
-    description: Spec Unit ごとの観測可能な差分仕様
+    description: 仕様単位ごとの観測可能な差分仕様
     template: spec.md
     instruction: |
+      `openspec/planner`が差分仕様を作成・更新し、主仕様の同期も依頼された場合に担当する。アーカイブの進行はプライマリエージェントが担当する。
       request.md、proposal.md、該当する承認済み設計を読み、確認済み要求から直接導ける各仕様領域に `specs/<capability>/spec.md` を作成する。`SHAPE`では`Design Source`の承認済みモックを確認する。
-      製品の意味を認める根拠はrequest.mdだけとし、承認済み設計は要求を実現する具体像として照合する。重要な不整合はOpenCodeが所有者との対話で解決してから仕様を作成する。
+      製品の意味を認める根拠はrequest.mdだけとし、承認済み設計は要求を実現する具体像として照合する。不整合はプライマリエージェントへ返し、要求の意味は所有者との対話で、提案・仕様・作業範囲の不備は計画担当者が解決する。
       冒頭の `## Purpose` に、所有者確認済みの要求が求める永続的仕様領域の目的を肯定形で記載する。
       差分見出しは `## ADDED Requirements`、`## MODIFIED Requirements`、`## REMOVED Requirements`、`## RENAMED Requirements` だけを使用する。
       要件とシナリオには、所有者が確認した利用者または外部契約から観測できる肯定的な終端状態だけを記載する。
@@ -74,6 +76,7 @@ artifacts:
     description: 実装成果をまとめた粗い作業パッケージ台帳
     template: tasks.md
     instruction: |
+      `openspec/planner`がtasks.mdの作業範囲を担当する。behavior-changeはdesign.mdを持たず、提案・仕様・作業パッケージを完成させてから、プライマリエージェントが`openspec/architect`へ読み取り専用の`READINESS_REVIEW`を委任する。両サブエージェントは互いを呼び出さない。
       tasks.md は `- [ ] WP<number>: <成果>` 形式の作業パッケージ台帳とする。
       各作業パッケージに対象の Requirement または Scenario と、客観的な Completion Evidence を記載する。
       ファイル単位、補助処理単位、試験階層単位へ分解しない。
@@ -89,8 +92,9 @@ apply:
     - tasks
   tracks: tasks.md
   instruction: |
-    OpenCodeから、計画上の重要な判断が解決済みの成果物を受け取る。所有者確認済みの要求、提案、差分仕様、該当する承認済み設計、作業パッケージを読み、要求が求める成果へ因果的につながる作業だけを実装、検証する。
-    `SHAPE`では要求の`UI Mock References`、提案の`Design Source`が示す対象アプリと承認範囲、実際の`mockups/<app>/src/**`と対象のStorybook表示例の画面・状態を照合し、要求との双方向の整合性を確認する。共有UIや観点の更新時は影響するアプリ、要求、変更を再確認する。`CONTINUITY`では既存製品の証拠を読み、`NONE`ではモックを必要としない。
+    プライマリエージェントまたは利用者が選択した`openspec/applier`が、重要な判断を解決し、成果物とUX証拠が整合した計画を実装する。開始には計画完成後の`openspec/architect`の`READINESS_REVIEW`による`APPROVED`が必要で、CLI上の成果物完成や計画担当者の自己点検だけでは承認にならない。`openspec-review`の意味検査を自己点検と最終確認で共有する。承認は確認した計画に対して有効とし、重要な修正後は影響する成果物を再確認する。既存のレビュー結果を証跡とし、承認専用の永続ファイルは追加しない。
+    所有者確認済みの要求、提案、差分仕様、該当する承認済み設計、作業パッケージを読み、要求が求める成果へ因果的につながる作業だけを実装、検証する。実装時の計画ファイル編集はtasks.mdの進捗に限定する。
+    `SHAPE`では要求の`UIモック参照`、提案の`Design Source`が示す対象アプリと承認範囲、実際の`mockups/<app>/src/**`と対象のStorybook表示例の画面・状態を照合し、要求との双方向の整合性を確認する。共有UIや観点の更新時は影響するアプリ、要求、変更を再確認する。`CONTINUITY`では既存製品の証拠を読み、`NONE`ではモックを必要としない。
     UIは`PRODUCTION_UI -> WIRING -> POLISH -> REVIEW`の順で進める。デザイナーが承認済みReactプロトタイプを対象の`apps/<app>`と`packages/ui`へ忠実に正式実装し、エンジニアは接続だけを担当する。デザイナーが確認済み契約から導ける必要な製品状態を補完し、独立レビューで忠実性と実ブラウザのデスクトップ・モバイル操作を確認する。製品コードは正式実装したUIを参照し、`mockups/`をインポートしない。プロトタイプの編集はOpenCodeが担当する。
-    計画入力の不足、`SHAPE`の承認済みモックを読めない状態、要求と成果物の重要な矛盾、未解決の重要判断がある場合は、`PLANNING_REQUIRED`を返してOpenCodeへ戻す。実装側では計画成果物の修復や要求の再解釈を行わない。
+    計画入力の不足、`SHAPE`の承認済みモックを読めない状態、要求と成果物の重要な矛盾、未解決の重要判断がある場合は、`PLANNING_REQUIRED`を返してプライマリエージェントへ戻す。要求の意味は所有者との対話へ、提案・仕様・作業範囲の不備は`openspec/planner`へ振り分ける。実装側では計画成果物の修復や要求の再解釈を行わない。
     全作業パッケージ完了時は `node scripts/openspec/verify-scenario-coverage.mjs --change <change-id>` を実行し、選択Changeの仕様構造とPlaywright E2E試験からScenarioへの参照を検証する。

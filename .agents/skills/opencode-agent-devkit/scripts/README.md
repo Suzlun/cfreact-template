@@ -28,7 +28,7 @@ python3 .agents/skills/opencode-agent-devkit/scripts/new_agent.py \
   --description "Delegate work to a small set of approved subagents" \
   --mode subagent \
   --permission-preset review-subagent \
-  --task-allow planner \
+  --task-allow openspec/planner \
   --task-allow unit/build/builder \
   --task-allow unit/build/reviewer
 ```

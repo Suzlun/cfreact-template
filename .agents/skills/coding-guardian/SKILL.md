@@ -85,9 +85,28 @@ Dependency directions:
   `.opencode/commands/opsx-*.md` files manually.
   `pnpm gen:openspec` uses OpenSpec `1.11.0` with the custom profile and both delivery formats
   for `new`, `continue`, `update`, `apply`, `verify`, `sync`, and `archive`.
-- Treat generated skills as generic traversal. OpenCode owns Request dialogue
-  and planning artifacts under `openspec/config.yaml` and the selected schema.
-  It also owns app prototypes under root `mockups/` in the same repository. Each publicly exposed
+- Treat generated skills and entry commands as generic traversal under
+  `openspec/config.yaml` and the selected schema. The OpenCode primary agent owns
+  owner dialogue, `request.md`, and orchestration, never silently authoring
+  delegated planning artifacts. The `openspec/planner` subagent owns proposal,
+  Specs (including requested main-spec sync), `tasks.md` scope, and applicable
+  `.openspec.yaml` `skip_specs` metadata. `openspec/architect` owns unified
+  frontend/backend `design.md` in `DESIGN`, the read-only final `READINESS_REVIEW`,
+  and optional read-only `IMPLEMENTATION_REVIEW` of an exact design question.
+  It delegates research to `researcher` only when indispensable.
+  The primary sequences Request/mock -> planner proposal/Specs -> architect
+  `DESIGN` for `architecture-change` -> planner tasks -> architect
+  `READINESS_REVIEW` -> implementation. `behavior-change` has no design artifact.
+  Planner and architect never call each other. The primary routes product meaning
+  to owner dialogue, planner artifact defects to the planner, and design defects
+  to the architect, and retains archive orchestration.
+  Planning Ready requires `APPROVED` from the architect's `READINESS_REVIEW`
+  after the plan is complete, alongside resolved decisions, consistent artifacts,
+  and applicable UX evidence. CLI completion and planner self-check are not approval.
+  Both self-check and final review use `openspec-review` semantic rules. Material
+  plan revisions require rechecking affected artifacts; use the existing review
+  result rather than a new persistent approval file.
+  The primary also owns app prototypes under root `mockups/` in the same repository. Each publicly exposed
   `apps/<app>` pairs with one integrated `mockups/<app>` prototype, with canonical
   React TypeScript in `mockups/<app>/src/**`, centered on `App.tsx` and `App.stories.tsx`;
   the current example is `mockups/main/src/App.tsx`. Product requirements derive from confirmed Request.
@@ -107,10 +126,19 @@ Dependency directions:
   Changes; planning-file edits are limited to `tasks.md` progress. Return missing
   product decisions or contradictory planning inputs as
   `PLANNING_REQUIRED` to OpenCode.
+- Before review dispatch, the facilitator audits the necessity of the whole review,
+  each participant, and each additional wave. Return `NOT_APPLICABLE` when no
+  review is needed, distinct from an actual review's `APPROVE`; mandatory evidence,
+  contracts, and the Planning Ready gate still apply. Every reviewer is read-only,
+  considers removing unnecessary implementation and planning content, and reports
+  only findings with proven customer harm, no-fix consequence, severity, likelihood,
+  scope, indispensable correction, and proportionate cost. Drop unsupported or
+  unnecessary findings, including warnings. The facilitator re-evaluates these
+  grounds independently; binding contracts and architecture do not expand scope.
 - For setup, follow `CONTRIBUTING.md` and `docs/storybook-host.md`. Verify the
   standard Dev Container first. Shared deployments reuse the same host service,
   supplying project paths, ports, and allowed public hosts outside the projects.
-  OpenCode owns authoring; Storybook renders the React mocks and their stories.
+  The OpenCode primary owns mock authoring; Storybook renders the React mocks and their stories.
 - Never call `fetch`, `axios`, or `cross-fetch` from frontend app/domain code.
 - App pages/components import domain hooks, never the API package directly.
 - Use the shared React Compiler configuration; runtime source never imports
@@ -160,7 +188,7 @@ Dependency directions:
   `node scripts/openspec/verify-scenario-coverage.mjs --change <change-id>`, then
   run the global active-Change check.
 - Actual UI changes require a production designer and real desktop/mobile
-  browser review. Request's optional `UI Mock References` identifies relevant
+  browser review. Request's optional `UIモック参照` identifies relevant
   Storybook story references identifying the app, such as `mockups/main/src/App.stories.tsx#Home`;
   `SHAPE` requires actual relevant viewpoints. Read `mockups/<app>/src/**` and those states together with
   proposal's `Design Source`, which complements those references with adopted

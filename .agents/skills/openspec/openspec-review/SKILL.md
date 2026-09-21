@@ -6,8 +6,10 @@ compatibility: Requires openspec CLI.
 
 # OpenSpec Change Review
 
-This is the shared semantic contract for OpenCode planning review,
-`openspec/reviewer`, and `openspec/analyzer`.
+This is the shared semantic contract for `openspec/planner` self-check and
+`openspec/architect` final implementability and semantic review in `READINESS_REVIEW`.
+Review is read-only. Planner self-check supports authoring but does not grant
+Planning Ready approval.
 
 ## Source precedence
 
@@ -22,7 +24,7 @@ Require only artifacts defined by the selected schema. Deterministic validators
 own structural checks.
 
 `request.md` is owner-controlled evidence, not a downstream planning artifact.
-Return `FAILED` when its confirmed Background, Motivation, Request, or confirmation
+Return `FAILED` when its confirmed `背景`, `変更の動機`, `要求`, or confirmation
 evidence is missing, unconfirmed, unreadable, or internally inconsistent. Never
 create, edit, supplement, or reinterpret it during review.
 
@@ -30,7 +32,7 @@ create, edit, supplement, or reinterpret it during review.
 
 - Desired outcomes and outcome constraints may become Requirements and
   Scenarios only when they follow directly from the confirmed Request.
-- Confirmed Background and Motivation content explains why the Request exists but
+- Confirmed `背景` and `変更の動機` content explains why the Request exists but
   never creates a Requirement, Scenario, or outcome constraint by itself.
 - Technologies, components, dependencies, structures, algorithms, procedures,
   migrations, tools, files, commands, tests, and implementation sequences are
@@ -43,7 +45,7 @@ create, edit, supplement, or reinterpret it during review.
 - `design.md` exists only for `architecture-change` and contains material
   decisions, not local implementation decomposition.
 - `tasks.md` is a coarse work-package ledger, not a file or test-layer plan.
-- Request's optional `UI Mock References` supplies design evidence through exact
+- Request's optional `UIモック参照` supplies design evidence through exact
   Storybook story references, not product outcomes. `SHAPE` requires its actual
   relevant viewpoints. Proposal's existing `Design Source` complements those
   references with adopted scope and owner approval; keep purpose and outcomes in
@@ -79,6 +81,14 @@ create, edit, supplement, or reinterpret it during review.
 
 ## Finding categories
 
+Before reporting, establish the exact confirmed customer outcome or external
+contract, actual customer harm, no-fix consequence, severity, likelihood, scope,
+indispensability, and a proportionate correction. Consider removing unnecessary
+implementation and planning content, not only adding missing content. Drop
+unsupported or unnecessary findings entirely, including warnings. Binding
+contracts and architecture constrain in-scope work without expanding scope.
+The facilitator independently re-evaluates these grounds before adopting findings.
+
 - `CONTRADICTION`: applicable sources require materially incompatible outcomes
   or plans.
 - `OVERREQUIREMENT`: an artifact requires behavior, structure, work, or an
@@ -102,9 +112,9 @@ material boundary.
 ## Artifact routing
 
 - Accept a candidate omission only after identifying the exact confirmed
-  outcome, externally owned contract meaning, or material boundary it can change
-  and the OpenSpec artifact or owner decision that must resolve it before
-  implementation.
+  customer outcome or external contract whose protection makes the missing
+  consideration indispensable, and the artifact or owner decision that must
+  resolve it before implementation. A material boundary alone does not expand scope.
 - Specs own customer-valued terminal outcomes and confirmed externally
   observable constraints. `design.md` owns only material architecture,
   security, data, dependency, and runtime decisions.
@@ -116,12 +126,32 @@ material boundary.
   replace removed or unrequested behavior with an inverse Requirement that
   requires its absence.
 
+## Design diagrams
+
+- Evaluate diagrams in `design.md` by whether they prevent a material design
+  misunderstanding. Text or tables may suffice; zero diagrams is valid.
+  Before alleging a missing diagram, identify the exact material decision that
+  would be misread and the confirmed outcome or contract that makes correction
+  indispensable. Counts or a fixed set of diagram types are not acceptance criteria.
+- For present diagrams, check GitHub-compatible `mermaid` syntax and whether
+  relationships, directions, message order, transition conditions, multiplicity,
+  and ownership accurately express the adopted design. `flowchart` structure
+  views need not use strict UML notation.
+- Read diagrams and prose together. Resolve contradictions as design
+  inconsistencies rather than silently preferring one representation. Confirm
+  elements and branches derive from confirmed outcomes and adopted decisions;
+  apply the same scope and implementation-detail limits as prose.
+- Consider removing redundant views and excessive detail. Each diagram should
+  address one principal question within the change and its necessary context;
+  prose should add rationale or constraints rather than repeat the diagram.
+  Apply the common finding filter before reporting any defect.
+
 ## UX review
 
 - `NONE`: no visible work may be introduced.
 - `CONTINUITY`: read the existing production evidence identified by
   `Continuity Source` and verify preservation of that experience.
-- `SHAPE`: follow Request's `UI Mock References`, such as
+- `SHAPE`: follow Request's `UIモック参照`, such as
   `mockups/main/src/App.stories.tsx#Home`, and proposal's `Design Source` approval scope.
   Both references must identify the applicable app through its path.
   Read actual `mockups/<app>/src/**` and referenced Storybook states, including
@@ -133,8 +163,8 @@ material boundary.
   accepted composition, hierarchy, actions, navigation, copy, states,
   responsiveness, and visual direction.
 
-OpenCode owns app prototypes under root `mockups/` and planning artifacts in the
-same repository. Each publicly exposed
+The OpenCode primary owns owner dialogue, `request.md`, and app prototypes under
+root `mockups/`, and orchestrates delegated planning in the same repository. Each publicly exposed
 `apps/<app>` pairs with one integrated `mockups/<app>` prototype. Each app's N
 routes/scenarios may relate to M Changes. A Change references multiple app prototypes
 only when its confirmed outcomes require them. On shared UI or viewpoint changes,
@@ -146,7 +176,10 @@ into the scoped `apps/<app>` and `packages/ui` rather than importing `mockups/`.
 
 Do not run a second shaping pass during semantic review. Report only a material
 contradiction, excess, misinterpretation, or omission.
-Return planning corrections to OpenCode. During implementation, missing or
+Return corrections through the primary: product meaning goes to owner dialogue;
+proposal, Specs, task scope, and applicable `skip_specs` metadata go to
+`openspec/planner`; `design.md` goes to `openspec/architect` in `DESIGN`.
+Planner and architect never call each other. During implementation, missing or
 contradictory planning inputs require `PLANNING_REQUIRED`.
 
 ## Procedure
@@ -161,8 +194,8 @@ contradictory planning inputs require `PLANNING_REQUIRED`.
    necessity, downstream artifacts, or tests. Reject an RFC, standard, package,
    implementation technique, non-goal, rejected alternative, or absent
    implementation represented as behavior.
-4. For every candidate omission, identify the exact confirmed Request outcome or
-   material boundary it can change and its required resolution owner. Reject
+4. For every candidate omission, prove the exact confirmed customer outcome or
+   external contract it is indispensable to protect and identify its resolution owner. Reject
    contract-completeness and implementation-choice findings that do not pass
    this test.
 5. For `architecture-change`, derive the delta Spec Unit set from the actual
@@ -170,26 +203,35 @@ contradictory planning inputs require `PLANNING_REQUIRED`.
 Assessment`, its generic capabilities are not collapsed into one
    customer-specific Requirement, and each decision has a valid source
    classification, selected target and version, and current scoped research
-   evidence. Report a missing capability, out-of-scope research citation,
+   evidence. Assess a missing capability, out-of-scope research citation,
    unexamined package state, or missing candidate selection as
-   `MATERIAL_OMISSION`; report unjustified `LIMITED_COMPLEMENT` as
-   `OVERREQUIREMENT`.
+   a candidate `MATERIAL_OMISSION`, and unjustified `LIMITED_COMPLEMENT` as a
+   candidate `OVERREQUIREMENT`; report only findings that meet the grounds above.
 6. Verify each work package has justified coverage and objective evidence while
    leaving local implementation choices open.
 7. Verify every work package causes an outcome required by the Request rather
    than merely satisfying downstream wording.
-8. Group one root cause into one finding and try to disprove it before reporting.
+8. Consider removing unnecessary content. Group one root cause into one finding,
+   try to disprove it, and establish all finding grounds before reporting.
 
 ## Results
 
-- `APPROVED`: required validation passes and no actionable finding remains.
+The following verdicts apply to the architect's `READINESS_REVIEW` after the
+planner completes the plan. Planner self-check reports its result to the primary
+without granting approval.
+
+- `APPROVED`: required validation passes, material decisions are resolved,
+  artifacts and applicable UX evidence are consistent, and no actionable finding remains.
 - `CHANGES_REQUIRED`: artifact edits can resolve all findings without a new
   material decision.
 - `DECISION_REQUIRED`: a material decision in the omission boundary is needed.
 - `FAILED`: required evidence cannot be read or evaluated.
 
-`APPROVED` means Planning Ready under the lifecycle boundary in
-`docs/change-operation.md`. Implementation may decide concrete representations,
+Only `APPROVED` from `openspec/architect` in `READINESS_REVIEW` grants Planning
+Ready under `docs/change-operation.md`. CLI artifact completion and planner
+self-check do not. Approval applies to the reviewed plan; material revisions
+require rechecking affected artifacts. Use the existing review result, never a
+new persistent approval file. Implementation may decide concrete representations,
 files, private APIs, helpers, test layers, fixtures, and ready-package order when
 those choices preserve the confirmed Request.
 
@@ -201,6 +243,9 @@ Evidence:
 - <path:line observed fact>
 Proposal impact: <exact outcome or boundary affected>
 Material consequence: <wrong, unsafe, or unverifiable result>
+Customer harm / no-fix consequence: <evidence-backed effect on the confirmed outcome or contract>
+Severity / likelihood / scope: <evidence-backed assessment>
+Indispensability / proportionality: <why correction is necessary and its cost is justified>
 Required outcome: <artifact state needed>
 Decision required: none | <exact material decision and owner>
 ```

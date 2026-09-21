@@ -39,7 +39,7 @@ generated-artifact recovery, output placement, and existence checks.
 OpenCode owns one integrated React prototype per publicly exposed `apps/<app>`,
 with source and Storybook entries in `mockups/<app>/src/**`, currently
 `mockups/main/src/App.stories.tsx`. For `SHAPE`, Request's
-`UI Mock References` identifies exact routes/scenarios and proposal's
+`UIモック参照` identifies exact routes/scenarios and proposal's
 `Design Source` records their approved scope. Raster images are supporting assets
 for that React design; confirmed Request and Specs authorize product outcomes.
 `CONTINUITY` follows existing production evidence. Generating an image alone does

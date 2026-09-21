@@ -34,7 +34,7 @@ pnpm build:mockup
 
 開発サーバーはポート6007、ビルド先はGit管理対象外の`mockups/dist`です。全アプリの表示例を同じモックカタログから選択します。共通UI部品のカタログは従来の`pnpm storybook`で起動します。
 
-要求の`UI Mock References`と提案の`Design Source`には、例えば`mockups/main/src/App.stories.tsx#UsersError`のように、ソースと表示例を特定する参照を記録します。実行時のURLはホスト環境が決めます。
+要求の`UIモック参照`と提案の`Design Source`には、例えば`mockups/main/src/App.stories.tsx#UsersError`のように、ソースと表示例を特定する参照を記録します。実行時のURLはホスト環境が決めます。
 
 ## ネイティブでの起動
 

@@ -118,7 +118,9 @@ Husky によりコミット時に検証されます。
 
 OpenSpec `1.11.0` を使用します。変更は `BEHAVIOR` なら `pnpm exec openspec new change <change-id> --schema behavior-change`、`ARCHITECTURE` なら `pnpm exec openspec new change <change-id> --schema architecture-change` で作成します。`pnpm gen:openspec` は `new`、`continue`、`update`、`apply`、`verify`、`sync`、`archive` のカスタムプロファイルでスキルとコマンドを再生成し、生成物は手編集しません。
 
-OpenCode が全計画成果物を担当し、OpenCode と利用者が選択した `openspec/applier` は計画完了した変更だけを実装します。実装側が編集できる計画ファイルは `tasks.md` の進捗だけです。製品判断の不足や計画間の矛盾があれば `PLANNING_REQUIRED` を返し、OpenCode で解決します。
+OpenCode のプライマリエージェントが所有者との対話、`request.md`、統合モックと委任を担当します。サブエージェント `openspec/planner` は提案、仕様、依頼された主仕様の同期、`tasks.md` の作業範囲、該当する `skip_specs` 設定を担当します。`openspec/architect` はフロントエンドとバックエンドを統合した設計と、計画完成後の最終確認を担当します。生成スキルと入口コマンドでもこの境界を守り、プライマリエージェントが委任先の成果物を代わりに作成しません。アーカイブの進行はプライマリエージェントが担当します。
+
+プライマリエージェントと利用者が選択した `openspec/applier` は計画完了した変更だけを実装します。実装側が編集できる計画ファイルは `tasks.md` の進捗だけです。製品判断の不足や計画間の矛盾があれば `PLANNING_REQUIRED` を返し、プライマリエージェントが要求の意味を所有者に確認し、計画成果物の不備を担当者へ差し戻します。
 
 ### OpenCodeで企画とモックを作る
 
@@ -129,14 +131,14 @@ OpenCodeは公開アプリごとの統合Reactモックを`mockups/<app>/src/`�
 1. OpenCodeで利用者、状況、動機、期待する成果を確認します。
 2. 確認済みの要求とReactモックを一緒に更新します。
 3. Storybookの表示例を使い、画面、状態、操作の流れをデスクトップとモバイルで確認します。
-4. 所有者の採用と要求の整合を確認したら、提案・仕様・設計・作業パッケージを完成させます。
-5. 計画が完了した変更をOpenCodeの実装段階、または利用者が選択する`openspec/applier`へ引き渡します。
+4. 所有者の採用と要求の整合を確認したら、`openspec/planner` へ提案と仕様を委任します。`architecture-change` では次に `openspec/architect` の `DESIGN` で設計を作成してから、`openspec/planner` が作業パッケージを完成させます。`behavior-change` では設計ファイルを作らず、計画担当者が提案・仕様・作業パッケージを完成させます。
+5. `openspec/architect` の読み取り専用の `READINESS_REVIEW` で `APPROVED` を得た変更を、OpenCodeの実装段階、または利用者が選択する `openspec/applier` へ引き渡します。
 
 企画中は公式のOpenSpec作成・継続・更新スキルを使用します。製品判断が不足した場合は`PLANNING_REQUIRED`としてOpenCode内の計画段階へ戻します。
 
 ### モックを引き渡す
 
-要求の `UI Mock References` から、`mockups/main/src/App.stories.tsx#Home` や `mockups/main/src/App.stories.tsx#UsersError` など、対象アプリをパスで識別できる実在の画面・状態へ参照を張ります。各アプリの複数の画面・状態と複数の変更は多対多で対応します。一つの変更が複数アプリのモックを参照するのは、確認済み成果に必要な場合だけです。共有 UI や観点の更新時は影響するアプリと要求を再評価し、変更のアーカイブ後もルートの `mockups/` と各アプリのモックを保持します。OpenCode は同じリポジトリの `mockups/<app>/src/**` と対象のStorybook表示例を照合します。
+要求の `UIモック参照` から、`mockups/main/src/App.stories.tsx#Home` や `mockups/main/src/App.stories.tsx#UsersError` など、対象アプリをパスで識別できる実在の画面・状態へ参照を張ります。各アプリの複数の画面・状態と複数の変更は多対多で対応します。一つの変更が複数アプリのモックを参照するのは、確認済み成果に必要な場合だけです。共有 UI や観点の更新時は影響するアプリと要求を再評価し、変更のアーカイブ後もルートの `mockups/` と各アプリのモックを保持します。OpenCode は同じリポジトリの `mockups/<app>/src/**` と対象のStorybook表示例を照合します。
 
 両スキーマの提案ひな形にある `Design Source` へ、実際の情報を記入します。
 
@@ -148,7 +150,7 @@ OpenCodeは公開アプリごとの統合Reactモックを`mockups/<app>/src/`�
 - 採用の証跡: <実際の所有者発言と、その発言が対象とするモック>
 ```
 
-`pnpm lint:openspec` で構造を検証し、要求・仕様・モックの意味と所有者の採用を照合して計画完了を判断します。その後、同じリポジトリで OpenCode の `openspec/applier` を選び、「`<change-id>` を実装して」と依頼します。`/opsx-apply <change-id>` でも開始できます。
+`pnpm lint:openspec` は構造を検証します。CLI 上の成果物完成や計画担当者の自己点検だけでは計画完了承認になりません。`openspec-review` の共通規則に従い、`openspec/architect` が最終確認で実装可能性、要求・仕様・モックの意味、所有者の採用を照合します。承認は確認した計画に対して有効であり、重要な修正後は影響する成果物を再確認します。証跡は既存のレビュー結果を使います。承認後、同じリポジトリで OpenCode の `openspec/applier` を選び、「`<change-id>` を実装して」と依頼します。`/opsx-apply <change-id>` でも開始できます。
 
 参照できないモックや計画間の矛盾が見つかった場合は、OpenCode で対象の要求・モック・下流成果物を更新し、再び計画完了を確認してから同じ変更の実装を再開します。
 

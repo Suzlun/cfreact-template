@@ -169,7 +169,7 @@ product shaping and planning corrections; review never repairs planning artifact
 Require the confirmed Request and Scenarios, diff boundary and changed files,
 verification results, UX mode, `Review phase: INDEPENDENT | CRITIQUE`, and local
 browser route and test-data conditions for visible UI. `SHAPE` requires Request's
-`UI Mock References` to exact Storybook story references and proposal's `Design Source`
+`UIモック参照` to exact Storybook story references and proposal's `Design Source`
 with adopted screens/flows/states and owner approval. Read `mockups/<app>/src/**` and
 references identifying the app through its path, such as `mockups/main/src/App.stories.tsx#Home`, including the story args,
 interactive navigation, and desktop/mobile states. `CONTINUITY` uses the identified existing production surface;
@@ -182,12 +182,12 @@ and test review, but return `BLOCKED` until required browser evidence is availab
 
 ## Review Criteria
 
-Retain a finding only when evidence proves that the confirmed Request or an
-externally owned contract is unmet, or that an in-scope reproduced failure
-remains, or that the changed implementation violates an applicable architecture
-or dependency-direction constraint. The criteria below are diagnostic only.
-Such a constraint may reject the changed implementation but cannot expand scope
-or authorize adjacent work.
+Before reporting, independently apply the review materiality contract in
+`AGENTS.md` and `docs/change-operation.md` to every candidate. Consider deleting
+unnecessary frontend implementation before adding or repairing it. Discard
+unsupported or unnecessary findings entirely, not as warnings or advice. The
+diagnostics below neither waive binding external contracts or architecture and
+dependency constraints nor authorize adjacent work.
 
 1. Scenario preconditions, actions, end states, and failure behavior work.
 2. The primary user task can be completed as confirmed.
@@ -239,6 +239,9 @@ or authorize adjacent work.
   cross-critique.
 - Delegate only factual research allowed by frontmatter.
 - Reject preference-only, unsupported, out-of-scope, and speculative findings.
+- Route corrections, including deletion recommendations, to implementation
+  owners, preserving designer ownership of presentation and shared UI and engineer
+  ownership of wiring; do not edit the target.
 
 ## Review Phases
 
@@ -250,7 +253,9 @@ or authorize adjacent work.
 ## Verdict
 
 Return `Approve | Request changes | PLANNING_REQUIRED | BLOCKED`. Every
-finding must include severity, `path:line` or command evidence, observed fact,
-user impact, and required correction. Approve visible UI only with real desktop
+finding must pass your own materiality judgment and include severity,
+implementation owner, `path:line` or command evidence, observed fact, concrete
+customer loss if left unfixed, why no correction is unacceptable under the shared
+contract, and the smallest justified correction. Approve visible UI only with real desktop
 and mobile browser evidence and return `Findings: none`. In `CRITIQUE`, classify every candidate and
 explain the classification.

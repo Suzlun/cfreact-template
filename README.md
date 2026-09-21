@@ -544,7 +544,7 @@ GitHub Actionsからリリースする場合は、Cloudflare認証情報と256�
 
 ### 永続的な振る舞い契約
 
-OpenSpec の仕様は、確認済み要求を意味の根拠とする、利用者または外部契約から観測できる振る舞いの正です。OpenCode が要求、提案、仕様、設計、作業パッケージの範囲を管理します。
+OpenSpec の仕様は、確認済み要求を意味の根拠とする、利用者または外部契約から観測できる振る舞いの正です。OpenCode のプライマリエージェントが要求と統合モックを担当し、サブエージェント `openspec/planner` が提案・仕様・作業パッケージの範囲と該当する `skip_specs` 設定、`openspec/architect` が統合設計と計画の最終確認を担当します。
 
 - 主仕様は `openspec/specs/**/spec.md` に置きます。
 - 活動中の差分仕様は `openspec/changes/*/specs/**/spec.md` に置きます。
@@ -586,7 +586,11 @@ OpenCode で所有者に確認できた内容を随時 `request.md` へ保存し
 
 `NONE` はモック不要、`CONTINUITY` は既存製品の証拠を参照します。`SHAPE` は要求とモックを同時に具体化し、確認済み要求と所有者が受け入れたモックの相互対応、採用理由、整合性を確認して提案を収束させます。`proposal.md` の `Design Source` には OpenCode が読めるパスまたは安定した識別子、対象画面・操作の流れ・状態、受け入れと採用理由を記録します。
 
-OpenCode と `openspec/applier` は計画完了した変更を実装し、計画ファイルでは `tasks.md` の進捗だけを更新します。要求の `UI Mock References` と提案の `Design Source` から、採用済みの `mockups/main/src/App.stories.tsx#Home` などのアプリ・画面・状態と `mockups/<app>/src/**` の React ソースを照合します。UI は対象の `apps/<app>` と共通 UI に、`PRODUCTION_UI -> WIRING -> POLISH -> REVIEW` の順に忠実に正式実装します。製品判断の不足や計画の矛盾があれば `PLANNING_REQUIRED` を返し、OpenCode で解決します。
+プライマリエージェントは、要求・モック、`openspec/planner` の提案・仕様、`architecture-change` での `openspec/architect` の `DESIGN`、計画担当者の作業パッケージ、設計担当者の `READINESS_REVIEW` の順に進行します。`behavior-change` は設計ファイルを持たず、提案・仕様・作業パッケージの完成後に同じ最終確認を受けます。実装開始には最終確認の `APPROVED` が必要で、CLI 上の成果物完成や計画担当者の自己点検だけでは承認になりません。重要な計画修正後は影響する成果物を再確認します。
+
+生成スキルと入口コマンドにもこの委任境界を適用します。主仕様の同期は `openspec/planner` へ委任し、アーカイブの進行はプライマリエージェントが担当します。
+
+OpenCode と `openspec/applier` は計画完了した変更を実装し、計画ファイルでは `tasks.md` の進捗だけを更新します。要求の `UIモック参照` と提案の `Design Source` から、採用済みの `mockups/main/src/App.stories.tsx#Home` などのアプリ・画面・状態と `mockups/<app>/src/**` の React ソースを照合します。UI は対象の `apps/<app>` と共通 UI に、`PRODUCTION_UI -> WIRING -> POLISH -> REVIEW` の順に忠実に正式実装します。製品判断の不足や計画の矛盾があれば `PLANNING_REQUIRED` を返し、OpenCode で解決します。
 
 新規プロダクトでは利用の流れ全体とモックを形にし、成果ごとの複数の変更へ分けます。共有判断が変われば影響する変更を再評価し、独立して計画完了したまとまりから実装へ引き渡します。
 
@@ -678,7 +682,7 @@ OpenCodeは公開アプリごとの統合Reactモックを`mockups/<app>/src/`�
 
 標準の実行環境はDev Containerです。`pnpm storybook:host`がプロジェクト選択と開発プレビューを提供し、`pnpm storybook:mockup`はモック用Storybookを直接起動します。`pnpm build:mockup`でGit管理対象外の`mockups/dist`へビルドします。共通の`mockups/.storybook`と`mockups/tsconfig.json`は、共通UIのTailwind CSS 4とReact Compiler設定を再利用します。
 
-要求の`UI Mock References`と提案の`Design Source`には、`mockups/main/src/App.stories.tsx#Home`や`mockups/main/src/App.stories.tsx#UsersError`のような定義ファイルと表示例の参照を記録します。OpenCodeは所有者確認済みの要求とモックを一緒に更新し、デスクトップとモバイルの実ブラウザで照合します。各アプリの画面・状態と変更は多対多で対応し、共有UIを更新した場合は影響する要求とモックを確認します。変更のアーカイブ後も`mockups/`を保持し、製品実装は正式なアプリと共通UIを利用します。
+要求の`UIモック参照`と提案の`Design Source`には、`mockups/main/src/App.stories.tsx#Home`や`mockups/main/src/App.stories.tsx#UsersError`のような定義ファイルと表示例の参照を記録します。OpenCodeは所有者確認済みの要求とモックを一緒に更新し、デスクトップとモバイルの実ブラウザで照合します。各アプリの画面・状態と変更は多対多で対応し、共有UIを更新した場合は影響する要求とモックを確認します。変更のアーカイブ後も`mockups/`を保持し、製品実装は正式なアプリと共通UIを利用します。
 
 起動・ホスト設定は[Storybookによるモック確認](docs/storybook-host.md)、編集規則は[mockups/AGENTS.md](mockups/AGENTS.md)を参照してください。
 

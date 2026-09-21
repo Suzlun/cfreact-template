@@ -324,11 +324,28 @@ Operations are the sequence.
 ### Preparation
 
 - Read project-specific rules
-- Route product shaping, Request dialogue, and planning artifacts to OpenCode.
+- The OpenCode primary owns owner dialogue, `request.md`, integrated mocks, and
+  orchestration. Delegate proposal, Specs and requested main-spec sync, `tasks.md`
+  scope, and applicable `skip_specs` metadata to the `openspec/planner` subagent.
+  Delegate unified frontend/backend design to `openspec/architect` in `DESIGN`,
+  which writes only `design.md`. The primary sequences Request/mock -> planner
+  proposal/Specs -> architect `DESIGN` for `architecture-change` -> planner tasks
+  -> architect read-only `READINESS_REVIEW` -> implementation. `behavior-change`
+  has no design artifact; the planner completes proposal/Specs/tasks before the
+  same final gate. Planner and architect never call each other. Architect may
+  delegate research to `researcher` only when indispensable.
+  Generated skills and entry commands respect this delegation; the primary never
+  silently writes delegated planning artifacts and retains archive orchestration.
+  Planning Ready requires resolved decisions, consistent artifacts, applicable UX
+  evidence, and `APPROVED` from `READINESS_REVIEW` after the plan is complete.
+  Planner self-check and CLI completion do not grant approval. Self-check and the
+  final implementability review share `openspec-review` semantic rules. Material
+  revisions require rechecking affected artifacts, using the existing review
+  result rather than a new persistent approval file.
   For `BEHAVIOR` and `ARCHITECTURE`, delegate implementation only within Planning
   Ready Changes; the user selects `openspec/applier` as a primary agent for that
   route. Its planning-file edits are limited to `tasks.md` progress.
-- Bind `SHAPE` work orders to Request's `UI Mock References` (exact Storybook
+- Bind `SHAPE` work orders to Request's `UIモック参照` (exact Storybook
   story references such as `mockups/main/src/App.stories.tsx#Home`) and proposal's
   `Design Source` approval scope, both identifying the applicable app through its path.
   Pass actual `mockups/<app>/src/**` and referenced
@@ -337,8 +354,8 @@ Operations are the sequence.
   `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW` for UI work: designer formalizes
   approved UI, engineer only wires, designer completes necessary deducible states,
   then independent review. Production imports app/package UI, not `mockups/`.
-- OpenCode owns same-repository app prototypes under
-  root `mockups/` and planning. Each publicly exposed `apps/<app>` pairs with one
+- The OpenCode primary owns same-repository app prototypes under
+  root `mockups/`. Each publicly exposed `apps/<app>` pairs with one
   integrated `mockups/<app>` prototype. Each app's N viewpoints and M Changes relate
   many-to-many; a Change references multiple app prototypes only when its confirmed
   outcomes require them. Re-evaluate affected apps and Requests when shared UI or
@@ -346,7 +363,20 @@ Operations are the sequence.
   and their fixtures/local state within design evidence. Formalize only the scoped
   `apps/<app>` UI and shared UI during implementation.
 - Return missing product decisions or contradictory planning inputs as
-  `PLANNING_REQUIRED` to OpenCode.
+  `PLANNING_REQUIRED` to the primary. It routes product meaning to owner dialogue,
+  planner artifact defects to `openspec/planner`, and design defects to
+  `openspec/architect`. Optional read-only `IMPLEMENTATION_REVIEW` addresses only
+  an exact design question after implementation.
+- Before review dispatch, the facilitator audits the necessity of the whole
+  review, each participant, and every additional wave against confirmed outcomes
+  and external contracts. Use `NOT_APPLICABLE` when no review is needed, not the
+  `APPROVE` verdict of an actual review. Preserve mandatory evidence, contracts,
+  and the Planning Ready gate. All reviewers remain read-only and consider removing
+  unnecessary implementation and planning content. Require customer harm and
+  no-fix consequences, severity, likelihood, scope, indispensability, and a
+  proportionate correction before reporting a finding. Drop unsupported or
+  unnecessary findings entirely. The facilitator independently re-evaluates each
+  finding; binding contracts and architecture constrain work without expanding it.
 - Pin Ask-first boundaries
 - Pin generated artifacts and required quality gates
 - Pin allowed and disallowed tools

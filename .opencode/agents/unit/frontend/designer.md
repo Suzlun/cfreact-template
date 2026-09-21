@@ -173,7 +173,7 @@ production; OpenCode owns product shaping and the Planning Ready Change.
   implementations already permitted by the confirmed scope.
 - Inspect the current product, `packages/ui/styles/globals.css`, representative
   shared components, and Storybook before external research.
-- For `UX-Mode: SHAPE`, read Request's `UI Mock References` and proposal's
+- For `UX-Mode: SHAPE`, read Request's `UIモック参照` and proposal's
   `Design Source`: exact Storybook story references such as
   `mockups/main/src/App.stories.tsx#Home`, adopted screens/flows/states, and owner approval
   of that scope. Identify the app through each reference path. Inspect `mockups/<app>/src/**`, centered on `App.tsx` and `App.stories.tsx`,

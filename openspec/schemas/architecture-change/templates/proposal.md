@@ -38,7 +38,7 @@ UX-Mode: NONE
 
 ### Design Source
 
-- 採用済み観点: 要求の`UI Mock References`と同じ、対象アプリをパスで識別できる画面・状態の正確な参照（例: `mockups/main/src/App.stories.tsx#Home`）。対象の`mockups/<app>/src/**`と参照先のStorybook表示例で内容を確認する。
+- 採用済み観点: 要求の`UIモック参照`と同じ、対象アプリをパスで識別できる画面・状態の正確な参照（例: `mockups/main/src/App.stories.tsx#Home`）。対象の`mockups/<app>/src/**`と参照先のStorybook表示例で内容を確認する。
 - 対象範囲: 関連する画面、操作の流れ、状態。
 - 採用の証跡: 所有者が対象の観点と範囲を採用したことを示す短い記録。設計承認の証拠はこの節に記載する。
 -->
@@ -50,7 +50,7 @@ UX-Mode: NONE
 
 ## Repository Evidence
 
-| Source                                        | Observation                   | Relevance                             |
+| 出典                                          | 確認した事実                  | 関連性                                |
 | --------------------------------------------- | ----------------------------- | ------------------------------------- |
 | <!-- TODO: `path:line` またはコマンド結果 --> | <!-- TODO: 確認できた事実 --> | <!-- TODO: 意図または制約との関係 --> |
 
@@ -62,7 +62,7 @@ UX-Mode: NONE
 <!--
 ## Thesaurus
 
-| Formal Name | System Name | Meaning |
+| 正式名 | システム名 | 意味 |
 | --- | --- | --- |
 | 日本語の正式名 | 正確なシステム名 | 適用範囲と類似用語との差異 |
 -->

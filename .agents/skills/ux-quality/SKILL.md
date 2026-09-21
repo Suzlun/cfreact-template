@@ -6,14 +6,16 @@ description: Implement or review production UI for material fidelity to approved
 # UX Quality
 
 Evaluate the running production UI against Request/Specs and the adopted design.
-OpenCode owns product shaping and Planning Ready Changes; OpenCode implements
-and reviews without repairing Request, proposal, Specs, or design. Use this skill
+The OpenCode primary owns product shaping and delegates planning to
+`openspec/planner` and `openspec/architect`. OpenSpec Change implementation requires
+the architect's `READINESS_REVIEW` approval; implementers and reviewers do not repair Request,
+proposal, Specs, or design. Use this skill
 only within confirmed scope, never as independent authority to redesign a product.
 
 ## Evidence Order
 
 1. Confirmed Request and applicable Specs
-2. `SHAPE`: Request's `UI Mock References` to exact Storybook story references such as
+2. `SHAPE`: Request's `UIモック参照` to exact Storybook story references such as
    `mockups/main/src/App.stories.tsx#Home`, plus proposal's `Design Source` with adopted
    screens, flows, states, and owner approval. Both identify the applicable app through its path.
    Read actual `mockups/<app>/src/**` and
@@ -37,8 +39,8 @@ code and `packages/ui`, owning all `packages/ui/**` edits; the frontend engineer
 only wires data, actions, routes, and states. The designer then completes necessary
 deducible production states, followed by independent review.
 
-OpenCode owns one integrated `mockups/<app>` prototype
-per publicly exposed `apps/<app>` under root `mockups/` and planning artifacts. Production
+The OpenCode primary owns one integrated `mockups/<app>` prototype
+per publicly exposed `apps/<app>` under root `mockups/`. Production
 imports formalized UI in the scoped `apps/<app>` and shared UI rather than prototype source.
 Shared UI or viewpoint updates require tracing affected apps, Requests, and Changes and rechecking their approved
 scope; prototype fixtures/local state do not authorize new outcomes.

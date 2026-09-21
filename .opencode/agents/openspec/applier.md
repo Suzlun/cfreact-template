@@ -170,8 +170,8 @@ boundaries.
 Resolve the selected Change with status and apply instructions. Preserve
 planning roots and store flags, read the reported `schemaName`, and read every
 returned `contextFiles` path. Require the OpenCode-owned `request.md` to
-contain `Request-Status: CONFIRMED`, owner-confirmed Background, Motivation, a
-concrete Request, and confirmation evidence. Background and Motivation explain the
+contain `Request-Status: CONFIRMED`, owner-confirmed `背景`, `変更の動機`, a
+concrete `要求`, and confirmation evidence. `背景` and `変更の動機` explain the
 Request but never create implementation outcomes by themselves.
 `behavior-change` additionally contains proposal, Specs, and tasks.
 `architecture-change` additionally contains design and may report Specs as
@@ -183,9 +183,14 @@ Treat the confirmed Request as authoritative request evidence and every later
 artifact as a fallible derivation. Return `PLANNING_REQUIRED` without
 delegation when an artifact expands, reverses, or misinterprets the Request, or
 when a work package cannot be causally connected to its requested outcome.
-Proceed only with an OpenCode Planning Ready Change, a ready CLI state, and
-readable, coherent required context. OpenCode owns product shaping and all
-planning artifacts and app prototypes under root `mockups/`.
+Proceed only with a Planning Ready Change, a ready CLI state, readable coherent
+context, and the `openspec/architect` `APPROVED` result from `READINESS_REVIEW`
+after the planner completed this plan. CLI completion or planner self-check
+alone is insufficient. A materially revised plan requires rechecking affected
+artifacts; use the existing review result rather than creating an approval file.
+The OpenCode primary agent owns product shaping, Request, app prototypes under
+root `mockups/`, and orchestration. `openspec/planner` owns proposal, Specs, and
+task scope; `openspec/architect` owns design and the final readiness review.
 Each publicly exposed `apps/<app>` pairs with one integrated `mockups/<app>` prototype.
 OpenCode implements the approved scope in the applicable apps and shared UI and
 updates accepted task progress. Each app's N routes/scenarios may serve M Changes;
@@ -193,10 +198,10 @@ a Change references multiple app prototypes only when its confirmed outcomes req
 App prototypes remain outside Change directories and archives. Re-evaluate affected
 apps, Requests, and Changes when shared UI or viewpoint decisions change.
 
-Read Request's UI Mock References and the proposal's UX evidence before dispatch:
+Read Request's `UIモック参照` and the proposal's UX evidence before dispatch:
 
 - `SHAPE`: require relevant exact route/scenario references in Request's
-  `UI Mock References`, such as `mockups/main/src/App.stories.tsx#Home`, identifying
+  `UIモック参照`, such as `mockups/main/src/App.stories.tsx#Home`, identifying
   the applicable app through its path. Read the actual `mockups/<app>/src/**`,
   centered on `App.tsx` and `App.stories.tsx`, and the referenced static
   story's args and desktop/mobile states. Proposal's `Design Source`
@@ -300,10 +305,14 @@ graph. When all packages are complete:
 3. Run `node scripts/openspec/verify-scenario-coverage.mjs` to check interaction
    with every active Change.
 4. Send the complete implementation, artifacts, diff boundary, and verification
-   evidence to `unit/review/facilitator`.
+   evidence to `unit/review/facilitator` for necessity audit and any warranted
+   review. An audit cannot waive required evidence, contracts, or UI review.
 5. Route in-scope implementation findings to the responsible implementers and
-   repeat the final review until it returns `APPROVE`. Planning findings return
-   `PLANNING_REQUIRED`; unavailable required browser evidence is `BLOCKED`.
+   obtain re-review of the affected findings. Complete with `APPROVE` after
+   necessary review, or `NOT_APPLICABLE` when the facilitator establishes that
+   no review is needed. Report that distinction, never treat a skipped review
+   as approval. Planning findings return `PLANNING_REQUIRED`; unavailable
+   required browser evidence is `BLOCKED`.
 
 Only then report archive-ready. Actual UI changes require real desktop and
 mobile browser verification; static inspection alone cannot complete review.
@@ -326,7 +335,7 @@ Owner: <agent>
 Detailed local plan: <only the package dispatched now>
 Verification: <commands and evidence>
 
-Final Review: PLANNED | REVIEWING | REQUEST_CHANGES | APPROVE | PLANNING_REQUIRED | BLOCKED
+Final Review: PLANNED | REVIEWING | REQUEST_CHANGES | APPROVE | NOT_APPLICABLE | PLANNING_REQUIRED | BLOCKED
 ```
 
 ## Guardrails

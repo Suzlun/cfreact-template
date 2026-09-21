@@ -6,30 +6,30 @@ context: |
   Testing: Vitest (pure unit and customer-facing React/UI), Storybook browser tests, Playwright (E2E)
 
   Request authority boundary:
-  - OpenCode owns product shaping and planning through the repository-local official OpenSpec new, continue, update, and verify skills.
+  - The OpenCode primary agent owns owner dialogue, `request.md`, integrated mocks, and planning delegation. Official OpenSpec skills and entry commands provide generic traversal within these ownership boundaries.
   - Confirm who is affected, the current situation, the motivation for change, the expected value, and the desired outcome before selecting a solution. Ask only about missing information that materially changes the outcome or scope.
   - Motivation includes negative drivers such as pain points or limitations and positive drivers such as opportunities, aspirations, curiosity, or unexplored possibilities.
-  - `request.md` is a living set marked `Request-Status: CONFIRMED`; every saved item is owner-confirmed background, motivation and expected value, a requested outcome, an explicit outcome constraint, an explicitly required means, confirmation evidence, or a relevant UI Mock Reference.
+  - `request.md` is a living set marked `Request-Status: CONFIRMED`; every saved item is owner-confirmed background, motivation and expected value, a requested outcome, an explicit outcome constraint, an explicitly required means, confirmation evidence, or a relevant reference in `UIモック参照`.
   - Clear, explicit owner statements suffice as confirmation evidence for initial creation and updates. Save confirmed content immediately without asking the owner to confirm it again; ask one focused question only when meaning or binding force is unclear.
-  - Background and Motivation explain why the Request exists but never create Requirements or outcome constraints by themselves.
+  - `背景` and `変更の動機` explain why the Request exists but never create Requirements or outcome constraints by themselves.
   - Solution-shaped input is traced back to its background, motivation, and desired outcome before the named solution is treated as a required means.
-  - OpenCode maintains planning artifacts according to their meaning: purpose, outcomes, and outcome constraints in Request; adopted design details in design artifacts; required means as design constraints.
+  - The primary records purpose, outcomes, and outcome constraints in Request, and passes adopted design details and required means to their owners as design constraints. It does not author delegated planning artifacts on their behalf.
   - Repository evidence, common practice, security recommendations, implementation necessity, downstream artifacts, and tests cannot create product outcomes or Requirements.
-  - Required Means constrain architecture and tasks; product Requirements and Scenarios derive only from confirmed outcomes and outcome constraints.
+  - The `必須手段` section constrains architecture and tasks; product Requirements and Scenarios derive only from confirmed outcomes and outcome constraints.
 
   UI / UX boundary:
-  - OpenCode owns integrated React mocks under `mockups/<app>/src/**` and planning artifacts. Each public app has one integrated mock. App.stories.tsx defines initial screens and states through args; App.tsx owns the interactive journey. Reuse public UI subpaths, fixtures, and local state. Confirmed Request remains the product authority.
+  - The primary owns one integrated React mock per public app under `mockups/<app>/src/**`. `App.stories.tsx` selects initial screens and states through args; `App.tsx` owns the interactive journey. Reuse public UI subpaths, fixtures, and local state. Product requirements derive from confirmed Request.
   - OpenCode updates mocks and owner-confirmed Request together. Dev Container is the standard runtime. `pnpm storybook:host` serves registered projects; `pnpm storybook:mockup` serves the mock catalog directly. Shared `mockups/.storybook` and `mockups/tsconfig.json` reuse UI Tailwind CSS 4 and React Compiler. `pnpm build:mockup` builds to ignored `mockups/dist`.
   - Storybook stories select the initial screen and state, while React owns the interactive journey. Verify desktop and mobile in a real browser. Common UI retains its separate Storybook catalog. Shared hosting supplies project directories, public paths, and ports at runtime.
   - Each app's N routes/scenarios may correspond to M Changes. A Change may reference multiple app prototypes only when its confirmed outcomes require them. Shared UI or viewpoint decisions require re-evaluating affected apps, Requests, and Changes. Root `mockups/` and its app prototypes remain outside Change directories and their archives. Follow shared root `mockups/AGENTS.md` for source, build, and preview rules.
-  - Request may include `## UI Mock References` for relevant routes and scenarios, identifying the applicable app through exact paths such as `mockups/main/src/App.stories.tsx#Home` or `mockups/main/src/App.stories.tsx#UsersError`. SHAPE requires references to its actual relevant viewpoints. These references are design evidence; confirmed purpose and outcomes remain Request prose and are not inferred from the mock.
+  - Request may include `## UIモック参照` for relevant routes and scenarios, identifying the applicable app through exact paths such as `mockups/main/src/App.stories.tsx#Home` or `mockups/main/src/App.stories.tsx#UsersError`. SHAPE requires references to its actual relevant viewpoints. These references are design evidence; confirmed purpose and outcomes remain Request prose and are not inferred from the mock.
   - `UX-Mode: NONE` means no user-visible surface changes and requires no mock.
   - `UX-Mode: CONTINUITY` preserves an identified existing production experience and records readable production evidence in Continuity Source.
   - `UX-Mode: SHAPE` requires owner adoption of the relevant direction and material consistency between confirmed outcomes and the approved mock before `proposal.md` is created.
   - For SHAPE, check Request and the approved mock in both directions: the mock realizes confirmed outcomes and constraints, and its product semantics are authorized by Request. Resolve discrepancies through owner dialogue and update confirmed Request content or the approved design according to its meaning.
   - Material UX choices require rationale and owner confirmation when these are not already present. Design details remain in design artifacts.
-  - After each material viewpoint change, trace its UI Mock References across affected Changes and check Request rationale for affected tasks, action priority, hierarchy, navigation, defaults, recovery, and semantic copy. Save any newly owner-confirmed intent in Request and reconcile affected planning artifacts. After each user-visible Request change, re-evaluate and update the affected prototype viewpoints before proceeding.
-  - A SHAPE proposal records Primary User Task, UX Direction, and Design Source under UI / UX Impact. Design Source uses the same route/scenario references as Request's UI Mock References with adopted screen/flow/state scope and short owner adoption evidence for that scope. This existing section holds design approval evidence.
+  - After each material viewpoint change, trace its `UIモック参照` across affected Changes and check Request rationale for affected tasks, action priority, hierarchy, navigation, defaults, recovery, and semantic copy. Save any newly owner-confirmed intent in Request and reconcile affected planning artifacts. After each user-visible Request change, re-evaluate and update the affected prototype viewpoints before proceeding.
+  - A SHAPE proposal records Primary User Task, UX Direction, and Design Source under UI / UX Impact. Design Source uses the same route/scenario references as Request's `UIモック参照` with adopted screen/flow/state scope and short owner adoption evidence for that scope. This existing section holds design approval evidence.
   - A visible UI composition or placement may be an Outcome Constraint when it directly expresses the experience the customer wants. Internal component structure remains a means.
 
   YAGNI and reuse boundary:
@@ -42,12 +42,20 @@ context: |
   - Reuse evidence is valid only when the cited research report explicitly includes the generic capability in its investigation scope. Requirement traceability is not package-candidate coverage.
   - Distinguish repository code, workspace packages, direct dependencies, repository-adopted dependencies, transitive-only dependencies, new external packages, and dependency updates.
 
+  Planning ownership and approval:
+  - The `openspec/planner` subagent owns `proposal.md`, Specs, requested main-spec sync, `tasks.md` scope, and applicable `.openspec.yaml` `skip_specs` metadata.
+  - `openspec/architect` unifies frontend/backend design. In `DESIGN`, it creates or updates only `design.md`; in `READINESS_REVIEW`, it performs the read-only final implementability and semantic review of the completed plan. After implementation, read-only `IMPLEMENTATION_REVIEW` addresses only an assigned design question when needed. It delegates research to `researcher` only when indispensable.
+  - The primary sequences Request/mock -> planner proposal/Specs -> architect `DESIGN` for architecture changes -> planner work packages -> architect `READINESS_REVIEW` -> implementation. `behavior-change` has no `design.md` and proceeds to final review after proposal/Specs/tasks are complete.
+  - Planner and architect never call each other. The primary resolves product meaning through owner dialogue and routes proposal, Specs, and task-scope defects to `openspec/planner`, and design defects to `openspec/architect`. Archive orchestration stays with the primary.
+  - Planning Ready requires resolved material decisions, consistent artifacts, applicable UX evidence, and `APPROVED` from `READINESS_REVIEW` after the plan is complete. CLI artifact completion and planner self-check do not grant approval. `openspec-review` supplies shared semantic rules for self-check and final review.
+  - Approval applies to the reviewed plan; material revisions require rechecking affected artifacts. Use the existing review result as evidence, not a new persistent approval file.
+
   Change completion boundary:
   - For greenfield input, shape the integrated journey and mock before scaffolding outcome-bound Changes. Re-evaluate every affected Request when shared experience decisions change; hand off independently planning-ready Changes in waves.
-  - Apply accepts planning-ready artifacts from OpenCode. For SHAPE, read Request's UI Mock References, proposal's approved Design Source scope identifying the same apps through exact paths, and the actual `mockups/<app>/src/**` and referenced Storybook story references together; verify their consistency with Request. Recheck affected apps, Requests, and Changes when shared UI or viewpoints evolve.
+  - The primary or the user-selected `openspec/applier` primary agent implements only plans that have passed final approval. Planning-file edits are limited to `tasks.md` progress. For SHAPE, cross-check Request's `UIモック参照`, proposal's approved Design Source scope identifying the same apps, actual `mockups/<app>/src/**`, and referenced Storybook stories. Recheck affected apps, Requests, and Changes when shared UI or viewpoints evolve.
   - UI implementation follows `PRODUCTION_UI -> WIRING -> POLISH -> REVIEW`: the designer productionizes approved React viewpoints into the scoped `apps/<app>` UI and `packages/ui`, the engineer wires only routes/data/actions/states, the designer completes necessary deducible production states, and independent review verifies fidelity and real desktop/mobile use. Production code imports formalized app/package UI, never `mockups/`; OpenCode retains prototype ownership.
-  - Missing planning inputs, contradictions, or unresolved material choices return `PLANNING_REQUIRED` to OpenCode; implementation does not repair planning artifacts or reinterpret Request.
-  - A Change is complete when its Work Packages are implemented and merge-ready with reproducible repository-local or CI evidence.
+  - Missing planning inputs, contradictions, or unresolved material decisions return `PLANNING_REQUIRED` to the primary for resolution through the responsible owners. Implementation does not repair planning artifacts or reinterpret Request.
+  - A Change is complete when its work packages are implemented and merge-ready with reproducible repository-local or CI evidence.
   - Do not include release execution, deployment, environment provisioning, credential access, external approval, staging or production validation, rehearsal, or production observation.
 
   Test -> Spec contract:
@@ -67,12 +75,14 @@ context: |
 
 rules:
   proposal:
+    - '`openspec/planner` creates and updates the proposal from confirmed Request. Return missing Request meaning to the primary for owner dialogue.'
     - Derive the proposal only from `Request-Status: CONFIRMED` in `request.md`.
     - Keep outcomes and outcome constraints separate from required means and design details.
     - Cite repository evidence and record the positive Change boundary and observable success without adding outcomes.
     - OpenCode resolves missing or unclear Request content with the owner before creating the proposal.
-    - For SHAPE, create the proposal only after owner adoption and the bilateral Request/prototype check; include nonempty Primary User Task, UX Direction, and Design Source with the same exact route/scenario references as Request's UI Mock References, related scope, and adoption evidence.
+    - For SHAPE, create the proposal only after owner adoption and the bilateral Request/prototype check; include nonempty Primary User Task, UX Direction, and Design Source with the same exact route/scenario references as Request's `UIモック参照`, related scope, and adoption evidence.
   specs:
+    - '`openspec/planner` owns delta-spec authoring and updates, and main-spec sync when requested.'
     - Begin every delta spec with `## Purpose`.
     - Read confirmed Request and approved design, including the approved mock for SHAPE; only Request authorizes product semantics, while design supplies the adopted realization.
     - Requirements and Scenarios contain only positive observable behavior or externally owned constraints directly entailed by the owner-confirmed Request.
@@ -81,6 +91,7 @@ rules:
     - Do not specify standards, RFC compliance, packages, or implementation techniques unless their externally observable effect is itself a confirmed outcome constraint.
     - Every Scenario heading includes a stable Scenario ID suffix in parentheses.
   design:
+    - '`openspec/architect` creates and updates `architecture-change` design.md in DESIGN. Read-only review does not edit it.'
     - Keep only material decisions, reuse assessment, boundaries, data, security, migration, rollback, failure modes, risks, verification, and revisit triggers.
     - Read the approved UX design and preserve its adopted details in design artifacts; confirm missing rationale or owner adoption for material UX choices through OpenCode.
     - Record one or more Reuse Assessment rows for every delta Spec Unit, split by package-replaceable generic capability.
@@ -88,6 +99,7 @@ rules:
     - Treat transitive-only dependencies as unadopted until the consuming package declares and reviews a direct dependency.
     - Permit LIMITED_COMPLEMENT only with evidence that repository assets and established external packages cannot satisfy the confirmed outcome.
   tasks:
+    - '`openspec/planner` owns task scope. For architecture changes, author tasks after design is complete, then return the completed plan through the primary for `openspec/architect` READINESS_REVIEW.'
     - Keep `tasks.md` as a coarse Work Package ledger with objective completion evidence.
     - Do not create file-by-file, helper-by-helper, or test-layer-by-test-layer plans.
     - Do not require release execution, deployment, external environment operations, credentials, or external approval.

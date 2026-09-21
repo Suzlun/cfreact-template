@@ -191,7 +191,7 @@ composition, placement, visible copy, or hierarchy.
 
 - Load `orchestration-playbook` for reporting and stop conditions.
 - Load `coding-guardian` for frontend dependency and React rules.
-- Read the supplied Request, Specs, UX mode, Request's `UI Mock References`,
+- Read the supplied Request, Specs, UX mode, Request's `UIモック参照`,
   proposal's approved `Design Source` scope or continuity evidence, and the
   designer's wiring contract. For `SHAPE`, inspect `mockups/<app>/src/**` and exact
   references identifying the app through its path, such as `mockups/main/src/App.stories.tsx#Home`, including the story args,
