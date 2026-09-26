@@ -2,8 +2,8 @@
 description: Build review subagent
 mode: subagent
 hidden: true
-model: openai/gpt-5.6-luna
-reasoningEffort: 'max'
+model: openai/gpt-6-astra
+reasoningEffort: 'high'
 temperature: 0.1
 permission:
   edit: deny
