@@ -11,6 +11,12 @@
 - Write shared skill definitions in `.agents/skills/**/SKILL.md` and OpenCode agent and command definitions under `.opencode/` in English. Do not translate their prose into Japanese.
 - Shared project skills live in `.agents/skills/`, discovered through OpenCode's project Agent Skills compatibility. OpenCode's OpenCode runtime uses the same repository root and shared skills. Agent definitions remain in `.opencode/agents/`; command definitions remain in `.opencode/commands/`.
 
+## Establish Working Context
+
+- Before planning, researching, editing, or delegating repository work, MUST read `README.md` and the documentation relevant to the request and affected area, including applicable local `AGENTS.md` files and existing change artifacts.
+- MUST inspect the current Git branch and working tree, including staged changes, unstaged changes, and relevant untracked files. Read the relevant diffs before deciding what to change; preserve work already in progress. Do not read credentials or other protected local data to satisfy this check.
+- Use the user's request and these sources to identify what this project does, the concrete problem being addressed, what work is already underway, and the scope of the current task. Distinguish observed facts from assumptions; clarify only gaps that materially affect the outcome before choosing an approach.
+
 ## Natural Japanese Prose
 
 - Any content required to be Japanese MUST read as natural Japanese, not as a literal translation or code-switched prose.
