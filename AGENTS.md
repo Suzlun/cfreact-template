@@ -69,6 +69,10 @@ Apply the Credo as a decision standard without reciting it or making ceremonial 
 - Handwritten exported TypeScript declarations must have Japanese TSDoc where lint requires it.
 - Keep TSDoc limited to contract information that names and types do not already express. Do not invent error cases or examples, and do not repeat the signature in prose.
 
+## UI / UX
+
+- Express UI meaning through interaction, symbols, and imagery first. Outside places where text itself is the content, keep visible wording minimal; explaining the interface with on-screen prose is prohibited. Keep necessary action names, factual content, and impact information explicit.
+
 ## Commands
 
 - Install: `corepack enable && pnpm install`

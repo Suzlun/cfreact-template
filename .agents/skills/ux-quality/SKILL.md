@@ -54,7 +54,7 @@ checks below diagnose scoped defects; they do not authorize product changes.
 
 ### Primary Task and Action
 
-- The purpose is quickly understandable.
+- The purpose is quickly understandable through the interaction and visual composition, without explanatory UI prose.
 - One primary action is clear and secondary actions do not compete with it.
 - The result and available next step are understandable.
 - Destructive or irreversible actions preserve the confirmed context and outcome.
@@ -62,7 +62,7 @@ checks below diagnose scoped defects; they do not authorize product changes.
 ### Hierarchy and Density
 
 - Visual weight matches functional importance.
-- Headings, body copy, and supporting context establish a useful reading order.
+- Interaction, symbols, imagery, and necessary labels establish a useful reading order; prose belongs where text is the content.
 - Related items are close and unrelated regions are clearly separated.
 - Preserve adopted visual distinctions instead of flattening them into uniform
   cards, borders, spacing, and type.
@@ -73,7 +73,7 @@ checks below diagnose scoped defects; they do not authorize product changes.
   states required by Request/Specs. Complete a state absent from the mock only
   when deducible from those contracts and current conventions within scope.
 - Loading communicates purpose and progress.
-- Empty states explain facts and return users to the primary task when possible.
+- Empty states show the state and a next action; include only facts necessary for the user's decision.
 - Error states avoid invented causes and preserve confirmed recovery behavior.
 - Disabled states do not rely on color alone and make the reason understandable.
 - State changes avoid unnecessary layout shifts and focus loss.
@@ -107,6 +107,9 @@ to introduce them.
 
 ### Current System Consistency
 
+- Prefer interaction, symbols, and imagery over words. Outside text-content areas,
+  keep visible copy minimal and reject explanatory UI prose; preserve necessary
+  action names, factual content, and impact information.
 - Prefer existing tokens, shared components, component APIs, state patterns,
   and product vocabulary.
 - Represent the same concept with the same appearance and interaction.
