@@ -1,12 +1,12 @@
 ---
 name: research-report
-description: Records every repository or web investigation as a dated, evidence-backed research log. Use whenever research is requested or performed, before evidence collection and before returning findings.
+description: Use ONLY by the researcher subagent when an explicitly requested or indispensable persistent report is needed for current external evidence or deep research beyond the codebase. Never use for repository-only investigation or template maintenance.
 compatibility: opencode
 ---
 
 # Research Report
 
-Create durable investigation history without treating prior reports as durable truth.
+Only `researcher` uses this skill to create a required persistent report. Repository-only investigation and template maintenance do not produce reports. Prior reports are leads, not durable truth.
 
 ## Required workflow
 
@@ -21,7 +21,7 @@ Create durable investigation history without treating prior reports as durable t
 4. Treat prior reports as leads, never as authority. Re-verify every material reused claim against current primary evidence. A recent report may support the answer only after confirmation.
 5. For web evidence, use Agent Browser exclusively. Do not use `webfetch` or `websearch`.
 6. Collect primary evidence, cross-check material claims, and distinguish observations from inferences and assumptions.
-7. Write one report for every investigation, including repository-only, `FACTS_ONLY`, inconclusive, and blocked work.
+7. Write one report for the assigned investigation only when a persistent report is explicitly requested or indispensable to the confirmed task. `FACTS_ONLY`, inconclusive, or blocked work does not by itself require a report.
 8. Save the report before replying to the caller.
 
 ## Storage
@@ -52,8 +52,7 @@ Create durable investigation history without treating prior reports as durable t
 - Relevant existing reports received an explicit freshness and reliability assessment.
 - Material claims are backed by current primary evidence.
 - Every web source was accessed through Agent Browser.
-- The report exists at the required dated path and follows the complete template.
-- The caller response cites the saved report path.
+- When a report was required, it exists at the dated path and follows the complete template; the caller response cites its path.
 
 ## Bundled resources
 
