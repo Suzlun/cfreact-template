@@ -30,7 +30,7 @@ This document is lint-as-rules. Include only rules that are mechanically enforce
    - `commit-msg`: `pnpm commitlint --edit $1`
    - Break down what `.lintstagedrc.json` actually runs for TS, TSX, JS, JSX, JSON, and Markdown
 6. Use this repo's actual TypeSpec setup precisely:
-   - `apps/main/package.json` and `packages/core/package.json` define TypeSpec formatting, generation, and checks
+   - `apps/main/package.json` and `apps/core/package.json` define TypeSpec formatting, generation, and checks
    - OpenAPI output is configured by both TypeSpec `tspconfig.yaml` files
 7. Mention OpenSpec exactly as implemented today through the OpenCode-managed owner-confirmed `request.md`, the `behavior-change` and `architecture-change` schemas, `pnpm lint:openspec`, `scripts/openspec/verify-change-proposal.mjs`, `scripts/openspec/verify-scenario-coverage.mjs`, and `scripts/openspec/verify-change-task-scope.mjs`. Distinguish structural checks for `SHAPE`'s `Design Source` and `CONTINUITY`'s `Continuity Source` from semantic review of their evidence.
 8. Use this repo's real file names and paths. Do not reference non-existent legacy paths such as `apps/main/web`, `apps/main/internal/**`, `apps/main/.golangci.yml`, `tools/scripts/*`, root `.spectral.yaml`, or `commitlint.config.cjs`.
@@ -77,14 +77,14 @@ If a section has no enforceable rules beyond a short scope note, keep it brief.
    - `commitlint.config.js`
    - `eslint.config.js`
    - `apps/main/package.json`
-   - `packages/core/package.json`
+   - `apps/core/package.json`
    - `apps/main/typespec/tspconfig.yaml`
    - `apps/main/typespec/README.md`
    - `apps/main/package.json`
    - `apps/main/tsconfig.backend.json`
    - `apps/main/orval.backend.config.ts`
    - `apps/main/orval.frontend.config.ts`
-   - `packages/core/orval.config.ts`
+   - `apps/core/orval.config.ts`
    - `packages/core-sdk/orval.config.ts`
    - `scripts/codegen/verify-codegen-roots.mjs`
    - `scripts/codegen/normalize-backend-handler-imports.mjs`

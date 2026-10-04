@@ -31,7 +31,7 @@
   "scripts": {
     "dev": "concurrently \"pnpm dev:backend\" \"pnpm dev:frontend\"",
     "dev:frontend": "vite",
-    "dev:backend": "wrangler dev -c wrangler.toml -c ../../packages/core/wrangler.toml --ip 0.0.0.0",
+    "dev:backend": "wrangler dev -c wrangler.toml -c ../core/wrangler.toml --ip 0.0.0.0",
     "build": "pnpm check && pnpm build:frontend",
     "build:frontend": "vite build",
     "build:backend": "pnpm check:backend",

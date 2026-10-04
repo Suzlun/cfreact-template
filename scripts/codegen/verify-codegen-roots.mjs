@@ -9,9 +9,9 @@ const codegenRoots = [
   resolvePathWithinRoot(repositoryRoot, 'apps/main/src/backend/generated/api'),
   resolvePathWithinRoot(repositoryRoot, 'apps/main/src/backend/modules'),
   resolvePathWithinRoot(repositoryRoot, 'apps/main/src/frontend/api/generated'),
-  resolvePathWithinRoot(repositoryRoot, 'packages/core/typespec/openapi'),
-  resolvePathWithinRoot(repositoryRoot, 'packages/core/src/generated/api'),
-  resolvePathWithinRoot(repositoryRoot, 'packages/core/src/modules'),
+  resolvePathWithinRoot(repositoryRoot, 'apps/core/typespec/openapi'),
+  resolvePathWithinRoot(repositoryRoot, 'apps/core/src/generated/api'),
+  resolvePathWithinRoot(repositoryRoot, 'apps/core/src/modules'),
   resolvePathWithinRoot(repositoryRoot, 'packages/core-sdk/src/generated'),
 ];
 

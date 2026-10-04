@@ -20,7 +20,7 @@ import {
 test('Changesetはアプリケーション版へ影響するfile変更だけに要求する', () => {
   // template workflowや文書の保守を生成先の初回releaseへ混入させず、実行物とmanifestを対象にします。
   assert.equal(requiresApplicationChangeset('apps/main/src/frontend/app.tsx'), true);
-  assert.equal(requiresApplicationChangeset('packages/core/drizzle/migrations/0001.sql'), true);
+  assert.equal(requiresApplicationChangeset('apps/core/drizzle/migrations/0001.sql'), true);
   assert.equal(requiresApplicationChangeset('package.json'), true);
   assert.equal(requiresApplicationChangeset('pnpm-lock.yaml'), true);
   assert.equal(requiresApplicationChangeset('.github/workflows/release.yml'), false);
@@ -32,8 +32,8 @@ test('配備対象は依存先を先に一度だけ返す', () => {
   const manifest = {
     core: {
       workspace: '@example/core',
-      wranglerConfig: 'packages/core/wrangler.toml',
-      renderedConfig: 'packages/core/wrangler.release.toml',
+      wranglerConfig: 'apps/core/wrangler.toml',
+      renderedConfig: 'apps/core/wrangler.release.toml',
       dependsOn: [],
     },
     main: {

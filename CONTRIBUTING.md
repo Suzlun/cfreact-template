@@ -193,7 +193,7 @@ node scripts/openspec/verify-scenario-coverage.mjs
 
 ### API
 
-公開main APIの正は`apps/main/typespec/main.tsp`、内部core APIの正は`packages/core/typespec/main.tsp`です。core契約のBearer認証もTypeSpecへ定義し、core SDKへ実行時の基底URL、トークン、標準`fetch`を注入します。変更後は両Honoサーバー、frontend SDK、core SDKを一括再生成してください。
+公開main APIの正は`apps/main/typespec/main.tsp`、内部core APIの正は`apps/core/typespec/main.tsp`です。core契約のBearer認証もTypeSpecへ定義し、core SDKへ実行時の基底URL、トークン、標準`fetch`を注入します。変更後は両Honoサーバー、frontend SDK、core SDKを一括再生成してください。
 
 ```bash
 pnpm gen:api-sdk
@@ -220,9 +220,9 @@ core HTTP境界: entry -> app -> generated route -> Handler -> Service
 core永続化: Service -> Repository -> Schema / Platform
 ```
 
-coreの`Service`がドメイン操作、不変条件、状態遷移、副作用調整を所有します。mainはcore実装、`Repository`、Schema、D1へ直接依存しません。`apps/main/tsconfig.backend.json`と`packages/core/tsconfig.json`を個別に型検査します。
+coreの`Service`がドメイン操作、不変条件、状態遷移、副作用調整を所有します。mainはcore実装、`Repository`、Schema、D1へ直接依存しません。`apps/main/tsconfig.backend.json`と`apps/core/tsconfig.json`を個別に型検査します。
 
-各`apps/*`は想定利用者、状況、目的、成果で識別されるユースケースを所有し、core APIはそれらが利用するドメイン操作と問い合わせを提供します。想定利用者が異なれば別ユースケースです。すべてが同じユースケースを複数アプリへ置く場合はアプリ分割の必要を確認しますが、分割が確認済み要望なら維持します。重複だけを理由にユースケースをcoreへ移しません。
+各公開アプリは想定利用者、状況、目的、成果で識別されるユースケースを所有し、core APIはそれらが利用するドメイン操作と問い合わせを提供します。想定利用者が異なれば別ユースケースです。すべてが同じユースケースを複数アプリへ置く場合はアプリ分割の必要を確認しますが、分割が確認済み要望なら維持します。重複だけを理由にユースケースをcoreへ移しません。
 
 main固有の複合ユースケースはmainの`Service`へ置き、`@cfreact-template/core-sdk`または宣言済み外部クライアントだけを利用します。単純な公開変換は`Handler`からcore SDKを直接呼びます。core内の別リソースを利用する場合は公開`index.ts`を使い、`Repository`構築用のcomposition別名はcoreの`app`だけが利用します。ハンドラーは`env`を直接参照しません。
 
@@ -232,7 +232,7 @@ main固有の複合ユースケースはmainの`Service`へ置き、`@cfreact-te
 
 スキーマを変更したらマイグレーションを生成してください。
 
-`users` テーブルは `packages/core/src/modules/users/users.schema.ts` が所有します。既存の `packages/core/drizzle/migrations/0000_daily_dorian_gray.sql` を置き換えたり履歴を開始し直したりせず、同じマイグレーションストリームへ差分を追加します。
+`users` テーブルは `apps/core/src/modules/users/users.schema.ts` が所有します。既存の `apps/core/drizzle/migrations/0000_daily_dorian_gray.sql` を置き換えたり履歴を開始し直したりせず、同じマイグレーションストリームへ差分を追加します。
 
 ```bash
 pnpm migrate:generate

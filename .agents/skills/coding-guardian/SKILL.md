@@ -11,7 +11,7 @@ repository.
 - Follow `AGENTS.md` for communication language.
 - Read `docs/change-operation.md`, `CODING_STANDARDS.md`, and the enforcement
   entrypoints before editing.
-- Treat `apps/main/typespec/main.tsp` and `packages/core/typespec/main.tsp` as the public and internal API contract sources of truth.
+- Treat `apps/main/typespec/main.tsp` and `apps/core/typespec/main.tsp` as the public and internal API contract sources of truth.
 - Never hand-edit generated artifacts.
 - Frontend is React, TSX, Vite, and React Router. Do not introduce assumptions
   about `apps/main/web` or SvelteKit.
@@ -42,7 +42,7 @@ Important enforcement entrypoints:
   `apps/main/src/frontend/api/**`, `packages/ui/**`
 - React Compiler: `packages/build-config/react-compiler.js`, frontend/UI
   Vite/Vitest configs, `scripts/eslint/**`
-- Backend: `apps/main` and `packages/core`, their independent TypeScript and
+- Backend: `apps/main` and `apps/core`, their independent TypeScript and
   Wrangler configurations, `packages/core-sdk`, and core-owned Drizzle migrations
 - OpenSpec: generated skills, both custom schemas, and the
   proposal, Scenario validation, and task scope validators under
@@ -65,7 +65,7 @@ Area mapping:
 
 - Contract/codegen: both TypeSpec roots, both generated servers, frontend API, and core SDK
 - Frontend: frontend app/domain and shared UI
-- Backend: `apps/main/src/backend/**`, `packages/core/**`, `packages/core-sdk/**`
+- Backend: `apps/main/src/backend/**`, `apps/core/**`, `packages/core-sdk/**`
 - Tooling/workflow: root config, scripts, hooks, CI, `.agents/skills/**`, `.opencode/**`
 
 Dependency directions:
@@ -154,7 +154,7 @@ Dependency directions:
 - Keep generated Resource routes, app composition, Module responsibilities,
   Platform adapters, and shared Types in their declared backend elements.
 - `entry` imports `app` only; `app` owns Binding-to-service composition.
-- Apps own use cases identified by intended user, situation, purpose, and outcome. Different intended users define different use cases. When all four match across apps, confirm the app split and preserve it when owner-confirmed; duplication alone never moves a use case into core.
+- Public apps own use cases identified by intended user, situation, purpose, and outcome. Different intended users define different use cases. When all four match across apps, confirm the app split and preserve it when owner-confirmed; duplication alone never moves a use case into core.
 - Core API is the shared domain boundary: expose domain concepts, state, operations, queries, invariants, transitions, and consistency, never app workflows, remote Repository methods, or persistence-shaped DTOs.
 - Put app-specific decisions and core/external-service composition in the app Resource Service. Main Services may depend on core SDK; core Services may not. Keep direct Handler-to-core-SDK mappings when no app-specific decision exists.
 - App Services may sequence independent domain operations and external services. If a core invariant requires atomic changes, expose one core operation; never reconstruct the transaction in an app.
@@ -165,7 +165,7 @@ Dependency directions:
 - Keep backend external imports within the `boundaries/external` allowlist. Vitest is limited to pure same-Resource and core SDK transport test files. Handler and Service code never uses HTTP globals, Handlers never access `env` directly, and core source never imports core SDK.
 - Keep the core HTTP contract host-independent and Bearer-authenticated. Construct the core SDK from a runtime base URL, token, and standard `fetch`; Cloudflare Service Binding is only the current transport adapter. Never place the shared token in Wrangler vars, Terraform state, URLs, logs, or caller-controlled headers.
 - Keep expected failures in `Result` values and map them to safe `{ code, message }` responses. Wrap generated response validators with `guardResponseValidation`, route unsafe validation details through the logged fixed-500 path, and parse create-user success with the generated schema. Derive duplicate-email 409 responses from the database uniqueness result rather than error-string parsing.
-- Keep Worker checks in `apps/main/tsconfig.backend.json` and `packages/core/tsconfig.json`; keep `packages/core-sdk` server-safe and React-free.
+- Keep Worker checks in `apps/main/tsconfig.backend.json` and `apps/core/tsconfig.json`; keep `packages/core-sdk` server-safe and React-free.
 - Keep `scripts/codegen/verify-codegen-roots.mjs` before every package generator so real paths remain inside the repository and symbolic links are rejected before writes. Keep `scripts/codegen/normalize-backend-handler-imports.mjs` in the backend generation path. Generated-artifact tracking must use dynamic filesystem enumeration and `git ls-files --cached -z`, accepting staged additions while rejecting untracked artifacts before the drift check.
 - Add required Japanese TSDoc to public package exports, except generated and
   test code.

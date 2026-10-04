@@ -54,7 +54,7 @@ List only domains that require implementation or domain-specific review, in
 this order:
 
 1. `frontend`: `apps/*/src/frontend/**`, `packages/ui/**`, browser behavior
-2. `backend`: `apps/*/src/backend/**`, `packages/core/**`, `packages/core-sdk/**`, server contract implementation,
+2. `backend`: `apps/*/src/backend/**`, `apps/core/**`, `packages/core-sdk/**`, server contract implementation,
    persistence, runtime
 3. `build`: repository configuration, generation, tests, tooling, and CI that do
    not belong to frontend or backend

@@ -122,7 +122,7 @@ jobs:
         if: ${{ steps.credentials.outputs.configured == 'true' }}
         run: |
           # migration台帳を持つWrangler D1 migrationsで未適用分だけをcore配備前に適用します。
-          pnpm --filter @cfreact-template/core exec wrangler d1 migrations apply DB --config "${GITHUB_WORKSPACE}/packages/core/wrangler.release.toml" --env "${WRANGLER_ENVIRONMENT}" --remote
+          pnpm --filter @cfreact-template/core exec wrangler d1 migrations apply DB --config "${GITHUB_WORKSPACE}/apps/core/wrangler.release.toml" --env "${WRANGLER_ENVIRONMENT}" --remote
 
       - name: Prepare Worker secrets
         if: ${{ steps.credentials.outputs.configured == 'true' }}

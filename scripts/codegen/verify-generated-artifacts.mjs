@@ -17,9 +17,9 @@ const generationTargets = [
     clientGeneratedRoots: ['apps/main/src/frontend/api/generated'],
   },
   {
-    openApiRoot: 'packages/core/typespec/openapi',
-    backendGeneratedRoot: 'packages/core/src/generated/api',
-    modulesRoot: 'packages/core/src/modules',
+    openApiRoot: 'apps/core/typespec/openapi',
+    backendGeneratedRoot: 'apps/core/src/generated/api',
+    modulesRoot: 'apps/core/src/modules',
     clientGeneratedRoots: ['packages/core-sdk/src/generated'],
   },
 ].map((target) => ({

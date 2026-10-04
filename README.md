@@ -49,6 +49,11 @@ cfreact-template/
 │           ├── App.tsx
 │           └── App.stories.tsx
 ├── apps/
+│   ├── core/
+│   │   ├── src/
+│   │   ├── typespec/
+│   │   ├── drizzle/
+│   │   └── wrangler.toml
 │   └── main/
 │       ├── src/
 │       │   ├── frontend/
@@ -65,11 +70,6 @@ cfreact-template/
 │       ├── typespec/
 │       └── wrangler.toml
 ├── packages/
-│   ├── core/
-│   │   ├── src/
-│   │   ├── typespec/
-│   │   ├── drizzle/
-│   │   └── wrangler.toml
 │   ├── core-sdk/
 │   │   └── src/
 │   ├── ui/
@@ -86,23 +86,25 @@ cfreact-template/
 └── package.json
 ```
 
-| パス                                | 役割                                             |
-| ----------------------------------- | ------------------------------------------------ |
-| `mockups/<app>/`                    | 公開アプリごとの統合ReactモックとStorybook表示例 |
-| `apps/main/`                        | React、Hono、TypeSpecを一体配備する公開システム  |
-| `apps/main/src/frontend/app/`       | Reactのアプリ起動、ルーター、画面                |
-| `apps/main/src/frontend/domain/`    | TanStack Query hooksとprovider                   |
-| `apps/main/src/frontend/api/`       | main OpenAPI生成SDKとAPIラッパー                 |
-| `apps/main/src/backend/`            | main WorkerのHono入口と公開API                   |
-| `apps/main/typespec/`               | main公開API契約の正                              |
-| `packages/core/`                    | 非公開core Worker、共有ドメイン、Repository、D1  |
-| `packages/core/typespec/`           | core内部API契約の正                              |
-| `packages/core-sdk/`                | core OpenAPIから生成するサーバー専用SDK          |
-| `packages/core/drizzle/migrations/` | coreが所有するD1マイグレーション                 |
-| `packages/ui/`                      | Base UIベースの共通components/hooks              |
-| `infra/terraform/production/`       | productionのD1、KV、R2を管理するTerraform設定    |
+| パス                             | 役割                                             |
+| -------------------------------- | ------------------------------------------------ |
+| `mockups/<app>/`                 | 公開アプリごとの統合ReactモックとStorybook表示例 |
+| `apps/main/`                     | React、Hono、TypeSpecを一体配備する公開システム  |
+| `apps/main/src/frontend/app/`    | Reactのアプリ起動、ルーター、画面                |
+| `apps/main/src/frontend/domain/` | TanStack Query hooksとprovider                   |
+| `apps/main/src/frontend/api/`    | main OpenAPI生成SDKとAPIラッパー                 |
+| `apps/main/src/backend/`         | main WorkerのHono入口と公開API                   |
+| `apps/main/typespec/`            | main公開API契約の正                              |
+| `apps/core/`                     | 非公開core Worker、共有ドメイン、Repository、D1  |
+| `apps/core/typespec/`            | core内部API契約の正                              |
+| `packages/core-sdk/`             | core OpenAPIから生成するサーバー専用SDK          |
+| `apps/core/drizzle/migrations/`  | coreが所有するD1マイグレーション                 |
+| `packages/ui/`                   | Base UIベースの共通components/hooks              |
+| `infra/terraform/production/`    | productionのD1、KV、R2を管理するTerraform設定    |
 
 ### システムの追加
+
+`apps/`には、公開・非公開を問わず独立して起動・配備するシステムを置きます。`packages/`には、各システムへ組み込む共有ライブラリや共通のビルド設定を置きます。現在の配備対象は、公開アプリの`apps/main`と内部サービスの`apps/core`です。
 
 React + Hono + TypeSpecのシステムは`apps/<name>`へ一つのworkspace packageとして追加し、`dev`、`build`、`check`、`gen:api`、`deploy:dry-run`を実装します。TypeSpecからそのシステムのHono経路とfrontend SDKを生成し、共有ドメインの操作や問い合わせが必要なHandlerまたはServiceだけが`@cfreact-template/core-sdk`を利用します。配備対象は`.release/deploy-targets.json`へ明示登録します。
 
@@ -116,13 +118,13 @@ Next.jsなどの一体型システムも`apps/<name>`へ置き、ルートから
 React -> main SDK -> main Hono -> core SDK -> core Hono -> Service -> Repository -> D1
 ```
 
-`apps/main`は公開契約、画面固有の応答写像、`hello`、`health`を所有します。`packages/core`は共有ドメイン、`users`のService、Repository、Drizzleスキーマ、D1、メール、マイグレーションを所有します。mainバックエンドはcore実装を直接インポートせず、`packages/core-sdk`だけを利用します。
+`apps/main`は公開契約、画面固有の応答写像、`hello`、`health`を所有します。`apps/core`は共有ドメイン、`users`のService、Repository、Drizzleスキーマ、D1、メール、マイグレーションを所有します。mainバックエンドはcore実装を直接インポートせず、`packages/core-sdk`だけを利用します。
 
 #### アプリのユースケースとcoreドメイン
 
-各`apps/*`は、そのアプリのユースケースを所有します。ユースケースは、想定利用者、その利用者が置かれた状況、目的、得られる成果によって識別します。想定利用者が異なる場合は、利用するドメイン操作や処理順序が同じでも別のユースケースです。
+各公開アプリは、そのアプリのユースケースを所有します。ユースケースは、想定利用者、その利用者が置かれた状況、目的、得られる成果によって識別します。想定利用者が異なる場合は、利用するドメイン操作や処理順序が同じでも別のユースケースです。
 
-想定利用者、状況、目的、成果まで同じユースケースが複数の`apps/*`に存在する場合は、本当に別アプリとして分ける必要があるかを確認します。別アプリとして提供することが確認済みの要望であれば、その境界を維持します。実装の重複だけを理由にアプリを統合したり、ユースケースをcoreへ移したりしません。
+想定利用者、状況、目的、成果まで同じユースケースが複数の公開アプリに存在する場合は、本当に別アプリとして分ける必要があるかを確認します。別アプリとして提供することが確認済みの要望であれば、その境界を維持します。実装の重複だけを理由にアプリを統合したり、ユースケースをcoreへ移したりしません。
 
 core APIは、各アプリのユースケースから利用されるドメイン境界です。アプリ固有の利用者作業やワークフローではなく、ドメインの概念、状態、操作、問い合わせ、不変条件、状態遷移、整合性を提供します。異なるユースケースが同じcoreドメイン操作を利用することは、ドメインを共有する自然な結果です。
 
@@ -249,7 +251,7 @@ main TypeSpec生成経路とcore TypeSpec生成経路は別の契約です。mai
 
 ### API契約と生成物の再生成
 
-`apps/main/typespec`は公開main API、`packages/core/typespec`は非公開core APIの正です。各TypeSpecからOpenAPI、Hono経路、スマートハンドラー、利用側SDKを生成します。
+`apps/main/typespec`は公開main API、`apps/core/typespec`は非公開core APIの正です。各TypeSpecからOpenAPI、Hono経路、スマートハンドラー、利用側SDKを生成します。
 
 ```bash
 # 両TypeSpec -> 両Honoサーバー -> frontend SDK + core SDK
@@ -361,7 +363,7 @@ pnpm dev:all
 `pnpm dev:backend` で Wrangler を起動している状態で、`POST /api/v1/users` を叩くと
 `env.EMAIL.send()` が呼ばれ、Wrangler がローカルに `.eml` ファイルを出力します。
 
-1. `packages/core/wrangler.toml`の`EMAIL_FROM`と`EMAIL_TO`を開発用の値に更新
+1. `apps/core/wrangler.toml`の`EMAIL_FROM`と`EMAIL_TO`を開発用の値に更新
 2. サーバーを起動
 
    ```bash
@@ -416,10 +418,10 @@ CIは設定済みのPlaywrightブラウザを導入し、`pnpm test:run`でア�
 
 このテンプレートは、データベースマイグレーションに Drizzle Kit を使用します。
 
-現在の `users` テーブルは `packages/core/src/modules/users/users.schema.ts` が所有し、`packages/core/drizzle.config.ts` はこのファイルをスキーマ入力にします。所有場所の変更で既存履歴を作り直さず、`packages/core/drizzle/migrations/0000_daily_dorian_gray.sql` から続く同じマイグレーションストリームを維持します。
+現在の `users` テーブルは `apps/core/src/modules/users/users.schema.ts` が所有し、`apps/core/drizzle.config.ts` はこのファイルをスキーマ入力にします。所有場所の変更で既存履歴を作り直さず、`apps/core/drizzle/migrations/0000_daily_dorian_gray.sql` から続く同じマイグレーションストリームを維持します。
 
 1. **スキーマを変更:**
-   - 対象リソースの`packages/core/src/modules/<resource>/*.schema.ts`を編集
+   - 対象リソースの`apps/core/src/modules/<resource>/*.schema.ts`を編集
 
 2. **マイグレーションを生成:**
 
@@ -471,7 +473,7 @@ CIは設定済みのPlaywrightブラウザを導入し、`pnpm test:run`でア�
 
 Changesets、branch運用、ActionsのPR作成権限、ruleset、Production Environmentを含む生成先repositoryの設定は[`docs/release-operations.md`](docs/release-operations.md)を参照してください。リリース認証はrepository固有の`GITHUB_TOKEN`だけを使い、GitHub App、PAT、Client ID、private keyは不要です。
 
-productionの長期資源はTerraform、WorkerコードとBindingはWrangler、D1 migrationは`packages/core`が所有します。同じCloudflare資源をTerraformとWranglerの双方から作成しません。
+productionの長期資源はTerraform、WorkerコードとBindingはWrangler、D1 migrationは`apps/core`が所有します。同じCloudflare資源をTerraformとWranglerの双方から作成しません。
 
 GitHubの`production` Environmentには次を設定します。
 
@@ -515,12 +517,12 @@ GitHubの`production` Environmentには次を設定します。
    pnpm release:render-wrangler -- --terraform-outputs .wrangler/terraform-outputs.json
    ```
 
-   これにより`packages/core/wrangler.release.toml`と`apps/main/wrangler.release.toml`が生成されます。どちらもGit管理しません。
+   これにより`apps/core/wrangler.release.toml`と`apps/main/wrangler.release.toml`が生成されます。どちらもGit管理しません。
 
 5. **migrationと配備:**
 
    ```bash
-   pnpm --filter @cfreact-template/core exec wrangler d1 migrations apply DB --config packages/core/wrangler.release.toml --env production --remote
+   pnpm --filter @cfreact-template/core exec wrangler d1 migrations apply DB --config apps/core/wrangler.release.toml --env production --remote
    pnpm release:deploy-targets -- --targets all --environment production --secrets-file /secure/path/worker-secrets.json
    ```
 
@@ -530,7 +532,7 @@ GitHubの`production` Environmentには次を設定します。
 
 GitHub Actionsからリリースする場合は、Cloudflare認証情報と256ビット以上のランダムな`CORE_API_TOKEN`を`production` Environmentへ設定します。Deploy Workflowは同じ値をmainとcoreのWorker Secretへ登録します。ActionsのPR作成権限を含む全設定は`docs/release-operations.md`を参照してください。
 
-メール送信元と宛先は`packages/core/wrangler.toml`、mainのKV/R2とcoreのD1は各Wrangler Bindingで設定します。資源IDはTerraform outputから一時設定へ注入し、公開branchへ保存しません。`CORE_API_TOKEN`は平文の`vars`やTerraform stateへ保存せず、利用環境のSecret管理から両バックエンドへ注入します。
+メール送信元と宛先は`apps/core/wrangler.toml`、mainのKV/R2とcoreのD1は各Wrangler Bindingで設定します。資源IDはTerraform outputから一時設定へ注入し、公開branchへ保存しません。`CORE_API_TOKEN`は平文の`vars`やTerraform stateへ保存せず、利用環境のSecret管理から両バックエンドへ注入します。
 
 ## OpenSpec と変更運用
 
@@ -708,7 +710,7 @@ OpenCodeは公開アプリごとの統合Reactモックを`mockups/<app>/src/`�
 
 リソースのパス、HTTP メソッド、スキーマ、検証処理は `TypeSpec` と生成器が所有します。手書きの `Hono` 経路を別に作ったり、生成された経路ファイルを直接編集したりしません。
 
-共有ドメインの操作や問い合わせを追加する場合は`packages/core/typespec`とcoreの`Handler`、`Service`を先に変更し、生成された`core-sdk`をmainの`Handler`または`Service`から利用します。main固有の複合ユースケースはmainの`Service`へ置きます。外部パッケージが経路全体を所有する場合だけTypeSpecの対象外とし、最上位Honoへ明示的にマウントします。
+共有ドメインの操作や問い合わせを追加する場合は`apps/core/typespec`とcoreの`Handler`、`Service`を先に変更し、生成された`core-sdk`をmainの`Handler`または`Service`から利用します。main固有の複合ユースケースはmainの`Service`へ置きます。外部パッケージが経路全体を所有する場合だけTypeSpecの対象外とし、最上位Honoへ明示的にマウントします。
 
 ## コード品質
 

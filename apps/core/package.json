@@ -22,7 +22,7 @@
     "format:typespec:check": "tsp format typespec --check",
     "gen:openapi": "node ../../scripts/codegen/verify-codegen-roots.mjs && tsp compile typespec",
     "gen:types": "node ../../scripts/codegen/verify-codegen-roots.mjs && openapi-typescript typespec/openapi/openapi.json -o src/generated/api/openapi.ts",
-    "gen:api": "pnpm gen:types && node ../../scripts/codegen/verify-codegen-roots.mjs && orval --config ./orval.config.ts && node ../../scripts/codegen/normalize-backend-handler-imports.mjs --openapi packages/core/typespec/openapi/openapi.json --modules packages/core/src/modules && prettier --write \"src/generated/api/**/*.ts\" \"src/modules/*/handlers/**/*.ts\"",
+    "gen:api": "pnpm gen:openapi && pnpm gen:types && node ../../scripts/codegen/verify-codegen-roots.mjs && orval --config ./orval.config.ts && node ../../scripts/codegen/normalize-backend-handler-imports.mjs --openapi apps/core/typespec/openapi/openapi.json --modules apps/core/src/modules && prettier --write \"src/generated/api/**/*.ts\" \"src/modules/*/handlers/**/*.ts\"",
     "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {

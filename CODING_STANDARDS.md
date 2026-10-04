@@ -22,16 +22,16 @@
 
 ### サーバー要素
 
-- `backend-*`: `apps/main/src/backend/**`と`packages/core/src/**`の同じ責務ディレクトリ
-- `backend-platform-database`、`backend-platform-email`: `packages/core/src/platform/**`
-- `backend-module-service`: `apps/main/src/backend/modules/<module>/*.service.ts`と`packages/core/src/modules/<module>/*.service.ts`
-- `backend-module-repository`、`backend-module-schema`: `packages/core/src/modules/<module>/**`
+- `backend-*`: `apps/main/src/backend/**`と`apps/core/src/**`の同じ責務ディレクトリ
+- `backend-platform-database`、`backend-platform-email`: `apps/core/src/platform/**`
+- `backend-module-service`: `apps/main/src/backend/modules/<module>/*.service.ts`と`apps/core/src/modules/<module>/*.service.ts`
+- `backend-module-repository`、`backend-module-schema`: `apps/core/src/modules/<module>/**`
 - `core-sdk-test`: `packages/core-sdk/src/**/*.test.ts`
 - `core-sdk`: `packages/core-sdk/src/**/*`
 
 ### ユースケースとドメインの所有
 
-- 各`apps/*`は、想定利用者、その利用者が置かれた状況、目的、得られる成果で識別されるユースケースを所有します。
+- 各公開アプリは、想定利用者、その利用者が置かれた状況、目的、得られる成果で識別されるユースケースを所有します。
 - 想定利用者が異なる場合は、利用するドメイン操作や処理順序が同じでも別のユースケースです。
 - 想定利用者、状況、目的、成果まで同じユースケースが複数アプリに存在する場合は、別アプリとして分ける必要を確認します。別アプリとしての提供が確認済み要望なら分割を維持し、重複だけを理由に統合またはcoreへの移動を行いません。
 - core APIは各アプリのユースケースが利用するドメイン境界であり、ドメイン概念、状態、操作、問い合わせ、不変条件、状態遷移、整合性をドメインの語彙で提供します。
@@ -86,7 +86,7 @@
 
 リソース名は `eslint-plugin-boundaries` の `capture` で取得します。同じ要素でも `captured.module` が異なるリソースは許可されません。要素外ファイルへの依存は `boundaries/no-unknown`、親ディレクトリへの逃避はバックエンド用の `no-restricted-imports` でも失敗します。
 
-`core-sdk`への依存はmainの`backend-module-service`だけに許可します。`packages/core/src/**`は`no-restricted-imports`により自身のHTTP SDKへ依存できません。coreは`Handler -> Service -> Repository -> Schema | Platform`の内部方向を維持し、ドメイン能力は`Service`が所有します。
+`core-sdk`への依存はmainの`backend-module-service`だけに許可します。`apps/core/src/**`は`no-restricted-imports`により自身のHTTP SDKへ依存できません。coreは`Handler -> Service -> Repository -> Schema | Platform`の内部方向を維持し、ドメイン能力は`Service`が所有します。
 
 ## 5. import / export
 
@@ -129,8 +129,8 @@
     import { z } from 'zod';
     ```
 
-- `packages/**/index.ts` は re-export のみで、実装と default export を禁止
-  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/**/index.ts']`
+- `packages/**/index.ts` と `apps/core/**/index.ts` は re-export のみで、実装と default export を禁止
+  - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-syntax']` → `eslint.config.js` の `files: ['packages/**/index.ts', 'apps/core/**/index.ts']`
   - NG例
     ```ts
     // packages/foo/index.ts
@@ -145,7 +145,7 @@
     export { something } from './something';
     ```
 
-- `packages/**/src/**/*.{ts,tsx}`では、coreのモジュール内部とcore-sdk内部を除き、実装を相対インポートで直接参照しない
+- `packages/**/src/**/*.{ts,tsx}`では、core-sdk内部を除き、実装を相対インポートで直接参照しない
   - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` と `rules['boundaries/element-types']` → `eslint.config.js`
   - NG例
     ```ts
@@ -156,7 +156,7 @@
     import { something } from './utils';
     ```
 
-- `apps/main/src/backend/platform`、`apps/main/src/backend/types`、`packages/core/src/platform`、`packages/core/src/types`、`packages/ui`は上位ディレクトリ参照の相対インポートを禁止し、エイリアスを使う
+- `apps/main/src/backend/platform`、`apps/main/src/backend/types`、`apps/core/src/platform`、`apps/core/src/types`、`packages/ui`は上位ディレクトリ参照の相対インポートを禁止し、エイリアスを使う
   - 強制: `pnpm lint` → `eslint .` → `rules['no-restricted-imports']` → `eslint.config.js`
   - 対象
     - `apps/main/src/backend/platform/**/*.{ts,tsx}`
@@ -257,7 +257,7 @@
     - バックエンド型の出力: `apps/main/package.json` の `gen:types`
     - mainバックエンドのリソースとハンドラー: `apps/main/orval.backend.config.ts`
     - frontend SDK: `apps/main/orval.frontend.config.ts`
-    - coreバックエンドとcore SDK: `packages/core/orval.config.ts`、`packages/core-sdk/orval.config.ts`
+    - coreバックエンドとcore SDK: `apps/core/orval.config.ts`、`packages/core-sdk/orval.config.ts`
   - NG例
     ```diff
     -  "title": "cfreact-template API"
@@ -770,7 +770,7 @@
 
 ## 9. サーバー実装規則
 
-この節は`apps/main/src/backend`、`packages/core/src`、`packages/core-sdk/src`へ`eslint.config.js`が適用する構造を要約します。
+この節は`apps/main/src/backend`、`apps/core/src`、`packages/core-sdk/src`へ`eslint.config.js`が適用する構造を要約します。
 
 ### 9.1 ソース要素
 
@@ -781,14 +781,14 @@
 | `backend-generated-api`          | mainとcoreの`src/generated/api/openapi.ts`                  | `openapi-typescript`が生成するOpenAPI型              |
 | `backend-generated-resource`     | mainとcoreの`src/generated/api/<module>/**/*`               | `Orval`生成のHono経路、検証処理、スキーマ            |
 | `backend-platform-http`          | `apps/main/src/backend/platform/http/**/*`                  | HTTP 応答検証などの基盤処理                          |
-| `backend-platform-database`      | `packages/core/src/platform/database/**/*`                  | `D1`と`Drizzle`の接続処理                            |
-| `backend-platform-email`         | `packages/core/src/platform/email/**/*`                     | `Cloudflare Email Workers`の送信処理                 |
+| `backend-platform-database`      | `apps/core/src/platform/database/**/*`                      | `D1`と`Drizzle`の接続処理                            |
+| `backend-platform-email`         | `apps/core/src/platform/email/**/*`                         | `Cloudflare Email Workers`の送信処理                 |
 | `backend-platform-observability` | `apps/main/src/backend/platform/observability/**/*`         | 内部失敗の記録                                       |
 | `backend-module-handler`         | `apps/main/src/backend/modules/<module>/handlers/**/*`      | 契約済み入力とサービス結果を HTTP 応答へ変換する     |
 | `backend-module-test`            | `apps/main/src/backend/modules/<module>/*.test.ts`          | 同じリソースの純粋で決定的な業務規則を検証する       |
 | `backend-module-service`         | mainとcoreの`src/modules/<module>/*.service.ts`             | main固有ユースケースまたはcoreドメイン操作を調整する |
-| `backend-module-repository`      | `packages/core/src/modules/<module>/*.repository.ts`        | core所有データを永続化する                           |
-| `backend-module-schema`          | `packages/core/src/modules/<module>/*.schema.ts`            | core所有の`Drizzle`スキーマ                          |
+| `backend-module-repository`      | `apps/core/src/modules/<module>/*.repository.ts`            | core所有データを永続化する                           |
+| `backend-module-schema`          | `apps/core/src/modules/<module>/*.schema.ts`                | core所有の`Drizzle`スキーマ                          |
 | `backend-module-entry`           | `apps/main/src/backend/modules/<module>/index.ts`           | リソースの唯一の公開入口                             |
 | `backend-module-support`         | `apps/main/src/backend/modules/<module>/*.ts`（上記を除く） | リソース内で共有する補助型、応答、補助処理           |
 | `backend-types`                  | `apps/main/src/backend/types/**/*`                          | 複数リソースで共有する型                             |
@@ -864,7 +864,7 @@ mainバックエンドからcore実装への直接依存は`no-restricted-import
 
 ### 9.7 API 契約と生成
 
-- 公開main APIの正は`apps/main/typespec/main.tsp`、内部core APIの正は`packages/core/typespec/main.tsp`です。
+- 公開main APIの正は`apps/main/typespec/main.tsp`、内部core APIの正は`apps/core/typespec/main.tsp`です。
 - core TypeSpecはBearer認証を契約とし、core SDKは実行時に基底URL、トークン、Web標準`fetch`を受け取ります。Cloudflare Service Bindingは注入可能な通信手段の一つであり、SDK契約へ含めません。ネットワーク通信では証明書検証済みHTTPSを使用し、SDKは認証ヘッダーを上書きしてリダイレクトを拒否します。
 - `pnpm gen:api-sdk`は両OpenAPI、両Honoサーバー、frontend SDK、core SDKを生成します。
 - 各生成段階は書き込み前に `scripts/codegen/verify-codegen-roots.mjs` を実行し、生成ルートの実体経路をリポジトリ内へ限定して、配下のシンボリックリンクを拒否します。
@@ -875,9 +875,9 @@ mainバックエンドからcore実装への直接依存は`no-restricted-import
 
 ### 9.8 TypeScript とパッケージ公開面
 
-- `apps/main/tsconfig.backend.json`と`packages/core/tsconfig.json`が両Workerを個別に型検査し、`packages/core-sdk/tsconfig.json`が生成SDK境界を検査します。
+- `apps/main/tsconfig.backend.json`と`apps/core/tsconfig.json`が両Workerを個別に型検査し、`packages/core-sdk/tsconfig.json`が生成SDK境界を検査します。
 - ルートの `pnpm check` は全パッケージの `check` を実行するため、このバックエンド型検査を含みます。CI も `pnpm check` を実行します。
-- `apps/main`はfrontendとmain Worker、`packages/core`はcore Worker、`packages/core-sdk`はサーバー専用SDKだけを公開します。
+- `apps/main`はfrontendとmain Worker、`apps/core`はcore Worker、`packages/core-sdk`はサーバー専用SDKだけを公開します。
 
 ## 10. サイズ制約
 

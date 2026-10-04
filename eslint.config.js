@@ -223,9 +223,9 @@ export default tseslint.config(
         { type: 'core-sdk-test', pattern: 'packages/core-sdk/src/**/*.test.ts', mode: 'full' },
         { type: 'core-sdk', pattern: 'packages/core-sdk/src/**/*', mode: 'full' },
         { type: 'backend-entry', pattern: 'apps/main/src/backend/entry/index.ts', mode: 'full' },
-        { type: 'backend-entry', pattern: 'packages/core/src/entry/index.ts', mode: 'full' },
+        { type: 'backend-entry', pattern: 'apps/core/src/entry/index.ts', mode: 'full' },
         { type: 'backend-app', pattern: 'apps/main/src/backend/app/**/*', mode: 'full' },
-        { type: 'backend-app', pattern: 'packages/core/src/app/**/*', mode: 'full' },
+        { type: 'backend-app', pattern: 'apps/core/src/app/**/*', mode: 'full' },
         {
           type: 'backend-generated-api',
           pattern: 'apps/main/src/backend/generated/api/openapi.ts',
@@ -233,7 +233,7 @@ export default tseslint.config(
         },
         {
           type: 'backend-generated-api',
-          pattern: 'packages/core/src/generated/api/openapi.ts',
+          pattern: 'apps/core/src/generated/api/openapi.ts',
           mode: 'full',
         },
         {
@@ -244,7 +244,7 @@ export default tseslint.config(
         },
         {
           type: 'backend-generated-resource',
-          pattern: 'packages/core/src/generated/api/(*)/**/*',
+          pattern: 'apps/core/src/generated/api/(*)/**/*',
           mode: 'full',
           capture: ['module'],
         },
@@ -255,7 +255,7 @@ export default tseslint.config(
         },
         {
           type: 'backend-platform-http',
-          pattern: 'packages/core/src/platform/http/**/*',
+          pattern: 'apps/core/src/platform/http/**/*',
           mode: 'full',
         },
         {
@@ -265,7 +265,7 @@ export default tseslint.config(
         },
         {
           type: 'backend-platform-database',
-          pattern: 'packages/core/src/platform/database/**/*',
+          pattern: 'apps/core/src/platform/database/**/*',
           mode: 'full',
         },
         {
@@ -275,7 +275,7 @@ export default tseslint.config(
         },
         {
           type: 'backend-platform-email',
-          pattern: 'packages/core/src/platform/email/**/*',
+          pattern: 'apps/core/src/platform/email/**/*',
           mode: 'full',
         },
         {
@@ -285,7 +285,7 @@ export default tseslint.config(
         },
         {
           type: 'backend-platform-observability',
-          pattern: 'packages/core/src/platform/observability/**/*',
+          pattern: 'apps/core/src/platform/observability/**/*',
           mode: 'full',
         },
         {
@@ -296,7 +296,7 @@ export default tseslint.config(
         },
         {
           type: 'backend-module-handler',
-          pattern: 'packages/core/src/modules/(*)/handlers/**/*',
+          pattern: 'apps/core/src/modules/(*)/handlers/**/*',
           mode: 'full',
           capture: ['module'],
         },
@@ -308,7 +308,7 @@ export default tseslint.config(
         },
         {
           type: 'backend-module-test',
-          pattern: 'packages/core/src/modules/(*)/*.test.ts',
+          pattern: 'apps/core/src/modules/(*)/*.test.ts',
           mode: 'full',
           capture: ['module'],
         },
@@ -320,7 +320,7 @@ export default tseslint.config(
         },
         {
           type: 'backend-module-service',
-          pattern: 'packages/core/src/modules/(*)/*.service.ts',
+          pattern: 'apps/core/src/modules/(*)/*.service.ts',
           mode: 'full',
           capture: ['module'],
         },
@@ -332,7 +332,7 @@ export default tseslint.config(
         },
         {
           type: 'backend-module-repository',
-          pattern: 'packages/core/src/modules/(*)/*.repository.ts',
+          pattern: 'apps/core/src/modules/(*)/*.repository.ts',
           mode: 'full',
           capture: ['module'],
         },
@@ -344,7 +344,7 @@ export default tseslint.config(
         },
         {
           type: 'backend-module-schema',
-          pattern: 'packages/core/src/modules/(*)/*.schema.ts',
+          pattern: 'apps/core/src/modules/(*)/*.schema.ts',
           mode: 'full',
           capture: ['module'],
         },
@@ -356,7 +356,7 @@ export default tseslint.config(
         },
         {
           type: 'backend-module-domain',
-          pattern: 'packages/core/src/modules/(*)/domain/**/*',
+          pattern: 'apps/core/src/modules/(*)/domain/**/*',
           mode: 'full',
           capture: ['module'],
         },
@@ -368,7 +368,7 @@ export default tseslint.config(
         },
         {
           type: 'backend-module-entry',
-          pattern: 'packages/core/src/modules/(*)/index.ts',
+          pattern: 'apps/core/src/modules/(*)/index.ts',
           mode: 'full',
           capture: ['module'],
         },
@@ -380,12 +380,12 @@ export default tseslint.config(
         },
         {
           type: 'backend-module-support',
-          pattern: 'packages/core/src/modules/(*)/*.ts',
+          pattern: 'apps/core/src/modules/(*)/*.ts',
           mode: 'full',
           capture: ['module'],
         },
         { type: 'backend-types', pattern: 'apps/main/src/backend/types/**/*', mode: 'full' },
-        { type: 'backend-types', pattern: 'packages/core/src/types/**/*', mode: 'full' },
+        { type: 'backend-types', pattern: 'apps/core/src/types/**/*', mode: 'full' },
         { type: 'frontend-api', pattern: 'apps/main/src/frontend/api/**/*', mode: 'full' },
         { type: 'frontend-domain', pattern: 'apps/main/src/frontend/domain/**/*', mode: 'full' },
         { type: 'frontend-app', pattern: 'apps/main/src/frontend/app/**/*', mode: 'full' },
@@ -724,7 +724,7 @@ export default tseslint.config(
             },
             {
               target: './apps/main/src/backend',
-              from: './packages/core/src',
+              from: './apps/core/src',
               message:
                 'main backendはcore実装を直接参照せず、@cfreact-template/core-sdkを利用してください。',
             },
@@ -734,7 +734,7 @@ export default tseslint.config(
               message: 'frontendはcore SDKを直接利用できません。',
             },
             {
-              target: './packages/core/src',
+              target: './apps/core/src',
               from: './apps/main/src',
               message: 'coreは個別appの実装へ依存できません。',
             },
@@ -777,7 +777,7 @@ export default tseslint.config(
     files: [
       'apps/main/src/backend/**/*.{ts,tsx}',
       'apps/main/src/frontend/**/*.{ts,tsx}',
-      'packages/core/src/**/*.{ts,tsx}',
+      'apps/core/src/**/*.{ts,tsx}',
       'packages/core-sdk/src/**/*.{ts,tsx}',
       'packages/ui/index.ts',
       'packages/ui/SafeHTML.tsx',
@@ -805,7 +805,7 @@ export default tseslint.config(
     ignores: [
       'apps/main/src/backend/generated/**/*.{ts,tsx}',
       'apps/main/src/frontend/api/generated/**/*.{ts,tsx}',
-      'packages/core/src/generated/**/*.{ts,tsx}',
+      'apps/core/src/generated/**/*.{ts,tsx}',
       'packages/core-sdk/src/generated/**/*.{ts,tsx}',
       'packages/ui/vitest.config.ts',
       '**/*.test.ts',
@@ -826,7 +826,7 @@ export default tseslint.config(
     files: ['apps/**/*.{ts,tsx}', 'packages/**/*.{ts,tsx}'],
     ignores: [
       'apps/main/src/frontend/api/generated/**/*.{ts,tsx}',
-      'packages/core/src/generated/**/*.{ts,tsx}',
+      'apps/core/src/generated/**/*.{ts,tsx}',
       'packages/core-sdk/src/generated/**/*.{ts,tsx}',
     ],
     rules: {
@@ -925,9 +925,9 @@ export default tseslint.config(
     },
   },
 
-  // packages 配下の index.ts は re-export 専用（実装禁止）
+  // ライブラリとcoreの index.ts は再エクスポート専用。
   {
-    files: ['packages/**/index.ts'],
+    files: ['packages/**/index.ts', 'apps/core/**/index.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -1696,7 +1696,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/core/src/**/*.{ts,tsx}'],
+    files: ['apps/core/src/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -1717,7 +1717,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/main/src/backend/**/*.ts', 'packages/core/src/**/*.ts'],
+    files: ['apps/main/src/backend/**/*.ts', 'apps/core/src/**/*.ts'],
     rules: {
       // サーバー側では console.log を許可（ログ出力として使用）
       'no-console': 'off',
@@ -1726,7 +1726,7 @@ export default tseslint.config(
   {
     files: [
       'apps/main/src/backend/**/*.{ts,tsx}',
-      'packages/core/src/**/*.{ts,tsx}',
+      'apps/core/src/**/*.{ts,tsx}',
       'packages/core-sdk/src/**/*.{ts,tsx}',
     ],
     rules: {
@@ -1759,7 +1759,7 @@ export default tseslint.config(
   {
     files: [
       'apps/main/src/backend/generated/**/*.{ts,tsx}',
-      'packages/core/src/generated/**/*.{ts,tsx}',
+      'apps/core/src/generated/**/*.{ts,tsx}',
       'packages/core-sdk/src/generated/**/*.{ts,tsx}',
     ],
     rules: {
@@ -1799,7 +1799,7 @@ export default tseslint.config(
   {
     files: [
       'apps/main/src/backend/modules/*/handlers/**/*.{ts,tsx}',
-      'packages/core/src/modules/*/handlers/**/*.{ts,tsx}',
+      'apps/core/src/modules/*/handlers/**/*.{ts,tsx}',
     ],
     rules: {
       // 前置きと検証処理のインポートは `Orval` 所有、関数本体は開発者所有の混合領域。
@@ -1829,7 +1829,7 @@ export default tseslint.config(
   {
     files: [
       'apps/main/src/backend/modules/*/*.service.{ts,tsx}',
-      'packages/core/src/modules/*/*.service.{ts,tsx}',
+      'apps/core/src/modules/*/*.service.{ts,tsx}',
     ],
     rules: {
       // サービスの外部作用は注入済み関数へ限定し、実行環境の HTTP グローバルへ直接到達させない。
@@ -1838,10 +1838,7 @@ export default tseslint.config(
     },
   },
   {
-    files: [
-      'apps/main/src/backend/modules/**/*.{ts,tsx}',
-      'packages/core/src/modules/**/*.{ts,tsx}',
-    ],
+    files: ['apps/main/src/backend/modules/**/*.{ts,tsx}', 'apps/core/src/modules/**/*.{ts,tsx}'],
     rules: {
       // ハンドラー本体を含む開発者所有のモジュール実装には、通常のサイズ制約を適用する。
       'max-lines': [
@@ -1864,7 +1861,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/main/src/backend/app/**/*.{ts,tsx}', 'packages/core/src/app/**/*.{ts,tsx}'],
+    files: ['apps/main/src/backend/app/**/*.{ts,tsx}', 'apps/core/src/app/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -1894,13 +1891,13 @@ export default tseslint.config(
       'apps/main/src/backend/modules/**/*.{ts,tsx}',
       'apps/main/src/backend/platform/**/*.{ts,tsx}',
       'apps/main/src/backend/types/**/*.{ts,tsx}',
-      'packages/core/src/entry/**/*.{ts,tsx}',
-      'packages/core/src/generated/**/*.{ts,tsx}',
-      'packages/core/src/modules/**/*.{ts,tsx}',
-      'packages/core/src/platform/**/*.{ts,tsx}',
-      'packages/core/src/types/**/*.{ts,tsx}',
+      'apps/core/src/entry/**/*.{ts,tsx}',
+      'apps/core/src/generated/**/*.{ts,tsx}',
+      'apps/core/src/modules/**/*.{ts,tsx}',
+      'apps/core/src/platform/**/*.{ts,tsx}',
+      'apps/core/src/types/**/*.{ts,tsx}',
     ],
-    ignores: ['apps/main/src/backend/app/**/*.{ts,tsx}', 'packages/core/src/app/**/*.{ts,tsx}'],
+    ignores: ['apps/main/src/backend/app/**/*.{ts,tsx}', 'apps/core/src/app/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -1911,12 +1908,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/main/src/backend/modules/*/*.{ts,tsx}', 'packages/core/src/modules/*/*.{ts,tsx}'],
+    files: ['apps/main/src/backend/modules/*/*.{ts,tsx}', 'apps/core/src/modules/*/*.{ts,tsx}'],
     ignores: [
       'apps/main/src/backend/modules/*/handlers/**/*.{ts,tsx}',
       'apps/main/src/backend/modules/*/index.ts',
-      'packages/core/src/modules/*/handlers/**/*.{ts,tsx}',
-      'packages/core/src/modules/*/index.ts',
+      'apps/core/src/modules/*/handlers/**/*.{ts,tsx}',
+      'apps/core/src/modules/*/index.ts',
     ],
     rules: {
       'no-restricted-imports': [
@@ -1937,7 +1934,7 @@ export default tseslint.config(
   {
     files: [
       'apps/main/src/backend/modules/*/handlers/**/*.{ts,tsx}',
-      'packages/core/src/modules/*/handlers/**/*.{ts,tsx}',
+      'apps/core/src/modules/*/handlers/**/*.{ts,tsx}',
     ],
     rules: {
       'no-restricted-imports': [
@@ -1956,7 +1953,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/main/src/backend/modules/*/index.ts', 'packages/core/src/modules/*/index.ts'],
+    files: ['apps/main/src/backend/modules/*/index.ts', 'apps/core/src/modules/*/index.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -1979,14 +1976,14 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/main/src/backend/**/*.{ts,tsx}', 'packages/core/src/**/*.{ts,tsx}'],
+    files: ['apps/main/src/backend/**/*.{ts,tsx}', 'apps/core/src/**/*.{ts,tsx}'],
     ignores: [
       'apps/main/src/backend/app/**/*.{ts,tsx}',
       'apps/main/src/backend/generated/**/*.{ts,tsx}',
       'apps/main/src/backend/modules/**/*.{ts,tsx}',
-      'packages/core/src/app/**/*.{ts,tsx}',
-      'packages/core/src/generated/**/*.{ts,tsx}',
-      'packages/core/src/modules/**/*.{ts,tsx}',
+      'apps/core/src/app/**/*.{ts,tsx}',
+      'apps/core/src/generated/**/*.{ts,tsx}',
+      'apps/core/src/modules/**/*.{ts,tsx}',
     ],
     rules: {
       'no-restricted-imports': [
@@ -2066,7 +2063,6 @@ export default tseslint.config(
     files: ['packages/**/*.{ts,tsx}'],
     ignores: [
       '**/index.ts',
-      'packages/core/src/**/*.{ts,tsx}',
       'packages/core-sdk/src/**/*.{ts,tsx}',
       'apps/main/src/frontend/api/generated/**/*.{ts,tsx}',
       'apps/main/src/frontend/app/tests/**/*.{ts,tsx}',

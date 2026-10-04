@@ -10,8 +10,8 @@ export default defineConfig({
   test: {
     projects: [
       {
-        extends: './packages/core/vitest.config.ts',
-        root: './packages/core',
+        extends: './apps/core/vitest.config.ts',
+        root: './apps/core',
         test: {
           name: 'core-rules',
         },
